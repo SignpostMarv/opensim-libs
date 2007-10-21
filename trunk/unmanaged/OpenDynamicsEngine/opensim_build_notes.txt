@@ -9,6 +9,9 @@ created contrib/Ode.NET/Ode.NET.sln using premake --target vs2005
 build:
 
 windows:
+
+/NOTE:/ compiling for unix mashes include/ode/config.h, and breaks the windows build.  Delete the file & get it again from svn before building for windoz.
+    
 compiler: Visual Studio 2005 Express
 build/vs2005/ode.sln
 build all
@@ -21,7 +24,7 @@ build all
 copy Ode/obj/Release/Ode.NET.dll to trunk/bin
 
 linux:
-configure --enable-shared
+./configure --enable-shared
 make -k
 ignore the compile errors on drawstuff
 copy libode.so to bin
