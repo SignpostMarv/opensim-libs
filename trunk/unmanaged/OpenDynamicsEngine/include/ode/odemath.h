@@ -294,7 +294,7 @@ ODE_API int  dSafeNormalize4 (dVector4 a);
 static __inline void _dNormalize3(dVector3 a)
 {
 	int bNormalizationResult = dSafeNormalize3(a);
-	dIASSERT(bNormalizationResult);
+	//dIASSERT(bNormalizationResult);
 	dVARIABLEUSED(bNormalizationResult);
 }
 
