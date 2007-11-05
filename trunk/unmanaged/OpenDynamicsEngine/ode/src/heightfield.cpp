@@ -1738,7 +1738,9 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
         nMinZ = dMAX( nMinZ, 0 );
         nMaxZ = dMIN( nMaxZ, terrain->m_p_data->m_nDepthSamples - 1 );
 
-        dIASSERT ((nMinX < nMaxX) || (nMinZ < nMaxZ))		
+		if (!((nMinX < nMaxX) || (nMinZ < nMaxZ)))
+			goto dCollideHeightfieldExit;
+        //dIASSERT ((nMinX < nMaxX) || (nMinZ < nMaxZ))		
     }
 
 

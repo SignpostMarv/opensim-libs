@@ -301,7 +301,7 @@ static __inline void _dNormalize3(dVector3 a)
 static __inline void _dNormalize4(dVector4 a)
 {
 	int bNormalizationResult = dSafeNormalize4(a);
-	dIASSERT(bNormalizationResult);
+	//dIASSERT(bNormalizationResult);
 	dVARIABLEUSED(bNormalizationResult);
 }
 
