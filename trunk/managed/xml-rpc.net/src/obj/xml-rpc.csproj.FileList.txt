@@ -1,0 +1,5 @@
+obj\Debug\ResolveAssemblyReference.cache
+..\..\bin\xml-rpc.dll
+..\..\bin\xml-rpc.pdb
+obj\Debug\xml-rpc.dll
+obj\Debug\xml-rpc.pdb

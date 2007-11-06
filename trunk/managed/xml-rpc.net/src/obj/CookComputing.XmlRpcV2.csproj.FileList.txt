@@ -1,0 +1,7 @@
+..\..\bin\CookComputing.XmlRpcV2.dll
+..\..\bin\CookComputing.XmlRpcV2.pdb
+obj\Debug\ResolveAssemblyReference.cache
+obj\Debug\CookComputing.XmlRpcV2.dll
+obj\Debug\CookComputing.XmlRpcV2.pdb
+..\..\..\bin\CookComputing.XmlRpcV2.dll
+..\..\..\bin\CookComputing.XmlRpcV2.pdb
