@@ -1,0 +1,8 @@
+as of now (oct '07), this library only has a build file for Visual Studio.
+
+Building in VS2005, the following idiosyncrasy comes up.  If you double-click the .sln file (or try to invoke it from a command shell), VS quits immediately, without an error message.
+
+However, if you open Visual Studio using the start menu, you can open ModifiedBulletX.sln using the File->Open Project menu.
+
+Someone needs to create a mono/nant build for this.
+
