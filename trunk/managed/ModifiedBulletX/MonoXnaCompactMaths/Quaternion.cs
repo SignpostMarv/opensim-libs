@@ -90,93 +90,40 @@ namespace MonoXnaCompactMaths
 
         public static Quaternion CreateFromRotationMatrix(Matrix matrix)
         {
-            float Omega2 = matrix.M44;
-            if (!isAprox(Omega2, 1f))
-            {
-                //"Normalize" the Rotation matrix. Norma = M44 = Omega2
-                matrix = matrix / Omega2;
-            }
-            //Deducted from: public static Matrix CreateFromQuaternion(Quaternion quaternion)
-            float lambda1pos, lambda2pos, lambda3pos, lambda1neg, lambda2neg, lambda3neg;
-            lambda1pos = (1f - matrix.M11 + matrix.M23 + matrix.M32) / 2f;
-            lambda2pos = (1f - matrix.M22 + matrix.M13 + matrix.M31) / 2f;
-            lambda3pos = (1f - matrix.M33 + matrix.M12 + matrix.M21) / 2f;
-            lambda1neg = (1f - matrix.M11 - matrix.M23 - matrix.M32) / 2f;
-            lambda2neg = (1f - matrix.M22 - matrix.M13 - matrix.M31) / 2f;
-            lambda3neg = (1f - matrix.M33 - matrix.M12 - matrix.M21) / 2f;
-
-            //lambadIS = (qJ + s*qK)^2
-            //q0 = w | q1 = x | q2 = y, q3 = z
-            //Every value of qI (I=1,2,3) has 4 possible values cause the sqrt
-            float[] x = new float[4]; float[] y = new float[4]; float[] z = new float[4];
-            float[] sig1 = {1f, 1f, -1f, -1f};
-            float[] sig2 = {1f, -1f, 1f, -1f};
-            for (int i = 0; i < 4; i++)
-            {
-                x[i] = (sig1[i] * (float)Math.Sqrt(lambda1pos) + sig2[i] * (float)Math.Sqrt(lambda1neg)) / 2f;
-                y[i] = (sig1[i] * (float)Math.Sqrt(lambda2pos) + sig2[i] * (float)Math.Sqrt(lambda2neg)) / 2f;
-                z[i] = (sig1[i] * (float)Math.Sqrt(lambda3pos) + sig2[i] * (float)Math.Sqrt(lambda3neg)) / 2f;
-            }
-
-            //Only a set of x, y, z are the corrects values. So it requires testing
-            int li_i=0, li_j=0, li_k=0;
-            bool lb_testL1P, lb_testL2P, lb_testL3P, lb_testL1N, lb_testL2N, lb_testL3N;
-            bool lb_superLambda = false;
-            while((li_i<4)&&(!lb_superLambda))
-            {
-                while ((li_j < 4) && (!lb_superLambda))
-                {
-                    while ((li_k < 4) && (!lb_superLambda))
-                    {
-                        lb_testL1P = isAprox((float)(
-                            Math.Pow((double)(y[li_j] + z[li_k]), 2.0)), lambda1pos);
-                        lb_testL2P = isAprox((float)(
-                            Math.Pow((double)(x[li_i] + z[li_k]), 2.0)), lambda2pos);
-                        lb_testL3P = isAprox((float)(
-                            Math.Pow((double)(x[li_i] + y[li_j]), 2.0)), lambda3pos);
-                        lb_testL1N = isAprox((float)(
-                            Math.Pow((double)(y[li_j] - z[li_k]), 2.0)), lambda1neg);
-                        lb_testL2N = isAprox((float)(
-                            Math.Pow((double)(x[li_i] - z[li_k]), 2.0)), lambda2neg);
-                        lb_testL3N = isAprox((float)(
-                            Math.Pow((double)(x[li_i] - y[li_j]), 2.0)), lambda3neg);
-
-                        lb_superLambda = (lb_testL1P && lb_testL2P && lb_testL3P
-                            && lb_testL1N && lb_testL2N && lb_testL3N);
-
-                        if (!lb_superLambda) li_k++;
-                    }
-                    if (!lb_superLambda) li_j++;
-                }
-                if (!lb_superLambda) li_i++;
-            }
-
+            /* Q = (x,y,z,w)*/
             Quaternion q = new Quaternion();
-
-            if (lb_superLambda)
+            /*      | 1 - (2y^2 + 2z^2)         2xy + 2zw           2xz - 2yw           0   |
+             * M =  |   2xy - 2zw           1 - (2x^2 + 2z^2)       2yz + 2xw           0   |
+             *      |   2xz + 2yw               2yz - 2xw       1 - (2x^2 + 2y^2)       0   |
+             *      |       0                       0                     0             1   |
+             * 
+             * w^2 + x^2 + y^2 + z^2 = 1
+             * 
+             * +/- 1/2*Sqrt(M11 + M22 + M33 + 1) = +/- 1/2*Sqrt(4 - 4x^2 - 4y^2 + 4z^2) =
+             * = +/- Sqrt(1 - x^2 - y^2 - z^2) = w */
+            q.W = 0.5f * (float)Math.Sqrt(matrix.M11 + matrix.M22 + matrix.M33 + 1);
+            ///* case w!=0 
+            // *      M12 - M21 = +/- 4z||w||     z = (M21 - M12)/4w
+            // *      M31 - M13 = +/- 4y||w||     y = (M13 - M31)/4w
+            // *      M23 - M32 = +/- 4x||w||     x = (M32 - M23)/4w */
+            if (q.W != 0)
             {
-                q.X = x[li_i]; q.Y = y[li_j]; q.Z = z[li_k];
-                q.W = (matrix.M12 - 2f * q.X * q.Y) / (2f * q.Z);
-
-                if (!isAprox(Omega2, 1f))
-                {
-                    if (Omega2 < 0) throw new Exception("Quaternion.CreateFromRotationMatrix: Omega2 is negative!");
-                    q = q * (float)Math.Sqrt(Omega2);//2 possibles values (+/-). For now only 1.
-                }
+                q.X = (matrix.M32 - matrix.M23) / (4 * q.W);
+                q.Y = (matrix.M13 - matrix.M31) / (4 * q.W);
+                q.Z = (matrix.M21 - matrix.M12) / (4 * q.W);
             }
             else
             {
-                q = Quaternion.identity;
+                float alpha2 = matrix.M12 * matrix.M12 * matrix.M13 * matrix.M13;
+                float beta2 = matrix.M12 * matrix.M12 * matrix.M23 * matrix.M23;
+                float gamma2 = matrix.M13 * matrix.M13 * matrix.M23 * matrix.M23;
+                float omega = (float)Math.Sqrt(alpha2 + beta2 + gamma2);
+                q.X = matrix.M13 * matrix.M12 / omega;
+                q.Y = matrix.M12 * matrix.M23 / omega;
+                q.Z = matrix.M13 * matrix.M23 / omega;
             }
-
             return q;
         }
-        private static float floatError = 0.000001f;
-        private static bool isAprox(float test, float realValue)
-        {
-            return (((realValue * (1f - floatError)) <= test) && (test <= (realValue * (1f + floatError))));
-        }
-
 
         public static void CreateFromRotationMatrix(ref Matrix matrix, out Quaternion result)
         {
