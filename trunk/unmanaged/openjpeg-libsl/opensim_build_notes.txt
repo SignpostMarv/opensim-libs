@@ -1,14 +1,12 @@
 source: 
 svn://opensecondlife.org/libsl
-revision 1476
+revision 1457
 
 changes:
 OpenJPEG.rc:
 commented out line 10: //#include "afxres.h"
 commented out line 20: //LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
 
-opj_includes.h
-added #ifdefined _WINDOWS guard to line 43
 build:
 
 windows:
@@ -16,7 +14,7 @@ compiler: Visual Studio 2005 Express
 DllOpenJPEG.sln
 set release config
 build all
-
+copy Release/openjpeg-libsl.dll to /bin
 
 linux:
 make

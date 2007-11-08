@@ -41,9 +41,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#ifndef _WINDOWS
-#include <inttypes.h>
-#endif
 /*
  ==========================================================
    OpenJPEG interface
