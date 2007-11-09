@@ -1311,7 +1311,10 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
     }
 
     // at least on triangle should intersect geom
-    dIASSERT (numTri != 0);
+    //dIASSERT (numTri != 0);
+	if (numTri == 0) {
+		return 0;
+	}
     // pass1: VS triangle as Planes
     // Group Triangle by same plane definition
     // as Terrain often has many triangles using same plane definition
@@ -1810,5 +1813,6 @@ dCollideHeightfieldExit:
         // Return contact count.
         return numTerrainContacts;
 }
+
 
 
