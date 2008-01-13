@@ -1526,7 +1526,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                 {
                     depth = geomNDepthGetter( o2,
                         triVertex[0], triVertex[1], triVertex[2] );
-                    if (depth + dEpsilon < 0)
+                    if (depth - dEpsilon > 0)
                         vertexCollided = true;
                 }
                 else
