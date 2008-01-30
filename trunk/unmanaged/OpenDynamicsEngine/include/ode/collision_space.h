@@ -62,6 +62,7 @@ ODE_API void dSpaceSetCleanup (dSpaceID space, int mode);
 ODE_API int dSpaceGetCleanup (dSpaceID space);
 
 ODE_API void dSpaceAdd (dSpaceID, dGeomID);
+ODE_API bool dSpaceLockQuery (dSpaceID);
 ODE_API void dSpaceRemove (dSpaceID, dGeomID);
 ODE_API int dSpaceQuery (dSpaceID, dGeomID);
 ODE_API void dSpaceClean (dSpaceID);

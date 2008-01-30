@@ -1603,6 +1603,9 @@ namespace Ode.NET
 		[DllImport("ode", EntryPoint = "dSpaceCollide2"), SuppressUnmanagedCodeSecurity]
 		public static extern void SpaceCollide2(IntPtr space1, IntPtr space2, IntPtr data, NearCallback callback);
 
+        [DllImport("ode", EntryPoint = "dSpaceLockQuery"), SuppressUnmanagedCodeSecurity]
+        public static extern bool SpaceLockQuery(IntPtr space);
+
 		[DllImport("ode", EntryPoint = "dSpaceDestroy"), SuppressUnmanagedCodeSecurity]
 		public static extern void SpaceDestroy(IntPtr space);
 

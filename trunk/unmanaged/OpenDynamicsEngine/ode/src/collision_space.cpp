@@ -665,7 +665,12 @@ void dSpaceDestroy (dxSpace *space)
   dUASSERT (dGeomIsSpace(space),"argument not a space");
   dGeomDestroy (space);
 }
-
+bool dSpaceLockQuery (dxSpace *space)
+{
+  dAASSERT (space);
+  dUASSERT (dGeomIsSpace(space),"argument not a space");
+  return (!((space)==0 || (space)->lock_count==0));
+}
 
 void dSpaceSetCleanup (dxSpace *space, int mode)
 {
@@ -694,10 +699,13 @@ void dSpaceAdd (dxSpace *space, dxGeom *g)
 
 void dSpaceRemove (dxSpace *space, dxGeom *g)
 {
-  dAASSERT (space);
-  dUASSERT (dGeomIsSpace(space),"argument not a space");
-  CHECK_NOT_LOCKED (space);
-  space->remove (g);
+	if (dGeomIsSpace(space))
+	{
+		if (!dSpaceLockQuery(space))
+		{
+			space->remove (g);
+		}
+	}
 }
 
 
