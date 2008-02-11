@@ -20,6 +20,7 @@
 			OutputDirectory="../../lib/DebugDLL"
 			IntermediateDirectory="obj/ode/DebugDLL"
 			ConfigurationType="2"
+			UseOfMFC="1"
 			CharacterSet="2"
 			>
 			<Tool
@@ -44,7 +45,7 @@
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -101,7 +102,7 @@
 		</Configuration>
 		<Configuration
 			Name="ReleaseDLL|Win32"
-			OutputDirectory="../../lib/ReleaseDLL"
+			OutputDirectory="..\..\..\..\..\..\OpenSimDev\bin"
 			IntermediateDirectory="obj/ode/ReleaseDLL"
 			ConfigurationType="2"
 			UseOfMFC="1"
