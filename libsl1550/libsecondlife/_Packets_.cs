@@ -782,7 +782,7 @@ namespace libsecondlife.Packets
         public abstract void FromBytes(byte[] bytes, ref int i, ref int packetEnd, byte[] zeroBuffer);
         public abstract void FromBytes(Header header, byte[] bytes, ref int i, ref int packetEnd, byte[] zeroBuffer);
         public int ResendCount;
-        internal int TickCount;
+        public int TickCount;
 
         public abstract byte[] ToBytes();
         public static PacketType GetType(ushort id, PacketFrequency frequency)
