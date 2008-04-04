@@ -2,9 +2,15 @@ BUILD=nhibernate-build
 DRIVER=$(BUILD)/nhibernate/src/NHibernate/Driver/SqliteClientDriver.cs
 MONO1=$(BUILD)/nhibernate/lib/mono/1.0
 MONO2=$(BUILD)/nhibernate/lib/mono/2.0
+OUTDIR=$(BUILD)/nhibernate/build/NHibernate-1.2.1.GA/bin/mono-2.0/
+NHIB=$(OUTDIR)/NHibernate.dll
 
-all: $(BUILD) $(DRIVER) $(MONO2)
-	cd $(BUILD)/nhibernate && nant
+all: $(NHIB)
+	mkdir nhibernate-dll
+	cp $(NHIB) $(OUTDIR)/Castle.DynamicProxy.dll $(OUTDIR)/Iesi.Collections.dll nhibernate-dll
+
+$(NHIB): $(MONO2) $(DRIVER)
+	cd $(BUILD)/nhibernate && nant -D:project.config=release clean build 
 
 $(MONO2): $(BUILD)
 	cp -a $(MONO1) $(MONO2) 
@@ -16,4 +22,4 @@ $(BUILD):
 	svn co https://nhibernate.svn.sourceforge.net/svnroot/nhibernate/tags/1.2.1.GA $(BUILD)
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD) nhibernate-dll
