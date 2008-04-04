@@ -7,7 +7,7 @@ NHIB=$(OUTDIR)/NHibernate.dll
 
 all: $(NHIB)
 	mkdir nhibernate-dll
-	cp $(NHIB) $(OUTDIR)/Castle.DynamicProxy.dll $(OUTDIR)/Iesi.Collections.dll nhibernate-dll
+	cp $(NHIB) $(OUTDIR)/NHibernate.Mapping.Attributes.dll $(OUTDIR)/Castle.DynamicProxy.dll $(OUTDIR)/Iesi.Collections.dll nhibernate-dll
 
 $(NHIB): $(MONO2) $(DRIVER)
 	cd $(BUILD)/nhibernate && nant -D:project.config=release clean build 
