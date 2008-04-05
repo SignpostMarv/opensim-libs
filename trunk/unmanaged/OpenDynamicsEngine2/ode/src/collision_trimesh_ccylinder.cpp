@@ -803,7 +803,7 @@ static void _cldTestOneTriangleVSCapsule( const dVector3 &v0,
 	if ( iBestAxis == 0 ) 
 	{
 		// this should not happen (we should already exit in that case)
-		dIASSERT(FALSE);
+		//dIASSERT(FALSE);
 		// do nothing
 		return;
 	}
