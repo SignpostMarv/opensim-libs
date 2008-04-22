@@ -1769,7 +1769,7 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
         nMinZ = dMAX( nMinZ, 0 );
         nMaxZ = dMIN( nMaxZ, terrain->m_p_data->m_nDepthSamples - 1 );
 
-        dIASSERT ((nMinX < nMaxX) || (nMinZ < nMaxZ))	;
+        //dIASSERT ((nMinX < nMaxX) || (nMinZ < nMaxZ))	;
 		if (!((nMinX < nMaxX) || (nMinZ < nMaxZ)))
 		{
 			goto dCollideHeightfieldExit;
@@ -1782,7 +1782,12 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
         nMinX,nMaxX,nMinZ,nMaxZ,o2,numMaxTerrainContacts - numTerrainContacts,
         flags,CONTACT(contact,numTerrainContacts*skip),skip	);
 
-        dIASSERT( numTerrainContacts <= numMaxTerrainContacts );
+        //dIASSERT( numTerrainContacts <= numMaxTerrainContacts );
+		if (!(numTerrainContacts <= numMaxTerrainContacts))
+		{
+			goto dCollideHeightfieldExit;
+		}
+
 
         dContactGeom *pContact;
         for ( i = 0; i < numTerrainContacts; ++i )
