@@ -1,0 +1,12 @@
+== TESTING PLAN ==
+My plan for running the unit tests on SubversionSharp is as follows:
+    * re-extract the working copy and repo from the tarball on each run of the
+      tests.
+    * run any possible tests which read from the WC only (wc info, status, ...)
+    * test the "switch" command by performing a switch (with --relocate) on the
+      wc
+    * run any possible tests which read from the Repo (log, url info, ls ...)
+    * run tests which perform changes to the WC only (update, svn add, ...) and
+      use "info" and "status" to verify these
+    * run tests which perform changes to WC and Repo (commit, svn mkdir on
+      url, ...) and use "ls", "cat" etc. to verify these

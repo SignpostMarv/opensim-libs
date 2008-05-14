@@ -1,0 +1,28 @@
+%h1 Create a new test
+%form{method="post", action="/test/create/"}
+	- string lastCat = string.Empty;
+	%label{for="name"} Name
+	%input{type="text", id="name", name="name", size="40"}
+	%p Select the items to include
+	%table#tbl{ style="width:100%" }
+		%tr
+			%th 
+				%input{ type="checkbox", value=testCase.Id, name="case", class=lastCat.Replace(' ', '-')}
+			%th Name
+			%th Description
+		- foreach (TestCase testCase in items)
+			- if (lastCat != testCase.Category)
+				- lastCat = testCase.Category;
+				= "<tr><td colspan=\"3\"><h2><input type=\"checkbox\" onclick=\"selectAll(this, '" + lastCat.Replace(' ','-') + "');\" />" + lastCat + "</h2></td></tr>"
+			%tr
+				%td
+					%input{ type="checkbox", value=testCase.Id, name="case", class=lastCat.Replace(' ', '-')}
+				%td= testCase.Name
+				%td= testCase.Description
+	%input{type="submit", value="Create test"}
+%script{type="text/javascript"}
+	function selectAll(source, cat) {
+		var elems = $('tbl').getElementsByClassName(cat);
+		for each (var item in elems)
+			$(item).checked = source.checked;
+	}

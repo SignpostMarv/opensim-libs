@@ -1,0 +1,13 @@
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\TestApp.exe
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\TestApp.pdb
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\HttpServer.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\Tiny.Data.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\Tiny.Data.Drivers.PostgreSQL.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\Tiny.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\Mono.Security.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\Tiny.System.Logging.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\Npgsql.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\bin\Debug\HttpServer.pdb
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\obj\Debug\TestApp.exe
+C:\Users\Adam\Downloads\webserver-11358\trunk\TestApp\obj\Debug\TestApp.pdb

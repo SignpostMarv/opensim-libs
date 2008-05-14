@@ -1,0 +1,184 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9B253210-2436-4575-8C57-7565C027D54D}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>SubversionSharp</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Softec.SubversionSharp</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>WIN32</DefineConstants>
+    <DocumentationFile>..\bin\Debug\SubversionSharp.XML</DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>1</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>WIN32</DefineConstants>
+    <DocumentationFile>..\bin\Release\SubversionSharp.XML</DocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>1</WarningLevel>
+    <DebugType>none</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Svn.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnAuthBaton.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnAuthCred.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnAuthProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnAuthSslServerCertInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnClient.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnClientBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnClientCommitInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnClientCommitItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnClientContext.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnClientPropListItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnCommitInfo.cs" />
+    <Compile Include="SvnConfig.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnDelegate.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnDirEnt.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnError.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnInfo.cs" />
+    <Compile Include="SvnIO.cs" />
+    <Compile Include="SvnLock.cs" />
+    <Compile Include="SvnLogChangedPath.cs" />
+    <Compile Include="SvnNullReferenceException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnOptRevision.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnPath.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnStream.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnString.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnStringBuf.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnUrl.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnVersion.cs" />
+    <Compile Include="SvnWcEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnWcNotify.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SvnWcStatus.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AprSharp\AprSharp.csproj">
+      <Project>{9543697D-167B-4A39-93DF-5E5AC35BEDCA}</Project>
+      <Name>AprSharp</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

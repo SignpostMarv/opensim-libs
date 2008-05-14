@@ -1,0 +1,82 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{400D7B88-61C6-4675-AE05-93176AA963B5}"
+	ProjectSection(SolutionItems) = preProject
+		Build\AprSharp.build = Build\AprSharp.build
+		Build\AprSharpTest.build = Build\AprSharpTest.build
+		Build\CustomTasks.build = Build\CustomTasks.build
+		default.build = default.build
+		Build\GetDeps.build = Build\GetDeps.build
+		Build\SubversionLib.build = Build\SubversionLib.build
+		Build\SubversionSharp.build = Build\SubversionSharp.build
+		Build\SubversionSharpTest.build = Build\SubversionSharpTest.build
+		Build\SvnMockApp.build = Build\SvnMockApp.build
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "subversion", "subversion", "{1D355BF5-3314-48C9-82A7-4571E4691533}"
+	ProjectSection(SolutionItems) = preProject
+		Build\subversion\apr.win32.build = Build\subversion\apr.win32.build
+		Build\subversion\apriconv.win32.build = Build\subversion\apriconv.win32.build
+		Build\subversion\aprutil.win32.build = Build\subversion\aprutil.win32.build
+		Build\subversion\bdb.win32.build = Build\subversion\bdb.win32.build
+		Build\subversion\neon.win32.build = Build\subversion\neon.win32.build
+		Build\subversion\openssl.win32.build = Build\subversion\openssl.win32.build
+		Build\subversion\subversion.win32.build = Build\subversion\subversion.win32.build
+		Build\subversion\zlib.win32.build = Build\subversion\zlib.win32.build
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "svnclient", "SvnNativeClient\svnclient.vcproj", "{59103C52-2661-420B-B951-06D6D86B0D72}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SvnDotNet", "SvnDotNet.csproj", "{119E6696-0321-403D-A482-E2011886D77B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SvnDotNet.UnitTests", "SvnDotNet.UnitTests\SvnDotNet.UnitTests.csproj", "{E91ABACF-DDCC-401E-86A5-4E14D489068F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Debug|Win32.ActiveCfg = Debug|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Debug|Win32.Build.0 = Debug|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Release|Any CPU.ActiveCfg = Release|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Release|Win32.ActiveCfg = Release|Win32
+		{59103C52-2661-420B-B951-06D6D86B0D72}.Release|Win32.Build.0 = Release|Win32
+		{119E6696-0321-403D-A482-E2011886D77B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{119E6696-0321-403D-A482-E2011886D77B}.Release|Win32.ActiveCfg = Release|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{E91ABACF-DDCC-401E-86A5-4E14D489068F}.Release|Win32.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1D355BF5-3314-48C9-82A7-4571E4691533} = {400D7B88-61C6-4675-AE05-93176AA963B5}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,62 @@
+	1053: Swedish
+		Login: Logga in
+		Logout: Logga ut
+		Validator:
+			Required: Fältet '{0}' är obligatoriskt.
+			Integer: '{0}' måste vara ett heltal.
+			Email: '{0}' är inte en korrekt epost.
+			Date: '{0}' är inte ett korrekt datum.
+			Time: {0} är inte en korrekt tid.
+		user:
+			LoginFailed: Felaktigt användarnamn eller lörsenord.
+			Goodbye: Tack och adjö.
+			Username: Användarnamn
+			Password: Lösenord
+			Login: Logga in
+		test:
+			Add: Lägg till
+			List: Lista
+			SelectTest: Välj ett test
+			CopyTest: Kopiera testet
+			AddCase: Skapa testfall
+			Reset: Nollställ
+			IdMissing: Id saknas
+			MissingState: Status är inte angivet.
+			AvailableTests: Tillgängliga tester
+			SelectItems: Välj de testfall som ska inkluderas.
+			Name: Namn
+			CreateTest: Skapa testet
+		item:
+			Name: Namn
+			Description: Beskrivning
+	1033: En-us
+		Login: Login
+		Logout: Log out
+		Validator:
+			Required: '{0}' is required.
+			Integer: '{0}' must be an integer.
+			Email: '{0}' is not a valid email.
+			Date: '{0}' is not a correct date.
+			Time: '{0}' is not a correct time.
+		user:
+			LoginFailed: Incorrect username or password.
+			Goodbye: Welcome back anytime amigo!
+			Username: Username
+			Password: Password
+			Login: Login
+		test:
+			Add: Add
+			List: List
+			SelectTest: Select a test
+			CopyTest: Copy test
+			AddCase: Create test case
+			Reset: Reset 
+			IdMissing: Id was not specified.
+			MissingState: State was not specified.
+			AvailableTests: Available tests
+			SelectItems: Select the items to include
+			Name: Namn
+			CreateTest: Create new test
+		item:
+			Name: Name
+			Description: Description

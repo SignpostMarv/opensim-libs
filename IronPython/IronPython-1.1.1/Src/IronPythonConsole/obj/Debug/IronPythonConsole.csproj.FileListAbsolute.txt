@@ -1,0 +1,5 @@
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonConsole\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonConsole\obj\Debug\ipy.exe
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonConsole\obj\Debug\ipy.pdb
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\ipy.exe
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\ipy.pdb

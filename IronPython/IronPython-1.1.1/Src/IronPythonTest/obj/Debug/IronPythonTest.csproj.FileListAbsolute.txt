@@ -1,0 +1,9 @@
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\bin\Debug\IronPythonTest.dll
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\bin\Debug\IronPythonTest.pdb
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\bin\Debug\IronMath.dll
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\bin\Debug\IronPython.dll
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\bin\Debug\IronPython.pdb
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\bin\Debug\IronMath.pdb
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\obj\Debug\IronPythonTest.dll
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonTest\obj\Debug\IronPythonTest.pdb

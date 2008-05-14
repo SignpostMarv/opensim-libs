@@ -1,0 +1,117 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{119E6696-0321-403D-A482-E2011886D77B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PumaCode.SvnDotNet</RootNamespace>
+    <AssemblyName>PumaCode.SvnDotNet</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;WIN32</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AprSharp\Apr.cs" />
+    <Compile Include="AprSharp\AprAllocator.cs" />
+    <Compile Include="AprSharp\AprArgumentException.cs" />
+    <Compile Include="AprSharp\AprArgumentNullException.cs" />
+    <Compile Include="AprSharp\AprArgumentOutOfRangeException.cs" />
+    <Compile Include="AprSharp\AprArray.cs" />
+    <Compile Include="AprSharp\AprException.cs" />
+    <Compile Include="AprSharp\AprFile.cs" />
+    <Compile Include="AprSharp\AprHash.cs" />
+    <Compile Include="AprSharp\AprHashIndex.cs" />
+    <Compile Include="AprSharp\AprInvalidOperationException.cs" />
+    <Compile Include="AprSharp\AprMemNode.cs" />
+    <Compile Include="AprSharp\AprNullReferenceException.cs" />
+    <Compile Include="AprSharp\AprPool.cs" />
+    <Compile Include="AprSharp\AprStream.cs" />
+    <Compile Include="AprSharp\AprString.cs" />
+    <Compile Include="AprSharp\AprThreadMutex.cs" />
+    <Compile Include="AprSharp\AprTime.cs" />
+    <Compile Include="AprSharp\AprTimeExp.cs" />
+    <Compile Include="AprSharp\IAprUnmanaged.cs" />
+    <Compile Include="Conversions.cs" />
+    <Compile Include="Entry.cs" />
+    <Compile Include="Lock.cs" />
+    <Compile Include="NodeKind.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Revision.cs" />
+    <Compile Include="Schedule.cs" />
+    <Compile Include="Status.cs" />
+    <Compile Include="StatusEventArgs.cs" />
+    <Compile Include="StatusKind.cs" />
+    <Compile Include="StatusReceiver.cs" />
+    <Compile Include="SubversionClient.cs" />
+    <Compile Include="SubversionSharp\Svn.cs" />
+    <Compile Include="SubversionSharp\SvnAuthBaton.cs" />
+    <Compile Include="SubversionSharp\SvnAuthCred.cs" />
+    <Compile Include="SubversionSharp\SvnAuthProvider.cs" />
+    <Compile Include="SubversionSharp\SvnAuthSslServerCertInfo.cs" />
+    <Compile Include="SubversionSharp\SvnClient.cs" />
+    <Compile Include="SubversionSharp\SvnClientBase.cs" />
+    <Compile Include="SubversionSharp\SvnClientCommitInfo.cs" />
+    <Compile Include="SubversionSharp\SvnClientCommitItem.cs" />
+    <Compile Include="SubversionSharp\SvnClientContext.cs" />
+    <Compile Include="SubversionSharp\SvnClientPropListItem.cs" />
+    <Compile Include="SubversionSharp\SvnCommitInfo.cs" />
+    <Compile Include="SubversionSharp\SvnConfig.cs" />
+    <Compile Include="SubversionSharp\SvnData.cs" />
+    <Compile Include="SubversionSharp\SvnDelegate.cs" />
+    <Compile Include="SubversionSharp\SvnDirEnt.cs" />
+    <Compile Include="SubversionSharp\SvnError.cs" />
+    <Compile Include="SubversionSharp\SvnException.cs" />
+    <Compile Include="SubversionSharp\SvnInfo.cs" />
+    <Compile Include="SubversionSharp\SvnIO.cs" />
+    <Compile Include="SubversionSharp\SvnLock.cs" />
+    <Compile Include="SubversionSharp\SvnLogChangedPath.cs" />
+    <Compile Include="SubversionSharp\SvnNullReferenceException.cs" />
+    <Compile Include="SubversionSharp\SvnOptRevision.cs" />
+    <Compile Include="SubversionSharp\SvnPath.cs" />
+    <Compile Include="SubversionSharp\SvnStream.cs" />
+    <Compile Include="SubversionSharp\SvnString.cs" />
+    <Compile Include="SubversionSharp\SvnStringBuf.cs" />
+    <Compile Include="SubversionSharp\SvnUrl.cs" />
+    <Compile Include="SubversionSharp\SvnVersion.cs" />
+    <Compile Include="SubversionSharp\SvnWcEntry.cs" />
+    <Compile Include="SubversionSharp\SvnWcNotify.cs" />
+    <Compile Include="SubversionSharp\SvnWcStatus.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

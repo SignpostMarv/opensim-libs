@@ -1,0 +1,19 @@
+- string lastCat = string.Empty;
+%table#tbl{ style="width:100%" }
+	%tr
+		%th &nbsp;
+		%th Name
+		%th State
+		%th Description
+	- foreach (TestCase testCase in testCases)
+		- if (lastCat != testCase.Category)
+			- lastCat = testCase.Category;
+			= "<tr><td colspan=\"4\"><h2>" + lastCat + "</h2></td></tr>"
+		%tr
+			%td
+				%input{ type="checkbox", value=testCase.Id}
+			%td= testCase.Name
+			%td= testCase.State
+			%td= testCase.Description
+			%td= WebHelper.AjaxUpdater("/test/status/"+testCase.Id+"/Successful", "Successful", "tbl") +|
+				" | " + WebHelper.AjaxUpdater("/test/status/"+testCase.Id+"/Failed", "Failed", "tbl")

@@ -1,0 +1,301 @@
+<?xml version="1.0"?>
+<project xmlns="http://nant.sf.net/release/0.85-rc4/nant.xsd" name="SvnDotNet" default="help" basedir=".">
+
+    <!--====================================================================-->
+    <!--   GLOBAL PROPERTIES AND DEFAULTS                                   -->
+    <!--====================================================================-->
+
+    <property name="buildframework" value="net-2.0" if="${platform::is-win32()}" />
+    <property name="buildframework" value="mono-2.0" if="${not platform::is-win32()}" />
+
+    <property name="configuration" value="release" />
+    <property name="debug" value="false" />
+    <property name="optimize" value="true" />
+    <property name="platform" value="${platform::get-name()}" />
+    <property name="clrproject" value="maybe" />
+    <property name="svnproject" value="false" />
+    <property name="svnlibs" value="" />
+    <tstamp property="datestamp" pattern="yyyyMMdd" />
+
+    <!-- These properties will be changed by 'prepare' target -->
+    <property name="baseDir" value="${project::get-base-directory()}" />
+    <property name="binDir" value="" />
+    <property name="dllDir" value="" />
+
+    <!-- Versions of dependencies for 'get' target -->
+    <property name="getversion-svn" value="subversion-1.4.6" />
+    <property name="getversion-neon" value="neon-0.25.5"/>
+    <property name="getversion-openssl" value="openssl-0.9.8g"/>
+    <property name="getversion-zlib" value="zlib-1.2.3"/>
+    <property name="getversion-bdb" value="db-4.4.20"/>
+
+    <!-- Create default user file if doesn't exist -->
+    <copy file="default.build.user.tmpl" tofile="default.build.user"
+        unless="${file::exists('default.build.user')}" />
+
+    <include buildfile="default.build.user" />
+
+    <!--====================================================================-->
+    <!--   CONFIGURATION TARGETS                                            -->
+    <!--====================================================================-->
+
+    <target name="debug" description="Specify debug configuration for build/rebuild/clean">
+        <property name="configuration" value="debug" />
+        <property name="debug" value="true" />
+        <property name="optimize" value="false" />
+    </target>
+
+    <target name="release" description="Specify release configuration for build/rebuild/clean">
+        <property name="configuration" value="release" />
+        <property name="debug" value="false" />
+        <property name="optimize" value="true" />
+    </target>
+
+    <!--====================================================================-->
+    <!--   PROJECT TARGETS                                                  -->
+    <!--====================================================================-->
+
+    <target name="clr" description="Build the CLR framework assemblies">
+        <property name="clrproject" value="true" />
+    </target>
+
+    <target name="subversion" description="Build Subversion libs and their dependencies"
+            depends="lib-bdb,lib-apr,lib-apriconv,lib-aprutil,lib-openssl,lib-zlib,lib-neon,lib-subversion">
+    </target>
+
+    <target name="lib-bdb" description="Build only the Subversion libraries">
+        <property name="which-lib" value="bdb"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-apr" description="Build only the Subversion libraries">
+        <property name="which-lib" value="apr"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-apriconv" description="Build only the Subversion libraries">
+        <property name="which-lib" value="apriconv"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-aprutil" description="Build only the Subversion libraries">
+        <property name="which-lib" value="aprutil"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-openssl" description="Build only the Subversion libraries">
+        <property name="which-lib" value="openssl"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-zlib" description="Build only the Subversion libraries">
+        <property name="which-lib" value="zlib"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-neon" description="Build only the Subversion libraries">
+        <property name="which-lib" value="neon"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="lib-subversion" description="Build only the Subversion libraries">
+        <property name="which-lib" value="subversion"/>
+        <call target="any-subversion"/>
+    </target>
+
+    <target name="any-subversion" description="Used internally to build Subversion and/or its dependencies">
+        <call target="do-subversion" cascade="false"/>
+        <property name="svnlibs" value="${svnlibs}${which-lib}:"/>
+        <echo message="The '${which-lib}' library will be built." />
+    </target>
+
+    <target name="do-subversion" description="Prepares Nant to build Subversion and/or its dependencies">
+        <property name="svnproject" value="true" />
+        <property name="clrproject" value="false" if="${clrproject == 'maybe'}" />
+    </target>
+
+    <target name="all" description="Build 'subversion' and 'clr' targets">
+        <call target="clr" />
+        <call target="subversion" />
+    </target>
+
+    <!--====================================================================-->
+    <!--   FRAMEWORK TARGETS                                                -->
+    <!--====================================================================-->
+
+    <target name="mono">
+        <property name="buildframework" value="mono-2.0" />
+    </target>
+
+    <target name="dotnet">
+        <property name="buildframework" value="net-2.0" />
+    </target>
+
+    <!--====================================================================-->
+    <!--   UTILITY / PREPARATION TARGETS                                    -->
+    <!--====================================================================-->
+
+    <target name="prepare" description="Prepare for build" >
+        <property name="nant.settings.currentframework" value="${buildframework}" />
+
+        <call target="setdirnames" />
+
+        <!-- Setup output directory -->
+        <mkdir dir="${binDir}" unless="${directory::exists(binDir)}" />
+        <!-- Prepare directory for svn client dlls -->
+        <mkdir dir="${dllDir}" unless="${directory::exists(binDir)}" />
+
+        <property name="clrproject" value="true" if="${clrproject == 'maybe'}" />
+    </target>
+
+    <target name="setdirnames">
+        <property name="binDir" value="${baseDir}/bin/${nant.settings.currentframework}/${configuration}" />
+        <property name="dllDir" value="${baseDir}/bin/svn_client/${configuration}_${platform}" />
+        <property name="testDir" value="${baseDir}/test/${configuration}_${platform}"/>
+        <property name="deployDir" value="${baseDir}/bin/deploy/${configuration}_${platform}_${nant.settings.currentframework}" />
+    </target>
+
+    <target name="VC" description="Checks if the env variables for VS++ 2005 are set"
+         if="${svnproject and platform::is-win32()}">
+        <if test="${not environment::variable-exists('VCINSTALLDIR')}">
+            <fail message="You must first call &quot;%VS80COMNTOOLS%\vsvars32.bat&quot; !" />
+        </if>
+    </target>
+
+    <!--====================================================================-->
+    <!--   ACTION TARGETS                                                   -->
+    <!--====================================================================-->
+
+    <target name="build" depends="build-subversion,build-clr"
+        description="Build specified projects">
+
+        <echo message="Build finished." />
+    </target>
+
+    <target name="build-subversion" depends="prepare,VC" if="${svnproject}">
+        <foreach item="String" in="${svnlibs}" delim=":" property="svnlib">
+            <nant buildfile="Build/SubversionLib.build" target="build-${svnlib}"
+                  unless="${svnlib == ''}" />
+        </foreach>
+    </target>
+
+    <target name="build-clr" depends="prepare" if="${clrproject == 'true'}">
+        <nant target="build">
+            <buildfiles>
+                <include name="Build/AprSharp.build"/>
+                <include name="Build/SubversionSharp.build"/>
+                <include name="Build/SvnMockApp.build"/>
+            </buildfiles>
+        </nant>
+    </target>
+
+    <target name="clean" depends="clean-subversion,clean-clr"
+        description="Cleanup current build configuration">
+
+        <echo message="Clean finished." />
+    </target>
+
+    <target name="clean-subversion" depends="setdirnames,VC" if="${svnproject == 'true'}"
+        description="Cleanup current build configuration for Subversion">
+        <nant buildfile="Build/SubversionLib.build" target="clean" />
+    </target>
+
+    <target name="clean-clr" depends="setdirnames" if="${clrproject == 'true'}"
+        description="Cleanup current build configuration for CLR">
+        <delete dir="${binDir}" verbose="true" if="${directory::exists(binDir)}" />
+    </target>
+
+    <target name="rebuild" depends="clean,build"
+        description="Cleans then builds specified projects" />
+
+    <target name="test" depends="test-subversion,test-clr"
+        description="Runs tests">
+
+        <echo message="Tests finished." />
+    </target>
+
+    <target name="test-subversion" depends="prepare" if="${svnproject == 'true'}"
+        description="Tests Subversion libraries">
+        <echo message="Subversion library tests not implemented at this time."/>
+    </target>
+
+    <target name="test-clr" depends="prepare" if="${clrproject == 'true'}"
+        description="Tests CLR DLLs">
+
+        <nant target="build">
+            <buildfiles>
+                <include name="Build/AprSharpTest.build"/>
+                <include name="Build/SubversionSharpTest.build"/>
+            </buildfiles>
+        </nant>
+
+        <nunit2>
+            <formatter type="Plain" />
+            <test assemblyname="${testDir}/AprSharpTest.dll" />
+            <test assemblyname="${testDir}/SubversionSharpTest.dll">
+                <categories>
+                    <include name="LocalReadOnlyTests" />
+                </categories>
+            </test>
+            <test assemblyname="${testDir}/SubversionSharpTest.dll">
+                <categories>
+                    <include name="RepoReadOnlyTests" />
+                </categories>
+            </test>
+            <test assemblyname="${testDir}/SubversionSharpTest.dll">
+                <categories>
+                    <include name="LocalReadWriteTests" />
+                </categories>
+            </test>
+            <test assemblyname="${testDir}/SubversionSharpTest.dll">
+                <categories>
+                    <include name="RepoReadWriteTests" />
+                </categories>
+            </test>
+        </nunit2>
+    </target>
+
+    <!--====================================================================-->
+    <!--   OTHER TARGETS                                                    -->
+    <!--====================================================================-->
+
+    <target name="get" depends="userprops"
+		description="Download sources for Subversion and dependencies">
+
+        <nant buildfile="Build/GetDeps.build" target="get" />
+    </target>
+
+    <target name="bootstrap" depends="get,all,build"
+        description="Download and build Subversion, dependencies, and CLR projects" />
+
+    <target name="deploy" depends="setdirnames"
+        description="Copies all binary files to a common directory for distribution">
+
+        <delete dir="${deployDir}" verbose="true" if="${directory::exists(deployDir)}" />
+        <mkdir dir="${deployDir}" />
+        <copy todir="${deployDir}" flatten="true">
+            <fileset basedir="${binDir}">
+                <include name="*.*" />
+            </fileset>
+        </copy>
+        <copy todir="${deployDir}" flatten="true">
+            <fileset basedir="${dllDir}">
+                <include name="*.*" />
+            </fileset>
+        </copy>
+
+        <zip zipfile="${deployDir}/svndotnet_${datestamp}_${configuration}.zip"
+            stampdatetime="${datetime::now()}">
+
+            <fileset basedir="${deployDir}">
+                <include name="*.*" />
+            </fileset>
+        </zip>
+    </target>
+
+    <target name="help">
+        <loadfile property="helpinfo" file="Build/README.txt" />
+        <echo message="${helpinfo}"/>
+    </target>
+
+</project>

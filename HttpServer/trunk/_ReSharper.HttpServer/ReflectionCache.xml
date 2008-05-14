@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Assemblies Version="1073741831">
+  <Assembly Name="nunit.framework, Version=2.4.3.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Image="195c628c-b22b-4008-8dad-a435e9e93366" Timestamp="633458449860000000" />
+  <Assembly Name="Tiny, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8ad2ffbbe54376da" Image="616da94a-852f-4bbe-a0de-85d7a3e4bf22" Timestamp="633458449880000000" />
+  <Assembly Name="Tiny.Data, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8ad2ffbbe54376da" Image="6a273f0e-5be0-42f7-8b1b-9fe3d496d16d" Timestamp="633458449880000000" />
+  <Assembly Name="Tiny.Data.Drivers.PostgreSQL, Version=1.0.0.0, Culture=neutral" Image="0956053b-0a85-4717-bd87-357803455ec8" Timestamp="633458449880000000" />
+  <Assembly Name="JetBrains.Annotations, Version=4.0.783.45, Culture=neutral, PublicKeyToken=1010a0d8d6380325" Image="21359a72-8b3f-41c1-9b04-2818987dd857" Timestamp="633446496840000000" XmlDocIndexTimestamp="633446496840000000" />
+</Assemblies>

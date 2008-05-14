@@ -1,0 +1,11 @@
+- string lastCat = string.Empty;
+- foreach (TestCase testCase in items)
+	- if (lastCat != testCase.Category)
+		- lastCat = testCase.Category;
+		= "<tr><td colspan=\"4\"><h2>" + lastCat + "</h2></td></tr>"
+	%tr{class=lastCat}
+		%td= testCase.Name
+		%td= testCase.State
+		%td= testCase.Description
+		%td= WebHelper.AjaxUpdater("/item/status/"+testCase.Id+"/Successful", "Successful", "tbl") +|
+			" | " + WebHelper.AjaxUpdater("/item/status/"+testCase.Id+"/Failed", "Failed", "tbl")

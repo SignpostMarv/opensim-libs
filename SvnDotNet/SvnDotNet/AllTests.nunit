@@ -1,0 +1,11 @@
+<NUnitProject>
+  <Settings activeconfig="Debug" />
+  <Config name="Debug" binpathtype="Auto">
+    <assembly path="test\debug_win32\AprSharpTest.dll" />
+    <assembly path="test\debug_win32\SubversionSharpTest.dll" />
+  </Config>
+  <Config name="Release" binpathtype="Auto">
+    <assembly path="test\release_win32\AprSharpTest.dll" />
+    <assembly path="test\release_win32\SubversionSharpTest.dll" />
+  </Config>
+</NUnitProject>

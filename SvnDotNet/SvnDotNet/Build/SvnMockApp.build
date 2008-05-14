@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<project name="SvnTest" default="build" basedir="../SvnMockApp" xmlns="http://nant.sf.net/release/0.85/nant.xsd">
+
+	<target name="build">
+		<echo message = "Building SvnTest Application"/>
+		
+		<property name="defines" value="" />
+		<property name="defines" value="WIN32" if="${platform::is-win32()}" />
+
+		<copy file="../Vendor/mono/2.0/Mono.GetOptions.dll" tofile="${binDir}/Mono.GetOptions.dll" overwrite="true" />
+
+		<csc 
+			target = "exe" 
+			output = "${binDir}/SvnMockApp.exe"
+			define = "${defines}"
+			unsafe = "true"
+			optimize = "${optimize}"
+			debug  = "${debug}">
+			
+			<sources basedir = ".">
+				<include name = "**/*.cs"/>
+			</sources>
+
+			<references>
+				<include name = "${binDir}/SubversionSharp.dll"/>
+				<include name = "${binDir}/AprSharp.dll"/>
+				<include name = "${binDir}/Mono.GetOptions.dll"/>
+			</references>
+			
+		</csc>
+
+	</target>
+	
+</project>

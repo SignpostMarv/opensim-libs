@@ -1,0 +1,14 @@
+= WebHelper.ShowErrors(errors)
+= WebHelper.FormStart("frmadd", "/item/create/", IsAjax)
+	%input{type="hidden", name="item[testId]",value=testId}
+	%ul
+		%li
+			%label{for="test_name"}= Language["Name"]
+			%input{ id="test_name", name="item[name]", type="text", size="40" }/
+		%li
+			%label{for="test_category"}= Language["Category"]
+			%input{ id="test_category", name="item[category]", type="text", size="40" }/
+		%li
+			%label{for="test_description"}= Language["Description"]
+			%textarea{ id="test_description", name="item[description]", cols="40", rows="10" }
+	%input{type="submit", value="save"}

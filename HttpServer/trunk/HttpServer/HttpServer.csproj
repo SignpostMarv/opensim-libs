@@ -1,0 +1,176 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{455E7D70-1C85-4D7F-9F01-DC801B8B8C34}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HttpServer</RootNamespace>
+    <AssemblyName>HttpServer</AssemblyName>
+    <StartupObject>
+    </StartupObject>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Authentication\AuthModule.cs" />
+    <Compile Include="Authentication\BasicAuthentication.cs" />
+    <Compile Include="Authentication\DigestAuthentication.cs" />
+    <Compile Include="ContentTypes.cs" />
+    <Compile Include="Controllers\AuthRequiredAttribute.cs" />
+    <Compile Include="Controllers\AuthValidatorAttribute.cs" />
+    <Compile Include="Controllers\BeforeFilter.cs" />
+    <Compile Include="Controllers\ControllerNameAttribute.cs" />
+    <Compile Include="Controllers\RequestController.cs" />
+    <Compile Include="Controllers\RawHandlerAttribute.cs" />
+    <Compile Include="Controllers\ViewController.cs" />
+    <Compile Include="ExceptionHandler.cs" />
+    <Compile Include="Exceptions\BadRequestException.cs" />
+    <Compile Include="Exceptions\ForbiddenException.cs" />
+    <Compile Include="Exceptions\HttpException.cs" />
+    <Compile Include="Exceptions\InternalServerException.cs" />
+    <Compile Include="Exceptions\NotFoundException.cs" />
+    <Compile Include="Exceptions\UnauthorizedException.cs" />
+    <Compile Include="FormDecoders\FormDecoder.cs" />
+    <Compile Include="FormDecoders\FormDecoderProvider.cs" />
+    <Compile Include="FormDecoders\MultipartDecoder.cs" />
+    <Compile Include="FormDecoders\UrlDecoder.cs" />
+    <Compile Include="FormDecoders\XmlDecoder.cs" />
+    <Compile Include="Helpers\ObjectForm.cs" />
+    <Compile Include="Helpers\FormValidator.cs" />
+    <Compile Include="Helpers\Validator.cs" />
+    <Compile Include="Helpers\WebHelper.cs" />
+    <Compile Include="Helpers\XmlHelper.cs" />
+    <Compile Include="HttpHelper.cs" />
+    <Compile Include="HttpInput.cs" />
+    <Compile Include="HttpInputItem.cs" />
+    <Compile Include="HttpListener.cs" />
+    <Compile Include="HttpModules\AspNetModule.cs" />
+    <Compile Include="HttpModules\ControllerModule.cs" />
+    <Compile Include="HttpModules\FileModule.cs" />
+    <Compile Include="HttpModules\HttpModule.cs" />
+    <Compile Include="HttpModules\HttpModuleExceptionEventArgs.cs" />
+    <Compile Include="HttpModules\ReverseProxyModule.cs" />
+    <Compile Include="HttpModules\WebSiteModule.cs" />
+    <Compile Include="HttpParam.cs" />
+    <Compile Include="HttpRequestParser.cs" />
+    <Compile Include="HttpResponse.cs" />
+    <Compile Include="HttpServer.cs" />
+    <Compile Include="HttpClientContext.cs" />
+    <Compile Include="HttpRequest.cs" />
+    <Compile Include="Language\LanguageCategory.cs" />
+    <Compile Include="Language\LanguageHelper.cs" />
+    <Compile Include="Language\Memory\MemLanguageCategory.cs" />
+    <Compile Include="Language\LanguageManager.cs" />
+    <Compile Include="Language\Memory\MemLanguageManager.cs" />
+    <Compile Include="Language\Textfiles\YamlLight.cs" />
+    <Compile Include="Language\YamlWatcher.cs" />
+    <Compile Include="LogWriter.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Rendering\Haml\Nodes\DocTypeTag.cs" />
+    <Compile Include="Rendering\TemplateManager.cs" />
+    <Compile Include="Rendering\TemplateGenerator.cs" />
+    <Compile Include="Rendering\TemplateCompiler.cs" />
+    <Compile Include="Rendering\Haml\LineInfo.cs" />
+    <Compile Include="Rendering\Haml\NodeList.cs" />
+    <Compile Include="Rendering\Haml\Nodes\AttributeNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\ChildNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\ClassNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\DisplayCodeNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\IdNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\Node.cs" />
+    <Compile Include="Rendering\Haml\Nodes\SilentCodeNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\TagNode.cs" />
+    <Compile Include="Rendering\Haml\Nodes\TextNode.cs" />
+    <Compile Include="Rendering\CodeGeneratorException.cs" />
+    <Compile Include="Rendering\Haml\HamlGenerator.cs" />
+    <Compile Include="Rendering\Haml\Rules\AttributesRule.cs" />
+    <Compile Include="Rendering\Haml\Rules\NewLineRule.cs" />
+    <Compile Include="Rendering\Haml\Rules\Rule.cs" />
+    <Compile Include="Rendering\TinyTemplate.cs" />
+    <Compile Include="Rendering\Tiny\Nodes\CodeNode.cs" />
+    <Compile Include="Rendering\Tiny\Nodes\Node.cs" />
+    <Compile Include="Rendering\Tiny\Nodes\TextNode.cs" />
+    <Compile Include="Rendering\Tiny\TinyGenerator.cs" />
+    <Compile Include="RedirectRule.cs" />
+    <Compile Include="RequestCookie.cs" />
+    <Compile Include="RequestCookies.cs" />
+    <Compile Include="ResponseCookie.cs" />
+    <Compile Include="ResponseCookies.cs" />
+    <Compile Include="Sessions\HttpSession.cs" />
+    <Compile Include="Sessions\HttpSessionStore.cs" />
+    <Compile Include="Sessions\MemorySession.cs" />
+    <Compile Include="Sessions\MemorySessionStore.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

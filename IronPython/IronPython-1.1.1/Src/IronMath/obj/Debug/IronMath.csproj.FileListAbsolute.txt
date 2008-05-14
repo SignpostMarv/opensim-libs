@@ -1,0 +1,7 @@
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\bin\Debug\IronMath.dll
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\bin\Debug\IronMath.pdb
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\obj\Debug\IronMath.IronMath.resources
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\obj\Debug\IronMath.csproj.GenerateResource.Cache
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\obj\Debug\IronMath.dll
+C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronMath\obj\Debug\IronMath.pdb

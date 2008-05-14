@@ -1,0 +1,5 @@
+C:\Users\Adam\Downloads\webserver-11358\trunk\HttpServer\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Adam\Downloads\webserver-11358\trunk\HttpServer\bin\Debug\HttpServer.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\HttpServer\bin\Debug\HttpServer.pdb
+C:\Users\Adam\Downloads\webserver-11358\trunk\HttpServer\obj\Debug\HttpServer.dll
+C:\Users\Adam\Downloads\webserver-11358\trunk\HttpServer\obj\Debug\HttpServer.pdb
