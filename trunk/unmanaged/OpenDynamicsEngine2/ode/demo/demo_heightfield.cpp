@@ -531,11 +531,7 @@ static void simLoop (int pause)
 
 
   if (write_world) {
-    FILE *f = fopen ("state.dif","wt");
-    if (f) {
-      dWorldExportDIF (world,f,"X");
-      fclose (f);
-    }
+    dWorldExportDIF (world,"state.dif",false,"X");
     write_world = 0;
   }
 

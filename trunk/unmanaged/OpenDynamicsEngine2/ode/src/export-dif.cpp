@@ -491,132 +491,141 @@ static void printGeom (PrintingContext &c, dxGeom *g)
 //***************************************************************************
 // world
 
-void dWorldExportDIF (dWorldID w, FILE *file, const char *prefix)
+void dWorldExportDIF (dWorldID w, const char *filename, bool append, const char *prefix)
 {
-	PrintingContext c;
-	c.file = file;
+	FILE *file;
+	if(append) {
+	  file=fopen(filename, "at");
+	} else {
+	  file=fopen(filename, "wt");
+	}
+	if(file) {
+		PrintingContext c;
+		c.file = file;
 #if defined(dSINGLE)
-	c.precision = 7;
+		c.precision = 7;
 #else
-	c.precision = 15;
+		c.precision = 15;
 #endif
-	c.indent = 1;
-
-	fprintf (file,"-- Dynamics Interchange Format v0.1\n\n%sworld = dynamics.world {\n",prefix);
-	c.print ("gravity",w->gravity);
-	c.print ("ODE = {");
-	c.indent++;
-	c.print ("ERP",w->global_erp);
-	c.print ("CFM",w->global_cfm);
-	c.print ("auto_disable = {");
-	c.indent++;
-	c.print ("linear_threshold",w->adis.linear_average_threshold);
-	c.print ("angular_threshold",w->adis.angular_average_threshold);
-	c.print ("average_samples",(int)w->adis.average_samples);
-	c.print ("idle_time",w->adis.idle_time);
-	c.print ("idle_steps",w->adis.idle_steps);
-	fprintf (file,"\t\t},\n\t},\n}\n");
-	c.indent -= 3;
-
-	// bodies
-	int num = 0;
-	fprintf (file,"%sbody = {}\n",prefix);
-	for (dxBody *b=w->firstbody; b; b=(dxBody*)b->next) {
-		b->tag = num;
-		fprintf (file,"%sbody[%d] = dynamics.body {\n\tworld = %sworld,\n",prefix,num,prefix);
-		c.indent++;
-		c.print ("pos",b->posr.pos);
-		c.print ("q",b->q,4);
-		c.print ("lvel",b->lvel);
-		c.print ("avel",b->avel);
-		c.print ("mass",b->mass.mass);
-		fprintf (file,"\tI = {{");
-		for (int i=0; i<3; i++) {
-			for (int j=0; j<3; j++) {
-				c.printReal (b->mass.I[i*4+j]);
-				if (j < 2) fputc (',',file);
-			}
-			if (i < 2) fprintf (file,"},{");
-		}
-		fprintf (file,"}},\n");
-		c.printNonzero ("com",b->mass.c);
+		c.indent = 1;
+	
+		fprintf (file,"-- Dynamics Interchange Format v0.1\n\n%sworld = dynamics.world {\n",prefix);
+		c.print ("gravity",w->gravity);
 		c.print ("ODE = {");
 		c.indent++;
-		if (b->flags & dxBodyFlagFiniteRotation) c.print ("finite_rotation",1);
-		if (b->flags & dxBodyDisabled) c.print ("disabled",1);
-		if (b->flags & dxBodyNoGravity) c.print ("no_gravity",1);
-		if (b->flags & dxBodyAutoDisable) {
-			c.print ("auto_disable = {");
+		c.print ("ERP",w->global_erp);
+		c.print ("CFM",w->global_cfm);
+		c.print ("auto_disable = {");
+		c.indent++;
+		c.print ("linear_threshold",w->adis.linear_average_threshold);
+		c.print ("angular_threshold",w->adis.angular_average_threshold);
+		c.print ("average_samples",(int)w->adis.average_samples);
+		c.print ("idle_time",w->adis.idle_time);
+		c.print ("idle_steps",w->adis.idle_steps);
+		fprintf (file,"\t\t},\n\t},\n}\n");
+		c.indent -= 3;
+	
+		// bodies
+		int num = 0;
+		fprintf (file,"%sbody = {}\n",prefix);
+		for (dxBody *b=w->firstbody; b; b=(dxBody*)b->next) {
+			b->tag = num;
+			fprintf (file,"%sbody[%d] = dynamics.body {\n\tworld = %sworld,\n",prefix,num,prefix);
 			c.indent++;
-			c.print ("linear_threshold",b->adis.linear_average_threshold);
-			c.print ("angular_threshold",b->adis.angular_average_threshold);
-			c.print ("average_samples",(int)b->adis.average_samples);
-			c.print ("idle_time",b->adis.idle_time);
-			c.print ("idle_steps",b->adis.idle_steps);
-			c.print ("time_left",b->adis_timeleft);
-			c.print ("steps_left",b->adis_stepsleft);
+			c.print ("pos",b->posr.pos);
+			c.print ("q",b->q,4);
+			c.print ("lvel",b->lvel);
+			c.print ("avel",b->avel);
+			c.print ("mass",b->mass.mass);
+			fprintf (file,"\tI = {{");
+			for (int i=0; i<3; i++) {
+				for (int j=0; j<3; j++) {
+					c.printReal (b->mass.I[i*4+j]);
+					if (j < 2) fputc (',',file);
+				}
+				if (i < 2) fprintf (file,"},{");
+			}
+			fprintf (file,"}},\n");
+			c.printNonzero ("com",b->mass.c);
+			c.print ("ODE = {");
+			c.indent++;
+			if (b->flags & dxBodyFlagFiniteRotation) c.print ("finite_rotation",1);
+			if (b->flags & dxBodyDisabled) c.print ("disabled",1);
+			if (b->flags & dxBodyNoGravity) c.print ("no_gravity",1);
+			if (b->flags & dxBodyAutoDisable) {
+				c.print ("auto_disable = {");
+				c.indent++;
+				c.print ("linear_threshold",b->adis.linear_average_threshold);
+				c.print ("angular_threshold",b->adis.angular_average_threshold);
+				c.print ("average_samples",(int)b->adis.average_samples);
+				c.print ("idle_time",b->adis.idle_time);
+				c.print ("idle_steps",b->adis.idle_steps);
+				c.print ("time_left",b->adis_timeleft);
+				c.print ("steps_left",b->adis_stepsleft);
+				c.indent--;
+				c.print ("},");
+			}
+			c.printNonzero ("facc",b->facc);
+			c.printNonzero ("tacc",b->tacc);
+			if (b->flags & dxBodyFlagFiniteRotationAxis) {
+				c.print ("finite_rotation_axis",b->finite_rot_axis);
+			}
 			c.indent--;
 			c.print ("},");
-		}
-		c.printNonzero ("facc",b->facc);
-		c.printNonzero ("tacc",b->tacc);
-		if (b->flags & dxBodyFlagFiniteRotationAxis) {
-			c.print ("finite_rotation_axis",b->finite_rot_axis);
-		}
-		c.indent--;
-		c.print ("},");
-		if (b->geom) {
-			c.print ("geometry = {");
-			c.indent++;
-			for (dxGeom *g=b->geom; g; g=g->body_next) {
-				c.print ("{");
+			if (b->geom) {
+				c.print ("geometry = {");
 				c.indent++;
-				printGeom (c,g);
+				for (dxGeom *g=b->geom; g; g=g->body_next) {
+					c.print ("{");
+					c.indent++;
+					printGeom (c,g);
+					c.indent--;
+					c.print ("},");
+				}
 				c.indent--;
 				c.print ("},");
 			}
 			c.indent--;
-			c.print ("},");
+			c.print ("}");
+			num++;
 		}
-		c.indent--;
-		c.print ("}");
-		num++;
-	}
-
-	// joints
-	num = 0;
-	fprintf (file,"%sjoint = {}\n",prefix);
-	for (dxJoint *j=w->firstjoint; j; j=(dxJoint*)j->next) {
-		c.indent++;
-		const char *name = getJointName (j);
-		fprintf (file,
-			"%sjoint[%d] = dynamics.%s_joint {\n"
-			"\tworld = %sworld,\n"
-			"\tbody = {"
-			,prefix,num,name,prefix);
-
-		if ( j->node[0].body )
-			fprintf (file,"%sbody[%d]",prefix,j->node[0].body->tag);
-		if ( j->node[1].body )
-			fprintf (file,",%sbody[%d]",prefix,j->node[1].body->tag);
-		fprintf (file,"}\n");
-
-		switch (j->vtable->typenum) {
-			case dJointTypeBall: printBall (c,j); break;
-			case dJointTypeHinge: printHinge (c,j); break;
-			case dJointTypeSlider: printSlider (c,j); break;
-			case dJointTypeContact: printContact (c,j); break;
-			case dJointTypeUniversal: printUniversal (c,j); break;
-			case dJointTypeHinge2: printHinge2 (c,j); break;
-			case dJointTypeFixed: printFixed (c,j); break;
-			case dJointTypeAMotor: printAMotor (c,j); break;
-			case dJointTypeLMotor: printLMotor (c,j); break;
-			case dJointTypePR: printPR (c,j); break;
-			case dJointTypePU: printPU (c,j); break;
-			case dJointTypePiston: printPiston (c,j); break;
+	
+		// joints
+		num = 0;
+		fprintf (file,"%sjoint = {}\n",prefix);
+		for (dxJoint *j=w->firstjoint; j; j=(dxJoint*)j->next) {
+			c.indent++;
+			const char *name = getJointName (j);
+			fprintf (file,
+				"%sjoint[%d] = dynamics.%s_joint {\n"
+				"\tworld = %sworld,\n"
+				"\tbody = {"
+				,prefix,num,name,prefix);
+	
+			if ( j->node[0].body )
+				fprintf (file,"%sbody[%d]",prefix,j->node[0].body->tag);
+			if ( j->node[1].body )
+				fprintf (file,",%sbody[%d]",prefix,j->node[1].body->tag);
+			fprintf (file,"}\n");
+	
+			switch (j->vtable->typenum) {
+				case dJointTypeBall: printBall (c,j); break;
+				case dJointTypeHinge: printHinge (c,j); break;
+				case dJointTypeSlider: printSlider (c,j); break;
+				case dJointTypeContact: printContact (c,j); break;
+				case dJointTypeUniversal: printUniversal (c,j); break;
+				case dJointTypeHinge2: printHinge2 (c,j); break;
+				case dJointTypeFixed: printFixed (c,j); break;
+				case dJointTypeAMotor: printAMotor (c,j); break;
+				case dJointTypeLMotor: printLMotor (c,j); break;
+				case dJointTypePR: printPR (c,j); break;
+				case dJointTypePU: printPU (c,j); break;
+				case dJointTypePiston: printPiston (c,j); break;
+			}
+			c.indent--;
+			c.print ("}");
+			num++;
 		}
-		c.indent--;
-		c.print ("}");
-		num++;
+		fclose(file);
 	}
 }

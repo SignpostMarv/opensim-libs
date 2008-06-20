@@ -287,7 +287,7 @@ void update()
 //   char str[24];
 //   sprintf(str, "%06d",cnt++);
 
-//   dWorldExportDIF(world, file, str);
+//   dWorldExportDIF(world, file, str);  <-- update to use char* instead of FILE* for file parm
 }
 
 
@@ -725,6 +725,7 @@ world = dWorldCreate();
   dWorldDestroy (world);
   return 0;
 }
+
 
 
 

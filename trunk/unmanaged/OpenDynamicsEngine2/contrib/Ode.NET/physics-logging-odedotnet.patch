@@ -1,0 +1,14 @@
+Index: unmanaged/OpenDynamicsEngine2/contrib/Ode.NET/Ode/Ode.cs
+===================================================================
+--- unmanaged/OpenDynamicsEngine2/contrib/Ode.NET/Ode/Ode.cs	(リビジョン 45)
++++ unmanaged/OpenDynamicsEngine2/contrib/Ode.NET/Ode/Ode.cs	(作業コピー)
+@@ -1728,5 +1728,9 @@
+ 
+ 		[DllImport("ode", EntryPoint = "dWorldStepFast1"), SuppressUnmanagedCodeSecurity]
+ 		public static extern void WorldStepFast1(IntPtr world, dReal stepsize, int maxiterations);
++
++		[DllImport("ode", EntryPoint = "dWorldExportDIF"), SuppressUnmanagedCodeSecurity]
++		public static extern void WorldExportDIF(IntPtr world, string filename, bool append, string prefix);
++
+ 	}
+ }

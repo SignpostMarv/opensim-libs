@@ -147,13 +147,8 @@ static void command (int cmd)
     speed = 0;
     steer = 0;
     break;
-  case '1': {
-      FILE *f = fopen ("state.dif","wt");
-      if (f) {
-        dWorldExportDIF (world,f,"");
-        fclose (f);
-      }
-    }
+  case '1':
+    dWorldExportDIF (world,"state.dif",false,"");
   }
 }
 
