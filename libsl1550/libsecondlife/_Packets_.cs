@@ -71464,7 +71464,7 @@ namespace libsecondlife.Packets
         public override Header Header { get { return header; } set { header = value; } }
         public override PacketType Type { get { return PacketType.ParcelMediaUpdate; } }
         public DataBlockBlock DataBlock;
-        public DataBlockExtendedBlock DataExtendedBlock;
+        public DataBlockExtendedBlock DataBlockExtended;
 
         public ParcelMediaUpdatePacket()
         {
@@ -71472,7 +71472,7 @@ namespace libsecondlife.Packets
             Header.ID = 420;
             Header.Reliable = true;
             DataBlock = new DataBlockBlock();
-            DataExtendedBlock = new DataBlockExtendedBlock();
+            DataBlockExtended = new DataBlockExtendedBlock();
         }
 
         public ParcelMediaUpdatePacket(byte[] bytes, ref int i) : this()
@@ -71490,7 +71490,7 @@ namespace libsecondlife.Packets
                 bytes = zeroBuffer;
             }
             DataBlock.FromBytes(bytes, ref i);
-            DataExtendedBlock.FromBytes(bytes, ref i); ;
+            DataBlockExtended.FromBytes(bytes, ref i); ;
         }
 
         public ParcelMediaUpdatePacket(Header head, byte[] bytes, ref int i): this()
@@ -71508,19 +71508,19 @@ namespace libsecondlife.Packets
                 bytes = zeroBuffer;
             }
             DataBlock.FromBytes(bytes, ref i);
-            DataExtendedBlock.FromBytes(bytes, ref i); ;
+            DataBlockExtended.FromBytes(bytes, ref i); ;
         }
 
         public override byte[] ToBytes()
         {
             int length = 10;
-            length += DataBlock.Length; length += DataExtendedBlock.Length;
+            length += DataBlock.Length; length += DataBlockExtended.Length;
             if (header.AckList.Length > 0) { length += header.AckList.Length * 4 + 1; }
             byte[] bytes = new byte[length];
             int i = 0;
             header.ToBytes(bytes, ref i);
             DataBlock.ToBytes(bytes, ref i);
-            DataExtendedBlock.ToBytes(bytes, ref i);
+            DataBlockExtended.ToBytes(bytes, ref i);
             if (header.AckList.Length > 0) { header.AcksToBytes(bytes, ref i); }
             return bytes;
         }
@@ -71529,7 +71529,7 @@ namespace libsecondlife.Packets
         {
             string output = "--- ParcelMediaUpdate ---" + Environment.NewLine;
                 output += DataBlock.ToString() + Environment.NewLine;
-                output += DataExtendedBlock.ToString() + Environment.NewLine;
+                output += DataBlockExtended.ToString() + Environment.NewLine;
             return output;
         }
 
