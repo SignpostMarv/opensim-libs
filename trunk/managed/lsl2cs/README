@@ -1,0 +1,57 @@
+The files in this directory are used to generate the lsl.lexer.cs and
+lsl.parser.cs files found in OpenSim. Standard procedure would be to edit the
+lsl.lexer/lsl.parser files to update the compiler, then generate the .cs files
+with lg.exe and pg.exe. lg.exe, pg.exe and Tools.dll are built from the sources
+in the Tools/ directory.
+
+The CSCodeGenerator.cs and LSL2CSCodeTransformer.cs files are included here for
+testing purposes. The tests in the tests/ directory are also reproduced in the
+OpenSim tree in OpenSim/Tests/OpenSim/Region/ScriptEngine/Shared/CodeTools/.
+The output.cs file is a simple program that takes an LSL file as input and
+produces C# code, or with the -t parameter specified AFTER the filename, it
+prints the Abstract Syntax Tree.
+
+NOTE: In lsl.lexer.cs there is an "Unreachable code detected" warning. This is
+caused by a return statement in a switch statement followed by a break.
+Removing the break statement is sufficient to remove the warning.
+
+Instructions:
+
+Run make. Use the runtests.sh script to run all the tests.
+
+output.exe takes the LSL source file as its first argument and generates C#
+code on standard out. If you would like to see the AST instead append -t AFTER
+the LSL source file.
+
+Files and Directories:
+    Tools/
+        Contains the source code for the lexer generator and parser
+        generator. Download CSTools.zip from
+        http://cis.paisley.ac.uk/crow-ci0/
+    tests/
+        Contains a bunch of files I use for testing. The .lsl files contain
+        LSL source while the .cs files are the expected generated code.
+    CSCodeGenerator.cs
+        This class performs the code generation from the AST.
+    LSL2CSCodeTransformer.cs
+        This class performs necessary transformation of the AST. Currently
+        only type names are changed (ie: integer -> LSL_Types.LSLInteger).
+    lsl.lexer
+        The description of LSL tokens.
+    lsl.parser
+        LSL syntax in BNF.
+    Makefile
+        Yeah...
+    output.cs
+        Currently the "compiler" I use for testing.
+    README
+        This file.
+    runtests.sh
+        Shell script which will run each of the tests in the tests/ dir and
+        report success or failure.
+
+The compiler tools are used with permission from Malcolm Crowe. The original
+source can be downloaded[1] from his website[2].
+
+[1] http://cis.paisley.ac.uk/crow-ci0/CSTools47.zip
+[2] http://cis.paisley.ac.uk/crow-ci0/

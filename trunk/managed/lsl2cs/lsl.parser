@@ -1,0 +1,1121 @@
+%parser lsl.lexer LSLSyntax
+
+%namespace OpenSim.Region.ScriptEngine.Shared.CodeTools
+
+%symbol LSLProgramRoot
+{
+    public LSLProgramRoot(States s)
+    {
+        while (0 < s.kids.Count)
+            kids.Add(s.kids.Pop());
+    }
+
+    public LSLProgramRoot(GlobalDefinitions gd, States s)
+    {
+        while (0 < gd.kids.Count)
+            kids.Add(gd.kids.Pop());
+
+        while (0 < s.kids.Count)
+            kids.Add(s.kids.Pop());
+    }
+}
+
+%symbol GlobalDefinitions
+{
+    public GlobalDefinitions(GlobalVariableDeclaration gvd)
+    {
+        kids.Add(gvd);
+    }
+
+    public GlobalDefinitions(GlobalDefinitions gd, GlobalVariableDeclaration gvd)
+    {
+        while (0 < gd.kids.Count)
+            kids.Add(gd.kids.Pop());
+
+        kids.Add(gvd);
+    }
+
+    public GlobalDefinitions(GlobalFunctionDefinition gfd)
+    {
+        kids.Add(gfd);
+    }
+
+    public GlobalDefinitions(GlobalDefinitions gd, GlobalFunctionDefinition gfd)
+    {
+        while (0 < gd.kids.Count)
+            kids.Add(gd.kids.Pop());
+
+        kids.Add(gfd);
+    }
+}
+
+%symbol GlobalVariableDeclaration
+{
+    public GlobalVariableDeclaration(Declaration d)
+    {
+        kids.Add(d);
+    }
+
+    public GlobalVariableDeclaration(Assignment a)
+    {
+        kids.Add(a);
+    }
+}
+
+%symbol GlobalFunctionDefinition
+{
+    private string m_returnType;
+    private string m_name;
+
+    public GlobalFunctionDefinition(string returnType, string name, ArgumentDeclarationList adl, CompoundStatement cs)
+    {
+        m_returnType = returnType;
+        m_name = name;
+
+        kids.Add(adl);
+        kids.Add(cs);
+    }
+
+    public string ReturnType
+    {
+        get { return m_returnType; }
+        set { m_returnType = value; }
+    }
+
+    public string Name
+    {
+        get { return m_name; }
+    }
+}
+
+%symbol States
+{
+    public States(State ds)
+    {
+        kids.Add(ds);
+    }
+
+    public States(States s, State us)
+    {
+        while (0 < s.kids.Count)
+            kids.Add(s.kids.Pop());
+
+        kids.Add(us);
+    }
+}
+
+%symbol State
+{
+    private string m_name;
+
+    public State(string name, StateBody sb)
+    {
+        m_name = name;
+
+        while (0 < sb.kids.Count)
+            kids.Add(sb.kids.Pop());
+    }
+
+    public override string ToString()
+    {
+        return "STATE<" + m_name + ">";
+    }
+
+    public string Name
+    {
+        get { return m_name; }
+    }
+}
+
+%symbol StateBody
+{
+    public StateBody(StateBody sb, StateEvent se)
+    {
+        while (0 < sb.kids.Count)
+            kids.Add(sb.kids.Pop());
+
+        kids.Add(se);
+    }
+
+    public StateBody(StateEvent se)
+    {
+        kids.Add(se);
+    }
+}
+
+%symbol StateEvent
+{
+    private string m_name; 
+
+    public StateEvent(string name, CompoundStatement cs)
+    {
+        m_name = name;
+        kids.Add(cs);
+    }
+
+    public StateEvent(string name, ArgumentDeclarationList dal, CompoundStatement cs)
+    {
+        m_name = name;
+        if (0 < dal.kids.Count)
+            kids.Add(dal);
+        kids.Add(cs);
+    }
+
+    public override string ToString()
+    {
+        return "EVENT<" + m_name + ">";
+    }
+
+    public string Name
+    {
+        get { return m_name; }
+    }
+}
+
+%symbol ArgumentDeclarationList
+{
+    public ArgumentDeclarationList(Declaration d)
+    {
+        kids.Add(d);
+    }
+
+    public ArgumentDeclarationList(ArgumentDeclarationList adl, Declaration d)
+    {
+        while (0 < adl.kids.Count)
+            kids.Add(adl.kids.Pop());
+
+        kids.Add(d);
+    }
+}
+
+%symbol Declaration
+{
+    private string m_datatype;
+    private string m_id;
+
+    public Declaration(string type, string id)
+    {
+        m_datatype = type;
+        m_id = id;
+    }
+
+    public override string ToString()
+    {
+        return "Declaration<" + m_datatype + ":" + m_id + ">";
+    }
+
+    public string Datatype
+    {
+        get { return m_datatype; }
+        set { m_datatype = value; }
+    }
+
+    public string Id
+    {
+        get { return m_id; }
+    }
+}
+
+%symbol Typename
+{
+    public string yytext;
+
+    public Typename(string text)
+    {
+        yytext = text;
+    }
+}
+
+%symbol Event
+{
+    public string yytext;
+
+    public Event(string text)
+    {
+        yytext = text;
+    }
+}
+
+%symbol CompoundStatement
+{
+    public CompoundStatement()
+    {
+        // An empty constructor to generate a CompoundStatement without any
+        // kids.
+    }
+
+    public CompoundStatement(StatementList sl)
+    {
+        while (0 < sl.kids.Count)
+            kids.Add(sl.kids.Pop());
+    }
+}
+
+%symbol StatementList
+{
+    private void AddStatement(Statement s)
+    {
+        if (s.kids.Top is IfStatement || s.kids.Top is WhileStatement || s.kids.Top is DoWhileStatement || s.kids.Top is ForLoop)
+            kids.Add(s.kids.Pop());
+        else
+            kids.Add(s);
+    }
+
+    public StatementList(Statement s)
+    {
+        AddStatement(s);
+    }
+
+    public StatementList(StatementList sl, Statement s)
+    {
+        while (0 < sl.kids.Count)
+            kids.Add(sl.kids.Pop());
+
+        AddStatement(s);
+    }
+}
+
+%symbol Statement
+{
+    public Statement(Declaration d)
+    {
+        kids.Add(d);
+    }
+
+    public Statement(CompoundStatement cs)
+    {
+        kids.Add(cs);
+    }
+
+    public Statement(FunctionCall fc)
+    {
+        kids.Add(fc);
+    }
+
+    public Statement(Assignment a)
+    {
+        kids.Add(a);
+    }
+
+    public Statement(Expression e)
+    {
+        kids.Add(e);
+    }
+
+    public Statement(ReturnStatement rs)
+    {
+        kids.Add(rs);
+    }
+
+    public Statement(StateChange sc)
+    {
+        kids.Add(sc);
+    }
+
+    public Statement(IfStatement ifs)
+    {
+        kids.Add(ifs);
+    }
+
+    public Statement(WhileStatement ifs)
+    {
+        kids.Add(ifs);
+    }
+
+    public Statement(DoWhileStatement ifs)
+    {
+        kids.Add(ifs);
+    }
+
+    public Statement(ForLoop fl)
+    {
+        kids.Add(fl);
+    }
+
+    public Statement(JumpLabel jl)
+    {
+        kids.Add(jl);
+    }
+
+    public Statement(JumpStatement js)
+    {
+        kids.Add(js);
+    }
+}
+
+%symbol Assignment
+{
+    private string m_assignmentType;
+
+    public Assignment(SYMBOL lhs, SYMBOL rhs, string assignmentType)
+    {
+        m_assignmentType = assignmentType;
+
+        kids.Add(lhs);
+        if (rhs is ConstantExpression)
+            while (0 < rhs.kids.Count)
+                kids.Add(rhs.kids.Pop());
+        else
+            kids.Add(rhs);
+    }
+
+    public string AssignmentType
+    {
+        get { return m_assignmentType; }
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_assignmentType + ">";
+    }
+}
+
+%symbol ReturnStatement
+{
+    public ReturnStatement()
+    {
+        // An empty constructor to generate a ReturnStatement without any
+        // kids.
+    }
+
+    public ReturnStatement(Expression e)
+    {
+        if (e is ConstantExpression)
+            while (0 < e.kids.Count)
+                kids.Add(e.kids.Pop());
+        else
+            kids.Add(e);
+    }
+}
+
+%symbol JumpLabel
+{
+    private string m_labelName;
+
+    public JumpLabel(string labelName)
+    {
+        m_labelName = labelName;
+    }
+
+    public string LabelName
+    {
+        get { return m_labelName; }
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_labelName + ">";
+    }
+}
+
+%symbol JumpStatement
+{
+    private string m_targetName;
+
+    public JumpStatement(string targetName)
+    {
+        m_targetName = targetName;
+    }
+
+    public string TargetName
+    {
+        get { return m_targetName; }
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_targetName + ">";
+    }
+}
+
+%symbol StateChange
+{
+    private string m_newState;
+
+    public StateChange(string newState)
+    {
+        m_newState = newState;
+    }
+
+    public string NewState
+    {
+        get { return m_newState; }
+    }
+}
+
+%symbol IfStatement
+{
+    private void AddStatement(Statement s)
+    {
+        if (s.kids.Top is CompoundStatement)
+            kids.Add(s.kids.Pop());
+        else
+            kids.Add(s);
+    }
+
+    public IfStatement(Expression e, Statement ifs)
+    {
+        kids.Add(e);
+        AddStatement(ifs);
+    }
+
+    public IfStatement(Expression e, Statement ifs, Statement es)
+    {
+        kids.Add(e);
+
+        AddStatement(ifs);
+
+        if (es.kids.Top is IfStatement)
+            kids.Add(es.kids.Pop());
+        else
+            AddStatement(es);
+    }
+}
+
+%symbol WhileStatement
+{
+    public WhileStatement(Expression e, Statement s)
+    {
+        kids.Add(e);
+
+        if (s.kids.Top is CompoundStatement)
+            kids.Add(s.kids.Pop());
+        else
+            kids.Add(s);
+    }
+}
+
+%symbol DoWhileStatement
+{
+    public DoWhileStatement(Expression e, Statement s)
+    {
+        if (s.kids.Top is CompoundStatement)
+            kids.Add(s.kids.Pop());
+        else
+            kids.Add(s);
+
+        kids.Add(e);
+    }
+}
+
+%symbol ForLoop
+{
+    public ForLoop(ForLoopStatement flsa, Expression e, ForLoopStatement flsb, Statement s)
+    {
+        kids.Add(flsa);
+        kids.Add(e);
+        kids.Add(flsb);
+
+        if (s.kids.Top is CompoundStatement)
+            kids.Add(s.kids.Pop());
+        else
+            kids.Add(s);
+    }
+}
+
+%symbol ForLoopStatement
+{
+    public ForLoopStatement(Expression e)
+    {
+        kids.Add(e);
+    }
+
+    public ForLoopStatement(Assignment a)
+    {
+        kids.Add(a);
+    }
+
+    public ForLoopStatement(ForLoopStatement fls, Expression e)
+    {
+        while (0 < fls.kids.Count)
+            kids.Add(fls.kids.Pop());
+
+        kids.Add(e);
+    }
+
+    public ForLoopStatement(ForLoopStatement fls, Assignment a)
+    {
+        while (0 < fls.kids.Count)
+            kids.Add(fls.kids.Pop());
+
+        kids.Add(a);
+    }
+}
+
+%symbol FunctionCall
+{
+    private string m_id;
+
+    public FunctionCall(string id, ArgumentList al)
+    {
+        m_id = id;
+
+        kids.Add(al);
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_id + ">";
+    }
+
+    public string Id
+    {
+        get { return m_id; }
+    }
+}
+
+%symbol ArgumentList
+{
+    public ArgumentList(Argument a)
+    {
+        AddArgument(a);
+    }
+
+    public ArgumentList(ArgumentList al, Argument a)
+    {
+        while (0 < al.kids.Count)
+            kids.Add(al.kids.Pop());
+
+        AddArgument(a);
+    }
+
+    private void AddArgument(Argument a)
+    {
+        if (a is ExpressionArgument)
+            while (0 < a.kids.Count)
+                kids.Add(a.kids.Pop());
+        else
+            kids.Add(a);
+    }
+}
+
+%symbol Argument;
+
+%node ExpressionArgument : Argument
+{
+    public ExpressionArgument(Expression e)
+    {
+        if (e is ConstantExpression)
+            while (0 < e.kids.Count)
+                kids.Add(e.kids.Pop());
+        else
+            kids.Add(e);
+    }
+}
+
+%symbol Constant
+{
+    private string m_type;
+    private string m_val;
+
+    public Constant(string type, string val)
+    {
+        m_type = type;
+        m_val = val;
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_type + ":" + m_val + ">";
+    }
+
+    public string Value
+    {
+        get { return m_val; }
+        set { m_val = value; }
+    }
+
+    public string Type
+    {
+        get { return m_type; }
+        set { m_type = value; }
+    }
+}
+
+%node VectorConstant : Constant
+{
+    public VectorConstant(Expression valX, Expression valY, Expression valZ) : base("vector", null)
+    {
+        kids.Add(valX);
+        kids.Add(valY);
+        kids.Add(valZ);
+    }
+}
+
+%node RotationConstant : Constant
+{
+    public RotationConstant(Expression valX, Expression valY, Expression valZ, Expression valS) : base("rotation", null)
+    {
+        kids.Add(valX);
+        kids.Add(valY);
+        kids.Add(valZ);
+        kids.Add(valS);
+    }
+}
+
+%node ListConstant : Constant
+{
+    public ListConstant(ArgumentList al) : base("list", null)
+    {
+        kids.Add(al);
+    }
+}
+
+%symbol Expression
+{
+    protected void AddExpression(Expression e)
+    {
+        if (e is ConstantExpression)
+            while (0 < e.kids.Count)
+                kids.Add(e.kids.Pop());
+        else
+            kids.Add(e);
+    }
+}
+
+%node ConstantExpression : Expression
+{
+    public ConstantExpression(Constant c)
+    {
+        kids.Add(c);
+    }
+}
+
+%node IdentExpression : Expression
+{
+    protected string m_name;
+
+    public IdentExpression(string name)
+    {
+        m_name = name;
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_name + ">";
+    }
+
+    public string Name
+    {
+        get { return m_name; }
+    }
+}
+
+%node IdentDotExpression : IdentExpression
+{
+    private string m_member;
+
+    public IdentDotExpression(string name, string member) : base(name)
+    {
+        m_member = member;
+    }
+
+    public override string ToString()
+    {
+        string baseToString = base.ToString();
+        return baseToString.Substring(0, baseToString.Length - 1) + "." + m_member + ">";
+    }
+
+    public string Member
+    {
+        get { return m_member; }
+    }
+}
+
+%node FunctionCallExpression : Expression
+{
+    public FunctionCallExpression(FunctionCall fc)
+    {
+        kids.Add(fc);
+    }
+}
+
+%node BinaryExpression : Expression
+{
+    private string m_expressionSymbol;
+
+    public BinaryExpression(Expression lhs, Expression rhs, string expressionSymbol)
+    {
+        m_expressionSymbol = expressionSymbol;
+
+        AddExpression(lhs);
+        AddExpression(rhs);
+    }
+
+    public string ExpressionSymbol
+    {
+        get { return m_expressionSymbol; }
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_expressionSymbol + ">";
+    }
+}
+
+%node UnaryExpression : Expression
+{
+    private string m_unarySymbol;
+
+    public UnaryExpression(string unarySymbol, Expression e)
+    {
+        m_unarySymbol = unarySymbol;
+
+        AddExpression(e);
+    }
+
+    public string UnarySymbol
+    {
+        get { return m_unarySymbol; }
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + m_unarySymbol + ">";
+    }
+}
+
+%node TypecastExpression : Expression
+{
+    private string m_typecastType;
+
+    public TypecastExpression(string typecastType, SYMBOL rhs)
+    {
+        m_typecastType = typecastType;
+        kids.Add(rhs);
+    }
+
+    public string TypecastType
+    {
+        get { return m_typecastType; }
+        set { m_typecastType = value; }
+    }
+}
+
+%node ParenthesisExpression : Expression
+{
+    public ParenthesisExpression(Expression e)
+    {
+        kids.Add(e);
+    }
+}
+
+%node IncrementDecrementExpression : Expression
+{
+    private string m_name;
+    private string m_operation;
+    private bool m_postOperation;
+
+    public IncrementDecrementExpression(string name, string operation, bool postOperation)
+    {
+        m_name = name;
+        m_operation = operation;
+        m_postOperation = postOperation;
+    }
+
+    public IncrementDecrementExpression(IdentDotExpression ide, string operation, bool postOperation)
+    {
+        m_operation = operation;
+        m_postOperation = postOperation;
+
+        kids.Add(ide);
+    }
+
+    public override string ToString()
+    {
+        return base.ToString() + "<" + (m_postOperation ? m_name + m_operation : m_operation + m_name) + ">";
+    }
+
+    public string Name
+    {
+        get { return m_name; }
+    }
+
+    public string Operation
+    {
+        get { return m_operation; }
+    }
+
+    public bool PostOperation
+    {
+        get { return m_postOperation; }
+    }
+}
+
+%right EQUALS STAR_EQUALS SLASH_EQUALS PERCENT_EQUALS PLUS_EQUALS MINUS_EQUALS
+%left AMP_AMP STROKE_STROKE
+%left STROKE
+%left CARET
+%left AMP
+%left EQUALS_EQUALS EXCLAMATION_EQUALS
+%left LEFT_ANGLE RIGHT_ANGLE LESS_EQUALS GREATER_EQUALS
+%left LEFT_SHIFT RIGHT_SHIFT
+%left PLUS MINUS
+%left STAR SLASH PERCENT
+%right EXCLAMATION TILDE INCREMENT DECREMENT
+%before MINUS
+%nonassoc INITIALIZER
+
+LSLProgramRoot
+    : GlobalDefinitions:gd States:s %LSLProgramRoot(gd, s)
+    | States:s %LSLProgramRoot(s)
+    ;
+
+GlobalDefinitions
+    : GlobalVariableDeclaration:gvd %GlobalDefinitions(gvd)
+    | GlobalDefinitions:gd GlobalVariableDeclaration:gvd %GlobalDefinitions(gd, gvd)
+    | GlobalFunctionDefinition:gfd %GlobalDefinitions(gfd)
+    | GlobalDefinitions:gd GlobalFunctionDefinition:gfd %GlobalDefinitions(gd, gfd)
+    ;
+
+GlobalVariableDeclaration
+    : Declaration:d SEMICOLON %GlobalVariableDeclaration(d)
+    | Declaration:d EQUALS:eq Expression:e SEMICOLON %GlobalVariableDeclaration(new Assignment(yyp, d, e, eq.yytext))
+    ;
+
+GlobalFunctionDefinition
+    : IDENT:id LEFT_PAREN ArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %GlobalFunctionDefinition("void", id.yytext, adl, cs)
+    | Typename:t IDENT:id LEFT_PAREN ArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %GlobalFunctionDefinition(t.yytext, id.yytext, adl, cs)
+    ;
+
+States
+    : State:st %States(st)
+    | States:s State:st %States(s, st)
+    ;
+
+State
+    : DEFAULT_STATE:st LEFT_BRACE StateBody:sb RIGHT_BRACE  %State(st.yytext, sb)
+    | STATE IDENT:id LEFT_BRACE StateBody:sb RIGHT_BRACE %State(id.yytext, sb)
+    ;
+
+StateBody
+    : StateEvent:se %StateBody(se)
+    | StateBody:sb StateEvent:se %StateBody(sb, se)
+    ;
+
+StateEvent
+    : Event:e LEFT_PAREN ArgumentDeclarationList:dal RIGHT_PAREN CompoundStatement:cs %StateEvent(e.yytext, dal, cs)
+    ;
+
+ArgumentDeclarationList
+    :
+    | Declaration:da %ArgumentDeclarationList(da)
+    | ArgumentDeclarationList:dal COMMA Declaration:da %ArgumentDeclarationList(dal, da)
+    ;
+
+Declaration
+    : Typename:t IDENT:id %Declaration(t.yytext, id.yytext)
+    ;
+
+CompoundStatement
+    : LEFT_BRACE RIGHT_BRACE %CompoundStatement()
+    | LEFT_BRACE StatementList:sl RIGHT_BRACE %CompoundStatement(sl)
+    ;
+
+StatementList
+    : Statement:s %StatementList(s)
+    | StatementList:sl Statement:s %StatementList(sl, s)
+    ;
+ 
+Statement
+    : SEMICOLON
+    | Declaration:d SEMICOLON %Statement(d)
+    | Assignment:a SEMICOLON %Statement(a)
+    | Expression:e SEMICOLON %Statement(e)
+    | ReturnStatement:rs SEMICOLON %Statement(rs)
+    | JumpLabel:jl SEMICOLON %Statement(jl)
+    | JumpStatement:js SEMICOLON %Statement(js)
+    | StateChange:sc SEMICOLON %Statement(sc)
+    | IfStatement:is %Statement(is)
+    | WhileStatement:ws %Statement(ws)
+    | DoWhileStatement:dws %Statement(dws)
+    | ForLoop:fl %Statement(fl)
+    | CompoundStatement:cs %Statement(cs)
+    ;
+
+JumpLabel
+    : AT IDENT:id %JumpLabel(id.yytext)
+    ;
+
+JumpStatement
+    : JUMP IDENT:id %JumpStatement(id.yytext)
+    ;
+
+StateChange
+    : STATE IDENT:id %StateChange(id.yytext)
+    | STATE DEFAULT_STATE:d %StateChange(d.yytext)
+    ;
+
+IfStatement
+    : IF LEFT_PAREN Expression:e RIGHT_PAREN Statement:ifs %IfStatement(e, ifs)
+    | IF LEFT_PAREN Expression:e RIGHT_PAREN Statement:ifs ELSE Statement:es %IfStatement(e, ifs, es)
+    ;
+
+WhileStatement
+    : WHILE LEFT_PAREN Expression:e RIGHT_PAREN Statement:ws %WhileStatement(e, ws)
+    ;
+
+DoWhileStatement
+    : DO Statement:s WHILE LEFT_PAREN Expression:e RIGHT_PAREN SEMICOLON %DoWhileStatement(e, s);
+
+ForLoop
+    : FOR LEFT_PAREN ForLoopStatement:flsa SEMICOLON Expression:e SEMICOLON ForLoopStatement:flsb RIGHT_PAREN Statement:fls %ForLoop(flsa, e, flsb, fls)
+    ;
+
+ForLoopStatement
+    : Expression:e %ForLoopStatement(e)
+    | Assignment:a %ForLoopStatement(a)
+    | ForLoopStatement:fls COMMA Expression:e %ForLoopStatement(fls, e)
+    | ForLoopStatement:fls COMMA Assignment:a %ForLoopStatement(fls, a)
+    ;
+
+Assignment
+    : Declaration:d EQUALS:eq Expression:e %Assignment(d, e, eq.yytext)
+    | IDENT:id EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
+    | IDENT:id PLUS_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
+    | IDENT:id MINUS_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
+    | IDENT:id STAR_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
+    | IDENT:id SLASH_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
+    | IDENT:id PERCENT_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PLUS_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m MINUS_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m STAR_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m SLASH_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PERCENT_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
+    | IDENT:id PLUS_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
+    | IDENT:id MINUS_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
+    | IDENT:id STAR_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
+    | IDENT:id SLASH_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
+    | IDENT:id PERCENT_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PLUS_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m MINUS_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m STAR_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m SLASH_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PERCENT_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    ;
+
+ReturnStatement
+    : RETURN Expression:e %ReturnStatement(e)
+    | RETURN %ReturnStatement()
+    ;
+
+Constant
+    : INTEGER_CONSTANT:ic %Constant("integer", ic.yytext)
+    | HEX_INTEGER_CONSTANT:hic %Constant("integer", hic.yytext)
+    | FLOAT_CONSTANT:fc %Constant("float", fc.yytext)
+    | STRING_CONSTANT:sc %Constant("string", sc.yytext)
+    | LEFT_BRACKET ArgumentList:al RIGHT_BRACKET %ListConstant(al) %prec INITIALIZER
+    | LEFT_ANGLE Expression:e1 COMMA Expression:e2 COMMA Expression:e3 RIGHT_ANGLE %VectorConstant(e1, e2, e3) %prec INITIALIZER
+    | LEFT_ANGLE Expression:e1 COMMA Expression:e2 COMMA Expression:e3 COMMA Expression:e4 RIGHT_ANGLE %RotationConstant(e1, e2, e3, e4) %prec INITIALIZER
+    ;
+
+// surely this can be refactored into something a bit more intelligent
+Expression
+    : Constant:c %ConstantExpression(c)
+    | IDENT:id %IdentExpression(id.yytext)
+    | IDENT:id PERIOD IDENT:m %IdentDotExpression(id.yytext, m.yytext)
+    | IDENT:id INCREMENT:ic %IncrementDecrementExpression(id.yytext, ic.yytext, true)
+    | IDENT:id DECREMENT:ic %IncrementDecrementExpression(id.yytext, ic.yytext, true)
+    | IDENT:id PERIOD IDENT:m INCREMENT:ic %IncrementDecrementExpression(new IdentDotExpression(yyp, id.yytext, m.yytext), ic.yytext, true)
+    | IDENT:id PERIOD IDENT:m DECREMENT:ic %IncrementDecrementExpression(new IdentDotExpression(yyp, id.yytext, m.yytext), ic.yytext, true)
+    | INCREMENT:ic IDENT:id %IncrementDecrementExpression(id.yytext, ic.yytext, false)
+    | DECREMENT:ic IDENT:id %IncrementDecrementExpression(id.yytext, ic.yytext, false)
+    | INCREMENT:ic IDENT:id PERIOD IDENT:m %IncrementDecrementExpression(new IdentDotExpression(yyp, id.yytext, m.yytext), ic.yytext, false)
+    | DECREMENT:ic IDENT:id PERIOD IDENT:m %IncrementDecrementExpression(new IdentDotExpression(yyp, id.yytext, m.yytext), ic.yytext, false)
+    | FunctionCall:fc %FunctionCallExpression(fc)
+    | Expression:ea PLUS:p Expression:eb %BinaryExpression(ea, eb, p.yytext)
+    | Expression:ea MINUS:m Expression:eb %BinaryExpression(ea, eb, m.yytext)
+    | Expression:ea STAR:s Expression:eb %BinaryExpression(ea, eb, s.yytext)
+    | Expression:ea SLASH:s Expression:eb %BinaryExpression(ea, eb, s.yytext)
+    | Expression:ea PERCENT:p Expression:eb %BinaryExpression(ea, eb, p.yytext)
+    | Expression:ea AMP:a Expression:eb %BinaryExpression(ea, eb, a.yytext)
+    | Expression:ea STROKE:s Expression:eb %BinaryExpression(ea, eb, s.yytext)
+    | Expression:ea CARET:c Expression:eb %BinaryExpression(ea, eb, c.yytext)
+    | Expression:ea RIGHT_ANGLE:ra Expression:eb %BinaryExpression(ea, eb, ra.yytext)
+    | Expression:ea LEFT_ANGLE:la Expression:eb %BinaryExpression(ea, eb, la.yytext)
+    | Expression:ea EQUALS_EQUALS:ee Expression:eb %BinaryExpression(ea, eb, ee.yytext)
+    | Expression:ea EXCLAMATION_EQUALS:ee Expression:eb %BinaryExpression(ea, eb, ee.yytext)
+    | Expression:ea LESS_EQUALS:le Expression:eb %BinaryExpression(ea, eb, le.yytext)
+    | Expression:ea GREATER_EQUALS:ge Expression:eb %BinaryExpression(ea, eb, ge.yytext)
+    | Expression:ea AMP_AMP:aa Expression:eb %BinaryExpression(ea, eb, aa.yytext)
+    | Expression:ea STROKE_STROKE:ss Expression:eb %BinaryExpression(ea, eb, ss.yytext)
+    | Expression:ea LEFT_SHIFT:ls Expression:eb %BinaryExpression(ea, eb, ls.yytext)
+    | Expression:ea RIGHT_SHIFT:rs Expression:eb %BinaryExpression(ea, eb, rs.yytext)
+    | EXCLAMATION:ex Expression:e %UnaryExpression(ex.yytext, e)
+    | MINUS:m Expression:e %UnaryExpression(m.yytext, e)
+    | TILDE:t Expression:e %UnaryExpression(t.yytext, e)
+    | LEFT_PAREN Expression:e RIGHT_PAREN %ParenthesisExpression(e)
+// typecasts
+    | LEFT_PAREN Typename:t RIGHT_PAREN Constant:c %TypecastExpression(t.yytext, c)
+    | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id %TypecastExpression(t.yytext, new IdentExpression(yyp, id.yytext))
+    | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id PERIOD IDENT:m %TypecastExpression(t.yytext, new IdentDotExpression(yyp, id.yytext, m.yytext))
+    | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id INCREMENT:ic %TypecastExpression(t.yytext, new IncrementDecrementExpression(yyp, id.yytext, ic.yytext, true))
+    | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id PERIOD IDENT:m INCREMENT:ic %TypecastExpression(t.yytext, new IncrementDecrementExpression(yyp, new IdentDotExpression(yyp, id.yytext, m.yytext), ic.yytext, true))
+    | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id DECREMENT:dc %TypecastExpression(t.yytext, new IncrementDecrementExpression(yyp, id.yytext, dc.yytext, true))
+    | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id PERIOD IDENT:m DECREMENT:dc %TypecastExpression(t.yytext, new IncrementDecrementExpression(yyp, new IdentDotExpression(yyp, id.yytext, m.yytext), dc.yytext, true))
+    | LEFT_PAREN Typename:t RIGHT_PAREN FunctionCall:fc %TypecastExpression(t.yytext, fc)
+    | LEFT_PAREN Typename:t RIGHT_PAREN LEFT_PAREN Expression:e RIGHT_PAREN %TypecastExpression(t.yytext, e)
+    ;
+
+FunctionCall
+    : IDENT:id LEFT_PAREN ArgumentList:al RIGHT_PAREN %FunctionCall(id.yytext, al)
+    ;
+
+ArgumentList
+    :
+    | Argument:a %ArgumentList(a)
+    | ArgumentList:al COMMA Argument:a %ArgumentList(al, a)
+    ;
+
+Argument
+    : Expression:e %ExpressionArgument(e)
+    ;
+
+Typename
+    : INTEGER_TYPE:t %Typename(t.yytext)
+    | FLOAT_TYPE:t %Typename(t.yytext)
+    | STRING_TYPE:t %Typename(t.yytext)
+    | KEY_TYPE:t %Typename(t.yytext)
+    | VECTOR_TYPE:t %Typename(t.yytext)
+    | ROTATION_TYPE:t %Typename(t.yytext)
+    | LIST_TYPE:t %Typename(t.yytext)
+    ;
+
+Event
+    : AT_ROT_TARGET_EVENT:e %Event(e.yytext)
+    | AT_TARGET_EVENT:e %Event(e.yytext)
+    | ATTACH_EVENT:e %Event(e.yytext)
+    | CHANGED_EVENT:e %Event(e.yytext)
+    | COLLISION_EVENT:e %Event(e.yytext)
+    | COLLISION_END_EVENT:e %Event(e.yytext)
+    | COLLISION_START_EVENT:e %Event(e.yytext)
+    | CONTROL_EVENT:e %Event(e.yytext)
+    | DATASERVER_EVENT:e %Event(e.yytext)
+    | EMAIL_EVENT:e %Event(e.yytext)
+    | HTTP_RESPONSE_EVENT:e %Event(e.yytext)
+    | LAND_COLLISION_EVENT:e %Event(e.yytext)
+    | LAND_COLLISION_END_EVENT:e %Event(e.yytext)
+    | LAND_COLLISION_START_EVENT:e %Event(e.yytext)
+    | LINK_MESSAGE_EVENT:e %Event(e.yytext)
+    | LISTEN_EVENT:e %Event(e.yytext)
+    | MONEY_EVENT:e %Event(e.yytext)
+    | MOVING_END_EVENT:e %Event(e.yytext)
+    | MOVING_START_EVENT:e %Event(e.yytext)
+    | NO_SENSOR_EVENT:e %Event(e.yytext)
+    | NOT_AT_ROT_TARGET_EVENT:e %Event(e.yytext)
+    | NOT_AT_TARGET_EVENT:e %Event(e.yytext)
+    | OBJECT_REZ_EVENT:e %Event(e.yytext)
+    | ON_REZ_EVENT:e %Event(e.yytext)
+    | REMOTE_DATA_EVENT:e %Event(e.yytext)
+    | RUN_TIME_PERMISSIONS_EVENT:e %Event(e.yytext)
+    | SENSOR_EVENT:e %Event(e.yytext)
+    | STATE_ENTRY_EVENT:e:e %Event(e.yytext)
+    | STATE_EXIT_EVENT:e %Event(e.yytext)
+    | TIMER_EVENT:e %Event(e.yytext)
+    | TOUCH_EVENT:e %Event(e.yytext)
+    | TOUCH_END_EVENT:e %Event(e.yytext)
+    | TOUCH_START_EVENT:e %Event(e.yytext)
+    ;

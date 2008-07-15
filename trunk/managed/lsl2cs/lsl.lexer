@@ -1,0 +1,124 @@
+%lexer LSLTokens 
+
+%namespace OpenSim.Region.ScriptEngine.Shared.CodeTools
+
+%declare{
+    public string str;
+}
+
+%token STRING_CONSTANT;
+
+// common symbols
+"++"                    %INCREMENT
+"--"                    %DECREMENT
+"+="                    %PLUS_EQUALS
+"-="                    %MINUS_EQUALS
+"*="                    %STAR_EQUALS
+"/="                    %SLASH_EQUALS
+"%="                    %PERCENT_EQUALS
+";"                     %SEMICOLON
+"{"                     %LEFT_BRACE
+"}"                     %RIGHT_BRACE
+","                     %COMMA
+"="                     %EQUALS
+"("                     %LEFT_PAREN
+")"                     %RIGHT_PAREN
+"+"                     %PLUS
+"-"                     %MINUS
+"*"                     %STAR
+"/"                     %SLASH
+"%"                     %PERCENT
+"@"                     %AT
+"."                     %PERIOD
+"<"                     %LEFT_ANGLE
+">"                     %RIGHT_ANGLE
+"["                     %LEFT_BRACKET
+"]"                     %RIGHT_BRACKET
+"=="                    %EQUALS_EQUALS
+"!="                    %EXCLAMATION_EQUALS
+"<="                    %LESS_EQUALS
+">="                    %GREATER_EQUALS
+"&"                     %AMP
+"|"                     %STROKE
+"^"                     %CARET
+"~"                     %TILDE
+"!"                     %EXCLAMATION
+"&&"                    %AMP_AMP
+"||"                    %STROKE_STROKE
+"<<"                    %LEFT_SHIFT
+">>"                    %RIGHT_SHIFT
+
+// keywords
+"if"                    %IF
+"else"                  %ELSE
+"do"                    %DO
+"while"                 %WHILE
+"for"                   %FOR
+"default"               %DEFAULT_STATE
+"state"                 %STATE
+"jump"                  %JUMP
+"return"                %RETURN
+
+// data types
+"integer"               %INTEGER_TYPE
+"float"                 %FLOAT_TYPE
+"string"                %STRING_TYPE
+"key"                   %KEY_TYPE
+"vector"                %VECTOR_TYPE
+"rotation"              %ROTATION_TYPE
+"list"                  %LIST_TYPE
+
+// events
+"at_rot_target"         %AT_ROT_TARGET_EVENT
+"at_target"             %AT_TARGET_EVENT
+"attach"                %ATTACH_EVENT
+"changed"               %CHANGED_EVENT
+"collision"             %COLLISION_EVENT
+"collision_end"         %COLLISION_END_EVENT
+"collision_start"       %COLLISION_START_EVENT
+"control"               %CONTROL_EVENT
+"dataserver"            %DATASERVER_EVENT
+"email"                 %EMAIL_EVENT
+"http_response"         %HTTP_RESPONSE_EVENT
+"land_collision"        %LAND_COLLISION_EVENT
+"land_collision_end"    %LAND_COLLISION_END_EVENT
+"land_collision_start"  %LAND_COLLISION_START_EVENT
+"link_message"          %LINK_MESSAGE_EVENT
+"listen"                %LISTEN_EVENT
+"money"                 %MONEY_EVENT
+"moving_end"            %MOVING_END_EVENT
+"moving_start"          %MOVING_START_EVENT
+"no_sensor"             %NO_SENSOR_EVENT
+"not_at_rot_target"     %NOT_AT_ROT_TARGET_EVENT
+"not_at_target"         %NOT_AT_TARGET_EVENT
+"object_rez"            %OBJECT_REZ_EVENT
+"on_rez"                %ON_REZ_EVENT
+"remote_data"           %REMOTE_DATA_EVENT
+"run_time_permissions"  %RUN_TIME_PERMISSIONS_EVENT
+"sensor"                %SENSOR_EVENT
+"state_entry"           %STATE_ENTRY_EVENT
+"state_exit"            %STATE_EXIT_EVENT
+"timer"                 %TIMER_EVENT
+"touch"                 %TOUCH_EVENT
+"touch_start"           %TOUCH_START_EVENT
+"touch_end"             %TOUCH_END_EVENT
+
+// others
+[a-zA-Z_][0-9a-zA-Z_]*  %IDENT
+[0-9]+                  %INTEGER_CONSTANT
+0[xX][0-9a-fA-F]+       %HEX_INTEGER_CONSTANT
+[0-9]*\.([0-9]+)?([eE][-+]?[0-9]+)?[fF]?       %FLOAT_CONSTANT
+
+// String parsing.
+\"                      { yybegin("STRING"); yyl.str = "";}
+<STRING>[^\\\n\"]       { yyl.str += yytext; }
+<STRING>\n              { yyl.str += "\\n"; }
+<STRING>\\n             { yyl.str += "\\n"; }
+<STRING>\\t             { yyl.str += "    "; }
+<STRING>\\\"            { yyl.str += "\\\""; }
+<STRING>\\\\            { yyl.str += "\\\\"; }
+<STRING>\\              { yyl.str += '\\'; }
+<STRING>\"              { yybegin("YYINITIAL"); yyl.yytext = yyl.str; yyl.str = String.Empty; return new STRING_CONSTANT(); }
+
+[ \t\r\n]   ;   // whitespace
+\/\/.*      ;   // single line comments
