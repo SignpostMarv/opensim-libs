@@ -10,25 +10,21 @@ public class ex
     private static int m_indent = 0;
 
     public static void Main(string[] argv) {
-        Parser p = new LSLSyntax();
         StreamReader s = new StreamReader(argv[0]);
-        SYMBOL ast = p.Parse(s);
-        if (ast!=null)
-        {
-            if (1 < argv.Length && "-t" == argv[1])
-            {
-                printThisTree(new LSL2CSCodeTransformer(ast).Transform());
-            }
-            else
-            {
-                LSL2CSCodeTransformer ct = new LSL2CSCodeTransformer(ast);
-                //CSCodeGenerator cscg = new CSCodeGenerator(ct.Transform(), Console.OpenStandardOutput());
-                CSCodeGenerator cscg = new CSCodeGenerator(ct.Transform());
-                //cscg.Generate();
-                Console.Write(cscg.Generate());
-            }
-        }
+        string source = s.ReadToEnd();
 
+        CSCodeGenerator cscg = new CSCodeGenerator();
+        string output = cscg.Convert(source);
+
+        if (1 < argv.Length && "-t" == argv[1])
+        {
+            Parser p = new LSLSyntax();
+            LSL2CSCodeTransformer codeTransformer = new LSL2CSCodeTransformer(p.Parse(source));
+            SYMBOL ast = codeTransformer.Transform();
+            printThisTree(ast);
+        }
+        else
+            Console.Write(output);
     }
 
     public static void printThisTree(SYMBOL ast)
