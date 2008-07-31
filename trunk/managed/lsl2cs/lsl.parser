@@ -345,7 +345,7 @@
 
 %symbol Assignment
 {
-    private string m_assignmentType;
+    protected string m_assignmentType;
 
     public Assignment(SYMBOL lhs, SYMBOL rhs, string assignmentType)
     {
@@ -359,6 +359,14 @@
             kids.Add(rhs);
     }
 
+    public Assignment(SimpleAssignment sa)
+    {
+        m_assignmentType = sa.AssignmentType;
+
+        while (0 < sa.kids.Count)
+            kids.Add(sa.kids.Pop());
+    }
+
     public string AssignmentType
     {
         get { return m_assignmentType; }
@@ -368,6 +376,22 @@
     {
         return base.ToString() + "<" + m_assignmentType + ">";
     }
+}
+
+%symbol SimpleAssignment : Assignment
+{
+    public SimpleAssignment(SYMBOL lhs, SYMBOL rhs, string assignmentType)
+    {
+        m_assignmentType = assignmentType;
+
+        kids.Add(lhs);
+        if (rhs is ConstantExpression)
+            while (0 < rhs.kids.Count)
+                kids.Add(rhs.kids.Pop());
+        else
+            kids.Add(rhs);
+    }
+
 }
 
 %symbol ReturnStatement
@@ -453,15 +477,15 @@
             kids.Add(s);
     }
 
-    public IfStatement(Expression e, Statement ifs)
+    public IfStatement(SYMBOL s, Statement ifs)
     {
-        kids.Add(e);
+        kids.Add(s);
         AddStatement(ifs);
     }
 
-    public IfStatement(Expression e, Statement ifs, Statement es)
+    public IfStatement(SYMBOL s, Statement ifs, Statement es)
     {
-        kids.Add(e);
+        kids.Add(s);
 
         AddStatement(ifs);
 
@@ -474,27 +498,27 @@
 
 %symbol WhileStatement
 {
-    public WhileStatement(Expression e, Statement s)
+    public WhileStatement(SYMBOL s, Statement st)
     {
-        kids.Add(e);
+        kids.Add(s);
 
-        if (0 < s.kids.Count && s.kids.Top is CompoundStatement)
-            kids.Add(s.kids.Pop());
+        if (0 < st.kids.Count && st.kids.Top is CompoundStatement)
+            kids.Add(st.kids.Pop());
         else
-            kids.Add(s);
+            kids.Add(st);
     }
 }
 
 %symbol DoWhileStatement
 {
-    public DoWhileStatement(Expression e, Statement s)
+    public DoWhileStatement(SYMBOL s, Statement st)
     {
-        if (0 < s.kids.Count && s.kids.Top is CompoundStatement)
-            kids.Add(s.kids.Pop());
+        if (0 < st.kids.Count && st.kids.Top is CompoundStatement)
+            kids.Add(st.kids.Pop());
         else
-            kids.Add(s);
+            kids.Add(st);
 
-        kids.Add(e);
+        kids.Add(s);
     }
 }
 
@@ -520,9 +544,9 @@
         kids.Add(e);
     }
 
-    public ForLoopStatement(Assignment a)
+    public ForLoopStatement(SimpleAssignment sa)
     {
-        kids.Add(a);
+        kids.Add(sa);
     }
 
     public ForLoopStatement(ForLoopStatement fls, Expression e)
@@ -533,12 +557,12 @@
         kids.Add(e);
     }
 
-    public ForLoopStatement(ForLoopStatement fls, Assignment a)
+    public ForLoopStatement(ForLoopStatement fls, SimpleAssignment sa)
     {
         while (0 < fls.kids.Count)
             kids.Add(fls.kids.Pop());
 
-        kids.Add(a);
+        kids.Add(sa);
     }
 }
 
@@ -949,14 +973,19 @@ StateChange
 IfStatement
     : IF LEFT_PAREN Expression:e RIGHT_PAREN Statement:ifs %IfStatement(e, ifs)
     | IF LEFT_PAREN Expression:e RIGHT_PAREN Statement:ifs ELSE Statement:es %IfStatement(e, ifs, es)
+    | IF LEFT_PAREN SimpleAssignment:sa RIGHT_PAREN Statement:ifs %IfStatement(sa, ifs)
+    | IF LEFT_PAREN SimpleAssignment:sa RIGHT_PAREN Statement:ifs ELSE Statement:es %IfStatement(sa, ifs, es)
     ;
 
 WhileStatement
     : WHILE LEFT_PAREN Expression:e RIGHT_PAREN Statement:ws %WhileStatement(e, ws)
+    | WHILE LEFT_PAREN SimpleAssignment:sa RIGHT_PAREN Statement:ws %WhileStatement(sa, ws)
     ;
 
 DoWhileStatement
-    : DO Statement:s WHILE LEFT_PAREN Expression:e RIGHT_PAREN SEMICOLON %DoWhileStatement(e, s);
+    : DO Statement:s WHILE LEFT_PAREN Expression:e RIGHT_PAREN SEMICOLON %DoWhileStatement(e, s)
+    | DO Statement:s WHILE LEFT_PAREN SimpleAssignment:sa RIGHT_PAREN SEMICOLON %DoWhileStatement(sa, s)
+    ;
 
 ForLoop
     : FOR LEFT_PAREN ForLoopStatement:flsa SEMICOLON Expression:e SEMICOLON ForLoopStatement:flsb RIGHT_PAREN Statement:fls %ForLoop(flsa, e, flsb, fls)
@@ -964,37 +993,41 @@ ForLoop
 
 ForLoopStatement
     : Expression:e %ForLoopStatement(e)
-    | Assignment:a %ForLoopStatement(a)
+    | SimpleAssignment:sa %ForLoopStatement(sa)
     | ForLoopStatement:fls COMMA Expression:e %ForLoopStatement(fls, e)
-    | ForLoopStatement:fls COMMA Assignment:a %ForLoopStatement(fls, a)
+    | ForLoopStatement:fls COMMA SimpleAssignment:sa %ForLoopStatement(fls, sa)
     ;
 
 Assignment
     : Declaration:d EQUALS:eq Expression:e %Assignment(d, e, eq.yytext)
-    | IDENT:id EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
-    | IDENT:id PLUS_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
-    | IDENT:id MINUS_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
-    | IDENT:id STAR_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
-    | IDENT:id SLASH_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
-    | IDENT:id PERCENT_EQUALS:eq Expression:e %Assignment(id, e, eq.yytext)
-    | IDENT:id PERIOD IDENT:m EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
-    | IDENT:id PERIOD IDENT:m PLUS_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
-    | IDENT:id PERIOD IDENT:m MINUS_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
-    | IDENT:id PERIOD IDENT:m STAR_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
-    | IDENT:id PERIOD IDENT:m SLASH_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
-    | IDENT:id PERIOD IDENT:m PERCENT_EQUALS:eq Expression:e %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
-    | IDENT:id EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
-    | IDENT:id PLUS_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
-    | IDENT:id MINUS_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
-    | IDENT:id STAR_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
-    | IDENT:id SLASH_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
-    | IDENT:id PERCENT_EQUALS:eq Assignment:a %Assignment(id, a, eq.yytext)
-    | IDENT:id PERIOD IDENT:m EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
-    | IDENT:id PERIOD IDENT:m PLUS_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
-    | IDENT:id PERIOD IDENT:m MINUS_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
-    | IDENT:id PERIOD IDENT:m STAR_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
-    | IDENT:id PERIOD IDENT:m SLASH_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
-    | IDENT:id PERIOD IDENT:m PERCENT_EQUALS:eq Assignment:a %Assignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | SimpleAssignment:sa %Assignment(sa)
+    ;
+
+SimpleAssignment
+    : IDENT:id EQUALS:eq Expression:e %SimpleAssignment(id, e, eq.yytext)
+    | IDENT:id PLUS_EQUALS:eq Expression:e %SimpleAssignment(id, e, eq.yytext)
+    | IDENT:id MINUS_EQUALS:eq Expression:e %SimpleAssignment(id, e, eq.yytext)
+    | IDENT:id STAR_EQUALS:eq Expression:e %SimpleAssignment(id, e, eq.yytext)
+    | IDENT:id SLASH_EQUALS:eq Expression:e %SimpleAssignment(id, e, eq.yytext)
+    | IDENT:id PERCENT_EQUALS:eq Expression:e %SimpleAssignment(id, e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m EQUALS:eq Expression:e %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PLUS_EQUALS:eq Expression:e %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m MINUS_EQUALS:eq Expression:e %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m STAR_EQUALS:eq Expression:e %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m SLASH_EQUALS:eq Expression:e %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PERCENT_EQUALS:eq Expression:e %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), e, eq.yytext)
+    | IDENT:id EQUALS:eq SimpleAssignment:a %SimpleAssignment(id, a, eq.yytext)
+    | IDENT:id PLUS_EQUALS:eq SimpleAssignment:a %SimpleAssignment(id, a, eq.yytext)
+    | IDENT:id MINUS_EQUALS:eq SimpleAssignment:a %SimpleAssignment(id, a, eq.yytext)
+    | IDENT:id STAR_EQUALS:eq SimpleAssignment:a %SimpleAssignment(id, a, eq.yytext)
+    | IDENT:id SLASH_EQUALS:eq SimpleAssignment:a %SimpleAssignment(id, a, eq.yytext)
+    | IDENT:id PERCENT_EQUALS:eq SimpleAssignment:a %SimpleAssignment(id, a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m EQUALS:eq SimpleAssignment:a %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PLUS_EQUALS:eq SimpleAssignment:a %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m MINUS_EQUALS:eq SimpleAssignment:a %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m STAR_EQUALS:eq SimpleAssignment:a %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m SLASH_EQUALS:eq SimpleAssignment:a %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
+    | IDENT:id PERIOD IDENT:m PERCENT_EQUALS:eq SimpleAssignment:a %SimpleAssignment(new IdentDotExpression(yyp, id.yytext, m.yytext), a, eq.yytext)
     ;
 
 ReturnStatement
