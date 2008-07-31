@@ -818,9 +818,9 @@
 
 %node ParenthesisExpression : Expression
 {
-    public ParenthesisExpression(Expression e)
+    public ParenthesisExpression(SYMBOL s)
     {
-        kids.Add(e);
+        kids.Add(s);
     }
 }
 
@@ -1081,6 +1081,7 @@ Expression
     | MINUS:m Expression:e %UnaryExpression(m.yytext, e)
     | TILDE:t Expression:e %UnaryExpression(t.yytext, e)
     | LEFT_PAREN Expression:e RIGHT_PAREN %ParenthesisExpression(e)
+    | LEFT_PAREN SimpleAssignment:sa RIGHT_PAREN %ParenthesisExpression(sa)
 // typecasts
     | LEFT_PAREN Typename:t RIGHT_PAREN Constant:c %TypecastExpression(t.yytext, c)
     | LEFT_PAREN Typename:t RIGHT_PAREN IDENT:id %TypecastExpression(t.yytext, new IdentExpression(yyp, id.yytext))
