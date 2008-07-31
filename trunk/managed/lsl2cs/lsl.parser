@@ -447,7 +447,7 @@
 {
     private void AddStatement(Statement s)
     {
-        if (s.kids.Top is CompoundStatement)
+        if (0 < s.kids.Count && s.kids.Top is CompoundStatement)
             kids.Add(s.kids.Pop());
         else
             kids.Add(s);
@@ -465,7 +465,7 @@
 
         AddStatement(ifs);
 
-        if (es.kids.Top is IfStatement)
+        if (0 < es.kids.Count && es.kids.Top is IfStatement)
             kids.Add(es.kids.Pop());
         else
             AddStatement(es);
@@ -478,7 +478,7 @@
     {
         kids.Add(e);
 
-        if (s.kids.Top is CompoundStatement)
+        if (0 < s.kids.Count && s.kids.Top is CompoundStatement)
             kids.Add(s.kids.Pop());
         else
             kids.Add(s);
@@ -489,7 +489,7 @@
 {
     public DoWhileStatement(Expression e, Statement s)
     {
-        if (s.kids.Top is CompoundStatement)
+        if (0 < s.kids.Count && s.kids.Top is CompoundStatement)
             kids.Add(s.kids.Pop());
         else
             kids.Add(s);
@@ -506,7 +506,7 @@
         kids.Add(e);
         kids.Add(flsb);
 
-        if (s.kids.Top is CompoundStatement)
+        if (0 < s.kids.Count && s.kids.Top is CompoundStatement)
             kids.Add(s.kids.Pop());
         else
             kids.Add(s);
