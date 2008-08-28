@@ -19887,17 +19887,17 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i <= (bytes.Length - 1))
-            {
-                int count = (int)bytes[i++];
-                if (SurfaceInfo.Length < count)
-                {
-                    SurfaceInfo = new SurfaceInfoBlock[count];
-                    for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
-                }
-                for (int j = 0; j < count; j++)
-                { SurfaceInfo[j].FromBytes(bytes, ref i); }
-            }
+            //if (i <= (bytes.Length - 65))
+            //{
+            //    int count = (int)bytes[i++];
+            //    if (SurfaceInfo.Length < count)
+            //    {
+            //        SurfaceInfo = new SurfaceInfoBlock[count];
+            //        for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
+            //    }
+            //    for (int j = 0; j < count; j++)
+            //    { SurfaceInfo[j].FromBytes(bytes, ref i); }
+            //}
         }
 
         public ObjectGrabPacket(Header head, byte[] bytes, ref int i): this()
@@ -19916,17 +19916,17 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i <= (bytes.Length - 1))
-            {
-                int count = (int)bytes[i++];
-                if (SurfaceInfo.Length < count)
-                {
-                    SurfaceInfo = new SurfaceInfoBlock[count];
-                    for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
-                }
-                for (int j = 0; j < count; j++)
-                { SurfaceInfo[j].FromBytes(bytes, ref i); }
-            }
+            //if (i <= (bytes.Length - 65))
+            //{
+            //    int count = (int)bytes[i++];
+            //    if (SurfaceInfo.Length < count)
+            //    {
+            //        SurfaceInfo = new SurfaceInfoBlock[count];
+            //        for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
+            //    }
+            //    for (int j = 0; j < count; j++)
+            //    { SurfaceInfo[j].FromBytes(bytes, ref i); }
+            //}
         }
 
         public override byte[] ToBytes()
@@ -20175,17 +20175,17 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i <= (bytes.Length - 1))
-            {
-                int count = (int)bytes[i++];
-                if (SurfaceInfo.Length < count)
-                {
-                    SurfaceInfo = new SurfaceInfoBlock[count];
-                    for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
-                }
-                for (int j = 0; j < count; j++)
-                { SurfaceInfo[j].FromBytes(bytes, ref i); }
-            }
+            //if (i <= (bytes.Length - 65))
+            //{
+            //    int count = (int)bytes[i++];
+            //    if (SurfaceInfo.Length < count)
+            //    {
+            //        SurfaceInfo = new SurfaceInfoBlock[count];
+            //        for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
+            //    }
+            //    for (int j = 0; j < count; j++)
+            //    { SurfaceInfo[j].FromBytes(bytes, ref i); }
+            //}
         }
 
         public ObjectGrabUpdatePacket(Header head, byte[] bytes, ref int i): this()
@@ -20204,17 +20204,17 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i <= (bytes.Length - 1))
-            {
-                int count = (int)bytes[i++];
-                if (SurfaceInfo.Length < count)
-                {
-                    SurfaceInfo = new SurfaceInfoBlock[count];
-                    for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
-                }
-                for (int j = 0; j < count; j++)
-                { SurfaceInfo[j].FromBytes(bytes, ref i); }
-            }
+            //if (i <= (bytes.Length - 65))
+            //{
+            //    int count = (int)bytes[i++];
+            //    if (SurfaceInfo.Length < count)
+            //    {
+            //        SurfaceInfo = new SurfaceInfoBlock[count];
+            //        for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
+            //    }
+            //    for (int j = 0; j < count; j++)
+            //    { SurfaceInfo[j].FromBytes(bytes, ref i); }
+            //}
         }
 
         public override byte[] ToBytes()
@@ -20450,17 +20450,17 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i <= (bytes.Length - 1))
-            {
-                int count = (int)bytes[i++];
-                if (SurfaceInfo.Length < count)
-                {
-                    SurfaceInfo = new SurfaceInfoBlock[count];
-                    for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
-                }
-                for (int j = 0; j < count; j++)
-                { SurfaceInfo[j].FromBytes(bytes, ref i); }
-            }
+            //if (i <= (bytes.Length - 65))
+            //{
+            //    int count = (int)bytes[i++];
+            //    if (SurfaceInfo.Length < count)
+            //    {
+            //        SurfaceInfo = new SurfaceInfoBlock[count];
+            //        for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
+            //    }
+            //    for (int j = 0; j < count; j++)
+            //    { SurfaceInfo[j].FromBytes(bytes, ref i); }
+            //}
         }
 
         public ObjectDeGrabPacket(Header head, byte[] bytes, ref int i): this()
@@ -20479,17 +20479,17 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i <= (bytes.Length - 1))
-            {
-                int count = (int)bytes[i++];
-                if (SurfaceInfo.Length < count)
-                {
-                    SurfaceInfo = new SurfaceInfoBlock[count];
-                    for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
-                }
-                for (int j = 0; j < count; j++)
-                { SurfaceInfo[j].FromBytes(bytes, ref i); }
-            }
+            //if (i <= (bytes.Length - 65))
+            //{
+            //    int count = (int)bytes[i++];
+            //    if (SurfaceInfo.Length < count)
+            //    {
+            //        SurfaceInfo = new SurfaceInfoBlock[count];
+            //        for (int j = 0; j < count; j++) SurfaceInfo[j] = new SurfaceInfoBlock();
+            //    }
+            //    for (int j = 0; j < count; j++)
+            //    { SurfaceInfo[j].FromBytes(bytes, ref i); }
+            //}
         }
 
         public override byte[] ToBytes()
@@ -79651,7 +79651,7 @@ namespace libsecondlife.Packets
                 set
                 {
                     if (value == null) { _data = null; return; }
-                    if (value.Length > 1100) { throw new OverflowException("Value exceeds 1100 characters"); }
+                    if (value.Length > 1500) { throw new OverflowException("Value exceeds 1500 characters"); }
                     else { _data = new byte[value.Length]; Buffer.BlockCopy(value, 0, _data, 0, value.Length); }
                 }
             }
