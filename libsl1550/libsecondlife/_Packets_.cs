@@ -19887,7 +19887,7 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i > (bytes.Length - 1))
+            if (i <= (bytes.Length - 1))
             {
                 int count = (int)bytes[i++];
                 if (SurfaceInfo.Length < count)
@@ -19916,7 +19916,7 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i > (bytes.Length - 1))
+            if (i <= (bytes.Length - 1))
             {
                 int count = (int)bytes[i++];
                 if (SurfaceInfo.Length < count)
@@ -20175,7 +20175,7 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i > (bytes.Length - 1))
+            if (i <= (bytes.Length - 1))
             {
                 int count = (int)bytes[i++];
                 if (SurfaceInfo.Length < count)
@@ -20204,7 +20204,7 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i > (bytes.Length - 1))
+            if (i <= (bytes.Length - 1))
             {
                 int count = (int)bytes[i++];
                 if (SurfaceInfo.Length < count)
@@ -20450,7 +20450,7 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i > (bytes.Length - 1))
+            if (i <= (bytes.Length - 1))
             {
                 int count = (int)bytes[i++];
                 if (SurfaceInfo.Length < count)
@@ -20479,7 +20479,7 @@ namespace libsecondlife.Packets
             }
             AgentData.FromBytes(bytes, ref i);
             ObjectData.FromBytes(bytes, ref i);
-            if (i > (bytes.Length - 1))
+            if (i <= (bytes.Length - 1))
             {
                 int count = (int)bytes[i++];
                 if (SurfaceInfo.Length < count)
