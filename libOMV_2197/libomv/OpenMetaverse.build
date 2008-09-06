@@ -1,0 +1,161 @@
+<?xml version="1.0" ?>
+<project name="OpenMetaverse" default="build">
+    <echo message="Using '${nant.settings.currentframework}' Framework"/>
+
+    <property name="bin.dir" value="bin" />
+    <property name="obj.dir" value="obj" />
+    <property name="doc.dir" value="doc" />
+    <property name="project.main.dir" value="${project::get-base-directory()}" />
+
+    <target name="Debug" description="">
+        <property name="project.config" value="Debug" />
+        <property name="build.debug" value="true" />
+    </target>
+
+    <property name="project.config" value="Release" />
+
+    <target name="Release" description="">
+        <property name="project.config" value="Release" />
+        <property name="build.debug" value="false" />
+    </target>
+
+    <target name="net-1.1" description="Sets framework to .NET 1.1">
+        <property name="nant.settings.currentframework" value="net-1.1" />
+    </target>
+
+    <target name="net-2.0" description="Sets framework to .NET 2.0">
+        <property name="nant.settings.currentframework" value="net-2.0" />
+    </target>
+
+    <target name="mono-2.0" description="Sets framework to mono 2.0">
+        <property name="nant.settings.currentframework" value="mono-2.0" />
+    </target>
+
+    <target name="mono-1.0" description="Sets framework to mono 1.0">
+        <property name="nant.settings.currentframework" value="mono-1.0" />
+    </target>
+
+    <target name="init" description="">
+        <call target="${project.config}" />
+        <property name="sys.os.platform"
+                  value="${platform::get-name()}"
+                  />
+        <echo message="Platform ${sys.os.platform}" />
+        <property name="build.dir" value="${project::get-base-directory()}/${bin.dir}" />
+    </target>
+
+    <target name="clean" description="">
+        <echo message="Deleting all builds from all configurations" />
+        <delete failonerror="false">
+            <fileset basedir="${bin.dir}">
+                <include name="*" />
+                <exclude name="Tao.OpenGl.dll" />
+                <exclude name="GlacialList.dll" />
+                <exclude name="libopenjpeg-dotnet-2.1.3.0-x86_64.so" />
+                <exclude name="nunit.framework.dll" />
+                <exclude name="ICSharpCode.SharpZipLib.dll" />
+                <exclude name="Tao.OpenGl.dll.config" />
+                <exclude name="openjpeg-libsl.dll" />
+                <exclude name="Prebuild.exe" />
+                <exclude name="libopenjpeg-dotnet-2.1.3.0.so" />
+                <exclude name="log4net.dll" />
+                <exclude name="libopenjpeg-dotnet-2.1.3.0.dylib" />
+                <exclude name="Tao.Platform.Windows.dll" />
+                <exclude name="SLImageUpload.exe.config" />
+                <exclude name="OpenMetaverse.dll.config" />
+                <exclude name="openjpeg-dotnet.dll" />
+                <exclude name=".svn" />
+            </fileset>
+        </delete>
+        <delete dir="${obj.dir}" failonerror="false" />
+        <nant buildfile="../libomv/OpenMetaverse.GUI/OpenMetaverse.GUI.dll.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/GridAccountant/GridAccountant.exe.build" target="clean" />
+        <nant buildfile="../libomv/OpenMetaverse/Types/OpenMetaverseTypes.dll.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/groupmanager/groupmanager.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/Dashboard/Dashboard.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/Baker/Baker.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/VoiceTest/VoiceTest.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/GridProxy/GridProxy.dll.build" target="clean" />
+        <nant buildfile="../libomv/Programs/importprimscript/importprimscript.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/GridImageUpload/GridImageUpload.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/GUITestClient/GUITestClient.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/mapgenerator/mapgenerator.exe.build" target="clean" />
+        <nant buildfile="../libomv/OpenMetaverse.Utilities/OpenMetaverse.Utilities.dll.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/Heightmap/Heightmap.exe.build" target="clean" />
+        <nant buildfile="../libomv/OpenMetaverse/OpenMetaverse.dll.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/PacketDump/PacketDump.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/VisualParamGenerator/VisualParamGenerator.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/Simian/Simian.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/AvatarPreview/AvatarPreview.exe.build" target="clean" />
+        <nant buildfile="../libomv/OpenMetaverse.Rendering.Simple/OpenMetaverse.Rendering.Simple.dll.build" target="clean" />
+        <nant buildfile="../libomv/OpenMetaverse.Tests/OpenMetaverse.Tests.dll.build" target="clean" />
+        <nant buildfile="../libomv/Programs/examples/TestClient/TestClient.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/SecondGlance/SecondGlance.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/GridProxy/GridProxyApp.exe.build" target="clean" />
+        <nant buildfile="../libomv/Programs/PrimWorkshop/PrimWorkshop.exe.build" target="clean" />
+    </target>
+
+    <target name="build" depends="init" description="">
+        <nant buildfile="../libomv/OpenMetaverse/Types/OpenMetaverseTypes.dll.build" target="build" />
+        <nant buildfile="../libomv/OpenMetaverse/OpenMetaverse.dll.build" target="build" />
+        <nant buildfile="../libomv/OpenMetaverse.Utilities/OpenMetaverse.Utilities.dll.build" target="build" />
+        <nant buildfile="../libomv/OpenMetaverse.Tests/OpenMetaverse.Tests.dll.build" target="build" />
+        <nant buildfile="../libomv/Programs/GridProxy/GridProxy.dll.build" target="build" />
+        <nant buildfile="../libomv/OpenMetaverse.Rendering.Simple/OpenMetaverse.Rendering.Simple.dll.build" target="build" />
+        <nant buildfile="../libomv/OpenMetaverse.GUI/OpenMetaverse.GUI.dll.build" target="build" />
+        <nant buildfile="../libomv/Programs/AvatarPreview/AvatarPreview.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/Baker/Baker.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/importprimscript/importprimscript.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/mapgenerator/mapgenerator.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/Dashboard/Dashboard.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/PrimWorkshop/PrimWorkshop.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/SecondGlance/SecondGlance.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/GridImageUpload/GridImageUpload.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/GridProxy/GridProxyApp.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/VisualParamGenerator/VisualParamGenerator.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/VoiceTest/VoiceTest.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/groupmanager/groupmanager.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/GUITestClient/GUITestClient.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/Heightmap/Heightmap.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/GridAccountant/GridAccountant.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/PacketDump/PacketDump.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/examples/TestClient/TestClient.exe.build" target="build" />
+        <nant buildfile="../libomv/Programs/Simian/Simian.exe.build" target="build" />
+    </target>
+
+    <target name="build-release" depends="Release, init, build" description="Builds in Release mode" />
+
+    <target name="build-debug" depends="Debug, init, build" description="Builds in Debug mode" />
+
+    <target name="package" depends="clean, doc" description="Builds all" />
+
+    <target name="doc" depends="build-release">
+        <echo message="Generating all documentation from all builds" />
+        <nant buildfile="../libomv/OpenMetaverse.GUI/OpenMetaverse.GUI.dll.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/GridAccountant/GridAccountant.exe.build" target="doc" />
+        <nant buildfile="../libomv/OpenMetaverse/Types/OpenMetaverseTypes.dll.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/groupmanager/groupmanager.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/Dashboard/Dashboard.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/Baker/Baker.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/VoiceTest/VoiceTest.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/GridProxy/GridProxy.dll.build" target="doc" />
+        <nant buildfile="../libomv/Programs/importprimscript/importprimscript.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/GridImageUpload/GridImageUpload.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/GUITestClient/GUITestClient.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/mapgenerator/mapgenerator.exe.build" target="doc" />
+        <nant buildfile="../libomv/OpenMetaverse.Utilities/OpenMetaverse.Utilities.dll.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/Heightmap/Heightmap.exe.build" target="doc" />
+        <nant buildfile="../libomv/OpenMetaverse/OpenMetaverse.dll.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/PacketDump/PacketDump.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/VisualParamGenerator/VisualParamGenerator.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/Simian/Simian.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/AvatarPreview/AvatarPreview.exe.build" target="doc" />
+        <nant buildfile="../libomv/OpenMetaverse.Rendering.Simple/OpenMetaverse.Rendering.Simple.dll.build" target="doc" />
+        <nant buildfile="../libomv/OpenMetaverse.Tests/OpenMetaverse.Tests.dll.build" target="doc" />
+        <nant buildfile="../libomv/Programs/examples/TestClient/TestClient.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/SecondGlance/SecondGlance.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/GridProxy/GridProxyApp.exe.build" target="doc" />
+        <nant buildfile="../libomv/Programs/PrimWorkshop/PrimWorkshop.exe.build" target="doc" />
+    </target>
+
+</project>
