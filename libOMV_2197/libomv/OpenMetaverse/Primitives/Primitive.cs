@@ -59,6 +59,8 @@ namespace OpenMetaverse
     [Flags]
     public enum PrimFlags : uint
     {
+	/// <summary>Depreciated</summary
+	None = 0,
         /// <summary>Whether physics are enabled for this object</summary>
         Physics = 0x00000001,
         /// <summary></summary>
