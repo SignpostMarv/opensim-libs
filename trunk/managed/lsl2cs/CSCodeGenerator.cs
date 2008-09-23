@@ -32,7 +32,7 @@ using Tools;
 
 namespace OpenSim.Region.ScriptEngine.Shared.CodeTools
 {
-    public class CSCodeGenerator// : ICodeConverter
+    public class CSCodeGenerator // : ICodeConverter
     {
         private SYMBOL m_astRoot = null;
         private Dictionary<KeyValuePair<int, int>, KeyValuePair<int, int>> m_positionMap;
@@ -95,29 +95,29 @@ namespace OpenSim.Region.ScriptEngine.Shared.CodeTools
             string retstr = String.Empty;
 
             // standard preamble
-            retstr = GenerateLine("using OpenSim.Region.ScriptEngine.Common;");
-            retstr += GenerateLine("using System.Collections.Generic;");
-            retstr += GenerateLine("");
-            retstr += GenerateLine("namespace SecondLife");
-            retstr += GenerateLine("{");
+            //retstr = GenerateLine("using OpenSim.Region.ScriptEngine.Common;");
+            //retstr += GenerateLine("using System.Collections.Generic;");
+            //retstr += GenerateLine("");
+            //retstr += GenerateLine("namespace SecondLife");
+            //retstr += GenerateLine("{");
             m_braceCount++;
-            retstr += GenerateIndentedLine("public class Script : OpenSim.Region.ScriptEngine.Common");
-            retstr += GenerateIndentedLine("{");
+            //retstr += GenerateIndentedLine("public class Script : OpenSim.Region.ScriptEngine.Common");
+            //retstr += GenerateIndentedLine("{");
             m_braceCount++;
 
             // line number
             m_CSharpLine += 3;
 
             // here's the payload
-            //retstr += GenerateLine();
+            retstr += GenerateLine();
             foreach (SYMBOL s in m_astRoot.kids)
                 retstr += GenerateNode(s);
 
             // close braces!
             m_braceCount--;
-            retstr += GenerateIndentedLine("}");
+            //retstr += GenerateIndentedLine("}");
             m_braceCount--;
-            retstr += GenerateLine("}");
+            //retstr += GenerateLine("}");
 
             return retstr;
         }
@@ -728,14 +728,18 @@ namespace OpenSim.Region.ScriptEngine.Shared.CodeTools
                 int dotIndex = c.Value.IndexOf('.') + 1;
                 if (0 < dotIndex && (dotIndex == c.Value.Length || !Char.IsDigit(c.Value[dotIndex])))
                     c.Value = c.Value.Insert(dotIndex, "0");
+                c.Value = "new LSL_Types.LSLFloat("+c.Value+")";
+            }
+            else if("LSL_Types.LSLInteger" == c.Type)
+            {
+                c.Value = "new LSL_Types.LSLInteger("+c.Value+")";
+            }
+            else if("LSL_Types.LSLString" == c.Type)
+            {
+                c.Value = "new LSL_Types.LSLString(\""+c.Value+"\")";
             }
 
-            // need to quote strings
-            if ("LSL_Types.LSLString" == c.Type)
-                retstr += Generate("\"");
             retstr += Generate(c.Value, c);
-            if ("LSL_Types.LSLString" == c.Type)
-                retstr += Generate("\"");
 
             return retstr;
         }
