@@ -100,6 +100,44 @@ namespace OpenMetaverse
 
             return layer;
         }
+        /// <summary>
+        /// Creates a LayerData packet for compressed land data given a full
+        /// simulator heightmap and an array of indices of patches to compress
+        /// </summary>
+        /// <param name="heightmap">A 256 * 256 array of floating point values
+        /// specifying the height at each meter in the simulator</param>
+        /// <param name="patches">Array of indexes in the 16x16 grid of patches
+        /// for this simulator. For example if 1 and 17 are specified, patches
+        /// x=1,y=0 and x=1,y=1 are sent</param>
+        /// <returns></returns>
+        public static LayerDataPacket CreateWindPacket(float[] heightmap, int[] patches)
+        {
+            LayerDataPacket layer = new LayerDataPacket();
+            layer.LayerID.Type = (byte)TerrainPatch.LayerType.Wind;
+
+            TerrainPatch.GroupHeader header = new TerrainPatch.GroupHeader();
+            header.Stride = STRIDE;
+            header.PatchSize = 16;
+            header.Type = TerrainPatch.LayerType.Wind;
+
+            byte[] data = new byte[1536];
+            BitPack bitpack = new BitPack(data, 0);
+            bitpack.PackBits(header.Stride, 16);
+            bitpack.PackBits(header.PatchSize, 8);
+            bitpack.PackBits((int)header.Type, 8);
+
+            for (int i = 0; i < patches.Length; i++)
+            {
+                CreatePatch(bitpack, heightmap, patches[i] % 16, (patches[i] - (patches[i] % 16)) / 16);
+            }
+
+            bitpack.PackBits(END_OF_PATCHES, 8);
+
+            layer.LayerData.Data = new byte[bitpack.BytePos + 1];
+            Buffer.BlockCopy(bitpack.Data, 0, layer.LayerData.Data, 0, bitpack.BytePos + 1);
+
+            return layer;
+        }
 
         /// <summary>
         /// Add a patch of terrain to a BitPacker
