@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using HttpServer.Rendering;
@@ -22,7 +20,7 @@ namespace HttpServer.Test.Renderers
 
         public void Test1()
         {
-            Assert.AreEqual("<head><title>MyTitle</title></head>", _mgr.Render("hamlsamples/test1.haml"));
+            Assert.AreEqual("<head><title>MyTitle</title></head>", _mgr.Render("hamlsamples/test1.haml", new TemplateArguments()));
         }
 
         public void Test2()
@@ -35,7 +33,7 @@ namespace HttpServer.Test.Renderers
 	</head>
 </html>
 ";
-            string text = _mgr.Render("hamlsamples/test2.haml");
+            string text = _mgr.Render("hamlsamples/test2.haml", new TemplateArguments());
             Assert.AreEqual(realText, text);
         }
 
@@ -57,17 +55,51 @@ namespace HttpServer.Test.Renderers
         }
         public void Test3()
         {
-            string text = _mgr.Render("hamlsamples/test3.haml", "a", 1);
+            string text = _mgr.Render("hamlsamples/test3.haml", new TemplateArguments("a", 1));
         }
 
         public void TestLayout()
         {
-            string text = _mgr.Render("hamlsamples/testlayout.haml", "data", "shit");
+            string text = _mgr.Render("hamlsamples/testlayout.haml", new TemplateArguments("data", "shit"));
         }
 
         public void TestCodeTags()
         {
-            string text = _mgr.Render("hamlsamples/codesample.haml", "i", 1);
+            string text = _mgr.Render("hamlsamples/CodeSample.haml", new TemplateArguments("i", 1));
         }
+
+		public void TestMultiLine()
+		{
+			TextReader input = new StringReader(@"
+%html
+	%head
+		%title theTitle
+	%body
+		Show for loop
+		- for(int i = 0; i < |
+		2; i++)
+			= ""for loop"" |
+			+ "" entry = "" + |
+			i
+");
+
+			string expectedOutput = @"<html>
+	<head>
+		<title>
+theTitle		</title>
+	</head>
+	<body>
+		Show for loop
+		<% for(int i = 0; i < 2; i++)
+<%=  ""for loop"" + "" entry = "" + i %>		%>
+	</body>
+</html>
+";			
+			_generator.Parse(input);
+			TextWriter output = new StringWriter(new StringBuilder());
+			_generator.GenerateHtml(output);
+
+			Assert.AreEqual(expectedOutput, output.ToString());
+		}
     }
 }

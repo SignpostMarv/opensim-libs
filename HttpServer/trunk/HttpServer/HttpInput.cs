@@ -1,38 +1,59 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Xunit;
 
 namespace HttpServer
 {
     /// <summary>
-    /// Replacement of HttpInput, contains
-    /// information entered in either query string or
-    /// content body.
+    /// Contains some kind of input from the browser/client.
+    /// can be QueryString, form data or any other request body content.
     /// </summary>
-    public class HttpInput : HttpInputBase
+    public class HttpInput : IHttpInput
     {
+		/// <summary> Representation of a non-initialized class instance </summary>
         public static readonly HttpInput Empty = new HttpInput("Empty", true);
         private readonly IDictionary<string, HttpInputItem> _items = new Dictionary<string, HttpInputItem>();
         private string _name;
-        private readonly bool _ignoreChanges = false;
+
+		/// <summary> Variable telling the class that it is non-initialized <see cref="Empty"/> </summary>
+        protected readonly bool _ignoreChanges = false;
 
         /// <summary>
-        /// Create a new form
+        /// Initializes a new instance of the <see cref="HttpInput"/> class.
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="name">form name.</param>
         public HttpInput(string name)
         {
-            Name = name;
+        	Name = name;
         }
 
-        private HttpInput(string name, bool ignoreChanges)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpInput"/> class.
+        /// </summary>
+        /// <param name="name">form name.</param>
+        /// <param name="ignoreChanges">if set to <c>true</c> all changes will be ignored. </param>
+        /// <remarks>this constructor should only be used by Empty</remarks>
+		protected HttpInput(string name, bool ignoreChanges)
         {
             _name = name;
             _ignoreChanges = ignoreChanges;
         }
 
+		/// <summary>Creates a deep copy of the HttpInput class</summary>
+		/// <param name="input">The object to copy</param>
+		/// <remarks>The function makes a deep copy of quite a lot which can be slow</remarks>
+		protected HttpInput(HttpInput input)
+		{
+            foreach (HttpInputItem item in input)
+                _items.Add(item.Name, new HttpInputItem(item));
+
+			_name = input._name;
+			_ignoreChanges = input._ignoreChanges;
+		}
+
         /// <summary>
-        /// Name as lower case
+        /// Form name as lower case
         /// </summary>
         public string Name
         {
@@ -89,6 +110,11 @@ namespace HttpServer
             }
         }
 
+		/// <summary>
+		/// Returns true if the class contains a HttpInput value with the corresponding name
+		/// </summary>
+		/// <param name="name">The field/querystring name</param>
+		/// <returns>True if the value exists</returns>
         public bool Contains(string name)
         {
             return _items.ContainsKey(name) && _items[name].Value != null;
@@ -121,12 +147,41 @@ namespace HttpServer
             return item;
         }
 
+		/// <summary> Outputs the instance representing all its values joined together </summary>
+		/// <returns></returns>
         public override string ToString()
         {
             string temp = string.Empty;
             foreach (KeyValuePair<string, HttpInputItem> item in _items)
                 temp += item.Value.ToString(Name);
             return temp;
+        }
+
+        /// <summary>Returns all items as an unescaped query string.</summary>
+        /// <returns></returns>
+        public string ToString(bool asQueryString)
+        {
+            if (!asQueryString)
+                return ToString();
+
+            string temp = string.Empty;
+            foreach (KeyValuePair<string, HttpInputItem> item in _items)
+                temp += item.Value.ToString(null, true) + '&';
+
+            return temp.Length > 0 ? temp.Substring(0, temp.Length - 1) : string.Empty;
+        }
+
+        [Fact]
+        private static void TestToString()
+        {
+            string queryString = "title=hello&firstname=jonas&status=super";
+            HttpInput input = HttpHelper.ParseQueryString(queryString);
+            Assert.Equal(queryString, input.ToString(true));
+
+            queryString = "title[jonas]=hello&title[arne]=ohno&firstname=jonas&status=super";
+            input = HttpHelper.ParseQueryString(queryString);
+            Assert.Equal(queryString, input.ToString(true));
+
         }
 
         /// <summary>
@@ -157,7 +212,12 @@ namespace HttpServer
             return value;
         }
 
-        #region IEnumerable<KeyValuePair<string,HttpInputBase>> Members
+		/// <summary>Resets all data contained by class</summary>
+		virtual public void Clear()
+		{
+			_name = string.Empty;
+			_items.Clear();
+		}
 
         ///<summary>
         ///Returns an enumerator that iterates through the collection.
@@ -167,14 +227,11 @@ namespace HttpServer
         ///A <see cref="T:System.Collections.Generic.IEnumerator`1"></see> that can be used to iterate through the collection.
         ///</returns>
         ///<filterpriority>1</filterpriority>
-        IEnumerator<KeyValuePair<string, HttpInputItem>> IEnumerable<KeyValuePair<string, HttpInputItem>>.GetEnumerator()
+        IEnumerator<HttpInputItem> IEnumerable<HttpInputItem>.GetEnumerator()
         {
-            return _items.GetEnumerator();
+            return _items.Values.GetEnumerator();
         }
 
-        #endregion
-
-        #region IEnumerable Members
 
         ///<summary>
         ///Returns an enumerator that iterates through a collection.
@@ -186,19 +243,36 @@ namespace HttpServer
         ///<filterpriority>2</filterpriority>
         public IEnumerator GetEnumerator()
         {
-            return _items.GetEnumerator();
+            return _items.Values.GetEnumerator();
         }
 
-        #endregion
     }
 
-    public interface HttpInputBase : IEnumerable<KeyValuePair<string, HttpInputItem>>
+	/// <summary>
+	/// Base class for request data containers
+	/// </summary>
+    public interface IHttpInput : IEnumerable<HttpInputItem>
     {
+		/// <summary>
+		/// Adds a parameter mapped to the presented name
+		/// </summary>
+		/// <param name="name">The name to map the parameter to</param>
+		/// <param name="value">The parameter value</param>
         void Add(string name, string value);
 
+		/// <summary>
+		/// Returns a request parameter
+		/// </summary>
+		/// <param name="name">The name associated with the parameter</param>
+		/// <returns></returns>
         HttpInputItem this[string name]
         { get; }
 
+		/// <summary>
+		/// Returns true if the container contains the requested parameter
+		/// </summary>
+		/// <param name="name">Parameter id</param>
+		/// <returns>True if parameter exists</returns>
         bool Contains(string name);
     }
 }

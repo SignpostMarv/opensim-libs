@@ -18,12 +18,31 @@ namespace HttpServer.Authentication
     public class DigestAuthentication : AuthModule
     {
         static readonly Dictionary<string, DateTime> _nonces = new Dictionary<string, DateTime>();
-        private static Timer _timer = null;
+        private static Timer _timer;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DigestAuthentication"/> class.
+        /// </summary>
+        /// <param name="authenticator">Delegate used to provide information used during authentication.</param>
+        /// <param name="authRequiredDelegate">Delegate used to determine if authentication is required (may be null).</param>
+        public DigestAuthentication(AuthenticationHandler authenticator, AuthRequiredDelegate authRequiredDelegate) 
+            : base(authenticator, authRequiredDelegate)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DigestAuthentication"/> class.
+        /// </summary>
+        /// <param name="authenticator">Delegate used to provide information used during authentication.</param>
+        public DigestAuthentication(AuthenticationHandler authenticator)
+            : base(authenticator)
+        {
+        }
 
         /// <summary>
         /// Used by test classes to be able to use hardcoded values
         /// </summary>
-        public static bool DisableNonceCheck = false;
+        public static bool DisableNonceCheck;
 
         /// <summary>
         /// name used in http request.
@@ -46,8 +65,7 @@ namespace HttpServer.Authentication
         /// </returns>
         /// <exception cref="ArgumentException">if authenticationHeader is invalid</exception>
         /// <exception cref="ArgumentNullException">If any of the paramters is empty or null.</exception>
-        public override object Authenticate(string authenticationHeader, string realm, string httpVerb,
-                                            params object[] options)
+        public override object Authenticate(string authenticationHeader, string realm, string httpVerb, object[] options)
         {
             lock (_nonces)
             {
@@ -74,35 +92,55 @@ namespace HttpServer.Authentication
             if (!CheckAuthentication(realm, username, ref password, out state))
                 return null;
 
-            string A1 = String.Format("{0}:{1}:{2}", username, realm, password);
+            string hashedDigest = Encrypt(realm, username, password, httpVerb, reqInfo["uri"], reqInfo["qop"],
+                                          reqInfo["nonce"], reqInfo["nc"], reqInfo["cnonce"]);
+
+            if (reqInfo["response"] == hashedDigest && !staleNonce)
+                return state;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Encrypts parameters into a Digest string
+        /// </summary>
+        /// <param name="realm">Realm that the user want's to log into.</param>
+        /// <param name="userName">User logging in</param>
+        /// <param name="password">Users password.</param>
+        /// <param name="method">HTTP metod.</param>
+        /// <param name="uri">Uri/domain that generated the login prompt.</param>
+        /// <param name="qop">The qop.</param>
+        /// <param name="nonce">The nonce.</param>
+        /// <param name="nc">The nc.</param>
+        /// <param name="cnonce">The cnonce.</param>
+        /// <returns>Digest enrypted string</returns>
+        public static string Encrypt(string realm, string userName, string password, string method, string uri, string qop, string nonce, string nc, string cnonce)
+        {
+            string A1 = String.Format("{0}:{1}:{2}", userName, realm, password);
             string HA1 = GetMD5HashBinHex2(A1);
-            string A2 = String.Format("{0}:{1}", httpVerb, reqInfo["uri"]);
+            string A2 = String.Format("{0}:{1}", method, uri);
             string HA2 = GetMD5HashBinHex2(A2);
 
             string unhashedDigest;
-            if (reqInfo["qop"] != null)
+            if (qop != null)
             {
                 unhashedDigest = String.Format("{0}:{1}:{2}:{3}:{4}:{5}",
                                                HA1,
-                                               reqInfo["nonce"],
-                                               reqInfo["nc"],
-                                               reqInfo["cnonce"],
-                                               reqInfo["qop"],
+                                               nonce,
+                                               nc,
+                                               cnonce,
+                                               qop,
                                                HA2);
             }
             else
             {
                 unhashedDigest = String.Format("{0}:{1}:{2}",
                                                HA1,
-                                               reqInfo["nonce"],
+                                               nonce,
                                                HA2);
             }
 
-            string hashedDigest = GetMD5HashBinHex2(unhashedDigest);
-            if (reqInfo["response"] == hashedDigest && !staleNonce)
-                return state;
-
-            return null;
+            return GetMD5HashBinHex2(unhashedDigest);
         }
 
         private static void ManageNonces(object state)
@@ -111,11 +149,11 @@ namespace HttpServer.Authentication
             {
                 foreach (KeyValuePair<string, DateTime> pair in _nonces)
                 {
-                    if (pair.Value < DateTime.Now)
-                    {
-                        _nonces.Remove(pair.Key);
-                        return;
-                    }
+                    if (pair.Value >= DateTime.Now) 
+                        continue;
+
+                    _nonces.Remove(pair.Key);
+                    return;
                 }
             }
         }
@@ -128,7 +166,7 @@ namespace HttpServer.Authentication
         /// <param name="options">First options specifies if true if username/password is correct but not cnonce.</param>
         /// <returns>A correct auth request.</returns>
         /// <exception cref="ArgumentNullException">If realm is empty or null.</exception>
-        public override string CreateResponse(string realm, params  object[] options)
+        public override string CreateResponse(string realm, object[] options)
         {
             string nonce = GetCurrentNonce();
 
@@ -179,38 +217,36 @@ namespace HttpServer.Authentication
                     inQuote = !inQuote;
 
                 //find start of name
-                if (step == 0)
+                switch (step)
                 {
-                    if (!char.IsWhiteSpace(ch))
-                    {
-                        if (!char.IsLetterOrDigit(ch) && ch != '"')
+                    case 0:
+                        if (!char.IsWhiteSpace(ch))
+                        {
+                            if (!char.IsLetterOrDigit(ch) && ch != '"')
+                                return null;
+                            start = i;
+                            ++step;
+                        }
+                        break;
+                    case 1:
+                        if (char.IsWhiteSpace(ch) || ch == '=')
+                        {
+                            if (start == -1)
+                                return null;
+                            name = buffer.Substring(start, i - start);
+                            start = -1;
+                            ++step;
+                        }
+                        else if (!char.IsLetterOrDigit(ch) && ch != '"')
                             return null;
-                        start = i;
-                        ++step;
-                    }
-                }
-                    // find end of name
-                else if (step == 1)
-                {
-                    if (char.IsWhiteSpace(ch) || ch == '=')
-                    {
-                        if (start == -1)
-                            return null;
-                        name = buffer.Substring(start, i - start);
-                        start = -1;
-                        ++step;
-                    }
-                    else if (!char.IsLetterOrDigit(ch) && ch != '"')
-                        return null;
-                }
-                    // find start of value
-                else if (step == 2)
-                {
-                    if (!char.IsWhiteSpace(ch) && ch != '=')
-                    {
-                        start = i;
-                        ++step;
-                    }
+                        break;
+                    case 2:
+                        if (!char.IsWhiteSpace(ch) && ch != '=')
+                        {
+                            start = i;
+                            ++step;
+                        }
+                        break;
                 }
                 // find end of value
                 if (step == 3)
@@ -234,17 +270,13 @@ namespace HttpServer.Authentication
 
                         values.Add(name.ToLower(), buffer.Substring(start, stop - start));
                         name = string.Empty;
-                        inQuote = false;
                         start = -1;
                         step = 0;
                     }
                 }
             }
 
-            if (values.Count == 0)
-                return null;
-            else
-                return values;
+            return values.Count == 0 ? null : values;
         }
 
         /// <summary>
@@ -276,6 +308,11 @@ namespace HttpServer.Authentication
             return sb.ToString();
         }
 
+        /// <summary>
+        /// determines if the nonce is valid or has expired.
+        /// </summary>
+        /// <param name="nonce">nonce value (check wikipedia for info)</param>
+        /// <returns>true if the nonce has not expired.</returns>
         protected virtual bool IsValidNonce(string nonce)
         {
             lock (_nonces)

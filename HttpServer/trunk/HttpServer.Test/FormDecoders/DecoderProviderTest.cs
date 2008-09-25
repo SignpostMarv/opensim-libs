@@ -2,7 +2,6 @@ using System.IO;
 using HttpServer.FormDecoders;
 using NUnit.Framework;
 using HttpServer;
-using HttpServer.FormDecoders;
 
 namespace HttpServer.Test.FormDecoders
 {

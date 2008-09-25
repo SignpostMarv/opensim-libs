@@ -4,10 +4,19 @@ using HttpServer.Rendering.Haml.Nodes;
 
 namespace HttpServer.Rendering.Haml
 {
+    /// <summary>
+    /// A list of prototype nodes.
+    /// </summary>
     public class NodeList
     {
         private readonly List<Node> _nodes = new List<Node>();
 
+        /// <summary>
+        /// Creates the node.
+        /// </summary>
+        /// <param name="word">node identifier.</param>
+        /// <param name="parent">parent node.</param>
+        /// <returns>created node if identifier was found; otherwise null.</returns>
         public Node CreateNode(string word, Node parent)
         {
             foreach (Node node in _nodes)
@@ -36,6 +45,10 @@ namespace HttpServer.Rendering.Haml
             return null;            
         }
 
+        /// <summary>
+        /// Add a prototype
+        /// </summary>
+        /// <param name="node">prototype node</param>
         public void Add(Node node)
         {
             //todo: Replace types.

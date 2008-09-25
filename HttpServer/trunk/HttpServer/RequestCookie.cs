@@ -3,6 +3,10 @@ using System.Web;
 
 namespace HttpServer
 {
+    /// <summary>
+    /// cookie sent by the client/browser
+    /// </summary>
+    /// <seealso cref="ResponseCookie"/>
     public class RequestCookie
     {
         private readonly string _name = null;

@@ -80,6 +80,9 @@ namespace HttpServer
         }
 
 
+        /// <summary>
+        /// Remove all cookies
+        /// </summary>
         public void Clear()
         {
             _items.Clear();

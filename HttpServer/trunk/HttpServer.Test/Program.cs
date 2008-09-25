@@ -13,15 +13,11 @@ namespace HttpServer.Test
 
         static void Main(string[] args)
         {
-            HamlTest ytest = new HamlTest();
-            ytest.TestLayout();
+            //HamlTest ytest = new HamlTest();
+            //ytest.TestLayout();
 
-            DecoderProviderTest dpt = new DecoderProviderTest();
-            dpt.Setup();
-
-            RequestControllerTest test = new RequestControllerTest();
-            test.Setup();
-            test.TestBinaryMethod();
+            HttpServerLoadTests tests = new HttpServerLoadTests();
+            tests.Test();
         }
     }
 }

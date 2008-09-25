@@ -26,7 +26,7 @@ namespace HttpServer.Rendering.Haml.Nodes
     /// </summary>
     internal class SilentCodeNode : ChildNode
     {
-        private string _code;
+        private string _code = string.Empty;
 
         public SilentCodeNode(Node parent) : base(parent)
         {}
@@ -54,7 +54,7 @@ namespace HttpServer.Rendering.Haml.Nodes
         public override Node Parse(NodeList prototypes, Node parent, LineInfo line, ref int offset)
         {
             if (offset > line.Data.Length)
-                throw new CodeGeneratorException(line.LineNumber, "Too little data");
+				throw new CodeGeneratorException(line.LineNumber, line.Data, "Too little data");
 
             int pos = line.Data.Length;
             ++offset;
@@ -68,11 +68,18 @@ namespace HttpServer.Rendering.Haml.Nodes
             return node;
         }
 
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <summary>
+        /// Convert the node to c# code
+        /// </summary>
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
 
             //if (LineInfo == null)
-            if ((Parent != null && Parent.Children.Last.Value != this) && LineInfo == null)
+            if ((Parent != null && Parent.Children.Last != null && Parent.Children.Last.Value != this) && LineInfo == null)
             {
                 if (inString)
                     return string.Format("\"); {0} sb.Append(@\"", _code);
@@ -95,7 +102,7 @@ namespace HttpServer.Rendering.Haml.Nodes
             {
                 sb.Append("{");
                 if (Modifiers.Count != 0)
-                    throw new CodeGeneratorException(LineInfo.LineNumber, "Code tags should not have any modifiers.");
+					throw new CodeGeneratorException(LineInfo.LineNumber, LineInfo.Data, "Code tags should not have any modifiers.");
 
                 foreach (Node node in Children)
                     sb.Append(node.ToCode(ref inString));
@@ -112,6 +119,10 @@ namespace HttpServer.Rendering.Haml.Nodes
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Convert node to HTML (with ASP-tags)
+        /// </summary>
+        /// <returns>HTML string</returns>
         public override string ToHtml()
         {
             if (LineInfo == null)
@@ -127,7 +138,7 @@ namespace HttpServer.Rendering.Haml.Nodes
                 sb.AppendLine();
 
             if (Modifiers.Count != 0)
-                throw new CodeGeneratorException(LineInfo.LineNumber, "Code tags should not have any modifiers.");
+				throw new CodeGeneratorException(LineInfo.LineNumber, LineInfo.Data, "Code tags should not have any modifiers.");
 
             foreach (Node node in Children)
                 sb.Append(node.ToHtml());

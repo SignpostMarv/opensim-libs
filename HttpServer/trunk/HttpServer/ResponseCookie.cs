@@ -3,6 +3,10 @@ using System.Web;
 
 namespace HttpServer
 {
+    /// <summary>
+    /// cookie being sent back to the browser.
+    /// </summary>
+    /// <seealso cref="ResponseCookie"/>
     public class ResponseCookie : RequestCookie
     {
         private const string _nullPath = "/";

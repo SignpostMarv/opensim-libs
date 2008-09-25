@@ -22,7 +22,7 @@ namespace HttpServer.Test.Authentication
         [Test]
         public void TestResponse()
         {
-            DigestAuthentication digest = new DigestAuthentication();
+            DigestAuthentication digest = new DigestAuthentication(OnTestAuth, null);
             string response = digest.CreateResponse("blaj", false);
             Assert.AreEqual("Digest ", response.Substring(0, 7));
 
@@ -68,8 +68,7 @@ namespace HttpServer.Test.Authentication
         [Test]
         public void TestAuth()
         {
-            DigestAuthentication auth = new DigestAuthentication();
-            auth.OnAuthenticate += OnTestAuth;
+            DigestAuthentication auth = new DigestAuthentication(OnTestAuth, null);
             object res = auth.Authenticate(
                 @"Digest username=""Mufasa"",
                       realm=""testrealm@host.com"",
@@ -99,8 +98,7 @@ namespace HttpServer.Test.Authentication
             string realm = "myrealm";
             string userName = "Jonas";
             string password = "morsOlle";
-            DigestAuthentication auth = new DigestAuthentication();
-            auth.OnAuthenticate += OnAuth2;
+            DigestAuthentication auth = new DigestAuthentication(OnAuth2, null);
             string server = auth.CreateResponse(realm);
 
             NameValueCollection args = Decode(server);

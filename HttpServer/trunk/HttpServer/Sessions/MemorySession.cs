@@ -6,7 +6,7 @@ namespace HttpServer.Sessions
     /// <summary>
     /// A session stored in memory.
     /// </summary>
-    public class MemorySession : HttpSession
+    public class MemorySession : IHttpSession
     {
         private string _id;
         private DateTime _accessed;
@@ -21,7 +21,7 @@ namespace HttpServer.Sessions
         {
             _id = id;
         }
-
+        
         /// <summary>
         /// Id
         /// </summary>
@@ -30,7 +30,7 @@ namespace HttpServer.Sessions
         {
             _id = id;
         }
-        #region HttpSession Members
+        #region IHttpSession Members
 
         /// <summary>
         /// Session id
@@ -49,10 +49,13 @@ namespace HttpServer.Sessions
         {
             get
             {
-                if (_vars.ContainsKey(name))
-                    return _vars[name];
-                else
-                    return null;
+				if (_vars.ContainsKey(name))
+				{
+					_accessed = DateTime.Now;
+					return _vars[name];
+				}
+				
+				return null;
             }
             set
             {
@@ -101,18 +104,34 @@ namespace HttpServer.Sessions
         /// </summary>
         public void Clear()
         {
-            _vars.Clear();
-            _accessed = DateTime.Now;
-            _changed = true;
+			Clear(false);
         }
 
-        ///<summary>
+		/// <summary>
+		/// Clears the specified expire.
+		/// </summary>
+		/// <param name="expires">True if the session is cleared due to expiration</param>
+		public void Clear(bool expires)
+		{
+			BeforeClear(this, new HttpSessionClearedArgs(expires));
+
+			_vars.Clear();
+			_accessed = DateTime.Now;
+			_changed = true;	
+		}
+
+    	///<summary>
         ///Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         ///</summary>
         ///<filterpriority>2</filterpriority>
         public void Dispose()
         {
         }
+
+    	/// <summary>
+    	/// Event triggered upon clearing the session
+    	/// </summary>
+    	public event HttpSessionClearedHandler BeforeClear = delegate{};
 
         #endregion
     }

@@ -2,10 +2,37 @@ using System.Collections;
 
 namespace HttpServer
 {
+    /// <summary>
+    /// Lists content type mime types.
+    /// </summary>
     public class ContentType
     {
+        /// <summary>
+        /// text/plain
+        /// </summary>
         public const string Text = "text/plain";
+
+        /// <summary>
+        /// text/haml
+        /// </summary>
         public const string Html = "text/html";
+
+        /// <summary>
+        /// content type for javascript documents = application/javascript
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// RFC 4329 states that text/javascript have been superseeded by
+        /// application/javascript. You might still want to check browser versions
+        /// since older ones do not support application/javascript.
+        /// </para>
+        /// <para>Browser support: http://krijnhoetmer.nl/stuff/javascript/mime-types/</para>
+        /// </remarks>
+        public const string Javascript = "application/javascript";
+
+        /// <summary>
+        /// text/xml
+        /// </summary>
         public const string Xml = "text/xml";
     }
 
@@ -41,6 +68,7 @@ namespace HttpServer
         /// </summary>
         /// <param name="type">Part of type ("xml" would return "application/xml")</param>
         /// <returns></returns>
+        /// <remarks>All content types are in lower case.</remarks>
         public string this[string type]
         {
             get
@@ -57,6 +85,12 @@ namespace HttpServer
 
         #region IEnumerable Members
 
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        /// </returns>
         public IEnumerator GetEnumerator()
         {
             return _contentTypes.GetEnumerator();

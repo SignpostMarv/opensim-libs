@@ -4,20 +4,27 @@ using HttpServer.Rendering.Haml;
 
 namespace HttpServer.Rendering.Haml.Nodes
 {
+    /// <summary>
+    /// A node represents a controller code and contents. For example a html tag, an attribute list or something else.
+    /// </summary>
     public abstract class Node
     {
-        private LinkedList<Node> _children = new LinkedList<Node>();
-        private LinkedList<Node> _modifiers = new LinkedList<Node>();
+        private readonly LinkedList<Node> _children = new LinkedList<Node>();
+        private readonly LinkedList<Node> _modifiers = new LinkedList<Node>();
         private LineInfo _lineInfo;
         private readonly Node _parent;
         
+        /// <summary>
+        /// Add a new node
+        /// </summary>
+        /// <param name="parent">parent node.</param>
         public Node(Node parent)
         {
             _parent = parent;
         }
 
         /// <summary>
-        /// Text nodes should be added as child.
+        /// Returns true if the node is applicable after another node as text instead of being applied as a modifier
         /// </summary>
         public abstract bool IsTextNode
     {
@@ -40,10 +47,12 @@ namespace HttpServer.Rendering.Haml.Nodes
             }
         }
 
+        /// <summary>
+        /// All child nodes for this node.
+        /// </summary>
         public LinkedList<Node> Children
         {
             get { return _children; }
-            set { _children = value; }
         }
 
         /// <summary>
@@ -55,11 +64,20 @@ namespace HttpServer.Rendering.Haml.Nodes
             set { _lineInfo = value; }
         }
 
+        /// <summary>
+        /// Modifiers are used to modify the first node on the line.
+        /// Typical modifiers are attribute lists, class names and IDs.
+        /// </summary>
         protected LinkedList<Node> Modifiers
         {
             get { return _modifiers; }
         }
 
+        /// <summary>
+        /// Modifiers are used to modify the first node on the line.
+        /// Typical modifiers are attribute lists, class names and IDs.
+        /// </summary>
+        /// <param name="node">Modifier node</param>
         public void AddModifier(Node node)
         {
             if (node.IsTextNode)
@@ -68,11 +86,18 @@ namespace HttpServer.Rendering.Haml.Nodes
                 _modifiers.AddLast(node);
         }
 
+        /// <summary>
+        /// Last modifier for this node
+        /// </summary>
+        /// <seealso cref="Modifiers"/>
         public Node LastModifier
         {
             get { return _modifiers.Last.Value; }
         }
 
+        /// <summary>
+        /// Number of modifiers for this line.
+        /// </summary>
         public int ModifierCount
         {
             get { return _modifiers.Count; }
@@ -105,37 +130,41 @@ namespace HttpServer.Rendering.Haml.Nodes
         /// <param name="firstNode">First node on line, used since some nodes cannot exist on their own on a line.</param>
         public abstract bool CanHandle(string word, bool firstNode);
 
+        /// <summary>
+        /// Generate HTML code (with ASP tags)
+        /// </summary>
+        /// <returns></returns>
         public abstract string ToHtml();
 
         /// <summary>
-        /// 
+        /// Converts the node to c# code
         /// </summary>
         /// <param name="inString">true if we are inside the internal stringbuilder</param>
-        /// <returns></returns>
+        /// <returns>c# code</returns>
         public virtual string ToCode(ref bool inString)
         {
             return ToCode(ref inString, false, true);
         }
 
         /// <summary>
-        /// 
+        /// Convert the node to c# code
         /// </summary>
-        /// <param name="smallEnough">code is small enough to fit on one row</param>
-        /// <param name="inString">true if we are inside the internal stringbuilder</param>
-        /// <returns></returns>
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <returns>c# code</returns>
         public virtual string ToCode(ref bool inString, bool smallEnough)
         {
             return ToCode(ref inString, smallEnough, false);
         }
 
         /// <summary>
-        /// 
+        /// Generate C# code of the node
         /// </summary>
         /// <param name="inString">true if we are inside the internal stringbuilder</param>
         /// <param name="smallEnough">code is small enough to fit on one row.</param>
-        /// <param name="defaultValue">smallEnough is a default value, recalc it</param>
-        /// <returns></returns>
-        protected abstract string ToCode(ref bool inString, bool smallEnough, bool defaultValue);
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected abstract string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue);
 
         /// <summary>
         /// Get intendation level for this node.

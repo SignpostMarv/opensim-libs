@@ -28,6 +28,9 @@ namespace HttpServer.Controllers
             _name = name;
         }
 
+        /// <summary>
+        /// The name that the controller should use
+        /// </summary>
         public string Name
         {
             get { return _name; }

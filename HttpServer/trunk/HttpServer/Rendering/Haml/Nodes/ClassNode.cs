@@ -27,7 +27,7 @@ namespace HttpServer.Rendering.Haml.Nodes
         public override Node Parse(NodeList prototypes, Node parent, LineInfo line, ref int offset)
         {
             if (offset > line.Data.Length - 1)
-                throw new CodeGeneratorException(line.LineNumber, "Too little data");
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Too little data");
 
             int pos = GetEndPos(offset, line.Data);
             if (pos == -1)
@@ -53,19 +53,23 @@ namespace HttpServer.Rendering.Haml.Nodes
             return word.Length > 0 && word[0] == '.';
         }
 
+        /// <summary>
+        /// Convert node to HTML (with ASP-tags)
+        /// </summary>
+        /// <returns>HTML string</returns>
         public override string ToHtml()
         {
             return "class=\"" + _name + "\" ";
         }
 
         /// <summary>
-        /// 
+        /// Convert the node to c# code
         /// </summary>
-        /// <param name="inString">true if we are inside the internal stringbuilder</param>
-        /// <param name="smallEnough">code is small enough to fit on one row.</param>
-        /// <param name="defaultValue">smallEnough is a default value, recalc it</param>
-        /// <returns></returns>
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             return "class=\"\"" + _name + "\"\"";
         }

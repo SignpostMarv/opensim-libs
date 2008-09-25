@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using HttpServer;
 using HttpServer.Authentication;
@@ -5,7 +6,7 @@ using HttpServer.Exceptions;
 
 namespace Tutorial.Tutorial4
 {
-    class Tutorial4 : Tutorial
+    public class Tutorial4 : Tutorial
     {
         private HttpServer.HttpServer _server;
 
@@ -28,25 +29,20 @@ namespace Tutorial.Tutorial4
 
             // Let's use Digest authentication which is superior to basic auth since it
             // never sends password in clear text.
-            DigestAuthentication auth = new DigestAuthentication();
+            DigestAuthentication auth = new DigestAuthentication(OnAuthenticate, OnAuthenticationRequired);
             _server.AuthenticationModules.Add(auth);
-
-            // the OnAuthenticate method is used to provide the auth module with a password
-            // since we need to encrypt it to be able to compare it with the encrypted password from the browser/client.
-            auth.OnAuthenticate += OnAuthenticate;
-
-            // The OnAuthenticationRequired method determines which pages we use authentication for.
-            // in this case we got a /membersonly/ section that we protect.
-            auth.OnAuthenticationRequired += OnAuthenticationRequired;
 
             // Let's reuse our module from previous tutorial to handle pages.
             _server.Add(new Tutorial3.MyModule());
 
             // and start the server.
-            _server.Start(IPAddress.Any, 8080);
+            _server.Start(IPAddress.Any, 8081);
+
+            Console.WriteLine("Goto http://localhost:8081/membersonly to get authenticated.");
+            Console.WriteLine("Password is 'morsOlle', and userName is 'arne'");
         }
 
-        private bool OnAuthenticationRequired(HttpRequest request)
+        private bool OnAuthenticationRequired(IHttpRequest request)
         {
             // only required authentication for "/membersonly"
             return request.Uri.AbsolutePath.StartsWith("/membersonly");
@@ -70,7 +66,7 @@ namespace Tutorial.Tutorial4
             {
                 password = "morsOlle";
 
-                // login can be fetched from HttpSession in all modules
+                // login can be fetched from IHttpSession in all modules
                 login = new User(1, "arne");
             }
             else
@@ -83,6 +79,11 @@ namespace Tutorial.Tutorial4
         public void EndTutorial()
         {
             _server.Stop();
+        }
+
+        public string Name
+        {
+            get { return "Using HTTP authentication."; }
         }
 
         #endregion

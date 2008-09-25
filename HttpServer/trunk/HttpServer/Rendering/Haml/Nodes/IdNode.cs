@@ -23,7 +23,7 @@ namespace HttpServer.Rendering.Haml.Nodes
         public override Node Parse(NodeList prototypes, Node parent, LineInfo line, ref int offset)
         {
             if (line.Data[offset] != '#')
-                throw new CodeGeneratorException(line.LineNumber, "Node is not an id node.");
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Node is not an id node.");
 
             int endPos = GetEndPos(offset, line.Data);
             if (endPos == -1)
@@ -49,12 +49,23 @@ namespace HttpServer.Rendering.Haml.Nodes
             return word.Length > 0 && word[0] == '#';
         }
 
+        /// <summary>
+        /// Convert node to HTML (with ASP-tags)
+        /// </summary>
+        /// <returns>HTML string</returns>
         public override string ToHtml()
         {
             return "id=\"" + _id + "\" ";
         }
 
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <summary>
+        /// Convert the node to c# code
+        /// </summary>
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             return "id=\"\"" + _id + "\"\" ";
         }

@@ -51,7 +51,7 @@ namespace HttpServer.Sessions
         /// We use the flyweight pattern which reuses small objects
         /// instead of creating new each time.
         /// </summary>
-        /// <param name="session">Empty (unused) session that should be reused next time Create is called.</param>
+        /// <param name="session">EmptyLanguageNode (unused) session that should be reused next time Create is called.</param>
         void AddUnused(HttpSession session);
 
         /// <summary>

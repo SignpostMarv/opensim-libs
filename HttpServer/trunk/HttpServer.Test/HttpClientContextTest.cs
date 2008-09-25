@@ -1,10 +1,10 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Fadd;
 using NUnit.Framework;
 
 namespace HttpServer.Test
@@ -15,8 +15,8 @@ namespace HttpServer.Test
     [TestFixture]
     public class HttpClientContextTest
     {
-        private HttpClientContext _context;
-        private HttpRequest _request;
+        private IHttpClientContext _context;
+        private IHttpRequest _request;
         private ManualResetEvent _event = new ManualResetEvent(false);
         private ManualResetEvent _disconnectEvent = new ManualResetEvent(false);
         private bool _disconnected;
@@ -44,7 +44,7 @@ namespace HttpServer.Test
             _client.Connect("localhost", 14862);
             _remoteSocket = _listenSocket.EndAccept(res);
 
-            _context = new HttpClientContext(false, OnRequest, OnDisconnect, _client.GetStream(), OnLog);
+            _context = new HttpClientContextImp(false, new IPEndPoint(IPAddress.Loopback, 21111), OnRequest, OnDisconnect, _client.GetStream(), ConsoleLogWriter.Instance);
 
             _request = null;
             _disconnected = false;
@@ -64,59 +64,59 @@ namespace HttpServer.Test
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(CheckException))]
         public void TestConstructor1()
         {
-            new HttpClientContext(true, null, null);
+            new HttpClientContextImp(true, new IPEndPoint(IPAddress.Loopback, 21111), null, null);
         }
         [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(CheckException))]
         public void TestConstructor2()
         {
-            new HttpClientContext(true, new MemoryStream(), null);
+            new HttpClientContextImp(true, new IPEndPoint(IPAddress.Loopback, 21111), new MemoryStream(), null);
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentException))]
+        [ExpectedException(typeof(CheckException))]
         public void TestConstructor3()
         {
             MemoryStream stream = new MemoryStream();
             stream.Close();
-            new HttpClientContext(true, stream, null);
+            new HttpClientContextImp(true, new IPEndPoint(IPAddress.Loopback, 21111), stream, null);
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(CheckException))]
         public void TestConstructor4()
         {
-            new HttpClientContext(true,null, null, null, null);
+            new HttpClientContextImp(true, new IPEndPoint(IPAddress.Loopback, 21111), null, null, null, null);
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(CheckException))]
         public void TestSecured()
         {
             MemoryStream stream = new MemoryStream();
-            HttpClientContext context = new HttpClientContext(true, stream, null);
+            IHttpClientContext context = new HttpClientContextImp(true, new IPEndPoint(IPAddress.Loopback, 21111), stream, null);
             Assert.IsTrue(context.Secured);
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [ExpectedException(typeof(CheckException))]
         public void TestSecured2()
         {
             MemoryStream stream = new MemoryStream();
-            HttpClientContext context = new HttpClientContext(false, stream, null);
+            IHttpClientContext context = new HttpClientContextImp(false, new IPEndPoint(IPAddress.Loopback, 21111), stream, null);
             Assert.IsFalse(context.Secured);
         }
 
-        private void OnDisconnect(HttpClientContext client, SocketError error)
+        private void OnDisconnect(IHttpClientContext client, SocketError error)
         {
             _disconnected = true;
             _disconnectEvent.Set();
         }
 
-        private void OnRequest(HttpClientContext client, HttpRequest request)
+        private void OnRequest(IHttpClientContext client, IHttpRequest request)
         {
             ++_counter;
             _request = request;
@@ -231,12 +231,6 @@ accept:all
             byte[] bytes = Encoding.UTF8.GetBytes(s);
             _remoteSocket.Send(bytes);
             Thread.Sleep(50);
-        }
-
-        private void OnLog(object source, LogPrio prio, string message)
-        {
-            Debug.WriteLine(message);
-            Console.WriteLine(message);
         }
     }
 }

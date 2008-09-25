@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,11 +9,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Tutorial</RootNamespace>
     <AssemblyName>Tutorial</AssemblyName>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>2.0</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,6 +28,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Fadd, Version=1.0.0.0, Culture=neutral, PublicKeyToken=41411ef5f05a116f, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\dlls\Fadd.dll</HintPath>
+    </Reference>
+    <Reference Include="Fadd.Globalization.Yaml, Version=1.0.0.0, Culture=neutral, PublicKeyToken=41411ef5f05a116f, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\dlls\Fadd.Globalization.Yaml.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -46,12 +49,30 @@
     <Compile Include="Tutorial3\MyModule.cs" />
     <Compile Include="Tutorial3\Tutorial3.cs" />
     <Compile Include="Tutorial4\Tutorial4.cs" />
+    <Compile Include="Tutorial5\Controllers\ApplicationController.cs" />
+    <Compile Include="Tutorial5\Controllers\UserController.cs" />
+    <Compile Include="Tutorial5\Models\User.cs" />
+    <Compile Include="Tutorial5\Tutorial5.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HttpServer\HttpServer.csproj">
       <Project>{455E7D70-1C85-4D7F-9F01-DC801B8B8C34}</Project>
       <Name>HttpServer</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Tutorial5\language.yaml" />
+    <EmbeddedResource Include="Tutorial5\views\layouts\application.haml" />
+    <EmbeddedResource Include="Tutorial5\views\user\main.haml" />
+    <EmbeddedResource Include="Tutorial5\views\user\login.haml" />
+    <EmbeddedResource Include="Tutorial5\views\user\settings.haml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Tutorial5\public\stylesheets\application.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Tutorial5\public\images\" />
+    <Folder Include="Tutorial5\public\javascripts\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -11,11 +11,21 @@ namespace HttpServer.Exceptions
     /// </summary>
     public class BadRequestException : HttpException
     {
-        public BadRequestException(string errMsg) : base(HttpStatusCode.BadRequest, errMsg)
+        /// <summary>
+        /// Create a new bad request exception.
+        /// </summary>
+        /// <param name="errMsg">reason to why the request was bad.</param>
+        public BadRequestException(string errMsg)
+            : base(HttpStatusCode.BadRequest, errMsg)
         {
             
         }
 
+        /// <summary>
+        /// Create a new bad request exception.
+        /// </summary>
+        /// <param name="errMsg">reason to why the request was bad.</param>
+        /// <param name="inner">inner exception</param>
         public BadRequestException(string errMsg, Exception inner)
             : base(HttpStatusCode.BadRequest, errMsg, inner)
         {

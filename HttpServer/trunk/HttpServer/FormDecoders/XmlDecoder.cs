@@ -1,7 +1,6 @@
 using System.IO;
 using System.Text;
 using System.Xml;
-using HttpServer.FormDecoders;
 
 namespace HttpServer.FormDecoders
 {
@@ -20,9 +19,9 @@ namespace HttpServer.FormDecoders
     /// <remarks>
     /// The original xml document is stored in form["__xml__"].Value.
     /// </remarks>
-    public class XmlDecoder : FormDecoder
+    public class XmlDecoder : IFormDecoder
     {
-        #region FormDecoder Members
+        #region IFormDecoder Members
 
         /// <summary>
         /// 
@@ -33,7 +32,7 @@ namespace HttpServer.FormDecoders
         /// Note: contentType and encoding are not used?
         /// <returns>A http form, or null if content could not be parsed.</returns>
         /// <exception cref="InvalidDataException"></exception>
-        public HttpInput Decode(Stream stream, string contentType, Encoding encoding)
+		public HttpForm Decode(Stream stream, string contentType, Encoding encoding)
         {
             if (stream == null || stream.Length == 0)
                 return null;
@@ -42,9 +41,9 @@ namespace HttpServer.FormDecoders
             if (encoding == null)
                 encoding = Encoding.UTF8;
 
-            HttpInput form = new HttpInput("xml");
+			HttpForm form = new HttpForm();
 
-            using (TextReader reader = new StreamReader(stream))
+            using (TextReader reader = new StreamReader(stream, encoding))
             {
                 // let's start with saving the raw xml
                 form.Add("__xml__", reader.ReadToEnd());
@@ -75,7 +74,7 @@ namespace HttpServer.FormDecoders
         /// </summary>
         /// <param name="item">(parent) Item in form that content should be added to.</param>
         /// <param name="node">Node that should be parsed.</param>
-        public void TraverseNode(HttpInputBase item, XmlNode node)
+        public void TraverseNode(IHttpInput item, XmlNode node)
         {
             // Add text node content to previous item
             if (node.Name == "#text")
@@ -90,7 +89,7 @@ namespace HttpServer.FormDecoders
 
             string name = node.Name.ToLower();
             item.Add(name, node.Value);
-            HttpInputBase myItem = item[name];
+            IHttpInput myItem = item[name];
 
             if (node.Attributes != null)
                 foreach (XmlAttribute attribute in node.Attributes)

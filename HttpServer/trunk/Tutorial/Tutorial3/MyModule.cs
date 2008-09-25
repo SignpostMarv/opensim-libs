@@ -1,6 +1,7 @@
 using System.IO;
 using HttpServer;
 using HttpServer.HttpModules;
+using HttpServer.Sessions;
 
 namespace Tutorial.Tutorial3
 {
@@ -13,7 +14,7 @@ namespace Tutorial.Tutorial3
         /// <param name="response">Information that is being sent back to the client.</param>
         /// <param name="session">Session used to </param>
         /// <returns>true if this module handled the request.</returns>
-        public override bool Process(HttpRequest request, HttpResponse response, HttpSession session)
+        public override bool Process(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             if (session["times"] == null)
                 session["times"] = 1;

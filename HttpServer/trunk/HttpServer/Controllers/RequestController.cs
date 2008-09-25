@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Web;
 using HttpServer.Authentication;
 using HttpServer.Exceptions;
 using HttpServer.HttpModules;
+using HttpServer.Sessions;
 
 namespace HttpServer.Controllers
 {
@@ -48,24 +50,28 @@ namespace HttpServer.Controllers
         private const string Html = "html";
         private readonly LinkedList<MethodInfo> _beforeFilters = new LinkedList<MethodInfo>();
         private readonly Dictionary<string, MethodInfo> _binaryMethods = new Dictionary<string, MethodInfo>();
-        private readonly List<string> _authMethods = new List<string>();
+        private readonly Dictionary<string, int> _authMethods = new Dictionary<string, int>();
         private readonly Dictionary<string, MethodInfo> _methods = new Dictionary<string, MethodInfo>();
-        private LinkedListNode<MethodInfo> _betweenFilter = null;
+        private LinkedListNode<MethodInfo> _lastMiddleFilter;
         private string _controllerName;
-        private MethodInfo _defaultMethod = null;
-        private string _defaultMethodStr = null;
-        private MethodInfo _authValidator = null;
+        private MethodInfo _defaultMethod;
+        private string _defaultMethodStr;
+        private MethodInfo _authValidator;
 
         //used temp during method mapping.
         private string _id;
         private MethodInfo _method;
         private string _methodName;
-        private HttpRequest _request;
+        private IHttpRequest _request;
         private string _requestedExtension;
-        private HttpResponse _response;
-        private HttpSession _session;
+        private IHttpResponse _response;
+        private IHttpSession _session;
 
-        public RequestController(RequestController controller)
+        /// <summary>
+        /// create a new request controller
+        /// </summary>
+        /// <param name="controller">prototype to copy information from</param>
+        protected RequestController(RequestController controller)
         {
             _beforeFilters = controller._beforeFilters;
             _binaryMethods = controller._binaryMethods;
@@ -77,7 +83,10 @@ namespace HttpServer.Controllers
             _authValidator = controller._authValidator;
         }
 
-        public RequestController()
+        /// <summary>
+        /// create a new controller
+        /// </summary>
+        protected RequestController()
         {
             MapMethods();
         }
@@ -96,6 +105,9 @@ namespace HttpServer.Controllers
             set { _session[AuthModule.AuthenticationTag] = value; }
         }
 
+        /// <summary>
+        /// Name of this controller (class name without the "Controller" part)
+        /// </summary>
         public string ControllerName
         {
             get { return _controllerName; }
@@ -129,10 +141,12 @@ namespace HttpServer.Controllers
         /// Id is the third part of the uri path.
         /// </summary>
         /// <remarks>
-        /// Is extracted as in: /controller/action/id/
+        /// <para>Is extracted as in: /controllername/methodname/id/
+        /// </para>
+        /// <para>string.Empty if not specified.</para>
         /// </remarks>
         /// <example></example>
-        protected string Id
+        public string Id
         {
             get { return _id ?? string.Empty; }
         }
@@ -146,7 +160,10 @@ namespace HttpServer.Controllers
             get { return _methodName; }
         }
 
-        protected HttpRequest Request
+        /// <summary>
+        /// Request information (like Url, form, querystring etc)
+        /// </summary>
+        protected IHttpRequest Request
         {
             get { return _request; }
         }
@@ -159,15 +176,22 @@ namespace HttpServer.Controllers
             get { return _requestedExtension; }
         }
 
-        protected HttpResponse Response
+        /// <summary>
+        /// Response information (that is going to be sent back to the browser/client)
+        /// </summary>
+        protected IHttpResponse Response
         {
             get { return _response; }
         }
 
-        protected HttpSession Session
+        /// <summary>
+        /// Session information, is stored between requests as long as the session cookie is valid.
+        /// </summary>
+        protected IHttpSession Session
         {
             get { return _session; }
         }
+
         /*
         protected virtual void AddAuthAttribute(string methodName, object attribute)
         {
@@ -202,7 +226,7 @@ namespace HttpServer.Controllers
         /// </summary>
         /// <param name="request">Url requested by the client.</param>
         /// <returns>true if module should handle the url.</returns>
-        public virtual bool CanHandle(HttpRequest request)
+        public virtual bool CanHandle(IHttpRequest request)
         {
             if (request.UriParts.Length <= 0)
                 return false;
@@ -232,7 +256,7 @@ namespace HttpServer.Controllers
         /// Determines which method to use.
         /// </summary>
         /// <param name="request">Requested resource</param>
-        protected virtual MethodInfo GetMethod(HttpRequest request)
+        protected virtual MethodInfo GetMethod(IHttpRequest request)
         {
             // Check where the default met
             if (request.UriParts.Length <= 1)
@@ -248,7 +272,8 @@ namespace HttpServer.Controllers
 
             if (_methods.ContainsKey(uriPart))
                 return _methods[uriPart];
-            else if (_binaryMethods.ContainsKey(uriPart))
+            
+            if (_binaryMethods.ContainsKey(uriPart))
                 return _binaryMethods[uriPart];
 
 
@@ -283,15 +308,50 @@ namespace HttpServer.Controllers
             }
         }
 
-        protected void InvokeMethod()
+        /// <summary>
+        /// Override this method to be able to process result
+        /// returned by controller method.
+        /// </summary>
+        protected virtual void InvokeMethod()
         {
-            if (_authMethods.Contains(_methodName))
+            try
+            {
+                InvokeMethodInternal();
+            }
+            catch (Exception err)
+            {
+                OnUnhandledException(err);
+            }
+        }
+
+        /// <summary>
+        /// Override this method if you want to be able to 
+        /// handle unhanded exceptions
+        /// </summary>
+        /// <param name="err">thrown exception</param>
+        /// <remarks>Don't "eat" exceptions derived from HttpException since
+        /// they are handled by the framework,unless your are sure of what you are
+        /// doing..</remarks>
+        protected virtual void OnUnhandledException(Exception err)
+        {
+            throw err;
+        }
+
+        private void InvokeMethodInternal()
+        {
+            if (_authMethods.ContainsKey(_methodName))
             {
                 if (_authValidator != null)
                 {
-                    bool res = (bool) _authValidator.Invoke(this, null);
-                    if (!res)
-                        throw new UnauthorizedException("Need to authenticate.");
+                    if (_authValidator.GetParameters().Length == 1)
+                    {
+                        if (!(bool) _authValidator.Invoke(this, new object[] {_authMethods[_methodName]}))
+                            return;
+                    }
+                    // backwards compatible.
+                    else
+                        if (!(bool)_authValidator.Invoke(this, null))
+                            throw new UnauthorizedException("Need to authenticate.");
                 }
             }
 
@@ -350,6 +410,10 @@ namespace HttpServer.Controllers
         {
             lock (_methods)
             {
+                // already mapped.
+                if (_methods.Count > 0)
+                    return;
+
                 object[] controllerNameAttrs = GetType().GetCustomAttributes(typeof (ControllerNameAttribute), false);
                 if (controllerNameAttrs.Length > 0)
                     _controllerName = ((ControllerNameAttribute)controllerNameAttrs[0]).Name;
@@ -360,9 +424,6 @@ namespace HttpServer.Controllers
                         _controllerName = ControllerName.Replace("Controller", "");
                     _controllerName = ControllerName.ToLower();
                 }
-
-                if (_methods.Count != 0)
-                    return;
 
                 MethodInfo[] methods =
                     GetType().GetMethods(BindingFlags.Public | BindingFlags.InvokeMethod | BindingFlags.Instance);
@@ -383,7 +444,7 @@ namespace HttpServer.Controllers
                         object[] authAttributes = info.GetCustomAttributes(true);
                         foreach (object attribute in authAttributes)
                             if (attribute.GetType() == typeof (AuthRequiredAttribute))
-                                _authMethods.Add(info.Name.ToLower());
+                                _authMethods.Add(info.Name.ToLower(), ((AuthRequiredAttribute)attribute).Level);
                         _methods.Add(info.Name.ToLower(), info);
                     }
 
@@ -395,7 +456,7 @@ namespace HttpServer.Controllers
                         object[] authAttributes = info.GetCustomAttributes(true);
                         foreach (object attribute in authAttributes)
                             if (attribute.GetType() == typeof(AuthRequiredAttribute))
-                                _authMethods.Add(info.Name.ToLower());
+                                _authMethods.Add(info.Name.ToLower(), ((AuthRequiredAttribute)attribute).Level);
                         _binaryMethods.Add(info.Name.ToLower(), info);
                     }
                 } //foreach
@@ -421,8 +482,6 @@ namespace HttpServer.Controllers
                                 BeforeFilterAttribute attr = (BeforeFilterAttribute) attribute;
                                 LinkedListNode<MethodInfo> node = new LinkedListNode<MethodInfo>(info);
 
-                                if (_betweenFilter == null)
-                                    _betweenFilter = node;
 
                                 if (attr.Position == FilterPosition.First)
                                     _beforeFilters.AddFirst(node);
@@ -430,12 +489,21 @@ namespace HttpServer.Controllers
                                     _beforeFilters.AddLast(node);
                                 else
                                 {
-                                    _beforeFilters.AddAfter(_betweenFilter, node);
-                                    _betweenFilter = node;
+                                    if (_lastMiddleFilter == null)
+                                        _beforeFilters.AddLast(node);
+                                    else
+                                        _beforeFilters.AddAfter(_lastMiddleFilter, node);
+
+                                    _lastMiddleFilter = node;
                                 }
                             }
                     }
                 }
+
+                // Map index method.
+                MethodInfo mi = GetType().GetMethod("Index", BindingFlags.Public | BindingFlags.Instance);
+                if (mi != null && mi.ReturnType == typeof(string) && mi.GetParameters().Length == 0)
+                    DefaultMethod = "Index";
             }
         }
 
@@ -445,7 +513,7 @@ namespace HttpServer.Controllers
         /// <param name="request">Uses Uri and QueryString to determine method.</param>
         /// <param name="response">Relays response object to invoked method.</param>
         /// <param name="session">Relays session object to invoked method. </param>
-        public override bool Process(HttpRequest request, HttpResponse response, HttpSession session)
+        public override bool Process(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             if (!CanHandle(request))
                 return false;
@@ -466,7 +534,7 @@ namespace HttpServer.Controllers
         /// <param name="request"></param>
         /// <param name="response"></param>
         /// <param name="session"></param>
-        protected virtual void SetupRequest(HttpRequest request, HttpResponse response, HttpSession session)
+        protected virtual void SetupRequest(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             _requestedExtension = Html;
 
@@ -485,9 +553,12 @@ namespace HttpServer.Controllers
                         _id = _id.Substring(0, pos);
                     }
                 }
+                _id = HttpUtility.UrlDecode(_id);
             }
             else if (request.QueryString["id"] != HttpInputItem.Empty)
-                _id = request.QueryString["id"].Value;
+                _id = HttpUtility.UrlDecode(request.QueryString["id"].Value);
+            else
+                _id = string.Empty;
 
             _request = request;
             _response = response;
@@ -505,6 +576,10 @@ namespace HttpServer.Controllers
 
         #region ICloneable Members
 
+        /// <summary>
+        /// Make a clone of this controller
+        /// </summary>
+        /// <returns>a new controller with the same base information as this one.</returns>
         public abstract object Clone();
 
         #endregion

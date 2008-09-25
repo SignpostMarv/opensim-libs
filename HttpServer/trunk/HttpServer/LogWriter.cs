@@ -1,7 +1,13 @@
 using System;
+using System.Diagnostics;
+using System.Text;
 
 namespace HttpServer
 {
+    /// <summary>
+    /// Priority for log entries
+    /// </summary>
+    /// <seealso cref="LogWriter"/>
     public enum LogPrio
     {
         /// <summary>
@@ -37,40 +43,109 @@ namespace HttpServer
     }
 
     /// <summary>
-    /// A delegate that helps us keep track of errors in the system.
+    /// Interface used to write to log files.
     /// </summary>
-    /// <param name="source">class that writes the log entry.</param>
-    /// <param name="priority">priority for the message</param>
-    /// <param name="message">log message</param>
-    public delegate void WriteLogHandler(object source, LogPrio priority, string message);
-
-    public class ConsoleLogWriter
+    public interface LogWriter
     {
-        public static void Logwriter(object source, LogPrio prio, string message)
+        /// <summary>
+        /// Write an entry to the log file.
+        /// </summary>
+        /// <param name="source">object that is writing to the log</param>
+        /// <param name="priority">importance of the log message</param>
+        /// <param name="message">the message</param>
+        void Write(object source, LogPrio priority, string message);
+    }
+
+    /// <summary>
+    /// This class writes to the console. It colors the output depending on the logprio and includes a 3-level stacktrace (in debug mode)
+    /// </summary>
+    /// <seealso cref="LogWriter"/>
+    public sealed class ConsoleLogWriter : LogWriter
+    {
+        /// <summary>
+        /// The actual instance of this class.
+        /// </summary>
+        public static readonly ConsoleLogWriter Instance = new ConsoleLogWriter();
+
+        /// <summary>
+        /// Logwriters the specified source.
+        /// </summary>
+        /// <param name="source">object that wrote the logentry.</param>
+        /// <param name="prio">Importance of the log message</param>
+        /// <param name="message">The message.</param>
+        public void Write(object source, LogPrio prio, string message)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(DateTime.Now.ToString());
+            sb.Append(" ");
+            sb.Append(prio.ToString().PadRight(10));
+            sb.Append(" | ");
+#if DEBUG
+            StackTrace trace = new StackTrace();
+            StackFrame[] frames = trace.GetFrames();
+            int endFrame = frames.Length > 4 ? 4 : frames.Length;
+            int startFrame = frames.Length > 0 ? 1 : 0;
+            for (int i = startFrame; i < endFrame; ++i)
+            {
+                sb.Append(frames[i].GetMethod().Name);
+                sb.Append(" -> ");
+            }
+#else
+            sb.Append(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            sb.Append(" | ");
+#endif
+            sb.Append(message);
+
+            Console.ForegroundColor = GetColor(prio);
+            Console.WriteLine(sb.ToString());
+            Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        /// <summary>
+        /// Get color for the specified logprio
+        /// </summary>
+        /// <param name="prio">prio for the log entry</param>
+        /// <returns>A <see cref="ConsoleColor"/> for the prio</returns>
+        public static ConsoleColor GetColor(LogPrio prio)
         {
             switch (prio)
             {
                 case LogPrio.Trace:
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    break;
+                    return ConsoleColor.DarkGray;
                 case LogPrio.Debug:
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    break;
+                    return ConsoleColor.Gray;
                 case LogPrio.Info:
-                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                    break;
+                    return ConsoleColor.White;
                 case LogPrio.Warning:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    break;
+                    return ConsoleColor.DarkMagenta;
                 case LogPrio.Error:
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    break;
+                    return ConsoleColor.Magenta;
                 case LogPrio.Fatal:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    break;
+                    return ConsoleColor.Red;
             }
-            Console.WriteLine(source.GetType().Name + " " + prio + ": " + message);
-            Console.ForegroundColor = ConsoleColor.Gray;
-        }        
+
+            return ConsoleColor.Yellow;
+        }
+    }
+
+    /// <summary>
+    /// Default log writer, writes everything to null (nowhere).
+    /// </summary>
+    /// <seealso cref="LogWriter"/>
+    public sealed class NullLogWriter : LogWriter
+    {
+        /// <summary>
+        /// The logging instance.
+        /// </summary>
+        public static readonly NullLogWriter Instance = new NullLogWriter();
+
+        /// <summary>
+        /// Writes everything to null
+        /// </summary>
+        /// <param name="source">object that wrote the logentry.</param>
+        /// <param name="prio">Importance of the log message</param>
+        /// <param name="message">The message.</param>
+        public void Write(object source, LogPrio prio, string message)
+        {}
     }
 }

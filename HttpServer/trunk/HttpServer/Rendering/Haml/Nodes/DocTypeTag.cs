@@ -50,18 +50,24 @@ namespace HttpServer.Rendering.Haml.Nodes
             return word.Length >= 3 && word.Substring(0, 3) == "!!!" && firstNode;
         }
 
+        /// <summary>
+        /// Convert node to HTML (with ASP-tags)
+        /// </summary>
+        /// <returns>HTML string</returns>
+        /// <exception cref="NotImplementedException"></exception>
         public override string ToHtml()
         {
             throw new NotImplementedException();
         }
 
         /// <summary>
-        /// 
+        /// Convert the node to c# code
         /// </summary>
-        /// <param name="smallEnough">code is small enough to fit on one row.</param>
-        /// <param name="defaultValue">smallEnough is a default value, recalc it</param>
-        /// <returns></returns>
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             return _docType + Environment.NewLine;
         }

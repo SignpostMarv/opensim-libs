@@ -1,7 +1,7 @@
+using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Web;
 using HttpServer.FormDecoders;
 
 namespace HttpServer.FormDecoders
@@ -9,9 +9,9 @@ namespace HttpServer.FormDecoders
     /// <summary>
     /// Can handle application/x-www-form-urlencoded
     /// </summary>
-    public class UrlDecoder : FormDecoder
+    public class UrlDecoder : IFormDecoder
     {
-        #region FormDecoder Members
+        #region IFormDecoder Members
 
         /// <summary>
         /// </summary>
@@ -22,7 +22,7 @@ namespace HttpServer.FormDecoders
         /// A http form, or null if content could not be parsed.
         /// </returns>
         /// <exception cref="InvalidDataException">If contents in the stream is not valid input data.</exception>
-        public HttpInput Decode(Stream stream, string contentType, Encoding encoding)
+		public HttpForm Decode(Stream stream, string contentType, Encoding encoding)
         {
             if (stream == null || stream.Length == 0)
                 return null;
@@ -31,24 +31,23 @@ namespace HttpServer.FormDecoders
             if (encoding == null)
                 encoding = Encoding.UTF8;
 
-            HttpInput form = new HttpInput("noname");
-
-            StreamReader reader = new StreamReader(stream, encoding);
-            string s = reader.ReadToEnd();
-            string[] pairs = s.Split('&');
-            foreach (string pair in pairs)
+            try
             {
-                string[] item = pair.Split('=');
-                if (item.Length != 2)
-                    throw new InvalidDataException("Invalid url string, expected an equal sign.");
-
-                form.Add(HttpUtility.UrlDecode(item[0]), HttpUtility.UrlDecode(item[1]));
+                StreamReader reader = new StreamReader(stream, encoding);
+                return new HttpForm(HttpHelper.ParseQueryString(reader.ReadToEnd()));
             }
-
-            return form;
+            catch(ArgumentException err)
+            {
+                throw new InvalidDataException(err.Message, err);
+            }
         }
 
 
+        /// <summary>
+        /// Checks if the decoder can handle the mime type
+        /// </summary>
+        /// <param name="contentType">Content type (with any additional info like boundry). Content type is always supplied in lower case.</param>
+        /// <returns>True if the decoder can parse the specified content type</returns>
         public bool CanParse(string contentType)
         {
             if (string.IsNullOrEmpty(contentType))

@@ -32,6 +32,14 @@ namespace HttpServer.Test.Renderers
         }
 
         [Test]
+        public void TestFormat()
+        {
+            string temp = @"Let's do <% string.Format(""Some stuff = {0}"", Dummy) %>.";
+            ParseAndGenerate(temp);
+            Assert.AreEqual("sb.Append(@\"Let's do \"); string.Format(\"Some stuff = {0}\", Dummy) sb.Append(@\".\r\n\");", _sb.ToString());
+        }
+
+        [Test]
         public void TestCode()
         {
             string temp = @"<html><% if (a == 'a') { %>Hello<% } %></html>";
@@ -42,20 +50,20 @@ namespace HttpServer.Test.Renderers
         public void TestEchoGenerated()
         {
             ParseAndGenerate(@"<html name=""<%= name %>"">");
-            object[] args = new object[]{"name", "jonas"};
-            TinyTemplate template = _compiler.Compile(args, _sb.ToString());
-            string result = template.Invoke(args);
+            TemplateArguments args = new TemplateArguments("name", "jonas");
+            ITinyTemplate template = _compiler.Compile(args, _sb.ToString(), "nun");
+            string result = template.Invoke(args, null);
             Assert.AreEqual("<html name=\"jonas\">\r\n", result);
         }
 
         public void TestCodeGenerated()
         {
             ParseAndGenerate(@"<html><% if (a == 'a') { %>Hello<% } %></html>");
-            object[] args = new object[] { 'a', 'b' };
-            TinyTemplate template = _compiler.Compile(args, _sb.ToString());
+            TemplateArguments args = new TemplateArguments("a", 'b');
+			ITinyTemplate template = _compiler.Compile(args, _sb.ToString(), "nun");
 
-            Assert.AreEqual("<html></html>\r\n", template.Invoke(args));
-            Assert.AreEqual("<html>Hello</html>\r\n", template.Invoke(new object[] { 'a', 'a' }));
+            Assert.AreEqual("<html></html>\r\n", template.Invoke(args, null));
+			Assert.AreEqual("<html>Hello</html>\r\n", template.Invoke(new TemplateArguments("a", 'a'), null));
         }
 
         private void ParseAndGenerate(string temp)

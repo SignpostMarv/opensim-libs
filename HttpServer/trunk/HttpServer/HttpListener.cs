@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -8,7 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 namespace HttpServer
 {
     /// <summary>
-    /// HTTP Listener waits for HTTP connections and provide us with HttpListenerContexts using the
+    /// HTTP Listener waits for HTTP connections and provide us with <see cref="HttpListenerContext"/>s using the
     /// <see cref="RequestHandler"/> delegate.
     /// </summary>
     public class HttpListener
@@ -19,12 +20,19 @@ namespace HttpServer
         private readonly SslProtocols _sslProtocol = SslProtocols.Tls;
         private ClientDisconnectedHandler _disconnectHandler;
         private TcpListener _listener;
-        private WriteLogHandler _logWriter;
+        private ILogWriter _logWriter = NullLogWriter.Instance;
         private RequestReceivedHandler _requestHandler;
-        private readonly object _logLock = new object();
+        private readonly object _listenLock = new object();
+        private bool _canListen;
+        private bool _useTraceLogs;
 
         /// <summary>
-        /// Listen for regular http connections
+        /// A client have been accepted, but not handled, by the listener.
+        /// </summary>
+        public event EventHandler<ClientAcceptedEventArgs> Accepted = delegate{};
+
+        /// <summary>
+        /// Listen for regular HTTP connections
         /// </summary>
         /// <param name="address">IP Address to accept connections on</param>
         /// <param name="port">TCP Port to listen on, default HTTP port is 80.</param>
@@ -56,7 +64,7 @@ namespace HttpServer
         /// <param name="address">IP Address to accept connections on</param>
         /// <param name="port">TCP Port to listen on, default HTTPS port is 443</param>
         /// <param name="certificate">Certificate to use</param>
-        /// <param name="protocol">which https protocol to use, default is Tls.</param>
+        /// <param name="protocol">which HTTPS protocol to use, default is TLS.</param>
         public HttpListener(IPAddress address, int port, X509Certificate certificate, SslProtocols protocol)
             : this(address, port, certificate)
         {
@@ -73,22 +81,22 @@ namespace HttpServer
         }
 
         /// <summary>
-        /// Gives you a change to receive log entries for all internals of the http lib.
+        /// Gives you a change to receive log entries for all internals of the HTTP library.
         /// </summary>
-        public WriteLogHandler LogWriter
+        /// <remarks>
+        /// You may not switch log writer after starting the listener.
+        /// </remarks>
+        public ILogWriter LogWriter
         {
             get { return _logWriter; }
             set
             {
-                lock (_logLock)
-                {
-                    _logWriter = value;
-                    if (_certificate != null)
-                        WriteLog(this, LogPrio.Info,
-                                 "HTTPS(" + _sslProtocol + ") listening on " + _address + ":" + _port);
-                    else
-                        WriteLog(this, LogPrio.Info, "HTTP listening on " + _address + ":" + _port);
-                }
+                _logWriter = value ?? NullLogWriter.Instance;
+                if (_certificate != null)
+                    _logWriter.Write(this, LogPrio.Info,
+                                     "HTTPS(" + _sslProtocol + ") listening on " + _address + ":" + _port);
+                else
+                    _logWriter.Write(this, LogPrio.Info, "HTTP listening on " + _address + ":" + _port);
             }
         }
 
@@ -107,76 +115,94 @@ namespace HttpServer
             }
         }
 
-        protected IAsyncResult BeginAcceptSocket(AsyncCallback callback, object state)
+        /// <summary>
+        /// True if we should turn on trace logs.
+        /// </summary>
+        public bool UseTraceLogs
         {
-            return _listener.BeginAcceptSocket(callback, state);
+            get { return _useTraceLogs; }
+            set { _useTraceLogs = value; }
         }
 
-        protected HttpClientContext EndAcceptSocket(IAsyncResult ar)
-        {
-            // if we have stopped the listener.
-            if (_listener == null)
-                return null;
-            if (_requestHandler == null)
-                return null;
-
-            Socket socket = _listener.EndAcceptSocket(ar);
-            WriteLog(this, LogPrio.Debug, "Accepted connection from: " + socket.RemoteEndPoint);
-            NetworkStream stream = new NetworkStream(socket, true);
-            if (_certificate != null)
-            {
-                SslStream sslStream = new SslStream(stream, false);
-                sslStream.AuthenticateAsServer(_certificate, false, _sslProtocol, true);
-                return new HttpClientContext(true, _requestHandler, _disconnectHandler, sslStream, LogWriter);
-            }
-            else
-                return new HttpClientContext(false, _requestHandler, _disconnectHandler, stream, LogWriter);
-        }
 
         private void OnAccept(IAsyncResult ar)
         {
             try
             {
-                // Let's end the request.
-                EndAcceptSocket(ar);
-                BeginAcceptSocket(OnAccept, null);
+                // i'm not trying to avoid ALL cases here. but just the most simple ones.
+                // doing a lock would defeat the purpose since only one socket could be accepted at once.
+
+                // the lock kills performance and that's why I temporarly disabled it.
+                // right now it's up to the exception block to handle Stop()
+                /*lock (_listenLock)
+                    if (!_canListen)
+                        return;
+                */
+                Socket socket = _listener.EndAcceptSocket(ar);
+                _listener.BeginAcceptSocket(OnAccept, null);
+
+                ClientAcceptedEventArgs args = new ClientAcceptedEventArgs(socket);
+                Accepted(this, args);
+                if (args.Revoked)
+                {
+                    _logWriter.Write(this, LogPrio.Debug, "Socket was revoked by event handler.");
+                    socket.Close();
+                    return;
+                }
+
+                _logWriter.Write(this, LogPrio.Debug, "Accepted connection from: " + socket.RemoteEndPoint);
+
+                NetworkStream stream = new NetworkStream(socket, true);
+                IPEndPoint remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
+
+                if (_certificate != null)
+                    CreateSecureContext(stream, remoteEndPoint);
+                else
+                    new HttpClientContextImp(false, remoteEndPoint, _requestHandler, _disconnectHandler, stream,
+                                             LogWriter);
             }
             catch (Exception err)
             {
+                if (err is ObjectDisposedException || err is NullReferenceException) // occurs when we shut down the listener.
+                {
+                    if (UseTraceLogs)
+                        _logWriter.Write(this, LogPrio.Trace, err.Message);
+                    return;
+                }
+
+                _logWriter.Write(this, LogPrio.Debug, err.Message);
                 if (ExceptionThrown == null)
 #if DEBUG
                     throw;
 #else
-    // we can't really do anything but close the connection
-                    Console.WriteLine(err.Message);
+                   _logWriter.Write(this, LogPrio.Fatal, err.Message);
+                // we can't really do anything but close the connection
 #endif
-                else
+                if (ExceptionThrown != null)
                     ExceptionThrown(this, err);
-            }
-            finally
-            {
-                try
-                {
-                    // we do this in finally since we REALLY want the http listener to keep
-                    // running.
-                    // but don't do it if we fail
-                    BeginAcceptSocket(OnAccept, null);
-                }
-                catch (Exception err)
-                {
-                    if (ExceptionThrown == null)
-#if DEBUG
-                        throw;
-#else
-    // we can't really do anything but close the connection
-                    Console.WriteLine(err.Message);
-#endif
-                    else
-                        ExceptionThrown(this, err);
-                }
             }
         }
 
+        private void CreateSecureContext(Stream stream, IPEndPoint remoteEndPoint)
+        {
+            SslStream sslStream = new SslStream(stream, false);
+            try
+            {
+                sslStream.AuthenticateAsServer(_certificate, false, _sslProtocol, false); //todo: this may fail
+                new HttpClientContextImp(true, remoteEndPoint, _requestHandler, _disconnectHandler, sslStream,
+                                                   LogWriter);
+            }
+            catch (IOException err)
+            {
+                if (UseTraceLogs)
+                    _logWriter.Write(this, LogPrio.Trace, err.Message);
+            }
+            catch (ObjectDisposedException err)
+            {
+                if (UseTraceLogs)
+                    _logWriter.Write(this, LogPrio.Trace, err.Message);
+            }
+        }
         /// <summary>
         /// Start listen for new connections
         /// </summary>
@@ -187,9 +213,9 @@ namespace HttpServer
             {
                 _listener = new TcpListener(_address, _port);
                 _listener.Start(backlog);
+                _canListen = true;
             }
-
-            BeginAcceptSocket(OnAccept, null);
+            _listener.BeginAcceptSocket(OnAccept, null);
         }
 
 
@@ -199,17 +225,10 @@ namespace HttpServer
         /// <exception cref="SocketException"></exception>
         public void Stop()
         {
+            lock (_listenLock)
+                _canListen = false;
             _listener.Stop();
             _listener = null;
-        }
-
-        public void WriteLog(object source, LogPrio prio, string message)
-        {
-            lock (_logLock)
-            {
-                if (_logWriter != null)
-                    _logWriter(source, prio, message);
-            }
         }
 
         /// <summary>
@@ -217,7 +236,7 @@ namespace HttpServer
         /// </summary>
         /// <remarks>
         /// Exceptions will be thrown during debug mode if this event is not used,
-        /// exceptions will be printed to console and supressed during release mode.
+        /// exceptions will be printed to console and suppressed during release mode.
         /// </remarks>
         public event ExceptionHandler ExceptionThrown;
     }

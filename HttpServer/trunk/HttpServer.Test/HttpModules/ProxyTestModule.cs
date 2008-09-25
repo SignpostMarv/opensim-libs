@@ -1,5 +1,6 @@
 using HttpServer.HttpModules;
 using HttpServer;
+using HttpServer.Sessions;
 
 namespace HttpServer.Test.HttpModules
 {
@@ -12,7 +13,7 @@ namespace HttpServer.Test.HttpModules
         /// <param name="response">Information that is being sent back to the client.</param>
         /// <param name="session">Session used to </param>
         /// <returns>true if this module handled the request.</returns>
-        public override bool Process(HttpRequest request, HttpResponse response, HttpSession session)
+        public override bool Process(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             return false;
         }

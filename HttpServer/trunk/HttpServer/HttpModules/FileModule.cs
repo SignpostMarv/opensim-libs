@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using Fadd;
 using HttpServer.Exceptions;
-using HttpServer;
+using HttpServer.Sessions;
 
 namespace HttpServer.HttpModules
 {
@@ -13,24 +15,58 @@ namespace HttpServer.HttpModules
     {
         private readonly string _baseUri;
         private readonly string _basePath;
+    	private readonly bool _useLastModifiedHeader;
         private readonly IDictionary<string, string> _mimeTypes = new Dictionary<string, string>();
+        private static readonly string[] DefaultForbiddenChars = new string[]{ "\\", "..", ":" };
+        private string[] _forbiddenChars;
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="FileModule"/> class.
         /// </summary>
         /// <param name="baseUri">Uri to serve, for instance "/files/"</param>
         /// <param name="basePath">Path on hard drive where we should start looking for files</param>
-        public FileModule(string baseUri, string basePath)
+        /// <param name="useLastModifiedHeader">If true a Last-Modifed header will be sent upon requests urging webbrowser to cache files</param>
+        public FileModule(string baseUri, string basePath, bool useLastModifiedHeader)
         {
+            Check.Require(baseUri, "baseUri");
+            Check.Require(basePath, "basePath");
+
+        	_useLastModifiedHeader = useLastModifiedHeader;
             _baseUri = baseUri;
             _basePath = basePath;
             if (!_basePath.EndsWith("\\"))
                 _basePath += "\\";
+            ForbiddenChars = DefaultForbiddenChars;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileModule"/> class.
+        /// </summary>
+        /// <param name="baseUri">Uri to serve, for instance "/files/"</param>
+        /// <param name="basePath">Path on hard drive where we should start looking for files</param>
+        public FileModule(string baseUri, string basePath)
+            : this(baseUri, basePath, false)
+		{}
+
+        /// <summary>
+        /// List with all mime-type that are allowed. 
+        /// </summary>
+        /// <remarks>All other mime types will result in a Forbidden http status code.</remarks>
         public IDictionary<string, string> MimeTypes
         {
             get { return _mimeTypes; }
+        }
+
+        /// <summary>
+        /// characters that may not  exist in a path.
+        /// </summary>
+        /// <example>
+        /// fileMod.ForbiddenChars = new string[]{ "\\", "..", ":" };
+        /// </example>
+        public string[] ForbiddenChars
+        {
+            get { return _forbiddenChars; }
+            set { _forbiddenChars = value; }
         }
 
 
@@ -49,6 +85,7 @@ namespace HttpServer.HttpModules
             MimeTypes.Add("gif", "image/gif");
             MimeTypes.Add("png", "image/png");
 
+			MimeTypes.Add("ico", "image/vnd.microsoft.icon");
             MimeTypes.Add("css", "text/css");
             MimeTypes.Add("gzip", "application/x-gzip");
             MimeTypes.Add("zip", "multipart/x-zip");
@@ -81,13 +118,36 @@ namespace HttpServer.HttpModules
         /// <returns>true if this module should handle it.</returns>
         public bool CanHandle(Uri uri)
         {
+            if (Contains(uri.AbsolutePath, _forbiddenChars))
+                return false;
+
             return uri.AbsolutePath.StartsWith(_baseUri) && File.Exists(GetPath(uri));
         }
 
         private string GetPath(Uri uri)
         {
+            if (Contains(uri.AbsolutePath, _forbiddenChars))
+                throw new BadRequestException("Illegal path");
+
             string path = _basePath + uri.AbsolutePath.Substring(_baseUri.Length);
             return path.Replace('/', '\\');
+        }
+
+        /// <summary>
+        /// check if source contains any of the chars.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="chars"></param>
+        /// <returns></returns>
+        private static bool Contains(string source, IEnumerable<string> chars)
+        {
+            foreach (string s in chars)
+            {
+                if (source.Contains(s))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -96,7 +156,7 @@ namespace HttpServer.HttpModules
         /// <param name="request">Information sent by the browser about the request</param>
         /// <param name="response">Information that is being sent back to the client.</param>
         /// <param name="session">Session used to </param>
-        public override bool Process(HttpRequest request, HttpResponse response, HttpSession session)
+        public override bool Process(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             if (!CanHandle(request.Uri))
                 return false;
@@ -113,17 +173,31 @@ namespace HttpServer.HttpModules
                 else
                     throw new ForbiddenException("Forbidden file type: " + extension);
 
-                FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                response.ContentLength = stream.Length;
-                response.SendHeaders();
+				using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+				{	
+					if (!string.IsNullOrEmpty(request.Headers["if-Modified-Since"]))
+					{
+						DateTime lastRequest = DateTime.Parse(request.Headers["if-Modified-Since"]);
+						if (lastRequest.CompareTo(File.GetLastWriteTime(path)) <= 0)
+							response.Status = HttpStatusCode.NotModified;
+					}
 
-                byte[] buffer = new byte[8192];
-                int bytesRead = stream.Read(buffer, 0, 8192);
-                while (bytesRead > 0)
-                {
-                    response.SendBody(buffer, 0, bytesRead);
-                    bytesRead = stream.Read(buffer, 0, 8192);
-                }
+                    if (_useLastModifiedHeader)
+					    response.AddHeader("Last-modified", File.GetLastWriteTime(path).ToString("r"));
+					response.ContentLength = stream.Length;
+					response.SendHeaders();
+
+					if (request.Method != "Headers" && response.Status != HttpStatusCode.NotModified)
+					{
+						byte[] buffer = new byte[8192];
+						int bytesRead = stream.Read(buffer, 0, 8192);
+						while (bytesRead > 0)
+						{
+							response.SendBody(buffer, 0, bytesRead);
+							bytesRead = stream.Read(buffer, 0, 8192);
+						}
+					}
+				}
             }
             catch (FileNotFoundException err)
             {

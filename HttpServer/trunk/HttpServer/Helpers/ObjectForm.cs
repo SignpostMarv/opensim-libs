@@ -16,7 +16,7 @@ namespace HttpServer.Helpers
         private readonly string _method = "post";
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="ObjectForm"/> class.
         /// </summary>
         /// <param name="method"></param>
         /// <param name="name">form name *and* id.</param>
@@ -32,11 +32,11 @@ namespace HttpServer.Helpers
         }
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="ObjectForm"/> class.
         /// </summary>
         /// <param name="name">form name *and* id.</param>
         /// <param name="action">action to do when form is posted.</param>
-        /// <param name="obj"></param>
+        /// <param name="obj">object to get values from</param>
         public ObjectForm(string action, string name, object obj)
             : this(action, obj)
         {
@@ -46,6 +46,11 @@ namespace HttpServer.Helpers
             _name = name;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ObjectForm"/> class.
+        /// </summary>
+        /// <param name="action">form action.</param>
+        /// <param name="obj">object to get values from.</param>
         public ObjectForm(string action, object obj)
         {
             if (string.IsNullOrEmpty(action))
@@ -57,20 +62,41 @@ namespace HttpServer.Helpers
             _action = action;
         }
 
+        /// <summary>
+        /// write out the FORM-tag.
+        /// </summary>
+        /// <returns>generated html code</returns>
         public string Begin()
         {
-            if (!string.IsNullOrEmpty(_name))
-                return string.Format("<form method=\"{0}\" id=\"{1}\" name=\"{1}\" action=\"{2}\">", _method, _name, _action);
-            else
-                return string.Format("<form method=\"{0}\" action=\"{1}\">", _method, _action);
+            return Begin(false);
         }
+
+        /// <summary>
+        /// Writeout the form tag
+        /// </summary>
+        /// <param name="isAjax">form should be posted through ajax.</param>
+        /// <returns>generated html code</returns>
+        public string Begin(bool isAjax)
+        {
+            string ajaxCode;
+            if (isAjax)
+                ajaxCode = "onsubmit=\"" + WebHelper.JSImplementation.AjaxFormOnSubmit() + "\"";
+            else
+                ajaxCode = string.Empty;
+
+            if (!string.IsNullOrEmpty(_name))
+                return string.Format("<form method=\"{0}\" id=\"{1}\" name=\"{1}\" {3} action=\"{2}\">", _method, _name, _action, ajaxCode);
+            else
+                return string.Format("<form method=\"{0}\" action=\"{1}\" {2}>", _method, _action, ajaxCode);
+        }
+
 
         /// <summary>
         /// Generates a text box.
         /// </summary>
         /// <param name="propertyName"></param>
         /// <param name="options"></param>
-        /// <returns></returns>
+        /// <returns>generated html code</returns>
         public string Tb(string propertyName, params object[] options)
         {
             if (options.Length % 2 != 0)
@@ -97,28 +123,40 @@ namespace HttpServer.Helpers
         /// </summary>
         /// <param name="propertyName"></param>
         /// <param name="options"></param>
-        /// <returns></returns>
+        /// <returns>generated html code</returns>
         public string Pb(string propertyName, params object[] options)
         {
             return string.Format("<input type=\"password\" name=\"{0}[{1}]\" id=\"{0}_{1}\" />", _name, propertyName);
         }
 
+        /// <summary>
+        /// Hiddens the specified property name.
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        /// <param name="options">The options.</param>
+        /// <returns>generated html code</returns>
         public string Hidden(string propertyName, params object[] options)
         {
             return string.Format("<input type=\"hidden\" name=\"{0}[{1}]\" id=\"{0}_{1}\" value=\"{2}\" />", _name, propertyName, GetValue(propertyName));
         }
 
+        /// <summary>
+        /// Labels the specified property name.
+        /// </summary>
+        /// <param name="propertyName">property in object.</param>
+        /// <param name="label">caption</param>
+        /// <returns>generated html code</returns>
         public string Label(string propertyName, string label)
         {
             return string.Format("<label for=\"{0}_{1}\">{2}</label>", _name, propertyName, label);
         }
         /// <summary>
-        /// Checkbox
+        /// Generate a checkbox
         /// </summary>
-        /// <param name="propertyName"></param>
-        /// <param name="value"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
+        /// <param name="propertyName">property in object</param>
+        /// <param name="value">checkbox value</param>
+        /// <param name="options">additional html attributes.</param>
+        /// <returns>generated html code</returns>
         public string Cb(string propertyName, string value, params object[] options)
         {
             string isChecked = string.Empty;
@@ -137,12 +175,29 @@ namespace HttpServer.Helpers
             return string.Format("<input type=\"hidden\" name=\"{0}\" id=\"{0}_{1}\" value=\"0\" /><input type=\"checkbox\" name=\"{0}[{1}]\" id=\"{0}_{1}\" value=\"{2}\" {3} />", _name, propertyName, value, isChecked);
         }
 
+        /// <summary>
+        /// Write a html select tag
+        /// </summary>
+        /// <param name="propertyName">object property.</param>
+        /// <param name="idColumn">id column</param>
+        /// <param name="titleColumn">The title column.</param>
+        /// <param name="options">The options.</param>
+        /// <returns></returns>
         public string Select(string propertyName, string idColumn, string titleColumn, params object[] options)
         {
             object o = _object.GetType().GetProperty(propertyName).GetValue(_object, null);
             return Select(propertyName, o as IEnumerable, idColumn, titleColumn, options);
         }
 
+        /// <summary>
+        /// Selects the specified property name.
+        /// </summary>
+        /// <param name="propertyName">Name of the property.</param>
+        /// <param name="items">The items.</param>
+        /// <param name="idColumn">The id column.</param>
+        /// <param name="titleColumn">The title column.</param>
+        /// <param name="options">The options.</param>
+        /// <returns></returns>
         public string Select(string propertyName, IEnumerable items, string idColumn, string titleColumn, params object[] options)
         {
             //object o = _object.GetType().GetProperty(propertyName).GetValue(_object, null);
@@ -162,11 +217,20 @@ namespace HttpServer.Helpers
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Write a submit tag.
+        /// </summary>
+        /// <param name="value">button caption</param>
+        /// <returns>html submit tag</returns>
         public string Submit(string value)
         {
             return string.Format("<input type=\"submit\" value=\"{0}\" />", value);
         }
 
+        /// <summary>
+        /// html end form tag
+        /// </summary>
+        /// <returns>html</returns>
         public string End()
         {
             return "</form>";

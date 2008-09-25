@@ -5,23 +5,38 @@ using HttpServer.Rendering.Haml.Nodes;
 
 namespace HttpServer.Rendering.Haml.Nodes
 {
+    /// <summary>
+    /// Represents a HTML tag.
+    /// </summary>
     public class TagNode : Node
     {
         private string _name;
 
+        /// <summary>
+        /// Create a new HTML tag node.
+        /// </summary>
+        /// <param name="parent">parent node</param>
         public TagNode(Node parent) : base(parent)
         {
         }
 
+        /// <summary>
+        /// This is a plain text node
+        /// </summary>
         public override bool IsTextNode
         {
             get { return false; }
         }
 
+        /// <summary>
+        /// tag name
+        /// </summary>
         public string Name
         {
             get { return _name; }
-            set { _name = value; }
+            set { 
+                _name = value; 
+            }
         }
 
         /// <summary>
@@ -50,10 +65,10 @@ namespace HttpServer.Rendering.Haml.Nodes
         public override Node Parse(NodeList prototypes, Node parent, LineInfo line, ref int offset)
         {
             if (offset > line.Data.Length - 1)
-                throw new CodeGeneratorException(line.LineNumber, "Tried to parse after end of line");
+				throw new CodeGeneratorException(line.LineNumber, line.Data, "Tried to parse after end of line");
 
             if (line.Data[offset] != '%')
-                throw new CodeGeneratorException(line.LineNumber, "Not a tag node");
+				throw new CodeGeneratorException(line.LineNumber, line.Data, "Not a tag node");
 
             int pos = -1;
             for (int i = offset + 1; i < line.Data.Length; ++i)
@@ -69,21 +84,37 @@ namespace HttpServer.Rendering.Haml.Nodes
 
             TagNode node = (TagNode) prototypes.CreateNode("%", parent);
             node.Name = line.Data.Substring(offset + 1, pos - offset - 1);
+			if (node._name == "br" || node._name == "input" || node._name == "style" || node._name == "img")
+            {
+                line.SelfClosed = true;
+            	node.LineInfo = line;
+                node.LineInfo.SelfClosed = true;
+            }
+
             offset = pos;
             return node;
         }
 
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <summary>
+        /// Convert the node to c# code
+        /// </summary>
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             StringBuilder sb = new StringBuilder();
             string intend = LineInfo == null ? string.Empty : string.Empty.PadLeft(LineInfo.Intendation, '\t');
 
             bool tempStr = inString;
+            bool childSmallEnough = Children.Count == 0 ||
+                (Children.Count == 1 && Children.First.Value.ToCode(ref tempStr).Length < 60 && AllChildrenCount <= 2);
             /*smallEnough = AllChildrenCount < 1 ||
                           (Children.Count <= 2 &&
                            Children.First.Value.ToCode(ref tempStr).Length < 40);
             */
-            smallEnough = false; // small enough needs a lot of love.
+            //smallEnough = false; // small enough needs a lot of love.
             if (!inString)
             {
                 sb.Append("sb.Append(@\"");
@@ -108,16 +139,18 @@ namespace HttpServer.Rendering.Haml.Nodes
             if (LineInfo.SelfClosed)
             {
                 sb.Append("/>");
+				if (!childSmallEnough)
+                    sb.AppendLine();
                 return sb.ToString();
             }
 
-            if (smallEnough)
+            if (childSmallEnough)
                 sb.Append(">");
             else
                 sb.AppendLine(">");
 
             foreach (Node node in Children)
-                sb.Append(node.ToCode(ref inString, smallEnough));
+                sb.Append(node.ToCode(ref inString, childSmallEnough));
 
             if (!inString)
             {
@@ -125,8 +158,12 @@ namespace HttpServer.Rendering.Haml.Nodes
                 inString = true;
             }
 
-            if (!smallEnough)
+            if (!childSmallEnough)
+            {
+                // seems to be done by children
+                //sb.AppendLine();
                 sb.Append(intend);
+            }
 
             sb.Append("</");
             sb.Append(_name);
@@ -137,6 +174,10 @@ namespace HttpServer.Rendering.Haml.Nodes
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Convert node to HTML (with ASP-tags)
+        /// </summary>
+        /// <returns>HTML string</returns>
         public override string ToHtml()
         {
             StringBuilder sb = new StringBuilder();

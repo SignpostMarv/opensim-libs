@@ -1,152 +1,98 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
-using HttpServer.Exceptions;
-using HttpServer.FormDecoders;
 
 namespace HttpServer.FormDecoders
 {
-    public class MultipartFormDecoder : FormDecoder
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// http://www.faqs.org/rfcs/rfc1867.html
+    /// </remarks>
+    public class MultipartDecoder : IFormDecoder
     {
-        private const string ContentDisposition = "CONTENT-DISPOSITION";
-        private const string ContentType = "CONTENT-TYPE";
-        private const string FieldName = "NAME";
-        private const string FormFileName = "FILENAME";
+        /// <summary>
+        /// multipart/form-data
+        /// </summary>
+        public const string MimeType = "multipart/form-data";
 
-        /*protected HttpFile CreateFile(string name, string fileName, string contentType)
+        /// <summary>
+        /// form-data
+        /// </summary>
+        public const string FormData = "form-data";
+        #region IFormDecoder Members
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream">Stream containing the content</param>
+        /// <param name="contentType">Content type (with any additional info like boundry). Content type is always supplied in lower case</param>
+        /// <param name="encoding">Stream enconding</param>
+        /// <returns>A http form, or null if content could not be parsed.</returns>
+        /// <exception cref="InvalidDataException">If contents in the stream is not valid input data.</exception>
+        /// <exception cref="ArgumentNullException">If any parameter is null</exception>
+        public HttpForm Decode(Stream stream, string contentType, Encoding encoding)
         {
-            return new HttpFile(name, fileName, contentType);
-        }*/
+			if(stream == null)
+				throw new ArgumentNullException("stream");
+			if(string.IsNullOrEmpty(contentType))
+				throw new ArgumentNullException("contentType");
+			if(encoding == null)
+				throw new ArgumentNullException("encoding");
 
-        public HttpInput Decode(Stream stream, string contentTypeAndBoundry, Encoding encoding)
-        {
-            HttpInput form = new HttpInput("multi");
+			if(!CanParse(contentType))
+				throw new InvalidOperationException("Cannot parse contentType: " + contentType);
 
-            StreamReader reader = new StreamReader(stream, encoding);
-            int contentPos = contentTypeAndBoundry.IndexOf('=');
-            if (contentPos == -1)
-                throw new ArgumentException("Boundry not found", "contentTypeAndBoundry");
-            string boundry = contentTypeAndBoundry.Substring(contentPos + 1);
+            //multipart/form-data, boundary=AaB03x
+            int pos = contentType.IndexOf("=");
+            if (pos == -1)
+                throw new InvalidDataException("Missing boundry in content type.");
 
-            string fieldName = string.Empty;
-            string disposition = string.Empty;
-            string fileName = string.Empty;
-            string contentType = string.Empty;
-            bool gotEmptyLine = false;
+            string boundry = contentType.Substring(pos + 1).Trim();
+            HttpMultipart multipart = new HttpMultipart(stream, boundry, encoding);
 
-            while (true)
-            {
-                string line = reader.ReadLine();
-                string upperLine = line.ToUpper();
+			HttpForm form = new HttpForm();
 
+            HttpMultipart.Element element;
+			while ((element = multipart.ReadNextElement()) != null)
+			{
+				if (string.IsNullOrEmpty(element.Name))
+					throw new InvalidDataException("Error parsing request. Missing value name.\nElement: " + element.ToString());
 
-                if (line.Contains(boundry))
-                {
-                    if (string.Compare(line, boundry + "--") == 0)
-                        break; // end boundry
-                    disposition = string.Empty;
-                    fileName = string.Empty;
-                    fieldName = string.Empty;
-                    contentType = string.Empty;
-                    gotEmptyLine = false;
-                    continue;
-                }
-                    // Content-Disposition: form-data; name="namn"
-                    // Content-Disposition: form-data; name="afile"; filename="intype-0.3.1.664.exe"
-                    // Content-Type: application/x-msdos-program
-                else if (upperLine.Contains(ContentDisposition) || upperLine.Contains(ContentType))
-                {
-                    //todo: Remove possible bug if ; is in names (which is encapsulated with "")
-                    string[] entries = line.Split(';');
-                    if (entries.Length < 1)
-                        throw new BadRequestException("Invalid line: " + line);
+				if(!string.IsNullOrEmpty(element.Filename))
+				{
+					if (string.IsNullOrEmpty(element.ContentType))
+						throw new InvalidDataException("Error parsing request. Value '" + element.Name + "' lacks a content type.");
 
-                    for (int i = 0; i < entries.Length; ++i)
-                    {
-                        // separate the fields
-                        int pos = entries[i].IndexOf('=');
-                        if (pos == -1)
-                        {
-                            pos = entries[i].IndexOf(':');
-                            if (pos == -1)
-                                throw new BadRequestException("Expected \"=\" after field name, line: " + line);
-                        }
+					// Read the file data
+					byte[] buffer = new byte[element.Length];
+					stream.Seek(element.Start, SeekOrigin.Begin);
+					stream.Read(buffer, 0, (int) element.Length);
 
-                        string name = entries[i].Substring(0, pos);
-                        ++pos;
+					// Generate a filename
+					string filename = element.Filename;
+					string path = Environment.GetFolderPath(Environment.SpecialFolder.InternetCache).Replace("\\\\", "\\") + "\\tmp";
+					element.Filename = path + element.Filename.GetHashCode() + ".tmp";
 
-                        while (entries[i][pos] == ' ')
-                            ++pos;
+					// If the file exists generate a new filename
+					while(File.Exists(element.Filename))
+						element.Filename = path + (element.Filename.GetHashCode() + 1) + ".tmp";
 
-                        string value;
-                        if (entries[i][pos] == '"')
-                        {
-                            ++pos;
-                            value = entries[i].Substring(pos, entries[i].Length - pos - 1);
-                        }
-                        else
-                            value = entries[i].Substring(pos);
+					File.WriteAllBytes(element.Filename, buffer);
+					form.AddFile(new HttpFile(element.Name, element.Filename, element.ContentType, filename));					
+				}
+				else
+				{
+					byte[] buffer = new byte[element.Length];
+					stream.Seek(element.Start, SeekOrigin.Begin);
+					stream.Read(buffer, 0, (int)element.Length);
+					form.Add(element.Name, encoding.GetString(buffer));
+				}
+			}
 
-                        switch (name.Trim().ToUpper())
-                        {
-                            case FieldName:
-                                fieldName = value;
-                                break;
-                            case ContentDisposition:
-                                disposition = value.ToLower();
-                                break;
-                            case FormFileName:
-                                fileName = value;
-                                break;
-                            case ContentType:
-                                contentType = value;
-                                break;
-                        }
-                    }
-                }
-                else if (line == string.Empty && !gotEmptyLine)
-                {
-                    gotEmptyLine = true;
-                }
-                else if (disposition == "form-data" && contentType == string.Empty)
-                {
-                    if (fieldName == string.Empty)
-                        throw new BadRequestException("Got form data, but no field name");
-
-                    form.Add(fieldName, line);
-                }
-                else
-                {
-                    //todo: implement reading of files.
-                    //HttpFile file = CreateFile(fieldName, fileName, contentType);
-
-                    long pos = stream.Position;
-                    byte[] buffer = new byte[8196];
-
-                    int bytes = stream.Read(buffer, 0, 8196);
-                    while (bytes > 0)
-                    {
-                        bytes = stream.Read(buffer, 0, 8196);
-                    }
-
-                    //got data;
-                    Console.Write("SHould do data");
-                }
-            }
             return form;
-
-            //Content-Type: multipart/form-data; boundary=---------------------------230051238959
-            /*
-             * -----------------------------230051238959
-Content-Disposition: form-data; name="namn"
-
-asdffsdfds
------------------------------230051238959
-Content-Disposition: form-data; name="afile"; filename="intype-0.3.1.664.exe"
-Content-Type: application/x-msdos-program
-
-MZP??????��??�???????@????????
-             * */
         }
 
         /// <summary>
@@ -156,8 +102,9 @@ MZP??????��??�???????@????????
         /// <returns>True if the decoder can parse the specified content type</returns>
         public bool CanParse(string contentType)
         {
-            return contentType.Contains("multipart/form-data");
+            return contentType.StartsWith(MimeType, true, CultureInfo.InvariantCulture);
         }
-        
+
+        #endregion
     }
 }

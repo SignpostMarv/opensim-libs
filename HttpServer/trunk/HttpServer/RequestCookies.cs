@@ -29,48 +29,41 @@ namespace HttpServer
                 char ch = cookies[i];
 
                 // searching for start of cookie name
-                if (state == 0)
+                switch (state)
                 {
-                    if (char.IsWhiteSpace(ch))
-                        continue;
-                    else
-                    {
+                    case 0:
+                        if (char.IsWhiteSpace(ch))
+                            continue;
                         start = i;
                         ++state;
-                    }
-                }
-                    // searching for end of cookie
-                else if (state == 1)
-                {
-                    if (char.IsWhiteSpace(ch) || ch == '=')
-                    {
-                        if (start == -1)
-                            return; // todo: decide if an exception should be thrown.
-                        name = cookies.Substring(start, i - start);
-                        start = -1;
-                        ++state;
-                    }
-                }
-                    // searching for start of value
-                else if (state == 2)
-                {
-                    if (!char.IsWhiteSpace(ch) && ch != '=')
-                    {
-                        start = i;
-                        ++state;
-                    }
-                }
-                    // searching for end of value
-                else if (state == 3)
-                {
-                    if (ch == ';')
-                    {
-                        if (start != -1)
-                            Add(new RequestCookie(name, cookies.Substring(start, i - start)));
-                        start = -1;
-                        state = 0;
-                        name = string.Empty;
-                    }
+                        break;
+                    case 1:
+                        if (char.IsWhiteSpace(ch) || ch == '=')
+                        {
+                            if (start == -1)
+                                return; // todo: decide if an exception should be thrown.
+                            name = cookies.Substring(start, i - start);
+                            start = -1;
+                            ++state;
+                        }
+                        break;
+                    case 2:
+                        if (!char.IsWhiteSpace(ch) && ch != '=')
+                        {
+                            start = i;
+                            ++state;
+                        }
+                        break;
+                    case 3:
+                        if (ch == ';')
+                        {
+                            if (start != -1)
+                                Add(new RequestCookie(name, cookies.Substring(start, i - start)));
+                            start = -1;
+                            state = 0;
+                            name = string.Empty;
+                        }
+                        break;
                 }
             }
 
@@ -113,12 +106,9 @@ namespace HttpServer
         /// </summary>
         public RequestCookie this[string id]
         {
-            get
+            get 
             {
-                if (_items.ContainsKey(id))
-                    return _items[id];
-                else
-                    return null;
+                return _items.ContainsKey(id) ? _items[id] : null;
             }
         }
         /// <summary>
@@ -131,6 +121,9 @@ namespace HttpServer
         }
 
 
+        /// <summary>
+        /// Remove all cookies.
+        /// </summary>
         public void Clear()
         {
             _items.Clear();
@@ -152,5 +145,16 @@ namespace HttpServer
         }
 
         #endregion
+
+        internal void Remove(string cookieName)
+        {
+            lock (_items)
+            {
+                if (!_items.ContainsKey(cookieName))
+                    return;
+
+                _items.Remove(cookieName);
+            }
+        }
     }
 }

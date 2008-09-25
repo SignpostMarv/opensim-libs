@@ -4,15 +4,10 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Fadd;
 
 namespace HttpServer
 {
-    public enum ConnectionType
-    {
-        Close,
-        KeepAlive
-    }
-
     /// <summary>
     /// Response that is sent back to the web browser / client.
     /// 
@@ -27,18 +22,18 @@ namespace HttpServer
     /// to set ContentType and ContentLength before doing so.
     /// </summary>
     /// <example>
-    /// public void MyHandler(HttpRequest request, HttpResponse response)
+    /// public void MyHandler(IHttpRequest request, IHttpResponse response)
     /// {
     ///   
     /// }
     /// </example>
     /// todo: add two examples, using SendHeaders/SendBody and just the Body stream.
-    public class HttpResponse
+    public class HttpResponse : IHttpResponse
     {
         private Stream _body = new MemoryStream();
         private bool _chunked;
         private ConnectionType _connection;
-        private readonly HttpClientContext _context;
+        private readonly IHttpClientContext _context;
         private Encoding _encoding = Encoding.UTF8;
         private readonly NameValueCollection _headers = new NameValueCollection();
         private bool _headersSent;
@@ -49,20 +44,21 @@ namespace HttpServer
         private HttpStatusCode _status;
         private long _contentLength;
         private string _contentType;
-        private bool _contentTypeChangedByCode = false;
+        private bool _contentTypeChangedByCode;
         private readonly ResponseCookies _cookies = new ResponseCookies();
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="IHttpResponse"/> class.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="request"></param>
-        /// <exception cref="ArgumentException"></exception>
-        public HttpResponse(HttpClientContext context, HttpRequest request)
+        /// <param name="context">The context.</param>
+        /// <param name="request">The request.</param>
+        public HttpResponse(IHttpClientContext context, IHttpRequest request)
         {
+			Check.Require(request, "request");
+
             _httpVersion = request.HttpVersion;
             if (string.IsNullOrEmpty(_httpVersion))
-                throw new ArgumentException("HttpVersion in HttpRequest cannot be empty.");
+                throw new ArgumentException("HttpVersion in IHttpRequest cannot be empty.");
 
             Status = HttpStatusCode.OK;
             _context = context;
@@ -189,6 +185,9 @@ namespace HttpServer
             set { _contentTypeChangedByCode = value; }
         }
 
+        /// <summary>
+        /// Cookies that should be created/changed.
+        /// </summary>
         public ResponseCookies Cookies
         {
             get { return _cookies; }
@@ -334,6 +333,9 @@ namespace HttpServer
             for (int i = 0; i < _headers.Count; ++i)
                 sb.AppendFormat("{0}: {1}\r\n", _headers.AllKeys[i], _headers[i]);
 
+            foreach (ResponseCookie cookie in Cookies)
+                sb.AppendFormat("Set-Cookie: {0}\r\n", cookie);
+
             sb.AppendLine();
 
             _context.Send(Encoding.GetBytes(sb.ToString()));
@@ -352,6 +354,13 @@ namespace HttpServer
             _headers["location"] = uri.ToString();
         }
 
+        /// <summary>
+        /// redirect to somewhere
+        /// </summary>
+        /// <param name="url">where the redirect should go</param>
+        /// <remarks>
+        /// No body are allowed when doing redirects.
+        /// </remarks>
         public void Redirect(string url)
         {
             Status = HttpStatusCode.Redirect;

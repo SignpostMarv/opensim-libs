@@ -5,6 +5,9 @@ using HttpServer.Exceptions;
 
 namespace HttpServer
 {
+    /// <summary>
+    /// Parses a HTTP request directly from a stream
+    /// </summary>
     public class HttpRequestParser
     {
         #region Delegates
@@ -13,24 +16,29 @@ namespace HttpServer
         /// Invoked when a request have been completed.
         /// </summary>
         /// <param name="request"></param>
-        public delegate void RequestCompletedHandler(HttpRequest request);
+        public delegate void RequestCompletedHandler(IHttpRequest request);
 
         #endregion
 
-        private readonly WriteLogHandler _log;
+        private readonly ILogWriter _log;
         private readonly RequestCompletedHandler RequestCompleted;
 
         private string _curHeaderName = string.Empty;
         private string _curHeaderValue = string.Empty;
         private State _curState;
-        private HttpRequest _request = new HttpRequest();
+        private readonly HttpRequest _request = new HttpRequest();
 
-        public HttpRequestParser(RequestCompletedHandler requestCompleted, WriteLogHandler logWriter)
+        /// <summary>
+        /// Create a new request parser
+        /// </summary>
+        /// <param name="requestCompleted">delegate called when a complete request have been generated</param>
+        /// <param name="logWriter">delegate receiving log entries.</param>
+        public HttpRequestParser(RequestCompletedHandler requestCompleted, ILogWriter logWriter)
         {
             if (requestCompleted == null)
                 throw new ArgumentNullException("requestCompleted");
 
-            _log = logWriter;
+            _log = logWriter ?? NullLogWriter.Instance;
             RequestCompleted = requestCompleted;
         }
 
@@ -42,6 +50,11 @@ namespace HttpServer
             get { return _curState; }
         }
 
+        internal HttpRequest CurrentRequest
+        {
+            get { return _request; }
+        }
+
         /// <summary>
         /// Add a number of bytes to the body
         /// </summary>
@@ -51,18 +64,19 @@ namespace HttpServer
         /// <returns></returns>
         private int AddToBody(byte[] buffer, int offset, int count)
         {
-            int bytesUsed = _request.AddToBody(buffer, offset, count);
-            if (_request.BodyIsComplete)
+            int bytesUsed = CurrentRequest.AddToBody(buffer, offset, count);
+            if (CurrentRequest.BodyIsComplete)
             {
                 int index = -1;
                 for (int i = offset + bytesUsed; i < offset + count; ++i)
                     buffer[++index] = buffer[i];
 
                 // Go to beginning of buffer since we are done.
-                _request.Body.Seek(0, SeekOrigin.Begin);
+                CurrentRequest.Body.Seek(0, SeekOrigin.Begin);
 
                 // got a complete request.
-                RequestCompleted(_request);
+                _log.Write(this, LogPrio.Trace, "Request parsed successfully.");
+                RequestCompleted(CurrentRequest);
                 Clear();
             }
 
@@ -74,7 +88,7 @@ namespace HttpServer
         /// </summary>
         private void Clear()
         {
-            _request = new HttpRequest();
+            CurrentRequest.Clear();
             _curHeaderName = string.Empty;
             _curHeaderValue = string.Empty;
             _curState = State.FirstLine;
@@ -92,38 +106,38 @@ namespace HttpServer
             //todo: In the interest of robustness, servers SHOULD ignore any empty line(s) received where a Request-Line is expected. 
             // In other words, if the server is reading the protocol stream at the beginning of a message and receives a CRLF first, it should ignore the CRLF.
             //
-            WriteLog(this, LogPrio.Debug, "Got request: " + value);
+            _log.Write(this, LogPrio.Debug, "Got request: " + value);
 
             //Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
             int pos = value.IndexOf(' ');
             if (pos == -1 || pos + 1 >= value.Length)
             {
-                WriteLog(this, LogPrio.Warning, "Invalid request line, missing Method.");
-                throw new BadRequestException("Invalid request line, missing Method");
+                _log.Write(this, LogPrio.Warning, "Invalid request line, missing Method. Line: " + value);
+                throw new BadRequestException("Invalid request line, missing Method. Line: " + value);
             }
 
-            _request.Method = value.Substring(0, pos).ToUpper();
+            CurrentRequest.Method = value.Substring(0, pos).ToUpper();
             int oldPos = pos + 1;
             pos = value.IndexOf(' ', oldPos);
             if (pos == -1)
             {
-                WriteLog(this, LogPrio.Warning, "Invalid request line, missing URI.");
-                throw new BadRequestException("Invalid request line, missing URI.");
+                _log.Write(this, LogPrio.Warning, "Invalid request line, missing URI. Line: " + value);
+                throw new BadRequestException("Invalid request line, missing URI. Line: " + value);
             }
-            _request.UriPath = value.Substring(oldPos, pos - oldPos);
-            if (_request.UriPath.Length > 4196)
+            CurrentRequest.UriPath = value.Substring(oldPos, pos - oldPos);
+            if (CurrentRequest.UriPath.Length > 4196)
                 throw new BadRequestException("Too long uri.");
 
             if (pos + 1 >= value.Length)
             {
-                WriteLog(this, LogPrio.Warning, "Invalid request line, missing HTTP-Version.");
-                throw new BadRequestException("Invalid request line, missing HTTP-Version.");
+                _log.Write(this, LogPrio.Warning, "Invalid request line, missing HTTP-Version. Line: " + value);
+                throw new BadRequestException("Invalid request line, missing HTTP-Version. Line: " + value);
             }
-            _request.HttpVersion = value.Substring(pos + 1);
-            if (_request.HttpVersion.Length < 4 || string.Compare(_request.HttpVersion.Substring(0, 4), "HTTP", true) != 0)
+            CurrentRequest.HttpVersion = value.Substring(pos + 1);
+            if (CurrentRequest.HttpVersion.Length < 4 || string.Compare(CurrentRequest.HttpVersion.Substring(0, 4), "HTTP", true) != 0)
             {
-                WriteLog(this, LogPrio.Warning, "Invalid HTTP version.");
-                throw new BadRequestException("Invalid HTTP version.");
+                _log.Write(this, LogPrio.Warning, "Invalid HTTP version in request line. Line: " + value);
+                throw new BadRequestException("Invalid HTTP version in Request line. Line: " + value);
             }
         }
 
@@ -135,7 +149,7 @@ namespace HttpServer
         /// <exception cref="BadRequestException">If content length cannot be parsed.</exception>
         protected void OnHeader(string name, string value)
         {
-            _request.AddHeader(name, value);
+            CurrentRequest.AddHeader(name, value);
         }
 
         /// <summary>
@@ -155,7 +169,7 @@ namespace HttpServer
 
 #if DEBUG
             string temp = Encoding.ASCII.GetString(buffer, offset, size);
-            WriteLog(this, LogPrio.Trace, "\r\n\r\n HTTP MESSAGE: " + temp + "\r\n");
+            _log.Write(this, LogPrio.Trace, "\r\n\r\n HTTP MESSAGE: " + temp + "\r\n");
 #endif
 
             int currentLine = 1;
@@ -167,9 +181,11 @@ namespace HttpServer
 
             int end = offset + size;
 
-            /// Handled bytes are used to keep track of the number of bytes processed.
-            /// We do this since we can handle partial requests (to be able to check headers and abort
-            /// invalid requests directly without having to process the whole header / body).
+            //<summary>
+            // Handled bytes are used to keep track of the number of bytes processed.
+            // We do this since we can handle partial requests (to be able to check headers and abort
+            // invalid requests directly without having to process the whole header / body).
+            // </summary>
             int handledBytes = 0;
 
 
@@ -185,7 +201,7 @@ namespace HttpServer
                 {
                     if (i > 4196)
                     {
-                        WriteLog(this, LogPrio.Warning, "HTTP Request is too large.");
+                        _log.Write(this, LogPrio.Warning, "HTTP Request is too large.");
                         throw new BadRequestException("Too large request line.");
                     }
 
@@ -195,7 +211,7 @@ namespace HttpServer
                     // first line can be empty according to RFC, ignore it and move next.
                     if (startPos == -1 && (ch != '\r' || nextCh != '\n'))
                     {
-                        WriteLog(this, LogPrio.Warning, "Request line is not found.");
+                        _log.Write(this, LogPrio.Warning, "Request line is not found.");
                         throw new BadRequestException("Invalid request line.");
                     }
 
@@ -203,7 +219,7 @@ namespace HttpServer
                     {
                         if (nextCh != '\n')
                         {
-                            WriteLog(this, LogPrio.Warning, "RFC says that linebreaks should be \\r\\n, got only \\n.");
+                            _log.Write(this, LogPrio.Warning, "RFC says that linebreaks should be \\r\\n, got only \\n.");
                             throw new BadRequestException("Invalid line break on request line, expected CrLf.");
                         }
 
@@ -222,18 +238,18 @@ namespace HttpServer
                     {
                         if (nextCh != '\n')
                         {
-                            WriteLog(this, LogPrio.Warning, "Expected crlf, got only lf.");
+                            _log.Write(this, LogPrio.Warning, "Expected crlf, got only lf.");
                             throw new BadRequestException("Expected crlf on line " + currentLine);
                         }
 
                         ++i; //ignore \r
                         ++i; //ignore \n
 
-                        if (_request.ContentLength == 0)
+                        if (CurrentRequest.ContentLength == 0)
                         {
-                            WriteLog(this, LogPrio.Debug, "Got a complete request (content-length: 0).");
                             _curState = State.FirstLine;
-                            RequestCompleted(_request);
+                            _log.Write(this, LogPrio.Trace, "Request parsed successfully (no content).");
+                            RequestCompleted(CurrentRequest);
                             Clear();
                             return i;
                         }
@@ -241,18 +257,18 @@ namespace HttpServer
                         _curState = State.Body;
                         if (i + 1 < end)
                         {
-                            WriteLog(this, LogPrio.Trace, "Adding bytes to the body");
+                            _log.Write(this, LogPrio.Trace, "Adding bytes to the body");
                             return AddToBody(buffer, i, end - i);
                         }
-                        else
-                            return i;
+
+                        return i;
                     }
 
-                    else if (char.IsWhiteSpace(ch) || ch == ':')
+                    if (char.IsWhiteSpace(ch) || ch == ':')
                     {
                         if (startPos == -1)
                         {
-                            WriteLog(this, LogPrio.Warning, "Expected header name, got colon on line " + currentLine);
+                            _log.Write(this, LogPrio.Warning, "Expected header name, got colon on line " + currentLine);
                             throw new BadRequestException("Expected header name, got colon on line " + currentLine);
                         }
                         _curHeaderName = Encoding.UTF8.GetString(buffer, startPos, i - startPos);
@@ -266,13 +282,13 @@ namespace HttpServer
                         startPos = i;
                     else if (!char.IsLetterOrDigit(ch) && ch != '-')
                     {
-                        WriteLog(this, LogPrio.Warning, "Invalid character in header name on line " + currentLine);
+                        _log.Write(this, LogPrio.Warning, "Invalid character in header name on line " + currentLine);
                         throw new BadRequestException("Invalid character in header name on line " + currentLine);
                     }
 
                     if (startPos != -1 && i - startPos > 200)
                     {
-                        WriteLog(this, LogPrio.Warning, "Invalid header name on line " + currentLine);
+                        _log.Write(this, LogPrio.Warning, "Invalid header name on line " + currentLine);
                         throw new BadRequestException("Invalid header name on line " + currentLine);
                     }
                 }
@@ -289,20 +305,19 @@ namespace HttpServer
                 {
                     if (ch == ' ' || ch == '\t')
                         continue;
-                        // continue if we get a new line which is prepended with a whitespace
-                    else if (ch == '\r' && nextCh == '\n' && i + 3 < end &&
+
+                    // continue if we get a new line which is prepended with a whitespace
+                    if (ch == '\r' && nextCh == '\n' && i + 3 < end &&
                              char.IsWhiteSpace((char) buffer[i + 2]))
                     {
                         ++i;
                         continue;
                     }
-                    else
-                    {
-                        startPos = i;
-                        _curState = _curState + 1;
-                        handledBytes = i;
-                        continue;
-                    }
+
+                    startPos = i;
+                    _curState = _curState + 1;
+                    handledBytes = i;
+                    continue;
                 }
                 else if (_curState == State.HeaderValue)
                 {
@@ -310,23 +325,23 @@ namespace HttpServer
                         continue;
                     if (nextCh != '\n')
                     {
-                        WriteLog(this, LogPrio.Warning, "Invalid linebreak on line " + currentLine);
+                        _log.Write(this, LogPrio.Warning, "Invalid linebreak on line " + currentLine);
                         throw new BadRequestException("Invalid linebreak on line " + currentLine);
                     }
 
                     if (startPos == -1)
                         continue; // allow new lines before start of value
 
-                    //if (_curHeaderName == string.Empty)
+                    //if (_curHeaderName == string.EmptyLanguageNode)
                     //    throw new BadRequestException("Missing header on line " + currentLine);
                     if (startPos == -1)
                     {
-                        WriteLog(this, LogPrio.Warning, "Missing header value for '" + _curHeaderName);
+                        _log.Write(this, LogPrio.Warning, "Missing header value for '" + _curHeaderName);
                         throw new BadRequestException("Missing header value for '" + _curHeaderName);
                     }
                     if (i - startPos > 1024)
                     {
-                        WriteLog(this, LogPrio.Warning, "Too large header value on line " + currentLine);
+                        _log.Write(this, LogPrio.Warning, "Too large header value on line " + currentLine);
                         throw new BadRequestException("Too large header value on line " + currentLine);
                     }
 
@@ -337,7 +352,7 @@ namespace HttpServer
                         if (startPos != -1)
                             _curHeaderValue = Encoding.UTF8.GetString(buffer, startPos, i - startPos);
 
-                        WriteLog(this, LogPrio.Trace, "Header value is on multiple lines.");
+                        _log.Write(this, LogPrio.Trace, "Header value is on multiple lines.");
                         _curState = State.Between;
                         startPos = -1;
                         ++i;
@@ -346,7 +361,7 @@ namespace HttpServer
                     }
 
                     _curHeaderValue += Encoding.UTF8.GetString(buffer, startPos, i - startPos);
-                    WriteLog(this, LogPrio.Trace, "Header [" + _curHeaderName + ": " + _curHeaderValue + "]");
+                    _log.Write(this, LogPrio.Trace, "Header [" + _curHeaderName + ": " + _curHeaderValue + "]");
                     OnHeader(_curHeaderName, _curHeaderValue);
 
                     startPos = -1;
@@ -368,7 +383,7 @@ namespace HttpServer
                     }
                     if (!canContinue)
                     {
-                        WriteLog(this, LogPrio.Trace, "Cant continue, no colon.");
+                        _log.Write(this, LogPrio.Trace, "Cant continue, no colon.");
                         return i + 1;
                     }
                 }
@@ -377,15 +392,12 @@ namespace HttpServer
             return handledBytes;
         }
 
-        public void WriteLog(object source, LogPrio prio, string entry)
-        {
-            if (_log == null)
-                return;
-            _log(source, prio, entry);
-        }
 
         #region Nested type: State
 
+        /// <summary>
+        /// Current state in the parsing.
+        /// </summary>
         public enum State
         {
             /// <summary>

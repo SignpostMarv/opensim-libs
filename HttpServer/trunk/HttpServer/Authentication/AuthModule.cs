@@ -1,4 +1,5 @@
 using System;
+using Fadd;
 using HttpServer.Exceptions;
 
 namespace HttpServer.Authentication
@@ -21,7 +22,7 @@ namespace HttpServer.Authentication
     /// <returns>true if user should be authenticated.</returns>
     /// <remarks>throw ForbiddenException if no more attempts are allowed.</remarks>
     /// <exception cref="ForbiddenException">If no more attempts are allowed</exception>
-    public delegate bool AuthRequiredDelegate(HttpRequest request);
+    public delegate bool AuthRequiredDelegate(IHttpRequest request);
 
     /// <summary>
     /// Authentication modules are used to implement different
@@ -29,22 +30,34 @@ namespace HttpServer.Authentication
     /// </summary>
     public abstract class AuthModule
     {
+        private readonly AuthenticationHandler _authenticator;
+        private readonly AuthRequiredDelegate _authRequiredDelegate;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthModule"/> class.
+        /// </summary>
+        /// <param name="authenticator">Delegate used to provide information used during authentication.</param>
+        /// <param name="authRequiredDelegate">Delegate used to determine if authentication is required (may be null).</param>
+        protected AuthModule(AuthenticationHandler authenticator, AuthRequiredDelegate authRequiredDelegate)
+        {
+            Check.Require(authenticator, "authenticator");
+            _authRequiredDelegate = authRequiredDelegate;
+            _authenticator = authenticator;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthModule"/> class.
+        /// </summary>
+        /// <param name="authenticator">Delegate used to provide information used during authentication.</param>
+        protected AuthModule(AuthenticationHandler authenticator) : this(authenticator, null)
+        {
+        }
+
         /// <summary>
         /// name used in http request.
         /// </summary>
         public abstract string Name
         { get; }
-
-        /// <summary>
-        /// used to let authentication modules authenticate the username and password
-        /// </summary>
-        public event AuthenticationHandler OnAuthenticate;
-
-        /// <summary>
-        /// Let's you decide on a system level if authentication is requried.
-        /// You can also decide if authentication is required in each HttpModule.
-        /// </summary>
-        public event AuthRequiredDelegate OnAuthenticationRequired;
 
         internal const string AuthenticationTag = "__authtag";
 
@@ -81,14 +94,7 @@ namespace HttpServer.Authentication
         /// <returns>true if authentication was successful</returns>
         protected bool CheckAuthentication(string realm, string userName, ref string password, out object login)
         {
-            if (OnAuthenticate == null)
-            {
-                password = null;
-                login = null;
-                return false;
-            }
-
-            OnAuthenticate(realm, userName, ref password, out login);
+            _authenticator(realm, userName, ref password, out login);
             return true;
         }
 
@@ -99,12 +105,12 @@ namespace HttpServer.Authentication
         /// <returns>true if user should be authenticated.</returns>
         /// <remarks>throw ForbiddenException from your delegate if no more attempts are allowed.</remarks>
         /// <exception cref="ForbiddenException">If no more attempts are allowed</exception>
-        public bool AuthenticationRequired(HttpRequest request)
+        public bool AuthenticationRequired(IHttpRequest request)
         {
-            if (OnAuthenticationRequired != null)
-                return OnAuthenticationRequired(request);
-            else
-                return false;
+            if (_authRequiredDelegate != null)
+                return _authRequiredDelegate(request);
+
+            return false;
         }
     }
 }

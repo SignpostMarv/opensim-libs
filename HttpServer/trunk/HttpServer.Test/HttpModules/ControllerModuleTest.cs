@@ -1,7 +1,6 @@
 using System;
-using System.Net;
 using HttpServer.HttpModules;
-using HttpServer.Test.Controllers;
+using HttpServer.Test.TestHelpers;
 using NUnit.Framework;
 using HttpServer.Sessions;
 
@@ -11,26 +10,20 @@ namespace HttpServer.Test.HttpModules
     public class ControllerModuleTest
     {
         private TestController _controller;
-        private HttpRequest _request;
-        private HttpResponse _response;
-        private HttpClientContext _context;
-        private MyStream _stream;
+        private IHttpRequest _request;
+        private IHttpResponse _response;
+        private IHttpClientContext _context;
         private ControllerModule _module;
 
         [SetUp]
         public void Setup()
         {
             _controller = new TestController();
-            _request = new HttpRequest();
+            _request = new HttpTestRequest();
             _request.HttpVersion = "HTTP/1.1";
-            _stream = new MyStream();
-            _context = new HttpClientContext(false, _stream, OnRequest);
+            _context = new HttpResponseContext();
             _response = new HttpResponse(_context, _request);
             _module = new ControllerModule();
-        }
-
-        private void OnRequest(HttpClientContext client, HttpRequest request)
-        {
         }
 
         [Test]

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using HttpServer.HttpModules;
-using HttpServer.Test.Controllers;
+using HttpServer.Test.TestHelpers;
 using NUnit.Framework;
 using HttpServer.Sessions;
 using HttpServer.Exceptions;
@@ -11,26 +11,20 @@ namespace HttpServer.Test.HttpModules
     [TestFixture]
     public class FileModuleTest
     {
-        private HttpRequest _request;
-        private HttpResponse _response;
-        private HttpClientContext _context;
-        private MyStream _stream;
+        private IHttpRequest _request;
+        private IHttpResponse _response;
+        private HttpResponseContext _context;
         private FileModule _module;
 
         [SetUp]
         public void Setup()
         {
-            _request = new HttpRequest();
+            _request = new HttpTestRequest();
             _request.HttpVersion = "HTTP/1.1";
-            _stream = new MyStream();
-            _context = new HttpClientContext(false, _stream, OnRequest);
+            _context = new HttpResponseContext();
             _response = new HttpResponse(_context, _request);
             _module = new FileModule("/files/", Environment.CurrentDirectory);
             _module.MimeTypes.Add("txt", "text/plain");
-        }
-
-        private void OnRequest(HttpClientContext client, HttpRequest request)
-        {
         }
 
 
@@ -41,8 +35,8 @@ namespace HttpServer.Test.HttpModules
             _request.Uri = new Uri("http://localhost/files/HttpModules/TextFile1.txt");
             _module.Process(_request, _response, new MemorySession("name"));
 
-            _stream.Seek(0, SeekOrigin.Begin);
-            TextReader reader = new StreamReader(_stream);
+            _context.Stream.Seek(0, SeekOrigin.Begin);
+            TextReader reader = new StreamReader(_context.Stream);
             string text = reader.ReadToEnd();
 
             int pos = text.IndexOf("\r\n\r\n");
@@ -50,7 +44,6 @@ namespace HttpServer.Test.HttpModules
 
             text = text.Substring(pos + 4);
             Assert.AreEqual("Hello World!", text);
-            _stream.Signal();
         }
 
         [Test]

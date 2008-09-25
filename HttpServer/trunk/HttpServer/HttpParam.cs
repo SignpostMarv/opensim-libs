@@ -7,20 +7,24 @@ namespace HttpServer
     /// <summary>
     /// Returns item either from a form or a query string (checks them in that order)
     /// </summary>
-    public class HttpParam : HttpInputBase
+    public class HttpParam : IHttpInput
     {
+		/// <summary> Representation of a non-initialized HttpParam </summary>
         public static readonly HttpParam Empty = new HttpParam(HttpInput.Empty, HttpInput.Empty);
 
-        private HttpInputBase _form;
-        private HttpInputBase _query;
+        private IHttpInput _form;
+        private IHttpInput _query;
 
-        public HttpParam(HttpInputBase form, HttpInputBase query)
+    	private List<HttpInputItem> _items = new List<HttpInputItem>();
+
+		/// <summary>Initialises the class to hold a value either from a post request or a querystring request</summary>		
+        public HttpParam(IHttpInput form, IHttpInput query)
         {
             _form = form;
             _query = query;
         }
 
-        #region HttpInputBase Members
+        #region IHttpInput Members
 
         /// <summary>
         /// The add method is not availible for HttpParam
@@ -49,7 +53,7 @@ namespace HttpServer
         /// Fetch an item from the form or querystring (in that order).
         /// </summary>
         /// <param name="name"></param>
-        /// <returns>Item if found; otherwise HttpInputItem.Empty</returns>
+        /// <returns>Item if found; otherwise HttpInputItem.EmptyLanguageNode</returns>
         public HttpInputItem this[string name]
         {
             get 
@@ -67,12 +71,11 @@ namespace HttpServer
         {
             _query = query;
         }
-        internal void SetForm(HttpInput form)
+        
+		internal void SetForm(HttpInput form)
         {
             _form = form;
         }
-
-        #region IEnumerable<KeyValuePair<string,HttpInputItem>> Members
 
         ///<summary>
         ///Returns an enumerator that iterates through the collection.
@@ -82,12 +85,12 @@ namespace HttpServer
         ///A <see cref="T:System.Collections.Generic.IEnumerator`1"></see> that can be used to iterate through the collection.
         ///</returns>
         ///<filterpriority>1</filterpriority>
-        IEnumerator<KeyValuePair<string, HttpInputItem>> IEnumerable<KeyValuePair<string, HttpInputItem>>.GetEnumerator()
+        IEnumerator<HttpInputItem> IEnumerable<HttpInputItem>.GetEnumerator()
         {
-            throw new NotImplementedException("Can't enumerate this class since it's a container for two others.");
+			List<HttpInputItem> items = new List<HttpInputItem>(_query);
+			items.AddRange(_form);
+			return items.GetEnumerator();
         }
-
-        #endregion
 
         #region IEnumerable Members
 
@@ -101,7 +104,9 @@ namespace HttpServer
         ///<filterpriority>2</filterpriority>
         public IEnumerator GetEnumerator()
         {
-            throw new NotImplementedException("Can't enumerate this class since it's a container for two others.");
+			List<HttpInputItem> items = new List<HttpInputItem>(_query);
+			items.AddRange(_form);
+        	return items.GetEnumerator();
         }
 
         #endregion

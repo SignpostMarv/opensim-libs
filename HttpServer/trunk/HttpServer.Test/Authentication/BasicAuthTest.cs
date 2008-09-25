@@ -20,9 +20,7 @@ namespace HttpServer.Test.Authentication
         [SetUp]
         public void Setup()
         {
-            _auth = new BasicAuthentication();
-            _auth.OnAuthenticate += OnAuth;
-            _auth.OnAuthenticationRequired += OnRequired;
+            _auth = new BasicAuthentication(OnAuth, OnRequired);
         }
 
         private void OnAuth(string realm, string userName, ref string password, out object login)
@@ -34,7 +32,7 @@ namespace HttpServer.Test.Authentication
             login = "mylogin";
         }
 
-        private bool OnRequired(HttpRequest request)
+        private bool OnRequired(IHttpRequest request)
         {
             return true;
         }

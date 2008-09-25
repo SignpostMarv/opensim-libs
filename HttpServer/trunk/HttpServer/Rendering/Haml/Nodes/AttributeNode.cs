@@ -1,4 +1,4 @@
-using System.Collections.Specialized;
+using System.Collections.Generic;
 using System.Text;
 using HttpServer.Rendering;
 using HttpServer.Rendering.Haml.Nodes;
@@ -6,21 +6,71 @@ using HttpServer.Rendering.Haml;
 
 namespace HttpServer.Rendering.Haml.Nodes
 {
+    /// <summary>
+    /// Contains HTML attributes.
+    /// </summary>
     public class AttributeNode : ChildNode
     {
-        private NameValueCollection _attributes;
+        /// <summary>
+        /// A attribute
+        /// </summary>
+        public class Attribute
+        {
+            /// <summary>
+            /// value is a simple word or quoted text
+            /// </summary>
+            public bool Simple;
+            /// <summary>
+            /// Name of the attribute
+            /// </summary>
+            public string Name;
+            /// <summary>
+            /// Value, can be a statement, variable or quoted text.
+            /// </summary>
+            public string Value;
+        }
+        private List<Attribute> _attributes;
 
-        public AttributeNode(Node parent, NameValueCollection col) : base(parent)
+        /// <summary>
+        /// Create a new node
+        /// </summary>
+        /// <param name="parent">parent node</param>
+        /// <param name="col">collection of attributes</param>
+        public AttributeNode(Node parent, List<Attribute> col)
+            : base(parent)
         {
             _attributes = col;
         }
 
+        /// <summary>
+        /// create an attribute node
+        /// </summary>
+        /// <param name="parent">parent node</param>
         public AttributeNode(Node parent) : base(parent)
         {
-            _attributes = new NameValueCollection();
+            _attributes = new List<Attribute>();
         }
 
-        public NameValueCollection Attributes
+        /// <summary>
+        /// Get an attribute
+        /// </summary>
+        /// <param name="name">name of the attribute (case sensitive)</param>
+        /// <returns>attribute if found; otherwise null.</returns>
+        public Attribute GetAttribute(string name)
+        {
+            foreach (Attribute attribute in _attributes)
+            {
+                if (attribute.Name == name)
+                    return attribute;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// html attributes
+        /// </summary>
+        public List<Attribute> Attributes
         {
             get { return _attributes; }
         }
@@ -37,13 +87,13 @@ namespace HttpServer.Rendering.Haml.Nodes
         public override Node Parse(NodeList prototypes, Node parent, LineInfo line, ref int offset)
         {
             if (line.Data[offset] != '{')
-                throw new CodeGeneratorException(line.LineNumber, "Attribute cant handle info at char " + offset + 1);
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Attribute cant handle info at char " + offset + 1);
 
             int endPos = GetEndPos(offset, line.Data, '}');
             if (endPos == -1)
-                throw new CodeGeneratorException(line.LineNumber, "Failed to find end of attribute list.");
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Failed to find end of attribute list: '" + line.UnparsedData + "'.");
 
-            NameValueCollection col = new NameValueCollection();
+            List<Attribute> col = new List<Attribute>();
             string attributes = line.Data.Substring(offset + 1, endPos - offset - 1);
             ParseAttributes(line, attributes, col);
             offset = endPos + 1;
@@ -54,7 +104,7 @@ namespace HttpServer.Rendering.Haml.Nodes
             return AddMe(prototypes, parent, line, node);
         }
 
-        private static void ParseAttributes(LineInfo line, string attributes, NameValueCollection col)
+        private static void ParseAttributes(LineInfo line, string attributes, List<Attribute> col)
         {
             bool inQuote = false;
             int parenthisCount = 0;
@@ -126,9 +176,9 @@ namespace HttpServer.Rendering.Haml.Nodes
                     // end of value
                 else if (step == 4)
                 {
-                    if (char.IsWhiteSpace(ch) || ch == ',')
+                    if (ch == ',')
                     {
-                        AddAttribute(col, name, attributes.Substring(start, i - start));
+                        AddAttribute(col, name, attributes.Substring(start, i - start).Trim());
                         start = -1;
                         ++step;
                     }
@@ -145,22 +195,47 @@ namespace HttpServer.Rendering.Haml.Nodes
             }
 
             if (step > 0 && step < 4)
-                throw new CodeGeneratorException(line.LineNumber, "Invalid attributes");
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Invalid attributes");
 
             if (step == 4)
                 AddAttribute(col, name, attributes.Substring(start, attributes.Length - start));
         }
 
-        private static void AddAttribute(NameValueCollection col, string name, string value)
+        private static void AddAttribute(List<Attribute> col, string name, string value)
         {
             if (string.IsNullOrEmpty(value))
                 return;
 
             // need to end with a ", else parsing will fail.
-            if (value[0] == '\"' && value[value.Length -1] != '\"')
-                col.Add(name, value + "+ @\"\"");
-            else 
-                col.Add(name,value);
+/*            
+if (value[0] == '\"' && value[value.Length -1] != '\"')
+                col.Add(name, value + "+ @\"\"");            else
+            {*/
+            bool complex = false;
+            bool inStr = false;
+            for (int i = 0; i < value.Length; ++i )
+            {
+                if (value[i] == '"')
+                {
+                    inStr = !inStr;
+                    continue;
+                }
+                if (!inStr)
+                {
+                    complex = true;
+                    break;
+                }
+            }
+
+                //if (pos != -1)
+                  //  value = value.Insert(pos, "@");
+
+            Attribute attr = new Attribute();
+            attr.Simple = !complex;
+            attr.Name = name;
+            attr.Value = value;
+            col.Add(attr);
+            //}
         }
 
         /// <summary>
@@ -177,32 +252,45 @@ namespace HttpServer.Rendering.Haml.Nodes
             return false;
         }
 
+        /// <summary>
+        /// Convert node to HTML (with ASP-tags)
+        /// </summary>
+        /// <returns>HTML string</returns>
         public override string ToHtml()
         {
             StringBuilder attrs = new StringBuilder();
             for (int i = 0; i < Attributes.Count; ++i)
             {
-                if (Attributes[i][0] != '"')
-                    attrs.AppendFormat("{0}=<%= {1} %> ", Attributes.AllKeys[i], Attributes[i]);
+                if (!Attributes[i].Simple)
+                    attrs.AppendFormat("{0}=<%= {1} %> ", Attributes[i].Name, Attributes[i].Value);
                 else
-                    attrs.AppendFormat("{0}={1} ", Attributes.AllKeys[i], Attributes[i]);
+                    attrs.AppendFormat("{0}={1} ", Attributes[i].Name, Attributes[i].Value);
             }
 
             return attrs.ToString();
         }
 
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <summary>
+        /// Convert the node to c# code
+        /// </summary>
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             StringBuilder attrs = new StringBuilder();
             for (int i = 0; i < Attributes.Count; ++i)
             {
-                if (Attributes[i][0] != '"')
-                    attrs.AppendFormat("{0}=\"\"\"); sb.Append({1}); sb.Append(@\"\"\" ", Attributes.AllKeys[i], Attributes[i]);
+                if (!Attributes[i].Simple)
+                    attrs.AppendFormat("{0}=\"\"\"); sb.Append({1}); sb.Append(@\"\"\" ", Attributes[i].Name,
+                                       Attributes[i].Value);
                 else
-                    attrs.AppendFormat("{0}=\"{1}\" ", Attributes.AllKeys[i], Attributes[i]);
+                    attrs.AppendFormat("{0}=\"{1}\" ", Attributes[i].Name, Attributes[i].Value);
             }
 
-            attrs.Length = attrs.Length - 1;
+            if (attrs.Length > 1)
+                attrs.Length = attrs.Length - 1;
             return attrs.ToString();            
         }
 

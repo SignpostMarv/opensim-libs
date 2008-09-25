@@ -17,7 +17,7 @@ namespace HttpServer.FormDecoders
         /// <param name="encoding">Stream enconding</param>
         /// <returns>A http form, or null if content could not be parsed.</returns>
         /// <exception cref="InvalidDataException">If contents in the stream is not valid input data.</exception>
-        HttpInput Decode(Stream stream, string contentType, Encoding encoding);
+        HttpForm Decode(Stream stream, string contentType, Encoding encoding);
 
         /// <summary>
         /// Checks if the decoder can handle the mime type

@@ -4,6 +4,9 @@ using HttpServer.Rendering.Haml.Rules;
 
 namespace HttpServer.Rendering.Haml
 {
+    /// <summary>
+    /// Contains line text and state information about a line in a HAML template.
+    /// </summary>
     public class LineInfo
     {
         private bool _appendNextLine;
@@ -18,6 +21,11 @@ namespace HttpServer.Rendering.Haml
         private int _whiteSpaces;
         private bool _selfClosed ;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LineInfo"/> class.
+        /// </summary>
+        /// <param name="lineNumber">The line number.</param>
+        /// <param name="unparsedData">The unparsed data (line contents).</param>
         public LineInfo(int lineNumber, string unparsedData)
         {
             _lineNumber = lineNumber;
@@ -60,11 +68,8 @@ namespace HttpServer.Rendering.Haml
             {
                 // rule is done, remove it.
                 // we can exit extra lines may have rules that are done too.
-                if (!_unfinishedRule.IsMultiLine(line))
-                {
-                    Console.WriteLine(_unfinishedRule.GetType().Name + " is done.");
+                if (!_unfinishedRule.IsMultiLine(line, false))
                     _unfinishedRule = null;
-                }
                 else
                     return true;
             }
@@ -142,7 +147,7 @@ namespace HttpServer.Rendering.Haml
         }
 
         /// <summary>
-        /// Rule have not got all needed information yet,
+        /// IRule have not got all needed information yet,
         /// keep appending lines to this LineInfo until rule says that it's done.
         /// </summary>
         public Rule UnfinishedRule
@@ -159,6 +164,9 @@ namespace HttpServer.Rendering.Haml
             get { return _whiteSpaces; }
         }
 
+        /// <summary>
+        /// True if node is selfclosed (i.e. &lt;br /&gt;)
+        /// </summary>
         public bool SelfClosed
         {
             get { return _selfClosed; }
@@ -175,14 +183,15 @@ namespace HttpServer.Rendering.Haml
             _extraLines.AddLast(line);
 
             if (CheckUnfinishedRule(this))
-            {
-                    Console.WriteLine(_lineNumber + ": Rule is not finished.");
-                    _appendNextLine = true;
-            }
+                _appendNextLine = true;
             else
                 _appendNextLine = false;
         }
 
+        /// <summary>
+        /// Parsed line contents (without whitespaces in the beginning)
+        /// </summary>
+        /// <param name="data">text contents</param>
         protected void SetParsedData(string data)
         {
             _data = data;

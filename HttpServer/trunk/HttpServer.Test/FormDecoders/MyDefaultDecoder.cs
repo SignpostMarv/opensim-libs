@@ -7,7 +7,7 @@ using HttpServer;
 
 namespace HttpServer.Test.FormDecoders
 {
-    class MyDefaultDecoder : FormDecoder
+    class MyDefaultDecoder : IFormDecoder
     {
         private bool _called;
 
@@ -17,7 +17,7 @@ namespace HttpServer.Test.FormDecoders
             set { _called = value; }
         }
 
-        #region FormDecoder Members
+        #region IFormDecoder Members
 
         /// <summary>
         /// 
@@ -27,10 +27,10 @@ namespace HttpServer.Test.FormDecoders
         /// <param name="encoding">Stream enconding</param>
         /// <returns>A http form, or null if content could not be parsed.</returns>
         /// <exception cref="InvalidDataException">If contents in the stream is not valid input data.</exception>
-        public HttpInput Decode(Stream stream, string contentType, Encoding encoding)
+        public HttpForm Decode(Stream stream, string contentType, Encoding encoding)
         {
             _called = true;
-            return HttpInput.Empty;
+			return HttpForm.EmptyForm;
         }
 
         /// <summary>

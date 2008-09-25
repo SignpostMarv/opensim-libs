@@ -15,14 +15,20 @@ namespace HttpServer
     /// <remarks>
     /// All names in a form SHOULD be in lowercase.
     /// </remarks>
-    public class HttpInputItem : HttpInputBase
+    public class HttpInputItem : IHttpInput
     {
+		/// <summary> Representation of a non-initialized HttpInputItem </summary>
         public static readonly HttpInputItem Empty = new HttpInputItem(string.Empty, true);
         private readonly IDictionary<string, HttpInputItem> _items = new Dictionary<string, HttpInputItem>();
         private readonly IList<string> _values = new List<string>();
         private string _name;
-        private readonly bool _ignoreChanges = false;
+        private readonly bool _ignoreChanges;
 
+		/// <summary>
+		/// Initializes an input item setting its name/identifier and value
+		/// </summary>
+		/// <param name="name">Parameter name/id</param>
+		/// <param name="value">Parameter value</param>
         public HttpInputItem(string name, string value)
         {
             Name = name;
@@ -34,6 +40,21 @@ namespace HttpServer
             Name = name;
             _ignoreChanges = ignore;
         }
+
+		/// <summary>Creates a deep copy of the item specified</summary>
+		/// <param name="item">The item to copy</param>
+		/// <remarks>The function makes a deep copy of quite a lot which can be slow</remarks>
+		public HttpInputItem(HttpInputItem item)
+		{
+			foreach (KeyValuePair<string, HttpInputItem> pair in item._items)
+				_items.Add(pair.Key, pair.Value);
+
+			foreach (string value in item._values)
+				_values.Add(value);
+
+			_ignoreChanges = item._ignoreChanges;
+			_name = item.Name;
+		}
 
         /// <summary>
         /// Number of values
@@ -50,12 +71,8 @@ namespace HttpServer
         /// <returns>HttpInputItem.Empty if no item was found.</returns>
         public HttpInputItem this[string name]
         {
-            get
-            {
-                if (_items.ContainsKey(name))
-                    return _items[name];
-                else
-                    return null;
+            get {
+                return _items.ContainsKey(name) ? _items[name] : Empty;
             }
         }
 
@@ -73,12 +90,26 @@ namespace HttpServer
         /// </summary>
         public string Value
         {
-            get
+            get {
+                return _values.Count == 0 ? null : _values[0];
+            }
+            set
             {
                 if (_values.Count == 0)
-                    return null;
+                    _values.Add(value);
                 else
-                    return _values[0];
+                    _values[0] = value;
+            }
+        }
+
+        /// <summary>
+        /// Returns the last value, or null if no value exist.
+        /// </summary>
+        public string LastValue
+        {
+            get
+            {
+                return _values.Count == 0 ? null : _values[_values.Count - 1];
             }
         }
 
@@ -116,12 +147,18 @@ namespace HttpServer
             return _items.ContainsKey(name) && _items[name].Value != null;
         }
 
+		/// <summary> Returns a formatted representation of the instance with the values of all contained parameters </summary>
         public override string ToString()
         {
             return ToString(string.Empty);
         }
 
-        public string ToString(string prefix)
+		/// <summary>
+		/// Outputs the string in a formatted manner
+		/// </summary>
+		/// <param name="prefix">A prefix to append, used internally</param>
+        /// <param name="asQuerySting">produce a query string</param>
+        public string ToString(string prefix, bool asQuerySting)
         {
             string name;
             if (string.IsNullOrEmpty(prefix))
@@ -129,37 +166,57 @@ namespace HttpServer
             else
                 name = prefix + "[" + Name + "]";
 
-            string temp = name;
-            if (_values.Count > 0)
+            if (asQuerySting)
             {
-                temp += " = ";
-                foreach (string value in _values)
-                    temp += value + ", ";
-                temp = temp.Remove(temp.Length - 2, 2);
+                string temp;
+                if (_values.Count == 0 && _items.Count > 0)
+                    temp = string.Empty;
+                else
+                    temp = name;
+
+                if (_values.Count > 0)
+                {
+                    temp += '=';
+                    foreach (string value in _values)
+                        temp += value + ',';
+                    temp = temp.Remove(temp.Length - 1, 1);
+                }
+
+                foreach (KeyValuePair<string, HttpInputItem> item in _items)
+                    temp += item.Value.ToString(name, true) + '&';
+
+                return _items.Count > 0 ? temp.Substring(0, temp.Length - 1) : temp;
             }
-            temp += Environment.NewLine;
+            else
+            {
+                string temp = name;
+                if (_values.Count > 0)
+                {
+                    temp += " = ";
+                    foreach (string value in _values)
+                        temp += value + ", ";
+                    temp = temp.Remove(temp.Length - 2, 2);
+                }
+                temp += Environment.NewLine;
 
-            foreach (KeyValuePair<string, HttpInputItem> item in _items)
-                temp += item.Value.ToString(name);
-
-            return temp;
+                foreach (KeyValuePair<string, HttpInputItem> item in _items)
+                    temp += item.Value.ToString(name, false);
+                return temp;
+            }
         }
 
-        #region HttpInputBase Members
+        #region IHttpInput Members
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name">name in lower case</param>
         /// <returns></returns>
-        HttpInputItem HttpInputBase.this[string name]
+        HttpInputItem IHttpInput.this[string name]
         {
-            get
+            get 
             {
-                if (_items.ContainsKey(name))
-                    return _items[name];
-                else
-                    return Empty;
+                return _items.ContainsKey(name) ? _items[name] : Empty;
             }
         }
 
@@ -177,8 +234,15 @@ namespace HttpServer
             if (_ignoreChanges)
                 throw new InvalidOperationException("Cannot add stuff to HttpInput.Empty.");
 
-            if (name.Contains("["))
+            int pos = name.IndexOf('[');
+            if (pos != -1)
             {
+                string name1 = name.Substring(0, pos);
+                string name2 = HttpInput.ExtractOne(name);
+                if (!_items.ContainsKey(name1))
+                    _items.Add(name1, new HttpInputItem(name1, null));
+                _items[name1].Add(name2, value);
+                /*
                 HttpInputItem item = HttpInput.ParseItem(name, value);
 
                 // Add the value to an existing sub item
@@ -186,6 +250,7 @@ namespace HttpServer
                     _items[item.Name].Add(item.Value);
                 else
                     _items.Add(item.Name, item);
+                 */
             }
             else
             {
@@ -198,8 +263,6 @@ namespace HttpServer
 
         #endregion
 
-        #region IEnumerable<KeyValuePair<string,HttpInputItem>> Members
-
         ///<summary>
         ///Returns an enumerator that iterates through the collection.
         ///</summary>
@@ -208,12 +271,11 @@ namespace HttpServer
         ///A <see cref="T:System.Collections.Generic.IEnumerator`1"></see> that can be used to iterate through the collection.
         ///</returns>
         ///<filterpriority>1</filterpriority>
-        IEnumerator<KeyValuePair<string, HttpInputItem>> IEnumerable<KeyValuePair<string, HttpInputItem>>.GetEnumerator()
+        IEnumerator<HttpInputItem> IEnumerable<HttpInputItem>.GetEnumerator()
         {
-            return _items.GetEnumerator();
+            return _items.Values.GetEnumerator();
         }
 
-        #endregion
 
         #region IEnumerable Members
 
@@ -227,9 +289,19 @@ namespace HttpServer
         ///<filterpriority>2</filterpriority>
         public IEnumerator GetEnumerator()
         {
-            return _items.GetEnumerator();
+            return _items.Values.GetEnumerator();
         }
 
         #endregion
+
+        /// <summary>
+        /// Outputs the string in a formatted manner
+        /// </summary>
+        /// <param name="prefix">A prefix to append, used internally</param>
+        /// <returns></returns>
+        public string ToString(string prefix)
+        {
+            return ToString(prefix, false);
+        }
     }
 }

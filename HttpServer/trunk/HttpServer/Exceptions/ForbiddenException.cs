@@ -13,6 +13,10 @@ namespace HttpServer.Exceptions
     /// </summary>
     public class ForbiddenException : HttpException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ForbiddenException"/> class.
+        /// </summary>
+        /// <param name="errorMsg">error message</param>
         public ForbiddenException(string errorMsg)
             : base(HttpStatusCode.Forbidden, errorMsg)
         {

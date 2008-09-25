@@ -9,7 +9,7 @@ namespace HttpServer.Sample.Controllers
 {
     public class UserController : RequestController
     {
-        private TemplateManager _templateMgr;
+        private readonly TemplateManager _templateMgr;
 
         public UserController(TemplateManager mgr)
         {
@@ -31,8 +31,12 @@ namespace HttpServer.Sample.Controllers
         {
             try
             {
-                string pageTemplate = _templateMgr.Render("views\\user\\" + MethodName + ".haml", args);
-                return _templateMgr.Render("views\\layouts\\application.haml", "text", pageTemplate);
+                // Converts the incoming object arguments to proper TemplateArguments
+                TemplateArguments arguments = new TemplateArguments(args);
+                string pageTemplate = _templateMgr.Render("views\\user\\" + MethodName + ".haml", arguments);
+                arguments.Clear();
+                arguments.Add("text", pageTemplate);
+                return _templateMgr.Render("views\\layouts\\application.haml", arguments);
             }
                 catch(FileNotFoundException err)
                 {
@@ -42,7 +46,7 @@ namespace HttpServer.Sample.Controllers
                 {
                     throw new InternalServerException("Failed to render template. Details: " + err.Message, err);
                 }
-                catch (CompileException err)
+                catch (TemplateException err)
                 {
                     throw new InternalServerException("Failed to compile template. Details: " + err.Message, err);
                 }

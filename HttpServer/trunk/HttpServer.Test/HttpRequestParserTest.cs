@@ -9,12 +9,12 @@ namespace HttpServer.Test
     public class HttpRequestParserTest
     {
         private HttpRequestParser _parser;
-        private HttpRequest _request;
+        private IHttpRequest _request;
 
         [SetUp]
         public void Setup()
         {
-            _parser = new HttpRequestParser(OnRequestCompleted, OnLog);
+            _parser = new HttpRequestParser(OnRequestCompleted, ConsoleLogWriter.Instance);
             _request = null;
         }
 
@@ -244,12 +244,7 @@ username=jonas&password=krakelkraka");
         {
             return Encoding.UTF8.GetBytes(s);
         }
-        private static void OnLog(object source, LogPrio prio, string message)
-        {
-            Console.WriteLine(message);
-        }
-
-        private void OnRequestCompleted(HttpRequest request)
+        private void OnRequestCompleted(IHttpRequest request)
         {
             _request = request;
         }

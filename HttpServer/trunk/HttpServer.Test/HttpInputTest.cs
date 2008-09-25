@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using HttpServer;
 
@@ -10,7 +7,6 @@ namespace HttpServer.Test
     public class HttpInputTest
     {
         private HttpInputItem _item;
-        private HttpInput _parent;
 
         [SetUp]
         public void Setup()
@@ -23,6 +19,27 @@ namespace HttpServer.Test
         public void Teardown()
         {
 
+        }
+
+        [Test]
+        public void Test()
+        {
+            HttpInput input = new HttpInput("teest");
+            input.Add("ivrMenu", string.Empty);
+            input.Add("ivrMenu[Digits][1][Digit]", "1");
+            input.Add("ivrMenu[Digits][1][Action]", "2");
+            input.Add("ivrMenu[Digits][1][Value]", string.Empty);
+            Assert.AreEqual("1", input["ivrMenu"]["Digits"]["1"]["Digit"].Value);
+            Assert.AreEqual("2", input["ivrMenu"]["Digits"]["1"]["Action"].Value);
+            Assert.AreEqual(string.Empty, input["ivrMenu"]["Digits"]["1"]["Value"].Value);
+        }
+
+        [Test]
+        public void TestSimple()
+        {
+            HttpInput input = new HttpInput("teest");
+            input.Add("ivrMenu", "myName");
+            Assert.AreEqual("myName", input["ivrMenu"].Value);
         }
 
         [Test]

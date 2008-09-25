@@ -1,41 +1,60 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
-using HttpServer;
-using HttpServer.Controllers;
 using HttpServer.Exceptions;
 using HttpServer.Helpers;
 using HttpServer.Rendering;
+using HttpServer.Sessions;
 
 namespace HttpServer.Controllers
 {
+    /// <summary>
+    /// View controllers integrates the templates, by adding 
+    /// Render methods.
+    /// </summary>
     public abstract class ViewController : RequestController
     {
+        private readonly TemplateArguments _arguments = new TemplateArguments();
         private readonly TemplateManager _templateMgr;
         private NameValueCollection _errors = new NameValueCollection();
-        private bool _includeLayoutInAjaxRequests = false;
+        private bool _includeLayoutInAjaxRequests;
         private string _layout = "Application";
         private string _title;
-        private readonly Dictionary<string, object> _arguments = new Dictionary<string, object>();
 
-        public ViewController(TemplateManager mgr)
+        /// <summary>
+        /// Create a new <see cref="ViewController"/>.
+        /// </summary>
+        protected ViewController(TemplateManager mgr)
         {
             _templateMgr = mgr;
         }
 
-        public ViewController(ViewController controller)
+        /// <summary>
+        /// Create a new <see cref="ViewController"/>.
+        /// </summary>
+        /// <param name="controller">prototype to copy information from.</param>
+        protected ViewController(ViewController controller)
             : base(controller)
         {
             _templateMgr = controller._templateMgr;
         }
 
         /// <summary>
-        /// A set of errors that occured during request processing.
+        /// Arguments that are being used in the templates.
         /// </summary>
-        /// <remarks>Errors can be rendered into templates using the WebHelper.RenderError method.</remarks>
+        protected TemplateArguments Arguments
+        {
+            get { return _arguments; }
+        }
+
+        /// <summary>
+        /// A set of errors that occurred during request processing.
+        /// Key should be argument name (if argument error, otherwise <see cref="String.Empty"/>), value should be
+        /// the error message.
+        /// </summary>
+        /// <remarks>Errors can be rendered into templates using the <see cref="WebHelper.Errors"/> method.</remarks>
         /// <seealso cref="WebHelper"/>
         [XmlElement("Errors")]
         protected NameValueCollection Errors
@@ -45,8 +64,9 @@ namespace HttpServer.Controllers
         }
 
         /// <summary>
-        /// True if we always should render contents inside page layouts.
+        /// True if we always should render contents inside page layouts when request is Ajax.
         /// </summary>
+        /// <remarks>default is false.</remarks>
         public bool IncludeLayoutInAjaxRequests
         {
             get { return _includeLayoutInAjaxRequests; }
@@ -56,7 +76,14 @@ namespace HttpServer.Controllers
         /// <summary>
         /// Which page layout to use (without file extension)
         /// </summary>
-        /// <remarks>Page layouts should be places in the Views\Layouts folder.</remarks>
+        /// <remarks>
+        /// <para>
+        /// Page layouts should be places in the Views\Layouts folder.
+        /// </para>
+        /// <para>
+        /// default is "Application"
+        /// </para>
+        /// </remarks>
         public string Layout
         {
             get { return _layout; }
@@ -64,7 +91,7 @@ namespace HttpServer.Controllers
         }
 
         /// <summary>
-        /// Page title
+        /// Page title (are added as a parameter to the layout template, use it in &lt;title&gt; HTML tag.
         /// </summary>
         public string Title
         {
@@ -72,46 +99,29 @@ namespace HttpServer.Controllers
             set { _title = value; }
         }
 
-        protected Dictionary<string, object> Arguments
-        {
-            get { return _arguments; }
-        }
-
+        /// <summary>
+        /// Render template for the currently invoked method.
+        /// </summary>
+        /// <param name="args">arguments/parameters used in template</param>
+        /// <returns>template generated content</returns>
+        /// <remarks>calls RenderActionWithErrors</remarks>
         protected string Render(params object[] args)
         {
             return RenderAction(MethodName, args);
         }
 
-        protected string RenderAction(string action, params object[] args)
+        /// <summary>
+        /// Render contents into a template.
+        /// </summary>
+        /// <param name="method">method/template to generate</param>
+        /// <param name="args">arguments/parameters used in template</param>
+        /// <returns>template generated content</returns>
+        /// <remarks>calls RenderActionWithErrors.</remarks>
+        protected virtual string RenderAction(string method, params object[] args)
         {
-            return RenderActionWithErrors(action, _errors, args);
-        }
-
-        protected virtual string RenderActionWithErrors(string action, NameValueCollection errors, params object[] args)
-        {
-            // no page template specified means that everything should be rendered into the main template directly
-            string pageTemplate;
-            if (!string.IsNullOrEmpty(action))
-            {
-                // Small hack to be able to display error messages.
-                object[] args2 = new object[args.Length + (_arguments.Count * 2) + 2];
-                args.CopyTo(args2, 0);
-                int index = args.Length - 1;
-                foreach (KeyValuePair<string, object> pair in _arguments)
-                {
-                    args2[++index] = pair.Key;
-                    args2[++index] = pair.Value;
-                }
-                args2[++index] = "errors";
-                args2[++index] = errors;
-
-                pageTemplate = RenderTemplate(ControllerName, action, args2);
-            }
-            else
-                pageTemplate = WebHelper.RenderErrors(_errors);
-
-            _arguments.Clear();
-            _errors.Clear();
+            if (!Arguments.Contains("Errors"))
+                Arguments.Add("Errors", _errors);
+            string pageTemplate = RenderTemplate(ControllerName, method, args);
 
             // 1. dont render main layout for ajax requests, since they just update partial 
             // parts of the web page.
@@ -119,34 +129,86 @@ namespace HttpServer.Controllers
             if (Request.IsAjax && !_includeLayoutInAjaxRequests)
                 return pageTemplate;
 
-
             return RenderLayout(_layout, pageTemplate);
         }
 
+        /// <summary>
+        /// Merge arguments array and Arguments property.
+        /// </summary>
+        /// <param name="args">Arguments array to merge</param>
+        /// <returns>arguments/parameters that can be used in the template.</returns>
+        /// <remarks>Will add Request/Response/Session arguments</remarks>
+        private TemplateArguments MergeArguments(object[] args)
+        {
+            // Create a new argument holder
+            TemplateArguments arguments = new TemplateArguments();
+            arguments.Add("Request", Request, typeof(IHttpRequest));
+            arguments.Add("Response", Response);
+            arguments.Add("Session", Session);
+            arguments.Add("Controller", this, typeof(ViewController));
+			arguments.Update(_arguments);
+			arguments.Update(new TemplateArguments(args));
+
+            return arguments;
+        }
+
+
+        /// <summary>
+        /// Renders errors from the <see cref="Errors"/> property into the
+        /// current method template, or as a JavaScript alert if the request is Ajax.
+        /// </summary>
+        /// <param name="method">name of the currently invoked method.</param>
+        /// <param name="arguments">arguments used in the method template.</param>
+        /// <returns>generated string</returns>
+        /// <remarks>Creates a JavaScript Alert box if request is Ajax.</remarks>
         protected string RenderErrors(string method, params object[] arguments)
         {
-            return RenderErrors(_errors, method, arguments);
-        }
-
-        protected string RenderErrors(NameValueCollection errors, string method, params object[] arguments)
-        {
-            if (errors.Count > 0)
+            if (_errors.Count > 0)
             {
                 if (Request.IsAjax)
-                    return RenderJsErrors(errors);
-
-                return RenderActionWithErrors(method, errors, arguments);
+                    return RenderJsErrors(_errors);
             }
 
-            return null;
+            return RenderAction(method, arguments);
         }
 
+        /// <summary>
+        /// Renders errors from the <see cref="Errors"/> property into the
+        /// current method template, or as a JavaScript alert if the request is Ajax.
+        /// </summary>
+        /// <param name="errors">A collection of errors.</param>
+        /// <param name="method">name of the currently invoked method.</param>
+        /// <param name="arguments">arguments used in the method template.</param>
+        /// <returns>generated string</returns>
+        /// <remarks>Creates a JavaScript Alert box if request is Ajax.</remarks>
+        protected string RenderErrors(NameValueCollection errors, string method, params object[] arguments)
+        {
+            if (_errors.Count > 0)
+            {
+                if (Request.IsAjax)
+                    return RenderJsErrors(_errors);
+            }
+
+            Arguments.Add("Errors", errors);
+            return RenderAction(method, arguments);
+        }
+
+        /// <summary>
+        /// Switches content-type to "text/JavaScript" and returns content.
+        /// </summary>
+        /// <param name="js">JavaScript to send to the client.</param>
+        /// <returns>JavaScript</returns>
         protected string RenderJavascript(string js)
         {
             Response.ContentType = "text/javascript";
             return js;
         }
 
+        /// <summary>
+        /// Creates a JavaScript "alert" filled with all errors.
+        /// </summary>
+        /// <param name="errors"></param>
+        /// <returns>a</returns>
         protected string RenderJsErrors(NameValueCollection errors)
         {
             StringBuilder sb = new StringBuilder();
@@ -159,6 +221,12 @@ namespace HttpServer.Controllers
             return sb.ToString();
         }
 
+        /// <summary>
+        /// renders one of the layouts
+        /// </summary>
+        /// <param name="layoutName">layout to render (should be found in the "views\\layouts" folder).</param>
+        /// <param name="contents">contents will be put in the template variable called "text".</param>
+        /// <returns>generated text/HTML.</returns>
         protected virtual string RenderLayout(string layoutName, string contents)
         {
             // template engine will find all layouts and take the first one with that one.
@@ -166,11 +234,24 @@ namespace HttpServer.Controllers
                                   "title", Title ?? "The page with no name");
         }
 
-        protected string RenderTemplate(string controller, string action, params object[] args)
+        /// <summary>
+        /// Render a template.
+        /// </summary>
+        /// <remarks>Merges the Arguments property with the <c>args</c> parameter and pass those to the template.</remarks>
+        /// <param name="controller">controller name are used as a folder name when looking for the template.</param>
+        /// <param name="method">method are used as filename when looking for the template.</param>
+        /// <param name="args">arguments that should be passed to the template.</param>
+        /// <returns></returns>
+        protected string RenderTemplate(string controller, string method, params object[] args)
         {
             try
             {
-                return _templateMgr.Render("views\\" + controller + "\\" + action + ".*", args);
+                TemplateArguments args2 = MergeArguments(args);
+                _arguments.Clear();
+
+                string result = _templateMgr.Render(controller + "\\" + method + ".*", args2);
+                _errors.Clear();
+                return result;
             }
             catch (FileNotFoundException err)
             {
@@ -180,7 +261,7 @@ namespace HttpServer.Controllers
             {
                 throw new InternalServerException("Failed to render template. Details: " + err.Message, err);
             }
-            catch (CompileException err)
+            catch (Fadd.CompilerException err)
             {
 #if DEBUG
                 throw new InternalServerException(err.Message + "<br />" + err.Data["code"] ?? "No compiled code");
@@ -191,22 +272,31 @@ namespace HttpServer.Controllers
             catch (CodeGeneratorException err)
             {
 #if DEBUG
-                throw new InternalServerException(err.ToString().Replace("\r\n", "<br />\r\n"), err);
+                string error = "Line: " + err.LineNumber + "<br />\r\n" + err.ToString().Replace("\r\n", "<br />\r\n");
+                throw new InternalServerException(error, err);
 #else
-                throw new InternalServerException("Failed to compile template.");
+                throw new InternalServerException("Failed to compile template.", err);
 #endif
             }
             catch (ArgumentException err)
             {
 #if DEBUG
-                throw new InternalServerException("Failed to render template, reason: " + err.ToString().Replace("\r\n", "<br />\r\n"), err);
+                throw new InternalServerException(
+                    "Failed to render template, reason: " + err.ToString().Replace("\r\n", "<br />\r\n"), err);
 #else
                 throw new InternalServerException("Failed to render templates", err);
 #endif
             }
         }
 
-        protected override void SetupRequest(HttpRequest request, HttpResponse response, HttpSession session)
+        /// <summary>
+        /// Invoked each time a new request is about to be invoked.
+        /// </summary>
+        /// <remarks>Can be used to clear old data.</remarks>
+        /// <param name="request"></param>
+        /// <param name="response"></param>
+        /// <param name="session"></param>
+        protected override void SetupRequest(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             _arguments.Clear();
             _errors.Clear();

@@ -4,24 +4,35 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
+using Fadd;
 using HttpServer.Authentication;
 using HttpServer.Exceptions;
 using HttpServer.FormDecoders;
 using HttpServer.HttpModules;
+using HttpServer.Rules;
 using HttpServer.Sessions;
 
 namespace HttpServer
 {
+    /// <summary>
+    /// Delegate used to find a realm/domain.
+    /// </summary>
+    /// <param name="domain"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// Realms are used during HTTP Authentication
+    /// </remarks>
+    /// <seealso cref="AuthModule"/>
+    /// <seealso cref="AuthenticationHandler"/>
     public delegate string RealmHandler(string domain);
 
     /// <summary>
-    /// The Tiny framework web server is a bit different.
-    /// It can only speak HTTP, but can not handle anything itself.
-    /// You need to add a website module to it, or use a controller module in it.
+    /// A complete HTTP server, you need to add a module to it to be able to handle incoming requests.
     /// </summary>
     /// <example>
+    /// <code>
     /// // this small example will add two web site modules, thus handling
-    /// // two different sites. In reality you should add controller modules or something
+    /// // two different sites. In reality you should add Controller modules or something
     /// // two the website modules to be able to handle different requests.
     /// HttpServer server = new HttpServer();
     /// server.Add(new WebSiteModule("www.gauffin.com", "Gauffin Telecom AB"));
@@ -32,7 +43,12 @@ namespace HttpServer
     /// 
     /// // start https
     /// server.Start(IPAddress.Any, 443, myCertificate);
+    /// </code>
     /// </example>
+    /// <seealso cref="HttpModule"/>
+    /// <seealso cref="ControllerModule"/>
+    /// <seealso cref="FileModule"/>
+    /// <seealso cref="HttpListener"/>
     public class HttpServer
     {
         private readonly FormDecoderProvider _formDecodersProvider = new FormDecoderProvider();
@@ -41,13 +57,90 @@ namespace HttpServer
         private readonly List<AuthModule> _authModules = new List<AuthModule>();
         private HttpListener _httpListener;
         private HttpListener _httpsListener;
-        private string _serverName = "TinyServer";
+        private string _serverName = "SeeSharpWebServer";
         private string _sessionCookieName = "__tiny_sessid";
-        private HttpSessionStore _sessionStore;
+        private IHttpSessionStore _sessionStore;
+        private ILogWriter _logWriter;
+        private int _backLog = 10;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class.
+        /// </summary>
+        public HttpServer() : this(new FormDecoderProvider(), NullLogWriter.Instance)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class.
+        /// </summary>
+        /// <param name="decoderProvider">Form decoders are used to convert different types of posted data to the <see cref="HttpInput"/> object types.</param>
+        /// <seealso cref="IFormDecoder"/>
+        /// <seealso cref="FormDecoderProviders"/>
+        public HttpServer(FormDecoderProvider decoderProvider)
+            : this(decoderProvider, null)
+        {
+            
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class.
+        /// </summary>
+        /// <param name="sessionStore">A session store is used to save and retrieve sessions</param>
+        /// <seealso cref="IHttpSessionStore"/>
+        public HttpServer(IHttpSessionStore sessionStore)
+            : this(new FormDecoderProvider(), sessionStore, null)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class.
+        /// </summary>
+        /// <param name="logWriter">The log writer.</param>
+        /// <seealso cref="LogWriter"/>
+        public HttpServer(ILogWriter logWriter) : this(new FormDecoderProvider(), logWriter)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class.
+        /// </summary>
+        /// <param name="decoderProvider">Form decoders are used to convert different types of posted data to the <see cref="HttpInput"/> object types.</param>
+        /// <param name="logWriter">The log writer.</param>
+        /// <seealso cref="IFormDecoder"/>
+        /// <seealso cref="FormDecoderProviders"/>
+        /// <seealso cref="LogWriter"/>
+        public HttpServer(FormDecoderProvider decoderProvider, ILogWriter logWriter)
+        {
+            Check.Require(decoderProvider, "decoderProvider");
+
+            _logWriter = logWriter ?? NullLogWriter.Instance;
+            _formDecodersProvider = decoderProvider;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class.
+        /// </summary>
+        /// <param name="decoderProvider">Form decoders are used to convert different types of posted data to the <see cref="HttpInput"/> object types.</param>
+        /// <param name="sessionStore">A session store is used to save and retrieve sessions</param>
+        /// <param name="logWriter">The log writer.</param>
+        /// <seealso cref="IFormDecoder"/>
+        /// <seealso cref="FormDecoderProviders"/>
+        /// <seealso cref="LogWriter"/>
+        /// <seealso cref="IHttpSessionStore"/>
+        public HttpServer(FormDecoderProvider decoderProvider, IHttpSessionStore sessionStore, ILogWriter logWriter)
+        {
+            Check.Require(decoderProvider, "decoderProvider");
+            Check.Require(sessionStore, "sessionStore");
+
+            _logWriter = logWriter ?? NullLogWriter.Instance;
+            _formDecodersProvider = decoderProvider;
+            _sessionStore = sessionStore;
+        }
 
         /// <summary>
         /// Modules used for authentication. The module that is is added first is used as 
-        /// the default auth module.
+        /// the default authentication module.
         /// </summary>
         /// <remarks>Use the corresponding property
         /// in the WebSiteModule if you are using multiple websites.</remarks>
@@ -65,7 +158,7 @@ namespace HttpServer
         }
 
         /// <summary>
-        /// Server name sent in http responses.
+        /// Server name sent in HTTP responses.
         /// </summary>
         /// <remarks>
         /// Do NOT include version in name, since it makes it 
@@ -78,7 +171,7 @@ namespace HttpServer
         }
 
         /// <summary>
-        /// Name of cookie where session id is stord.
+        /// Name of cookie where session id is stored.
         /// </summary>
         public string SessionCookieName
         {
@@ -86,17 +179,56 @@ namespace HttpServer
             set { _sessionCookieName = value; }
         }
 
+        /// <summary>
+        /// Specified where logging should go.
+        /// </summary>
+        /// <seealso cref="NullLogWriter"/>
+        /// <seealso cref="ConsoleLogWriter"/>
+        /// <seealso cref="LogWriter"/>
+        public ILogWriter LogWriter
+        {
+            get { return _logWriter; }
+            set 
+            { 
+                _logWriter = value ?? NullLogWriter.Instance;
+                foreach (HttpModule module in _modules)
+                    module.SetLogWriter(_logWriter);
+            }
+        }
+
+        /// <summary>
+        /// Number of connections that can wait to be accepted by the server.
+        /// </summary>
+        /// <remarks>Default is 10.</remarks>
+        public int BackLog
+        {
+            get { return _backLog; }
+            set { _backLog = value; }
+        }
+
+        /// <summary>
+        /// Adds the specified rule.
+        /// </summary>
+        /// <param name="rule">The rule.</param>
         public void Add(RedirectRule rule)
         {
             _rules.Add(rule);
         }
 
+        /// <summary>
+        /// Add a <see cref="HttpModule"/> to the server.
+        /// </summary>
+        /// <param name="module">mode to add</param>
         public void Add(HttpModule module)
         {
             _modules.Add(module);
         }
 
-        protected virtual void DecodeBody(HttpRequest request)
+        /// <summary>
+        /// Decodes the request body.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        protected virtual void DecodeBody(IHttpRequest request)
         {
             try
             {
@@ -113,27 +245,64 @@ namespace HttpServer
             }
         }
 
-        protected virtual void ErrorPage(HttpResponse response, HttpStatusCode error, string defaultReason)
+        /// <summary>
+        /// Generate a HTTP error page (that will be added to the response body).
+        /// response status code is also set.
+        /// </summary>
+        /// <param name="response">Response that the page will be generated in.</param>
+        /// <param name="error"><see cref="HttpStatusCode"/>.</param>
+        /// <param name="body">response body contents.</param>
+        protected virtual void ErrorPage(IHttpResponse response, HttpStatusCode error, string body)
         {
-            response.Reason = defaultReason;
+            response.Reason = "Internal server error";
             response.Status = error;
 
             StreamWriter writer = new StreamWriter(response.Body);
-            writer.WriteLine(defaultReason);
+            writer.WriteLine(body);
             writer.Flush();
         }
 
-        protected virtual string GetRealm(HttpRequest request)
+        /// <summary>
+        /// Generate a HTTP error page (that will be added to the response body).
+        /// response status code is also set.
+        /// </summary>
+        /// <param name="response">Response that the page will be generated in.</param>
+        /// <param name="err">exception.</param>
+        protected virtual void ErrorPage(IHttpResponse response, HttpException err)
         {
-            if (RealmWanted != null)
-                return RealmWanted(request.Headers["host"] ?? "localhost");
-            else
-                return ServerName;
+            response.Reason = err.GetType().Name;
+            response.Status = err.HttpStatusCode;
+            response.ContentType = "text/plain";
+            StreamWriter writer = new StreamWriter(response.Body);
+#if DEBUG
+            writer.WriteLine(err);
+#else
+            writer.WriteLine(err.Message);
+#endif
+            writer.Flush();
         }
 
-        protected virtual void HandleRequest(HttpClientContext context, HttpRequest request, HttpResponse response,
-                                             HttpSession session)
+        /// <summary>
+        /// Realms are used by the <see cref="AuthModule"/>s.
+        /// </summary>
+        /// <param name="request">HTTP request</param>
+        /// <returns>domain/realm.</returns>
+        protected virtual string GetRealm(IHttpRequest request)
         {
+            return RealmWanted != null ? RealmWanted(request.Headers["host"] ?? "localhost") : ServerName;
+        }
+
+        /// <summary>
+        /// Process an incoming request.
+        /// </summary>
+        /// <param name="context">connection to client</param>
+        /// <param name="request">request information</param>
+        /// <param name="response">response that should be filled</param>
+        /// <param name="session">session information</param>
+        protected virtual void HandleRequest(IHttpClientContext context, IHttpRequest request, IHttpResponse response,
+                                             IHttpSession session)
+        {
+            _logWriter.Write(this, LogPrio.Trace, "Processing request....");
             bool handled = false;
             try
             {
@@ -142,8 +311,12 @@ namespace HttpServer
                 {
                     foreach (HttpModule module in _modules)
                     {
-                        if (module.Process(request, response, session))
-                            handled = true;
+                        if (!module.Process(request, response, session)) 
+                            continue;
+
+                        handled = true;
+                        if(!module.AllowSecondaryProcessing)
+                            break;
                     }
                 }
             }
@@ -153,20 +326,17 @@ namespace HttpServer
                 {
                     AuthModule mod;
                     lock (_authModules)
-                        if (_authModules.Count > 0)
-                            mod = _authModules[0];
-                        else
-                            mod = null;
+                        mod = _authModules.Count > 0 ? _authModules[0] : null;
 
                     if (mod != null)
                         RequestAuthentication(mod, request, response);
                 }
                 else
-                    ErrorPage(response, err.HttpStatusCode, err.Message);
+                    ErrorPage(response, err);
             }
 
             if (!handled && response.Status == HttpStatusCode.OK)
-                ErrorPage(response, HttpStatusCode.NotFound, "Resource not found");
+                ErrorPage(response, HttpStatusCode.NotFound, "Resource not found: " + request.Uri);
 
             if (!response.HeadersSent)
             {
@@ -174,19 +344,19 @@ namespace HttpServer
                 if (session.Count > 0)
                 {
                     _sessionStore.Save(session);
-                    if (response.Cookies[_sessionCookieName] == null)
-                        response.Cookies.Add(new ResponseCookie(_sessionCookieName, session.Id, DateTime.Now.AddMinutes(20).AddDays(1)));
+                    // only set session cookie if it have not been sent in the request.
+                    if (request.Cookies[_sessionCookieName] == null)
+						response.Cookies.Add(new ResponseCookie(_sessionCookieName, session.Id, DateTime.MinValue));//DateTime.Now.AddMinutes(20).AddDays(1)));
                 }
                 else
                     _sessionStore.AddUnused(session);
-
-                // Now add cookies
-                foreach (ResponseCookie cookie in response.Cookies)
-                    response.AddHeader("Set-Cookie", cookie.ToString());
             }
 
             if (!response.Sent)
                 response.Send();
+
+			request.Clear();
+            _logWriter.Write(this, LogPrio.Trace, "....done.");
         }
 
         private void Init()
@@ -200,14 +370,26 @@ namespace HttpServer
             // add default decoders if none have been added.
             if (_formDecodersProvider.Count == 0)
             {
-                WriteLog(this, LogPrio.Info, "Loading all default form decoders, since none have been added.");
+                WriteLog(this, LogPrio.Info, "Loading UrlDecoder and MultipartDecoder, since no decoders have been added.");
                 _formDecodersProvider.Add(new UrlDecoder());
-                _formDecodersProvider.Add(new MultipartFormDecoder());
-                _formDecodersProvider.Add(new XmlDecoder());
+                _formDecodersProvider.Add(new MultipartDecoder());
             }
+
+			// Clear out old temporary files
+			DirectoryInfo info = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache));
+			foreach(FileInfo file in info.GetFiles("tmp*"))
+				file.Delete();
         }
 
-        protected virtual void OnClientDisconnected(HttpClientContext client, SocketError error)
+        /// <summary>
+        /// Can be overloaded to implement stuff when a client have been connected.
+        /// </summary>
+        /// <remarks>
+        /// Default implementation does nothing.
+        /// </remarks>
+        /// <param name="client">client that disconnected</param>
+        /// <param name="error">disconnect reason</param>
+        protected virtual void OnClientDisconnected(IHttpClientContext client, SocketError error)
         {
         }
 
@@ -218,7 +400,7 @@ namespace HttpServer
         /// <param name="response"></param>
         /// <param name="session"></param>
         /// <returns>true if request can be handled; false if not.</returns>
-        protected virtual bool ProcessAuthentication(HttpRequest request, HttpResponse response, HttpSession session)
+        protected virtual bool ProcessAuthentication(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             if (_authModules.Count > 0)
             {
@@ -241,11 +423,10 @@ namespace HttpServer
                     {
                         foreach (AuthModule aModule in _authModules)
                         {
-                            if (aModule.Name == word)
-                            {
-                                mod = aModule;
-                                break;
-                            }
+                            if (aModule.Name != word) 
+                                continue;
+                            mod = aModule;
+                            break;
                         }
                     }
                     if (mod != null)
@@ -263,11 +444,11 @@ namespace HttpServer
                     {
                         foreach (AuthModule module in _authModules)
                         {
-                            if (module.AuthenticationRequired(request))
-                            {
-                                RequestAuthentication(module, request, response);
-                                return false;
-                            }
+                            if (!module.AuthenticationRequired(request)) 
+                                continue;
+
+                            RequestAuthentication(module, request, response);
+                            return false;
                         }
 
                         // modules can have inited the authentication
@@ -294,7 +475,7 @@ namespace HttpServer
         /// <param name="mod"></param>
         /// <param name="request"></param>
         /// <param name="response"></param>
-        protected virtual void RequestAuthentication(AuthModule mod, HttpRequest request, HttpResponse response)
+        protected virtual void RequestAuthentication(AuthModule mod, IHttpRequest request, IHttpResponse response)
         {
             string theResponse = mod.CreateResponse(GetRealm(request));
             response.AddHeader("www-authenticate", theResponse);
@@ -302,69 +483,91 @@ namespace HttpServer
             response.Status = HttpStatusCode.Unauthorized;
         }
 
-        private void SetupRequest(HttpClientContext context, HttpRequest request)
+        private void SetupRequest(IHttpClientContext context, IHttpRequest request)
         {
-            HttpResponse response = new HttpResponse(context, request);
+            IHttpResponse response = new HttpResponse(context, request);
             try
             {
-                foreach (RedirectRule rule in _rules)
+                foreach (IRule rule in _rules)
                 {
-                    if (rule.Process(request, response))
-                    {
-                        response.Send();
-                        return;
-                    }
+                    if (!rule.Process(request, response)) 
+                        continue;
+                    response.Send();
+                    return;
                 }
 
-                RequestCookies cookies;
                 // load cookies if the exist.
-                if (request.Headers["cookie"] != null)
-                    cookies = new RequestCookies(request.Headers["cookie"]);
-                else
-                    cookies = new RequestCookies(string.Empty);
+                RequestCookies cookies = request.Headers["cookie"] != null
+                                             ? new RequestCookies(request.Headers["cookie"])
+                                             : new RequestCookies(string.Empty);
 
                 request.SetCookies(cookies);
 
-                HttpSession session;
+                IHttpSession session;
                 if (cookies[_sessionCookieName] != null)
                 {
-                    session = _sessionStore.Load(cookies[_sessionCookieName].Value);
-                    if (session == null)
-                        session = _sessionStore.Create(cookies[_sessionCookieName].Value);
+                    string sessionCookie = cookies[_sessionCookieName].Value;
+
+                    // there's a bug somewhere which fucks up headers which can render the session cookie useless.
+                    // therefore let's consider the session cookie as not set if that have happened.
+                    if (sessionCookie.Length > 40)
+                    {
+                        _logWriter.Write(this, LogPrio.Error, "Session cookie is fucked: " + sessionCookie);
+                        cookies.Remove(_sessionCookieName);
+                        _sessionStore.Remove(sessionCookie); // free the session cookie (and thus generating a new one).
+                        session = _sessionStore.Create();
+                    }
+                    else
+                        session = _sessionStore.Load(sessionCookie) ??
+                                  _sessionStore.Create(sessionCookie);
                 }
                 else
                     session = _sessionStore.Create();
 
                 HandleRequest(context, request, response, session);
             }
-            catch (Exception err)
+            catch (Exception err) 
             {
                 if (ExceptionThrown == null)
 #if DEBUG
                     throw;
 #else
-                    WriteLog(LogPrio.Fatal, err.Message);
-#endif
-                else
                 {
-                    ExceptionThrown(this, err);
-                    try
-                    {
-#if DEBUG
-                        context.Respond("HTTP/1.0", HttpStatusCode.InternalServerError,  "Internal server error", err.ToString());
-#else
-                        context.Respond("HTTP/1.0", HttpStatusCode.InternalServerError,  "Internal server error");
-#endif
-                    }
-                    catch(Exception){}
+                    WriteLog(LogPrio.Fatal, err.Message);
+                    return;
                 }
+#endif
+                ExceptionThrown(this, err);
+
+            	Exception e = err;
+				while(e != null)
+				{
+					if(e is SocketException)
+						return;
+
+					e = e.InnerException;
+				}
+
+                try
+                {
+#if DEBUG
+                    context.Respond("HTTP/1.0", HttpStatusCode.InternalServerError,  "Internal server error", err.ToString());
+#else
+                    context.Respond("HTTP/1.0", HttpStatusCode.InternalServerError,  "Internal server error");
+#endif
+                }
+                catch(Exception err2)
+                {
+                    LogWriter.Write(this, LogPrio.Fatal, "Failed to respond on message with Internal Server Error: " + err2);
+                }
+                
             }
         }
 
         /// <summary>
-        /// Start the webserver using regular HTTP.
+        /// Start the web server using regular HTTP.
         /// </summary>
-        /// <param name="address">IP Address to listen on, use IpAddress.Any to accept connections on all ipaddresses/network cards.</param>
+        /// <param name="address">IP Address to listen on, use IpAddress.Any to accept connections on all ip addresses/network cards.</param>
         /// <param name="port">Port to listen on. 80 can be a good idea =)</param>
         public void Start(IPAddress address, int port)
         {
@@ -372,15 +575,14 @@ namespace HttpServer
                 throw new ArgumentNullException("address");
             if (port <= 0)
                 throw new ArgumentException("Port must be a positive number.");
+            if (_httpListener != null) 
+                return;
 
-            if (_httpListener == null)
-            {
-                _httpListener = new HttpListener(address, port);
-                _httpListener.LogWriter = LogEntryWritten;
-                _httpListener.RequestHandler = SetupRequest;
-                _httpListener.Start(5);
-                Init();
-            }
+            _httpListener = new HttpListener(address, port);
+            _httpListener.LogWriter = LogWriter;
+            _httpListener.RequestHandler = SetupRequest;
+            _httpListener.Start(50);
+            Init();
         }
 
         /// <summary>
@@ -395,17 +597,19 @@ namespace HttpServer
                 throw new ArgumentNullException("address");
             if (port <= 0)
                 throw new ArgumentException("Port must be a positive number.");
+            if (_httpsListener != null) 
+                return;
 
-            if (_httpsListener == null)
-            {
-                _httpsListener = new HttpListener(address, port, certificate);
-                _httpsListener.LogWriter = LogEntryWritten;
-                _httpsListener.RequestHandler = SetupRequest;
-                _httpsListener.Start(5);
-                Init();
-            }
+            _httpsListener = new HttpListener(address, port, certificate);
+            _httpsListener.LogWriter = LogWriter;
+            _httpsListener.RequestHandler = SetupRequest;
+            _httpsListener.Start(5);
+            Init();
         }
 
+        /// <summary>
+        /// shut down the server and listeners
+        /// </summary>
         public void Stop()
         {
             if (_httpListener != null)
@@ -420,26 +624,29 @@ namespace HttpServer
             }
         }
 
+        /// <summary>
+        /// write an entry to the log file
+        /// </summary>
+        /// <param name="prio">importance of the message</param>
+        /// <param name="message">log message</param>
         protected virtual void WriteLog(LogPrio prio, string message)
         {
-            WriteLog(this, prio, message);
-        }
-
-        internal void WriteLog(object source, LogPrio prio, string message)
-        {
-            if (LogEntryWritten != null)
-                LogEntryWritten(this, prio, message);
-            Console.WriteLine(source.GetType().Name + ": " + prio + ", " + message);
+            LogWriter.Write(this, prio, message);
         }
 
         /// <summary>
-        /// Use this event to be able to get log entries into your favorite 
-        /// log library.
+        /// write an entry to the log file
         /// </summary>
-        public event WriteLogHandler LogEntryWritten;
+        /// <param name="source">object that wrote the message</param>
+        /// <param name="prio">importance of the message</param>
+        /// <param name="message">log message</param>
+        public void WriteLog(object source, LogPrio prio, string message)
+        {
+            LogWriter.Write(source, prio, message);
+        }
 
         /// <summary>
-        /// Realms are used during http authentication.
+        /// Realms are used during HTTP authentication.
         /// Default realm is same as server name.
         /// </summary>
         public event RealmHandler RealmWanted;
@@ -449,7 +656,7 @@ namespace HttpServer
         /// </summary>
         /// <remarks>
         /// Exceptions will be thrown during debug mode if this event is not used,
-        /// exceptions will be printed to console and supressed during release mode.
+        /// exceptions will be printed to console and suppressed during release mode.
         /// </remarks>
         public event ExceptionHandler ExceptionThrown;
     }

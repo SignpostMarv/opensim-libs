@@ -13,8 +13,8 @@ namespace HttpServer.FormDecoders
     /// </summary>
     public class FormDecoderProvider
     {
-        private readonly IList<FormDecoder> _decoders = new List<FormDecoder>();
-        private FormDecoder _defaultDecoder;
+        private readonly IList<IFormDecoder> _decoders = new List<IFormDecoder>();
+        private IFormDecoder _defaultDecoder;
 
         /// <summary>
         /// 
@@ -22,10 +22,10 @@ namespace HttpServer.FormDecoders
         /// <param name="contentType">Should contain boundary and type, as in: multipart/form-data; boundary=---------------------------230051238959</param>
         /// <param name="stream">Stream containg form data.</param>
         /// <param name="encoding">Encoding used when decoding the stream</param>
-        /// <returns>HttpInput.Empty if no parser was found. Must always return something (HttpInput.Empty instead of null)</returns>
+        /// <returns>HttpInput.EmptyLanguageNode if no parser was found. Must always return something (HttpInput.Empty instead of null)</returns>
         /// <exception cref="ArgumentException">If stream is null or not readable.</exception>
         /// <exception cref="InvalidDataException">If stream contents cannot be decoded properly.</exception>
-        public HttpInput Decode(string contentType, Stream stream, Encoding encoding)
+        public HttpForm Decode(string contentType, Stream stream, Encoding encoding)
         {
             if (encoding == null)
                 encoding = Encoding.UTF8;
@@ -34,21 +34,20 @@ namespace HttpServer.FormDecoders
 
             if (string.IsNullOrEmpty(contentType))
             {
-                if (_defaultDecoder != null)
-                    return _defaultDecoder.Decode(stream, contentType, encoding);
-                else
-                    return HttpInput.Empty;
+                return _defaultDecoder != null
+                           ? _defaultDecoder.Decode(stream, contentType, encoding)
+                           : HttpForm.EmptyForm;
             }
 
             //multipart/form-data; boundary=---------------------------230051238959
             contentType = contentType.ToLower();
-            foreach (FormDecoder decoder in _decoders)
+            foreach (IFormDecoder decoder in _decoders)
             {
                 if (decoder.CanParse(contentType))
                     return decoder.Decode(stream, contentType, encoding);
             }
 
-            return HttpInput.Empty;
+			return HttpForm.EmptyForm;
         }
 
         /// <summary>
@@ -56,7 +55,7 @@ namespace HttpServer.FormDecoders
         /// </summary>
         /// <param name="decoder"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public void Add(FormDecoder decoder)
+        public void Add(IFormDecoder decoder)
         {
             if (decoder == null)
                 throw new ArgumentNullException("decoder");
@@ -77,7 +76,7 @@ namespace HttpServer.FormDecoders
         /// <summary>
         /// Use with care.
         /// </summary>
-        public IList<FormDecoder> Decoders
+        public IList<IFormDecoder> Decoders
         {
             get { return _decoders; }
         }
@@ -85,7 +84,7 @@ namespace HttpServer.FormDecoders
         /// <summary>
         /// Decoder used for unknown content types.
         /// </summary>
-        public FormDecoder DefaultDecoder
+        public IFormDecoder DefaultDecoder
         {
             get { return _defaultDecoder; }
             set { _defaultDecoder = value; }

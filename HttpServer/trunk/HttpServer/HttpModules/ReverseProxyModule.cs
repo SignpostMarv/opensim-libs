@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using HttpServer.Exceptions;
 using HttpServer;
+using HttpServer.Sessions;
 
 namespace HttpServer.HttpModules
 {
@@ -56,8 +57,7 @@ namespace HttpServer.HttpModules
         /// <param name="request">Information sent by the browser about the request</param>
         /// <param name="response">Information that is being sent back to the client.</param>
         /// <param name="session">Session used to </param>
-        /// <param name="cookies">Incoming/outgoing cookies. If you modify a cookie, make sure that you also set a expire date. Modified cookies will automatically be sent.</param>
-        public override bool Process(HttpRequest request, HttpResponse response, HttpSession session)
+        public override bool Process(IHttpRequest request, IHttpResponse response, IHttpSession session)
         {
             if (!CanHandle(request.Uri))
                 return false;

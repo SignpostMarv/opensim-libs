@@ -12,17 +12,28 @@ namespace HttpServer.Rendering.Haml.Nodes
     {
         private string _text;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parent">parent node</param>
+        /// <param name="text">plain text</param>
         public TextNode(Node parent, string text) : base(parent)
         {
             Text = text;
         }
-
+        
+        /// <summary>
+        /// The text.
+        /// </summary>
         public string Text
         {
             get { return _text; }
             set { _text = value; }
         }
 
+        /// <summary>
+        /// Is this a text node (containing plain text)?
+        /// </summary>
         public override bool IsTextNode
         {
             get { return true; }
@@ -55,11 +66,16 @@ namespace HttpServer.Rendering.Haml.Nodes
         /// </summary>
         /// <param name="word">Controller char (word)</param>
         /// <returns>true if text belongs to this node type</returns>
+        /// <param name="firstNode">true if this is the first node on the line.</param>
         public override bool CanHandle(string word, bool firstNode)
         {
             return word.Length > 0 && (char.IsWhiteSpace(word[0]));
         }
 
+        /// <summary>
+        /// Generate HTML for this node.
+        /// </summary>
+        /// <returns></returns>
         public override string ToHtml()
         {
             // lineinfo = first node on line
@@ -69,7 +85,14 @@ namespace HttpServer.Rendering.Haml.Nodes
                 return _text;
         }
 
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <summary>
+        /// Convert the node to c# code
+        /// </summary>
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">todo: add description</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             int intendCount = GetIntendation();
             string intend = string.Empty.PadLeft(intendCount, '\t');
@@ -84,8 +107,13 @@ namespace HttpServer.Rendering.Haml.Nodes
 
             if (Children.Count > 0)
             {
-                sb.Append(intend);
-                sb.AppendLine(text);
+                if (smallEnough)
+                    sb.Append(text);
+                else
+                {
+                    sb.Append(intend);
+                    sb.AppendLine(text);
+                }
 
                 foreach (Node node in Children)
                     sb.Append(node.ToCode(ref inString, smallEnough));
@@ -95,7 +123,7 @@ namespace HttpServer.Rendering.Haml.Nodes
             {
                 // lineinfo = first node on line
                 if (LineInfo != null && !smallEnough)
-                    sb.Append(intend + text + Environment.NewLine);
+                    sb.AppendLine(intend + text);
                 else
                     sb.Append(text);
                 

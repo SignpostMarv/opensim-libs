@@ -14,13 +14,33 @@ namespace HttpServer.Authentication
     /// </summary>
     public class BasicAuthentication : AuthModule
     {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BasicAuthentication"/> class.
+        /// </summary>
+        /// <param name="authenticator">Delegate used to provide information used during authentication.</param>
+        /// <param name="authRequiredDelegate">Delegate used to determine if authentication is required (may be null).</param>
+        public BasicAuthentication(AuthenticationHandler authenticator, AuthRequiredDelegate authRequiredDelegate) 
+            : base(authenticator, authRequiredDelegate)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BasicAuthentication"/> class.
+        /// </summary>
+        /// <param name="authenticator">Delegate used to provide information used during authentication.</param>
+        public BasicAuthentication(AuthenticationHandler authenticator)
+            : base(authenticator)
+        {
+        }
+
         /// <summary>
         /// Create a response that can be sent in the WWW-Authenticate header.
         /// </summary>
         /// <param name="realm">Realm that the user should authenticate in</param>
         /// <param name="options">Not used in basic auth</param>
         /// <returns>A correct auth request.</returns>
-        public override string CreateResponse(string realm, params object[] options)
+        public override string CreateResponse(string realm, object[] options)
         {
             if (string.IsNullOrEmpty(realm))
                 throw new ArgumentNullException("realm");
@@ -39,8 +59,7 @@ namespace HttpServer.Authentication
         /// <returns>Authentication object that is stored for the request. A user class or something like that.</returns>
         /// <exception cref="ArgumentException">if authenticationHeader is invalid</exception>
         /// <exception cref="ArgumentNullException">If any of the paramters is empty or null.</exception>
-        public override object Authenticate(string authenticationHeader, string realm, string httpVerb,
-                                            params object[] options)
+        public override object Authenticate(string authenticationHeader, string realm, string httpVerb, object[] options)
         {
             if (string.IsNullOrEmpty(authenticationHeader))
                 throw new ArgumentNullException("realm");
@@ -65,10 +84,8 @@ namespace HttpServer.Authentication
             string pw = ourPw;
             object state;
             CheckAuthentication(realm, decoded.Substring(0, pos), ref pw, out state);
-            if (ourPw == pw)
-                return state;
-            else
-                return null;
+
+            return ourPw == pw ? state : null;
         }
 
         /// <summary>

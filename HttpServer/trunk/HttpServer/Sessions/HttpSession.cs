@@ -37,5 +37,48 @@ namespace HttpServer
         /// Remove everything from the session
         /// </summary>
         void Clear();
+
+		/// <summary>
+		/// Remove everything from the session
+		/// </summary>
+		/// <param name="expires">True if the session is cleared due to expiration</param>
+		void Clear(bool expires);
+
+		/// <summary>
+		/// Event triggered upon clearing the session
+		/// </summary>
+		event HttpSessionClearedHandler BeforeClear;
     }
+
+	/// <summary>
+	/// Arguments sent when a <see cref="HttpSession" /> is cleared
+	/// </summary>
+	public class HttpSessionClearedArgs
+	{
+		private readonly bool _expired;
+
+		/// <summary>
+		/// Instantiates the arguments for the event
+		/// </summary>
+		/// <param name="expired">True if the session is cleared due to expiration</param>
+		public HttpSessionClearedArgs(bool expired)
+		{
+			_expired = expired;
+		}
+
+		/// <summary>
+		/// Returns true if the session is cleared due to expiration
+		/// </summary>
+		public bool Expired
+		{
+			get { return _expired; }
+		}
+	}
+
+	/// <summary>
+	/// Delegate for when a HttpSession is cleared
+	/// </summary>
+	/// <param name="session">The session that is being cleared</param>
+	/// <param name="args">Arguments for the clearing</param>
+	public delegate void HttpSessionClearedHandler(HttpSession session, HttpSessionClearedArgs args);
 }

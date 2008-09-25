@@ -24,16 +24,30 @@ namespace HttpServer.Exceptions
     /// </summary>
     public class UnauthorizedException : HttpException
     {
+        /// <summary>
+        /// Create a new unauhtorized exception.
+        /// </summary>
+        /// <seealso cref="UnauthorizedException"/>
         public UnauthorizedException()
             : base(HttpStatusCode.Unauthorized, "The request requires user authentication.")
         {
             
         }
+
+        /// <summary>
+        /// Create a new unauhtorized exception.
+        /// </summary>
+        /// <param name="message">reason to why the request was unauthorized.</param>
+        /// <param name="inner">inner exception</param>
         public UnauthorizedException(string message, Exception inner)
             : base(HttpStatusCode.Unauthorized, message, inner)
         {
         }
 
+        /// <summary>
+        /// Create a new unauhtorized exception.
+        /// </summary>
+        /// <param name="message">reason to why the request was unauthorized.</param>
         public UnauthorizedException(string message)
             : base(HttpStatusCode.Unauthorized, message)
         {

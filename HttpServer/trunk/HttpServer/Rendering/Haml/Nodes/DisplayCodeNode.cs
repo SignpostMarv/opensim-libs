@@ -15,6 +15,10 @@ namespace HttpServer.Rendering.Haml.Nodes
     {
         private string _code;
 
+        /// <summary>
+        /// Contains C# code that will be rendered into the view.
+        /// </summary>
+        /// <param name="parent">Parent node</param>
         public DisplayCodeNode(Node parent) : base(parent)
         {}
 
@@ -30,13 +34,17 @@ namespace HttpServer.Rendering.Haml.Nodes
         public override Node Parse(NodeList prototypes, Node parent, LineInfo line, ref int offset)
         {
             if (offset >= line.Data.Length)
-                throw new CodeGeneratorException(line.LineNumber, "Too little data");
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Too little data");
 
             int pos = line.Data.Length;
 
             ++offset;
             string name = line.Data.Substring(offset, pos - offset);
             offset = pos;
+
+            string trimmedData = line.Data.Trim();
+            if (trimmedData.Length > 0 && trimmedData[trimmedData.Length-1] == ';')
+                throw new CodeGeneratorException(line.LineNumber, line.Data, "Displayed code should not end with semicolon.");
 
             DisplayCodeNode node = (DisplayCodeNode)prototypes.CreateNode("=", parent);
             node._code = name;
@@ -56,6 +64,9 @@ namespace HttpServer.Rendering.Haml.Nodes
             return word.Length > 0 && word[0] == '=';
         }
 
+        /// <summary>
+        /// Determines if this is a textnode (containg plain text)
+        /// </summary>
         public override bool IsTextNode
         {
             get
@@ -64,6 +75,10 @@ namespace HttpServer.Rendering.Haml.Nodes
             }
         }
 
+        /// <summary>
+        /// Generate HTML for this node (with asp tags for code)
+        /// </summary>
+        /// <returns></returns>
         public override string ToHtml()
         {
             if (Parent == null || (Parent.Children.Last.Value != this && LineInfo == null))
@@ -93,8 +108,11 @@ namespace HttpServer.Rendering.Haml.Nodes
         /// it inserts the result of the Ruby code into the template. 
         /// However, if the result is short enough, it is displayed entirely on one line.
         /// </summary>
-        /// <returns></returns>
-        protected override string ToCode(ref bool inString, bool smallEnough, bool defaultValue)
+        /// <param name="inString">True if we are inside the internal stringbuilder</param>
+        /// <param name="smallEnough">true if all subnodes fit on one line</param>
+        /// <param name="smallEnoughIsDefaultValue">smallEnough is a default value, recalc it</param>
+        /// <returns>c# code</returns>
+        protected override string ToCode(ref bool inString, bool smallEnough, bool smallEnoughIsDefaultValue)
         {
             if (LineInfo == null)
             {
@@ -106,7 +124,6 @@ namespace HttpServer.Rendering.Haml.Nodes
 
             StringBuilder sb = new StringBuilder();
             string intend = LineInfo == null ? string.Empty : string.Empty.PadLeft(LineInfo.Intendation, '\t');
-
             if (inString)
             {
                 sb.Append("\");");
@@ -127,6 +144,9 @@ namespace HttpServer.Rendering.Haml.Nodes
 
             foreach (Node node in Children)
                 sb.Append(node.ToCode(ref inString, smallEnough));
+
+            if (!smallEnough)
+                sb.AppendLine();
 
             return sb.ToString();
         }

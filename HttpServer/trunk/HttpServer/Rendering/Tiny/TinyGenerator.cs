@@ -4,11 +4,14 @@ using System.Text;
 
 namespace HttpServer.Rendering.Tiny
 {
-    public class TinyGenerator : TemplateGenerator
+    /// <summary>
+    /// Generates C# rendering object using ASP similiar tags in the HTML code.
+    /// </summary>
+    public class TinyGenerator : ITemplateGenerator
     {
         readonly StringBuilder _sb = new StringBuilder();
 
-        #region TemplateGenerator Members
+        #region ITemplateGenerator Members
 
         /// <summary>
         /// Generate C# code from the template.
@@ -101,7 +104,8 @@ namespace HttpServer.Rendering.Tiny
                     if (ch == '"')
                     {
                         sb.Append(ch);
-                        sb.Append(ch);
+                        if (!inCode)
+                            sb.Append(ch);
                     }
                     else if (ch == '<' && nextCh == '%')
                     {
