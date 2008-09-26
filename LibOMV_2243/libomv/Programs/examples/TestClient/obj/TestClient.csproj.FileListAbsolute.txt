@@ -1,0 +1,6 @@
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\TestClient.exe
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\TestClient\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\TestClient\obj\Debug\TestClient.exe
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\TestClient\obj\Debug\TestClient.pdb
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\TestClient\obj\Release\ResolveAssemblyReference.cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\TestClient\obj\Release\TestClient.exe

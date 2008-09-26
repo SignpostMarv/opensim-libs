@@ -1,0 +1,7 @@
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\OpenMetaverseTypes.dll
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse\Types\obj\Release\ResolveAssemblyReference.cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse\Types\obj\Release\OpenMetaverseTypes.dll
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse\Types\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse\Types\obj\Debug\OpenMetaverseTypes.dll
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse\Types\obj\Debug\OpenMetaverseTypes.pdb
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\OpenMetaverseTypes.XML

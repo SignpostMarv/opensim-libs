@@ -1,0 +1,183 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{02E4E597-681B-4673-87B2-66AC63FECF09}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon></ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>Simian</AssemblyName>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder></AppDesignerFolder>
+    <RootNamespace>Simian</RootNamespace>
+    <StartupObject></StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DocumentationFile></DocumentationFile>
+    <DebugSymbols>True</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <Optimize>False</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <RemoveIntegerChecks>False</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1591,1574,0419,0618</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile></DocumentationFile>
+    <DebugSymbols>False</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <Optimize>True</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <RemoveIntegerChecks>False</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1591,1574,0419,0618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+        <Name>System</Name>
+      <HintPath>\System.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Drawing">
+        <Name>System.Drawing</Name>
+      <HintPath>\System.Drawing.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml">
+        <Name>System.Xml</Name>
+      <HintPath>\System.Xml.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenMetaverse\OpenMetaverse.csproj">
+      <Name>OpenMetaverse</Name>
+      <Project>{6FBFDC0E-C626-4D88-9C2C-FFF24E030060}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="..\..\OpenMetaverse\Types\OpenMetaverseTypes.csproj">
+      <Name>OpenMetaverseTypes</Name>
+      <Project>{DEE84179-29D0-46DE-AD72-FA9F4EFF5EF8}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Agent.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AnimationSet.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DoubleDictionary.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EventDictionary.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExtensionLoader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="InventoryDefinitions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ISimianExtension.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Simian.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SimulationObject.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\AssetManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\AvatarManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\CoarseLocationUpdates.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\ConnectionManagement.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\ImageDelivery.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\InventoryManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\Messaging.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\Money.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\Movement.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\ObjectManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\RenderingPluginMesher.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\SceneManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Extensions\UDPServer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\IAssetProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\IAvatarProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\IInventoryProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\IMeshingProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\ISceneProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\IUDPProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,13 @@
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\GUITestClient.exe
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Release\ResolveAssemblyReference.cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Release\OpenMetaverse.GUITestClient.frmTestClient.resources
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Release\GUITestClient.Properties.Resources.resources
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Release\GUITestClient.csproj.GenerateResource.Cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Release\GUITestClient.exe
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\GUITestClient.pdb
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Debug\OpenMetaverse.GUITestClient.frmTestClient.resources
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Debug\GUITestClient.Properties.Resources.resources
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Debug\GUITestClient.csproj.GenerateResource.Cache
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Debug\GUITestClient.exe
+C:\Documents and Settings\DCOLIVE\Desktop\libomv\Programs\examples\GUITestClient\obj\Debug\GUITestClient.pdb
