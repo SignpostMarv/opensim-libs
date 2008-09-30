@@ -59,8 +59,8 @@ namespace HttpServer
                 }
             }
 
-            if (state == 0 && !input.GetEnumerator().MoveNext())
-                throw new ArgumentException("Not a valid querystring: " + queryString);
+            //if (state == 0 && !input.GetEnumerator().MoveNext())
+                //throw new ArgumentException("Not a valid querystring: " + queryString);
 
             if (name != null && startpos < queryString.Length)
                 Add(input, name, queryString.Substring(startpos, queryString.Length - startpos));

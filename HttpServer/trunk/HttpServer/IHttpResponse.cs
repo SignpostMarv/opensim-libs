@@ -33,6 +33,8 @@ namespace HttpServer
             /// </summary>
             Stream Body { get; set; }
 
+            string ProtocolVersion { get; set; }
+
             /// <summary>
             /// The chunked encoding modifies the body of a message in order to
             /// transfer it as a series of chunks, each with its own size indicator,
