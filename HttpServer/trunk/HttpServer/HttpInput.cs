@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Xunit;
+
 
 namespace HttpServer
 {
@@ -171,18 +171,7 @@ namespace HttpServer
             return temp.Length > 0 ? temp.Substring(0, temp.Length - 1) : string.Empty;
         }
 
-        [Fact]
-        private static void TestToString()
-        {
-            string queryString = "title=hello&firstname=jonas&status=super";
-            HttpInput input = HttpHelper.ParseQueryString(queryString);
-            Assert.Equal(queryString, input.ToString(true));
-
-            queryString = "title[jonas]=hello&title[arne]=ohno&firstname=jonas&status=super";
-            input = HttpHelper.ParseQueryString(queryString);
-            Assert.Equal(queryString, input.ToString(true));
-
-        }
+        
 
         /// <summary>
         /// Extracts one parameter from an array

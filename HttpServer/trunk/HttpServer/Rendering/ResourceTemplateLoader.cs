@@ -1,6 +1,6 @@
 using System.IO;
 using System.Reflection;
-using Xunit;
+
 
 namespace HttpServer.Rendering
 {
@@ -53,19 +53,7 @@ namespace HttpServer.Rendering
 			return null;
 		}
 
-		#region Test LoadTemplate
-
-		[Fact]
-		private static void TestLoadTemplate()
-		{
-			ResourceTemplateLoader loader = new ResourceTemplateLoader();
-			loader.LoadTemplates("/test/", loader.GetType().Assembly, loader.GetType().Namespace);
-			TextReader reader = loader.LoadTemplate("test\\resourcetest.haml");
-			Assert.NotNull(reader);
-			reader.Dispose();
-		}
-
-    	#endregion
+		
 
 		/// <summary>
 		/// Fetch all files from the resource that matches the specified arguments.

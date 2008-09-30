@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using Fadd;
 using Fadd.Logging;
-using Xunit;
+
 
 namespace HttpServer.Rendering
 {
@@ -61,29 +61,7 @@ namespace HttpServer.Rendering
 			}
 		}
 
-		#region Test for ParseName
-
-		[Fact]
-		private static void TestParseName()
-		{
-			string extension;
-			string filename = "/uSEr/test/hej.*";
-			ParseName(ref filename, out extension);
-			Assert.Equal("*", extension);
-			Assert.Equal("user/test/hej", filename);
-
-			filename = "test/teSt.xMl";
-			ParseName(ref filename, out extension);
-			Assert.Equal("xml", extension);
-			Assert.Equal("test/test", filename);
-
-			filename = "test/TeSt";
-			ParseName(ref filename, out extension);
-			Assert.Equal(string.Empty, extension);
-			Assert.Equal("test/test", filename);
-		}
-
-		#endregion
+		
 
 		/// <summary>
 		/// Add a resource to a specified uri without extension, ie user/test
@@ -139,34 +117,7 @@ namespace HttpServer.Rendering
 			}
 		}
 
-		#region Test for LoadResources
-
-		[Fact]
-		private static void TestLoadTemplates()
-		{
-			LogManager.SetProvider(new NullLogProvider());
-
-			ResourceManager resourceManager = new ResourceManager();
-			resourceManager.LoadResources("/test/", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			Assert.NotNull(resourceManager._loadedResources["test/resourcetest"]);
-			Assert.Equal("haml", resourceManager._loadedResources["test/resourcetest"][0].Extension);
-			Assert.Equal(resourceManager.GetType().Namespace + ".resourcetest.haml", resourceManager._loadedResources["test/resourcetest"][0].Name);
-
-			resourceManager._loadedResources.Clear();
-			resourceManager.LoadResources("/user", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			Assert.Equal(resourceManager.GetType().Namespace + ".resourcetest.haml", resourceManager._loadedResources["user/resourcetest"][0].Name);
-
-			resourceManager._loadedResources.Clear();
-			resourceManager.LoadResources("/user/test/", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			Assert.Equal(resourceManager.GetType().Namespace + ".resourcetest.haml", resourceManager._loadedResources["user/test/resourcetest"][0].Name);
-
-			resourceManager._loadedResources.Clear();
-			resourceManager.LoadResources("/", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			Assert.Equal(resourceManager.GetType().Namespace + ".resourcetest.haml", resourceManager._loadedResources["resourcetest"][0].Name);
-		}
-
-		#endregion
-
+	
 		/// <summary>
 		/// Retrieves a stream for the specified resource path if loaded otherwise null
 		/// </summary>
@@ -187,18 +138,6 @@ namespace HttpServer.Rendering
 			return info != null ? info.GetStream() : null;
 		}
 
-		#region Test for GetResourceStream
-
-		[Fact]
-		private static void TestGetResourceStream()
-		{
-			ResourceManager resources = new ResourceManager();
-			resources.LoadResources("/", resources.GetType().Assembly, "HttpServer.Rendering");
-			Assert.NotNull(resources.GetResourceStream("resourcetest.haml"));
-			Assert.NotNull(resources.GetResourceStream("\\resourcetest.haml"));
-		}
-
-		#endregion
 
 		/// <summary>
 		/// Fetch all files from the resource that matches the specified arguments.
@@ -245,32 +184,7 @@ namespace HttpServer.Rendering
 			return GetFiles(path + filename);
 		}
 
-		#region Test GetFiles
-
-		[Fact]
-		private static void TestGetFiles()
-		{
-			ResourceManager resourceManager = new ResourceManager();
-			resourceManager.LoadResources("/test/", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			string[] files = resourceManager.GetFiles("/test/", "resourcetest.xml");
-			Assert.Equal(1, files.Length);
-			Assert.Equal("test/resourcetest.xml", files[0]);
-
-			files = resourceManager.GetFiles("/test/", "resourcetest.*");
-			Assert.Equal(2, files.Length);
-
-			files = resourceManager.GetFiles("/test/haml/", "resourcetest2.haml");
-			Assert.Equal(1, files.Length);
-
-			files = resourceManager.GetFiles("/test/haml/resourcetest2.haml");
-			Assert.Equal(1, files.Length);
-
-			files = resourceManager.GetFiles("/test/resourcetest.*");
-			Assert.Equal(2, files.Length);
-		}
-
-		#endregion
-
+		
 		/// <summary>
 		/// Returns whether or not the loader has an instance of the file requested
 		/// </summary>
@@ -293,32 +207,5 @@ namespace HttpServer.Rendering
 
 			return false;
 		}
-
-		#region Test ContainsResource
-
-		[Fact]
-		private static void TestContainsResource()
-		{
-			ResourceManager resourceManager = new ResourceManager();
-			resourceManager.LoadResources("/test/", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			Assert.True(resourceManager.ContainsResource("/test/resourcetest.xml"));
-			Assert.True(resourceManager.ContainsResource("/test/resourcetest.haml"));
-			Assert.True(resourceManager.ContainsResource("/test/resourcetest.*"));
-			Assert.True(resourceManager.ContainsResource("/test/haml/resourcetest2.*"));
-			Assert.True(resourceManager.ContainsResource("/test/haml/resourcetest2.haml"));
-
-			Assert.False(resourceManager.ContainsResource("/test/resourcetest"));
-			Assert.False(resourceManager.ContainsResource("/test/rwerourcetest.xml"));
-			Assert.False(resourceManager.ContainsResource("/test/resourcetest.qaml"));
-			Assert.False(resourceManager.ContainsResource("/wrong/rwerourcetest.xml"));
-			Assert.False(resourceManager.ContainsResource("/test/haml/resourcetest2.xml"));
-
-			resourceManager._loadedResources.Clear();
-			resourceManager.LoadResources("/", resourceManager.GetType().Assembly, resourceManager.GetType().Namespace);
-			Assert.True(resourceManager.ContainsResource("/resourcetest.*"));
-			Assert.True(resourceManager.ContainsResource("resourcetest.haml"));
-		}
-
-		#endregion
 	}
 }

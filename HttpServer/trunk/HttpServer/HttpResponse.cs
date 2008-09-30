@@ -38,7 +38,7 @@ namespace HttpServer
         private readonly NameValueCollection _headers = new NameValueCollection();
         private bool _headersSent;
         private bool _sent;
-        private readonly string _httpVersion;
+        private string _httpVersion;
         private int _keepAlive = 20;
         private string _reason;
         private HttpStatusCode _status;
@@ -76,6 +76,11 @@ namespace HttpServer
             set { _body = value; }
         }
 
+        public string ProtocolVersion
+        {
+            get { return _httpVersion; }
+            set { _httpVersion = value; }
+        }
         /// <summary>
         /// The chunked encoding modifies the body of a message in order to
         /// transfer it as a series of chunks, each with its own size indicator,

@@ -5,7 +5,7 @@ using System.Text;
 using Fadd;
 #if DEBUG
 using HttpServer.Rendering.Haml;
-using Xunit;
+
 #endif
 
 namespace HttpServer.Rendering

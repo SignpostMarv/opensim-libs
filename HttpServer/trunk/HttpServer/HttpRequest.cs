@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using HttpServer.Exceptions;
 using HttpServer.FormDecoders;
-using Xunit;
+
 
 namespace HttpServer
 {
@@ -391,35 +391,9 @@ namespace HttpServer
         }
 
 #if DEBUG
-        [Fact]
-        private void TestEmptyObject()
-        {
-            Assert.Equal(string.Empty, HttpVersion);
-            Assert.Equal(string.Empty, Method);
-            Assert.Equal(HttpHelper.EmptyUri, Uri);
-            Assert.Equal(null, AcceptTypes);
-            Assert.Equal(0, (int)Body.Length);
-            Assert.Equal(0, ContentLength);
-            Assert.Equal(HttpInput.Empty, QueryString);
-            Assert.Equal(0, Headers.Count);
-        }
+        
 
-        [Fact]
-        private void TestHeaders()
-        {
-            AddHeader("connection", "keep-alive");
-            AddHeader("content-length", "10");
-            AddHeader("content-type", "text/html");
-            AddHeader("host", "www.gauffin.com");
-            AddHeader("accept", "gzip, text/html, bajs");
-
-            Assert.Equal(10, ContentLength);
-            Assert.Equal("text/html", Headers["content-type"]);
-            Assert.Equal("www.gauffin.com", Headers["host"]);
-            Assert.Equal("gzip", AcceptTypes[0]);
-            Assert.Equal("text/html", AcceptTypes[1]);
-            Assert.Equal("bajs", AcceptTypes[2]);
-        }
+       
 #endif
     }
 

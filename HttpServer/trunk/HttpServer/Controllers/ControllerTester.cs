@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using HttpServer.Sessions;
-using Xunit;
+
 
 namespace HttpServer.Controllers
 {
@@ -104,27 +104,9 @@ namespace HttpServer.Controllers
             return reader.ReadToEnd();
         }
 
-        [Fact]
-        private void TestGet()
-        {
-            MyController controller = new MyController();
-            IHttpResponse response;
-            IHttpSession session = DefaultSession;
-            string text = Get(controller, "/my/hello/1?hello=world", out response, session);
-            Assert.Equal("world|1", text);
-        }
+        
 
-        [Fact]
-        private void TestPost()
-        {
-            MyController controller = new MyController();
-            IHttpResponse response;
-            IHttpSession session = DefaultSession;
-            HttpForm form = new HttpForm();
-            form.Add("user[firstName]", "jonas");
-            string text = Post(controller, "/my/hello/", form, out response, session);
-            Assert.Equal("jonas", text);
-        }
+        
 
 
         private class MyController : RequestController
