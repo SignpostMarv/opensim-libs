@@ -341,7 +341,9 @@ namespace HttpServer
             foreach (ResponseCookie cookie in Cookies)
                 sb.AppendFormat("Set-Cookie: {0}\r\n", cookie);
 
-            sb.AppendLine();
+
+            sb.Append("\r\n");
+            //sb.AppendLine();
 
             _context.Send(Encoding.GetBytes(sb.ToString()));
         }
