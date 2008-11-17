@@ -1,0 +1,65 @@
+<Project name="Simian" description="" standardNamespace="Simian" newfilesearch="None" enableviewstate="True" fileversion="2.0" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
+  <Configurations active="Debug">
+    <Configuration name="Release" ctype="DotNetProjectConfiguration">
+      <Output directory="./../../bin/" assembly="Simian" executeScript="" executeBeforeBuild="" executeAfterBuild="" executeBeforeBuildArguments="" executeAfterBuildArguments="" />
+      <Build debugmode="True" target="Exe" />
+      <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Csc" warninglevel="4" nowarn="1591,1574,0419,0618" includedebuginformation="False" optimize="True" unsafecodeallowed="True" generateoverflowchecks="False" mainclass="" target="Exe" definesymbols="TRACE" generatexmldocumentation="False" win32Icon="" ctype="CSharpCompilerParameters" />
+    </Configuration>
+    <Configuration name="Debug" ctype="DotNetProjectConfiguration">
+      <Output directory="./../../bin/" assembly="Simian" executeScript="" executeBeforeBuild="" executeAfterBuild="" executeBeforeBuildArguments="" executeAfterBuildArguments="" />
+      <Build debugmode="True" target="Exe" />
+      <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Csc" warninglevel="4" nowarn="1591,1574,0419,0618" includedebuginformation="True" optimize="False" unsafecodeallowed="True" generateoverflowchecks="False" mainclass="" target="Exe" definesymbols="TRACE;DEBUG" generatexmldocumentation="False" win32Icon="" ctype="CSharpCompilerParameters" />
+    </Configuration>
+  </Configurations>
+  <DeploymentInformation target="" script="" strategy="File">
+    <excludeFiles />
+  </DeploymentInformation>
+  <Contents>
+    <File name="./Agent.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./AnimationSet.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./DoubleDictionary.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./EventDictionary.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./InventoryDefinitions.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Main.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Simian.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./SimulationObject.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/AccountManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/AssetManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/AuthFreeForAll.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/AvatarManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/ConnectionManagement.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/FriendManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/ImageDelivery.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/InventoryManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/Messaging.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/Money.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/Movement.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/ObjectManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/ParcelManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/RenderingPluginMesher.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/SceneManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/UDPManager.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Extensions/XMLPersistence.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IAccountProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IAssetProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IAuthenticationProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IAvatarProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IInventoryProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IMeshingProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IParcelProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IPersistable.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IPersistenceProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/ISceneProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="./Interfaces/IUDPProvider.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+  </Contents>
+  <References>
+    <ProjectReference type="Gac" localcopy="False" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+    <ProjectReference type="Gac" localcopy="False" refto="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <ProjectReference type="Gac" localcopy="False" refto="System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+    <ProjectReference type="Project" localcopy="False" refto="ExtensionLoader" />
+    <ProjectReference type="Project" localcopy="False" refto="OpenMetaverse" />
+    <ProjectReference type="Project" localcopy="False" refto="OpenMetaverseTypes" />
+  </References>
+</Project>

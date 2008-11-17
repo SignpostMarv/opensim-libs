@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>/home/caseyj/jc/it/v/virtual-worlds/second-life/clients/libsecondlife/src/libopenmetaverse-svn/bin/OpenMetaverse.GUI</name>
+    </assembly>
+    <members>
+        <member name="T:OpenMetaverse.GUI.AvatarList">
+            <summary>
+            ListView GUI component for viewing a client's nearby avatars list
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.AvatarList.#ctor">
+            <summary>
+            TreeView control for an unspecified client's nearby avatar list
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.AvatarList.#ctor(OpenMetaverse.GridClient)">
+            <summary>
+            TreeView control for the specified client's nearby avatar list
+            </summary>
+            <param name="client">
+            </param>
+        </member>
+        <member name="E:OpenMetaverse.GUI.AvatarList.OnAvatarDoubleClick">
+            <summary>
+            Triggered when the user double clicks on an avatar in the list
+            </summary>
+        </member>
+        <member name="P:OpenMetaverse.GUI.AvatarList.Client">
+            <summary>
+            Gets or sets the GridClient associated with this control
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.AvatarList.ClearNodes">
+            <summary>
+            Thread-safe method for clearing the TreeView control
+            </summary>
+        </member>
+        <member name="T:OpenMetaverse.GUI.FriendList">
+            <summary>
+            ListView GUI component for viewing a client's friend list
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.FriendList.#ctor">
+            <summary>
+            TreeView control for an unspecified client's friend list
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.FriendList.#ctor(OpenMetaverse.GridClient)">
+            <summary>
+            TreeView control for the specified client's friend list
+            </summary>
+        </member>
+        <member name="E:OpenMetaverse.GUI.FriendList.OnFriendDoubleClick">
+            <summary>
+            Triggered when the user double clicks on a friend in the list
+            </summary>
+        </member>
+        <member name="P:OpenMetaverse.GUI.FriendList.Client">
+            <summary>
+            Gets or sets the GridClient associated with this control
+            </summary>
+        </member>
+        <member name="T:OpenMetaverse.GUI.GroupList">
+            <summary>
+            ListView GUI component for viewing a client's group list
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.GroupList.#ctor">
+            <summary>
+            TreeView control for an unspecified client's group list
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.GroupList.#ctor(OpenMetaverse.GridClient)">
+            <summary>
+            TreeView control for the specified client's group list
+            </summary>
+        </member>
+        <member name="E:OpenMetaverse.GUI.GroupList.OnGroupDoubleClick">
+            <summary>
+            Triggered when the user double clicks on a group in the list
+            </summary>
+        </member>
+        <member name="P:OpenMetaverse.GUI.GroupList.Client">
+            <summary>
+            Gets or sets the GridClient associated with this control
+            </summary>
+        </member>
+        <member name="T:OpenMetaverse.GUI.InventoryTree">
+            <summary>
+            TreeView GUI component for browsing a client's inventory
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.InventoryTree.#ctor">
+            <summary>
+            TreeView control for an unspecified client's inventory
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.InventoryTree.#ctor(OpenMetaverse.GridClient)">
+            <summary>
+            TreeView control for the specified client's inventory
+            </summary>
+            <param name="client">
+            </param>
+        </member>
+        <member name="P:OpenMetaverse.GUI.InventoryTree.Client">
+            <summary>
+            Gets or sets the GridClient associated with this control
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.InventoryTree.ClearNodes">
+            <summary>
+            Thread-safe method for clearing the TreeView control
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.InventoryTree.CollapseNode(System.Windows.Forms.TreeNode)">
+            <summary>
+            Thread-safe method for collapsing a TreeNode in the control
+            </summary>
+            <param name="node">
+            </param>
+        </member>
+        <member name="M:OpenMetaverse.GUI.InventoryTree.ExpandNode(System.Windows.Forms.TreeNode)">
+            <summary>
+            Thread-safe method for expanding a TreeNode in the control
+            </summary>
+            <param name="node">
+            </param>
+        </member>
+        <member name="M:OpenMetaverse.GUI.InventoryTree.UpdateFolder(OpenMetaverse.UUID)">
+            <summary>
+            Thread-safe method for updating the contents of the specified folder UUID
+            </summary>
+            <param name="folderID">
+            </param>
+        </member>
+        <member name="T:OpenMetaverse.GUI.LocalChat">
+            <summary>
+            Panel GUI component for interfacing with local chat
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.LocalChat.#ctor">
+            <summary>
+            Panel control for an unspecified client's local chat interaction
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.LocalChat.#ctor(OpenMetaverse.GridClient)">
+            <summary>
+            Panel control for the specified client's local chat interaction
+            </summary>
+        </member>
+        <member name="P:OpenMetaverse.GUI.LocalChat.Client">
+            <summary>
+            Gets or sets the GridClient associated with this control
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.MiniMap.#ctor">
+            <summary>
+            PictureBox control for an unspecified client's mini-map
+            </summary>
+        </member>
+        <member name="M:OpenMetaverse.GUI.MiniMap.#ctor(OpenMetaverse.GridClient)">
+            <summary>
+            PictureBox control for the specified client's mini-map
+            </summary>
+        </member>
+        <member name="P:OpenMetaverse.GUI.MiniMap.Client">
+            <summary>
+            Gets or sets the GridClient associated with this control
+            </summary>
+        </member>
+    </members>
+</doc>
