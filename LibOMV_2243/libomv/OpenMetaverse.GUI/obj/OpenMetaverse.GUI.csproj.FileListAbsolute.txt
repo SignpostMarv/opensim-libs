@@ -1,5 +1,0 @@
-C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\OpenMetaverse.GUI.dll
-C:\Documents and Settings\DCOLIVE\Desktop\libomv\bin\OpenMetaverse.GUI.pdb
-C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse.GUI\obj\Debug\ResolveAssemblyReference.cache
-C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse.GUI\obj\Debug\OpenMetaverse.GUI.dll
-C:\Documents and Settings\DCOLIVE\Desktop\libomv\OpenMetaverse.GUI\obj\Debug\OpenMetaverse.GUI.pdb
