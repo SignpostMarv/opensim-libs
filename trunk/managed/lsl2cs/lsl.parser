@@ -341,6 +341,23 @@
     {
         kids.Add(js);
     }
+
+    public Statement(EmptyStatement es)
+    {
+        kids.Add(es);
+    }
+}
+
+%symbol EmptyStatement
+{
+    public EmptyStatement()
+    {
+    }
+
+    public override string ToString()
+    {
+        return base.ToString();
+    }
 }
 
 %symbol Assignment
@@ -941,8 +958,12 @@ StatementList
     | StatementList:sl Statement:s %StatementList(sl, s)
     ;
  
+EmptyStatement
+    : %EmptyStatement()
+    ;
+
 Statement
-    : SEMICOLON
+    : EmptyStatement:e SEMICOLON %Statement(e)
     | Declaration:d SEMICOLON %Statement(d)
     | Assignment:a SEMICOLON %Statement(a)
     | Expression:e SEMICOLON %Statement(e)
