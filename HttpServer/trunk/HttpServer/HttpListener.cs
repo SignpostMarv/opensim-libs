@@ -109,7 +109,11 @@ namespace HttpServer
             set
             {
                 if (value == null)
-                    throw new ArgumentNullException("value");
+                {
+                    _logWriter.Write(this, LogPrio.Info, "A Request handler was null");
+                    return;
+                }
+                    //throw new ArgumentNullException("value");
 
                 _requestHandler = value;
             }
@@ -127,6 +131,7 @@ namespace HttpServer
 
         private void OnAccept(IAsyncResult ar)
         {
+            Socket socket = null;
             try
             {
                 // i'm not trying to avoid ALL cases here. but just the most simple ones.
@@ -134,11 +139,11 @@ namespace HttpServer
 
                 // the lock kills performance and that's why I temporarly disabled it.
                 // right now it's up to the exception block to handle Stop()
-                /*lock (_listenLock)
+                lock (_listenLock)
                     if (!_canListen)
                         return;
-                */
-                Socket socket = _listener.EndAcceptSocket(ar);
+                
+                socket = _listener.EndAcceptSocket(ar);
                 _listener.BeginAcceptSocket(OnAccept, null);
 
                 ClientAcceptedEventArgs args = new ClientAcceptedEventArgs(socket);
@@ -180,6 +185,10 @@ namespace HttpServer
 #endif
                 if (ExceptionThrown != null)
                     ExceptionThrown(this, err);
+            }
+            finally
+            {
+                
             }
         }
 

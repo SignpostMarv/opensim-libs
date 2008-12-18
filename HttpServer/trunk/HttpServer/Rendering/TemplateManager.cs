@@ -239,45 +239,7 @@ namespace HttpServer.Rendering
             return null;
         }
 
-#if DEBUG
-        [Fact]
-        private void TestGetGeneratorForWildCard()
-        {
-            string resource = "rendering\\resourcetest.*";
-            Add("haml", new HamlGenerator());
-            Add("tiny", new Tiny.TinyGenerator());
-			_templateLoaders.Clear();
-        	ResourceTemplateLoader loader = new ResourceTemplateLoader();
-			loader.LoadTemplates("rendering/", loader.GetType().Assembly, "HttpServer.Rendering");
-            _templateLoaders.Add(loader);
-            ITemplateGenerator gen = GetGeneratorForWildCard(ref resource);
-            Assert.NotNull(gen);
-            Assert.IsType(typeof (HamlGenerator), gen);
-        }
 
-		[Fact]
-		private void TestMultipleLoaders()
-		{
-			const string resource = "rendering\\resourcetest.*";
-			Add("haml", new HamlGenerator());
-			Add("tiny", new Tiny.TinyGenerator());
-			if (_templateLoaders.Count == 0)
-				_templateLoaders.Add(new FileTemplateLoader());
-			ResourceTemplateLoader loader = new ResourceTemplateLoader();
-			loader.LoadTemplates("rendering/", loader.GetType().Assembly, "HttpServer.Rendering");
-			_templateLoaders.Add(loader);
-			string result = Render(resource, null);
-			
-			Assert.NotNull(result);
-			Assert.True(result.StartsWith("This file is used to test the resource template loader"));
-
-			((FileTemplateLoader)_templateLoaders[0]).PathPrefix = "..\\..\\";
-			result = Render(resource, null);
-
-			Assert.NotNull(result);
-			Assert.True(result.StartsWith("This file is used to test the resource template loader"));
-		}
-#endif
 		/// <summary>
 		/// Render a partial
 		/// </summary>
