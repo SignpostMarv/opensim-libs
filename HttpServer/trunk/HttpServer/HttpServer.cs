@@ -508,11 +508,11 @@ namespace HttpServer
                 {
                     string sessionCookie = cookies[_sessionCookieName].Value;
 
-                    // there's a bug somewhere which fucks up headers which can render the session cookie useless.
+                    // there's a bug somewhere which borks up headers which can render the session cookie useless.
                     // therefore let's consider the session cookie as not set if that have happened.
                     if (sessionCookie.Length > 40)
                     {
-                        _logWriter.Write(this, LogPrio.Error, "Session cookie is fucked: " + sessionCookie);
+                        _logWriter.Write(this, LogPrio.Error, "Session cookie is borked: " + sessionCookie);
                         cookies.Remove(_sessionCookieName);
                         _sessionStore.Remove(sessionCookie); // free the session cookie (and thus generating a new one).
                         session = _sessionStore.Create();
@@ -542,8 +542,11 @@ namespace HttpServer
             	Exception e = err;
 				while(e != null)
 				{
-					if(e is SocketException)
-						return;
+                    if (e is SocketException)
+                    {
+                        System.Console.WriteLine("[HTTPSERVER]: SocketException!");
+                        return;
+                    }
 
 					e = e.InnerException;
 				}
