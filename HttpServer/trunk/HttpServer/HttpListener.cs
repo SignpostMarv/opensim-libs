@@ -132,6 +132,7 @@ namespace HttpServer
         private void OnAccept(IAsyncResult ar)
         {
             Socket socket = null;
+            bool beginaccepted = false;
             try
             {
                 // i'm not trying to avoid ALL cases here. but just the most simple ones.
@@ -139,12 +140,13 @@ namespace HttpServer
 
                 // the lock kills performance and that's why I temporarly disabled it.
                 // right now it's up to the exception block to handle Stop()
-                lock (_listenLock)
-                    if (!_canListen)
-                        return;
+                //lock (_listenLock)
+                //    if (!_canListen)
+                //        return;
                 
                 socket = _listener.EndAcceptSocket(ar);
                 _listener.BeginAcceptSocket(OnAccept, null);
+                beginaccepted = true;
 
                 ClientAcceptedEventArgs args = new ClientAcceptedEventArgs(socket);
                 Accepted(this, args);
@@ -161,13 +163,16 @@ namespace HttpServer
                 IPEndPoint remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
 
                 if (_certificate != null)
-                    CreateSecureContext(stream, remoteEndPoint);
+                    CreateSecureContext(stream, remoteEndPoint, socket);
                 else
                     new HttpClientContextImp(false, remoteEndPoint, _requestHandler, _disconnectHandler, stream,
-                                             LogWriter);
+                                             LogWriter, socket);
             }
             catch (Exception err)
             {
+                if (!beginaccepted)
+                    _listener.BeginAcceptSocket(OnAccept, null);
+
                 if (err is ObjectDisposedException || err is NullReferenceException) // occurs when we shut down the listener.
                 {
                     if (UseTraceLogs)
@@ -186,20 +191,16 @@ namespace HttpServer
                 if (ExceptionThrown != null)
                     ExceptionThrown(this, err);
             }
-            finally
-            {
-                
-            }
         }
 
-        private void CreateSecureContext(Stream stream, IPEndPoint remoteEndPoint)
+        private void CreateSecureContext(Stream stream, IPEndPoint remoteEndPoint, Socket sock)
         {
             SslStream sslStream = new SslStream(stream, false);
             try
             {
                 sslStream.AuthenticateAsServer(_certificate, false, _sslProtocol, false); //todo: this may fail
                 new HttpClientContextImp(true, remoteEndPoint, _requestHandler, _disconnectHandler, sslStream,
-                                                   LogWriter);
+                                                   LogWriter, sock);
             }
             catch (IOException err)
             {

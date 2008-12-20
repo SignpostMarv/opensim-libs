@@ -27,6 +27,7 @@ namespace HttpServer
         private readonly Stream _stream;
         private readonly string _remoteAddress;
         private readonly string _remotePort;
+        private readonly Socket _sock;
     	
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpClientContextImp"/> class.
@@ -43,12 +44,14 @@ namespace HttpServer
         public HttpClientContextImp(bool secured, IPEndPoint remoteEndPoint, 
                                     RequestReceivedHandler requestHandler,
                                    ClientDisconnectedHandler disconnectHandler,
-                                   Stream stream, ILogWriter writer)
+                                   Stream stream, ILogWriter writer, Socket sock)
         {
             Check.Require(requestHandler, "requestHandler");
             Check.Require(remoteEndPoint, "remoteEndPoint");
             Check.NotEmpty(remoteEndPoint.Address.ToString(), "remoteEndPoint.Address");
             Check.Require(stream, "stream");
+            Check.Require(sock, "socket");
+
             if (!stream.CanWrite || !stream.CanRead)
                 throw new ArgumentException("Stream must be writeable and readable..");
 
@@ -60,12 +63,21 @@ namespace HttpServer
             _requestHandler = requestHandler;
             _disconnectHandler = disconnectHandler;
             _stream = stream;
+            _sock = sock;
             try
             {
                 _stream.BeginRead(_buffer, 0, BufferSize, OnReceive, null);
             }
             catch (IOException err)
             {
+                try
+                {
+                    _sock.Shutdown(SocketShutdown.Both);
+                    _sock.Close();
+                } // TODO: FIXME: change this to a respectable exception after testing
+                catch (System.AppDomainUnloadedException)
+                {
+                }
                 _log.Write(this, LogPrio.Debug, err.ToString());
                 _stream = null;
                 _disconnectHandler(this, SocketError.ConnectionAborted);
@@ -82,8 +94,8 @@ namespace HttpServer
         /// <exception cref="SocketException">If beginreceive fails</exception>
         /// <see cref="RequestReceivedHandler"/>
         /// <see cref="ClientDisconnectedHandler"/>
-        public HttpClientContextImp(bool secured, IPEndPoint remoteEndPoint, Stream stream, RequestReceivedHandler requestHandler)
-            : this(secured, remoteEndPoint, requestHandler, null, stream, null)
+        public HttpClientContextImp(bool secured, IPEndPoint remoteEndPoint, Stream stream, RequestReceivedHandler requestHandler, Socket sock)
+            : this(secured, remoteEndPoint, requestHandler, null, stream, null, sock)
         {
 
         }
@@ -103,6 +115,12 @@ namespace HttpServer
         public void Disconnect(SocketError error)
         {
             // disconnect may not throw any exceptions
+            if (error == SocketError.Success)
+            {
+                _sock.Disconnect(true);
+                //_sock.Shutdown(SocketShutdown.Both);
+               // _sock.Close();
+            }
             try
             {
                 _stream.Close();
@@ -118,6 +136,7 @@ namespace HttpServer
 
         private void OnReceive(IAsyncResult ar)
         {
+            
             try
             {
                 int bytesRead = _stream.EndRead(ar);
@@ -170,7 +189,8 @@ namespace HttpServer
                 }
 
                 _bytesLeft -= offset;
-                _stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
+                if (_stream.CanRead)
+                    _stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
             }
             catch (BadRequestException err)
             {

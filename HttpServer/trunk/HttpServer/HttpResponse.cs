@@ -218,7 +218,7 @@ namespace HttpServer
                 if (value[i] == '\n' && value[i-1] != '\r')
                     throw new ArgumentException("Invalid new line sequence, should be \\r\\n (crlf).");
             }
-                _headers[name.ToLower()] = value;
+                _headers[name] = value;
         }
 
         /// <summary>
@@ -308,27 +308,27 @@ namespace HttpServer
 
             _headersSent = true;
 
-            if (_headers["date"] == null)
-                _headers["date"] = DateTime.Now.ToString("r");
-            if (_headers["content-length"] == null)
-                _headers["content-length"] = _contentLength == 0 ? Body.Length.ToString() : _contentLength.ToString();
-            if (_headers["content-type"] == null)
-                _headers["content-type"] = _contentType;
-            if (_headers["server"] == null)
-                _headers["server"] = "Tiny WebServer";
+            if (_headers["Date"] == null)
+                _headers["Date"] = DateTime.Now.ToString("r");
+            if (_headers["Content-Length"] == null)
+                _headers["Content-Length"] = _contentLength == 0 ? Body.Length.ToString() : _contentLength.ToString();
+            if (_headers["Content-Type"] == null)
+                _headers["Content-Type"] = _contentType;
+            if (_headers["Server"] == null)
+                _headers["Server"] = "Tiny WebServer";
 
             if (Connection == ConnectionType.KeepAlive)
             {
-                _headers["keep-alive"] = "timeout=" + _keepAlive + ", max=" + _keepAlive*20;
-                _headers["connection"] = "keep-alive";
+                _headers["Keep-Alive"] = "timeout=" + _keepAlive + ", max=" + _keepAlive*20;
+                _headers["Connection"] = "Keep-Alive";
             }
             else
-                _headers["connection"] = "close";
+                _headers["Connection"] = "close";
 
             if (Body.Length != 0)
             {
-                if (_headers["content-type"] == null)
-                    _headers["content-type"] = _contentType ?? "text/html;charset=UTF-8";
+                if (_headers["Content-Type"] == null)
+                    _headers["Content-Type"] = _contentType ?? "text/html;charset=UTF-8";
             }
 
             StringBuilder sb = new StringBuilder();
@@ -358,7 +358,7 @@ namespace HttpServer
         public void Redirect(Uri uri)
         {
             Status = HttpStatusCode.Redirect;
-            _headers["location"] = uri.ToString();
+            _headers["Location"] = uri.ToString();
         }
 
         /// <summary>
@@ -371,7 +371,7 @@ namespace HttpServer
         public void Redirect(string url)
         {
             Status = HttpStatusCode.Redirect;
-            _headers["location"] = url;
+            _headers["Location"] = url;
         }
 
         /*

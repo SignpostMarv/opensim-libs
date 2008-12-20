@@ -327,6 +327,7 @@ namespace HttpServer
                     break;
 
                 case "connection":
+                    value = value.ToLower();
                     if (string.Compare(value, "close", true) == 0)
                         Connection = ConnectionType.Close;
                     else if (string.Compare(value, "keep-alive", true) == 0)
