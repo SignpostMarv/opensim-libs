@@ -1,0 +1,8 @@
+bin
+obj
+TestResult.xml
+*.VisualState.xml
+Drop
+drop
+DotNetOpenId-*
+StyleCop.Cache

@@ -1,0 +1,5 @@
+C:\Documents and Settings\dcolive\Desktop\dotnetopenid\bin\Release\DotNetOpenId.BuildTasks.dll
+C:\Documents and Settings\dcolive\Desktop\dotnetopenid\bin\Release\DotNetOpenId.BuildTasks.pdb
+C:\Documents and Settings\dcolive\Desktop\dotnetopenid\src\DotNetOpenId.BuildTasks\obj\Release\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\dotnetopenid\src\DotNetOpenId.BuildTasks\obj\Release\DotNetOpenId.BuildTasks.dll
+C:\Documents and Settings\dcolive\Desktop\dotnetopenid\src\DotNetOpenId.BuildTasks\obj\Release\DotNetOpenId.BuildTasks.pdb
