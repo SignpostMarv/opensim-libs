@@ -120,5 +120,11 @@
 <STRING>\\              { yyl.str += '\\'; }
 <STRING>\"              { yybegin("YYINITIAL"); yyl.yytext = yyl.str; yyl.str = String.Empty; return new STRING_CONSTANT(); }
 
+// Multi-line comments.
+\/\*                    { yybegin("COMMENT"); }
+<COMMENT>\*\/           { yybegin("YYINITIAL"); }
+<COMMENT>.  ;
+<COMMENT>\n ;
+
 [ \t\r\n]   ;   // whitespace
 \/\/.*      ;   // single line comments
