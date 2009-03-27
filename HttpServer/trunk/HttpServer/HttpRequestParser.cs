@@ -211,8 +211,9 @@ namespace HttpServer
                     // first line can be empty according to RFC, ignore it and move next.
                     if (startPos == -1 && (ch != '\r' || nextCh != '\n'))
                     {
+                        continue;
                         _log.Write(this, LogPrio.Warning, "Request line is not found.");
-                        throw new BadRequestException("Invalid request line.");
+                        //throw new BadRequestException("Invalid request line.");
                     }
 
                     if (startPos != -1 && ch == '\r')
