@@ -91,7 +91,8 @@ float BulletAPI_BtCollisionObject_getHitFraction(IntPtr handle)
 
 IntPtr BulletAPI_BtCollisionObject_getInterpolationAngularVelocity(IntPtr handle)
 {
-    return (void *)&GetBtCollisionObjectFromIntPtr(handle)->getInterpolationAngularVelocity();
+    btVector3 ret = GetBtCollisionObjectFromIntPtr(handle)->getInterpolationAngularVelocity();
+    return new btVector3(ret.getX(),ret.getY(),ret.getZ());
 }
 
 IntPtr BulletAPI_BtCollisionObject_getInterpolationLinearVelocity(IntPtr handle)
@@ -102,7 +103,10 @@ IntPtr BulletAPI_BtCollisionObject_getInterpolationLinearVelocity(IntPtr handle)
 
 IntPtr BulletAPI_BtCollisionObject_getInterpolationWorldTransform(IntPtr handle)
 {
-    return &GetBtCollisionObjectFromIntPtr(handle)->getInterpolationWorldTransform();
+    btTransform obj = GetBtCollisionObjectFromIntPtr(handle)->getInterpolationWorldTransform();
+    btVector3 origin = obj.getOrigin();
+    btQuaternion quat = obj.getRotation();
+    return new btTransform(quat,origin);
 }
 
 int BulletAPI_BtCollisionObject_getIslandTag(IntPtr handle)
@@ -127,7 +131,10 @@ IntPtr BulletAPI_BtCollisionObject_getUserPointer(IntPtr handle)
 
 IntPtr BulletAPI_BtCollisionObject_getWorldTransform(IntPtr handle)
 {
-    return &GetBtCollisionObjectFromIntPtr(handle)->getWorldTransform();
+    btTransform obj = GetBtCollisionObjectFromIntPtr(handle)->getInterpolationWorldTransform();
+    btVector3 origin = obj.getOrigin();
+    btQuaternion quat = obj.getRotation();
+    return new btTransform(quat,origin);
 }
 
 bool BulletAPI_BtCollisionObject_hasAnisotropicFriction(IntPtr handle)

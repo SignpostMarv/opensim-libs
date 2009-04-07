@@ -114,7 +114,12 @@ void BulletAPI_BtVector3_setZ(IntPtr umv, float z)
 
 void BulletAPI_BtVector3_delete(IntPtr umv)
 {
-    delete (GetBtVector3FromIntPtr(umv));
+    btVector3 * obj = GetBtVector3FromIntPtr(umv);
+    if (obj)
+    {
+        delete obj;
+        obj = NULL;
+    }
 }
 
 

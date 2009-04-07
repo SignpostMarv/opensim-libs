@@ -79,7 +79,7 @@ float BulletAPI_BtRigidBody_getAngularSleepingThreshold(IntPtr handle)
 IntPtr BulletAPI_BtRigidBody_getAngularVelocity(IntPtr handle) //btVector3
 {
    btVector3 result = GetBtRigidBodyFromIntPtr(handle)->getAngularVelocity();
-   return result;
+   return new btVector3(result.x(),result.y(),result.z());
 }
 
 float BulletAPI_BtRigidBody_getLinearSleepingThreshold(IntPtr handle)
@@ -91,13 +91,17 @@ float BulletAPI_BtRigidBody_getLinearSleepingThreshold(IntPtr handle)
 IntPtr BulletAPI_BtRigidBody_getCenterOfMassPosition(IntPtr handle) //btVector3
 {
     btVector3 result = GetBtRigidBodyFromIntPtr(handle)->getCenterOfMassPosition();
-    return result;
+    return new btVector3(result.x(),result.y(),result.z());
 }
 
 IntPtr BulletAPI_BtRigidBody_getCenterOfMassTransform(IntPtr handle) //btTransform
 {
     //btTransform result = 
-    return (void *) &(GetBtRigidBodyFromIntPtr(handle)->getCenterOfMassTransform());
+    
+    btTransform obj = (GetBtRigidBodyFromIntPtr(handle)->getCenterOfMassTransform());
+    btVector3 origin = obj.getOrigin();
+    btQuaternion quat = obj.getRotation();
+    return new btTransform(quat,origin);
 }
 
     // getCollisionShape implemented in base
@@ -109,18 +113,19 @@ IntPtr BulletAPI_BtRigidBody_getConstraintRef(IntPtr handle, int index) //btType
 IntPtr BulletAPI_BtRigidBody_getGravity(IntPtr handle) //btVector3
 {
     btVector3 result = GetBtRigidBodyFromIntPtr(handle)->getGravity();
-    return result;
+    return new btVector3(result.x(),result.y(),result.z());
 }
 
 IntPtr BulletAPI_BtRigidBody_getInvInertiaDiagLocal(IntPtr handle) //btVector3
 {
     
-    return (void *) &(GetBtRigidBodyFromIntPtr(handle)->getInvInertiaDiagLocal());
+    btVector3 result = (GetBtRigidBodyFromIntPtr(handle)->getInvInertiaDiagLocal());
+    return new btVector3(result.x(),result.y(),result.z());
 }
 
 IntPtr BulletAPI_BtRigidBody_getInvInertiaTensorWorld(IntPtr handle) //btMatrix3x3
 {
-    return (void *) &(GetBtRigidBodyFromIntPtr(handle)->getInvInertiaTensorWorld());
+    return new btMatrix3x3(GetBtRigidBodyFromIntPtr(handle)->getInvInertiaTensorWorld());
 }
 
 float BulletAPI_BtRigidBody_getInvMass(IntPtr handle)
@@ -135,7 +140,8 @@ float BulletAPI_BtRigidBody_getLinearDamping(IntPtr handle)
 
 IntPtr BulletAPI_BtRigidBody_getLinearVelocity(IntPtr handle)//btVector3
 {
-    return (void *) &(GetBtRigidBodyFromIntPtr(handle)->getLinearVelocity());
+    btVector3 result = (GetBtRigidBodyFromIntPtr(handle)->getLinearVelocity());
+     return new btVector3(result.x(),result.y(),result.z());
 }
 
 IntPtr BulletAPI_BtRigidBody_getMotionState(IntPtr handle)//btMotionState
@@ -151,17 +157,20 @@ int BulletAPI_BtRigidBody_getNumConstraintRefs(IntPtr handle)
 
 IntPtr BulletAPI_BtRigidBody_getTotalForce(IntPtr handle)//btVector3
 {
-    return (void *) &(GetBtRigidBodyFromIntPtr(handle)->getTotalForce());
+     btVector3 result = GetBtRigidBodyFromIntPtr(handle)->getTotalForce();
+     return new btVector3(result.x(),result.y(),result.z());
 }
 
 IntPtr BulletAPI_BtRigidBody_getTotalTorque(IntPtr handle)//btVector3
 {
-    return (void *) &(GetBtRigidBodyFromIntPtr(handle)->getTotalTorque());
+    btVector3 result = GetBtRigidBodyFromIntPtr(handle)->getTotalTorque();
+    return new btVector3(result.x(),result.y(),result.z());
 }
 
 IntPtr BulletAPI_BtRigidBody_getVelocityInLocalPoint(IntPtr handle, IntPtr rel_pos)//btVector3
 {
-    return GetBtRigidBodyFromIntPtr(handle)->getVelocityInLocalPoint(*(btVector3 *)rel_pos);
+    btVector3 result = GetBtRigidBodyFromIntPtr(handle)->getVelocityInLocalPoint(*(btVector3 *)rel_pos);
+    return new btVector3(result.x(),result.y(),result.z());
 }
 
 bool BulletAPI_BtRigidBody_isInWorld(IntPtr handle)

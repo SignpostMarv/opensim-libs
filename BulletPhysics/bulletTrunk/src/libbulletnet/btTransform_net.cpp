@@ -45,7 +45,8 @@ void BulletAPI_BtTransform_getOpenGLMatrix(IntPtr handle, float * m) // float ar
 //btvector3
 IntPtr BulletAPI_BtTransform_getOrigin(IntPtr handle)
 {
-    return GetBtTransformFromIntPtr(handle)->getOrigin();
+    btVector3 obj = GetBtTransformFromIntPtr(handle)->getOrigin();
+    return new btVector3(obj.x(), obj.y(), obj.z());
 }
 
 //btQuaternion
@@ -101,5 +102,10 @@ void BulletAPI_BtTransform_setRotation(IntPtr handle, IntPtr q) // btMatrix3x3
 
 void BulletAPI_BtTransform_delete(IntPtr handle)
 {
-    delete GetBtTransformFromIntPtr(handle);
+    btTransform * obj = GetBtTransformFromIntPtr(handle);
+    if (obj)
+    {
+        delete obj;
+        obj = NULL;
+    }
 }
