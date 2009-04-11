@@ -73,6 +73,22 @@ namespace BulletDotNET
             BulletAPI_BtDynamicsWorld_removeConstraint(m_handle, pconstraint.Handle);
         }
 
+        public void addConstraint(btTypedConstraint pconstraint)
+        {
+            addConstraint(pconstraint, false);
+        }
+
+        public void addConstraint(btTypedConstraint pconstraint, bool disableLinkedCollisions)
+        {
+            if (m_disposed)
+                throw new ObjectDisposedException(ToString());
+
+            if (pconstraint.Handle == IntPtr.Zero)
+                throw new ObjectDisposedException(ToString());
+
+            BulletAPI_BtDynamicsWorld_addConstraint(m_handle, pconstraint.Handle, disableLinkedCollisions);
+        }
+
 
         #region Native Invokes
          [DllImport(Native.Dll), SuppressUnmanagedCodeSecurity]
@@ -83,6 +99,9 @@ namespace BulletDotNET
         static extern void BulletAPI_BtDynamicsWorld_addRigidBody(IntPtr handle, IntPtr body);
          [DllImport(Native.Dll), SuppressUnmanagedCodeSecurity]
         static extern void BulletAPI_BtDynamicsWorld_removeRigidBody(IntPtr handle, IntPtr body);
+
+         [DllImport(Native.Dll), SuppressUnmanagedCodeSecurity]
+         static extern void BulletAPI_BtDynamicsWorld_addConstraint(IntPtr dynamicsWorld, IntPtr constraint, bool disableLinkedCollisions);
          [DllImport(Native.Dll), SuppressUnmanagedCodeSecurity]
         static extern void BulletAPI_BtDynamicsWorld_setGravity(IntPtr dynamicsWorld, IntPtr v);
          [DllImport(Native.Dll), SuppressUnmanagedCodeSecurity]

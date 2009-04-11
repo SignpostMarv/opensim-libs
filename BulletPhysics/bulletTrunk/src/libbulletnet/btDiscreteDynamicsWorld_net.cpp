@@ -26,6 +26,11 @@ void BulletAPI_BtDynamicsWorld_removeRigidBody(IntPtr handle, IntPtr body)
     GetBtDiscreteDynamicsWorldFromIntPtr(handle)->removeRigidBody((btRigidBody *)body);
 }
 
+void BulletAPI_BtDynamicsWorld_addConstraint(IntPtr handle, IntPtr constraint, bool disableLinkedCollisions)
+{
+    GetBtDiscreteDynamicsWorldFromIntPtr(handle)->addConstraint((btTypedConstraint *) constraint,disableLinkedCollisions);
+}
+
 void BulletAPI_BtDynamicsWorld_setGravity(IntPtr handle, IntPtr v)
 {
     GetBtDiscreteDynamicsWorldFromIntPtr(handle)->setGravity(*(btVector3 *) v);
