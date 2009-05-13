@@ -1173,4 +1173,5 @@ Event
     | TOUCH_EVENT:e %Event(e.yytext)
     | TOUCH_END_EVENT:e %Event(e.yytext)
     | TOUCH_START_EVENT:e %Event(e.yytext)
+    | HTTP_REQUEST_EVENT: e %Event(e.yytext)
     ;
