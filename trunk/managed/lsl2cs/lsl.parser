@@ -1010,6 +1010,7 @@ DoWhileStatement
 
 ForLoop
     : FOR LEFT_PAREN ForLoopStatement:flsa SEMICOLON Expression:e SEMICOLON ForLoopStatement:flsb RIGHT_PAREN Statement:fls %ForLoop(flsa, e, flsb, fls)
+    | FOR LEFT_PAREN SEMICOLON Expression:e SEMICOLON ForLoopStatement:flsb RIGHT_PAREN Statement:fls %ForLoop(null, e, flsb, fls)
     ;
 
 ForLoopStatement
