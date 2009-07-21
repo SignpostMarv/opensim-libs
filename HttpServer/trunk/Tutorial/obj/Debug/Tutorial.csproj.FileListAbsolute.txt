@@ -1,7 +1,0 @@
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\obj\Debug\ResolveAssemblyReference.cache
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\bin\Debug\Tutorial.exe
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\bin\Debug\Tutorial.pdb
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\bin\Debug\HttpServer.dll
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\bin\Debug\HttpServer.pdb
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\obj\Debug\Tutorial.exe
-C:\Users\Adam\Downloads\webserver-11358\trunk\Tutorial\obj\Debug\Tutorial.pdb

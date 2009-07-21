@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<class name="TestApp, TestApp.Test" table="tests">
-  <id name="Id" column="id" type="integer">
-    <generator class="sequence" value="tests_id_seq" />
-  </id>
-  <property name="Name" column="name" type="String" length="40" />
-  <property name="UserId" column="user_id" type="integer" />
-  <property name="Created" column="date_created" type="datetime" />
-</class>

@@ -1,8 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<class name="TestApp, TestApp.User" table="users">
-  <id name="Id" column="id" type="integer">
-    <generator class="sequence" value="users_id_seq" />
-  </id>
-  <property name="UserName" column="username" type="string" length="40" />
-  <property name="Password" column="password" type="String" length="40" />
-</class>
