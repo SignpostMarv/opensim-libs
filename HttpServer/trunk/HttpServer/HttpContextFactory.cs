@@ -49,14 +49,24 @@ namespace HttpServer
         	HttpClientContext context;
             lock (_contextQueue)
             {
-				if (_contextQueue.Count > 0)
-					context = _contextQueue.Dequeue();
-				else
-				{
-					context = CreateNewContext(isSecured, endPoint, stream, sock);
-					context.Disconnected += OnFreeContext;
-					context.RequestReceived += OnRequestReceived;
-				}
+                if (_contextQueue.Count > 0)
+                {
+                    context = _contextQueue.Dequeue();
+                    if (!context.Available)
+                    {
+                        context = CreateNewContext(isSecured, endPoint, stream, sock);
+                        context.Disconnected += OnFreeContext;
+                        context.RequestReceived += OnRequestReceived;
+                        context.EndWhenDone = true;
+                        
+                    }
+                }
+                else
+                {
+                    context = CreateNewContext(isSecured, endPoint, stream, sock);
+                    context.Disconnected += OnFreeContext;
+                    context.RequestReceived += OnRequestReceived;
+                }
             }
 
         	context.Stream = stream;
@@ -88,8 +98,16 @@ namespace HttpServer
         {
             var imp = (HttpClientContext) sender;
             imp.Cleanup();
-            lock (_contextQueue)
-                _contextQueue.Enqueue(imp);
+
+            if (!imp.EndWhenDone)
+            {
+                lock (_contextQueue)
+                    _contextQueue.Enqueue(imp);
+            }
+            else
+            {
+                imp.Close();
+            }
         }
 
 
@@ -158,6 +176,7 @@ namespace HttpServer
 	/// </summary>
 	internal class ReusableSocketNetworkStream : NetworkStream
 	{
+	    private bool disposed = false;
 		/// <summary>
 		///                     Creates a new instance of the <see cref="T:System.Net.Sockets.NetworkStream" /> class for the specified <see cref="T:System.Net.Sockets.Socket" />.
 		/// </summary>
@@ -272,17 +291,17 @@ namespace HttpServer
 		/// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
 		protected override void Dispose(bool disposing)
 		{
-            try
+
+            if (!disposed)
             {
+                disposed = true;
                 if (Socket != null && Socket.Connected)
                     Socket.Disconnect(true);
 
-            } 
-            catch (ObjectDisposedException)
-            {
+
                 
             }
-		    base.Dispose(disposing);
+            base.Dispose(disposing);
 		}
 	}
 

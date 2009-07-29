@@ -261,10 +261,10 @@ namespace HttpServer
 				bytesRead = Body.Read(buffer, 0, 4196);
 			}
 
-            /*
+            
 			if (Connection == ConnectionType.Close)
 				_context.Disconnect(SocketError.Success);
-            */
+            
 
 			Sent = true;
 		}

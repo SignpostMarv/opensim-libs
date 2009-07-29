@@ -15,7 +15,7 @@ namespace HttpServer
     /// Remember to <see cref="Start"/> after you have hooked the <see cref="RequestReceived"/> event.
     /// </remarks>
     /// TODO: Maybe this class should be broken up into HttpClientChannel and HttpClientContext?
-    public class HttpClientContext : IHttpClientContext
+    public class HttpClientContext : IHttpClientContext ,IDisposable
     {
         private readonly byte[] _buffer;
         private int _bytesLeft;
@@ -24,6 +24,9 @@ namespace HttpServer
         private readonly int _bufferSize;
         private IHttpRequest _currentRequest;
         private readonly Socket _sock;
+
+        public bool Available = true;
+        public bool EndWhenDone = false;
 
 		/// <summary>
 		/// This context have been cleaned, which means that it can be reused.
@@ -159,6 +162,7 @@ namespace HttpServer
         public void Close()
         {
             Cleanup();
+            Available = true;
         }
 
         /// <summary>
@@ -221,9 +225,10 @@ namespace HttpServer
                 //_sock.Disconnect(true);
                 if (error == SocketError.Success)
                 {
-                    Stream.Flush();
+                    if (Stream is ReusableSocketNetworkStream)
+                        ((NetworkStream)Stream).Flush();
                 }
-                Stream.Close();
+                //Stream.Close();
                 Disconnected(this, new DisconnectedEventArgs(error));
             }
             catch (Exception err)
@@ -332,7 +337,7 @@ namespace HttpServer
             _currentRequest.AddHeader("remote_port", RemotePort);
             _currentRequest.Body.Seek(0, SeekOrigin.Begin);
             RequestReceived(this, new RequestEventArgs(_currentRequest));
-			//_currentRequest.Clear();
+			_currentRequest.Clear();
         }
 
         /// <summary>
@@ -414,9 +419,17 @@ namespace HttpServer
                 throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
 
             if (Stream != null && Stream.CanWrite)
+            {
+                try
+                {
+                    Stream.Write(buffer, offset, size);
+                } 
+                catch (IOException)
+                {
+                       
+                }
+            }
 
-                Stream.Write(buffer, offset, size);
-            
         }
 
         /// <summary>
@@ -430,5 +443,40 @@ namespace HttpServer
         /// A request have been received in the context.
         /// </summary>
         public event EventHandler<RequestEventArgs> RequestReceived = delegate{};
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool unmanaged)
+        {
+            if (unmanaged)
+            {
+                if (Stream != null)
+                {
+                    try
+                    {
+                        if (Stream.CanWrite)
+                            Stream.Flush();
+
+                        Cleanup();
+
+                    }
+                    catch (IOException)
+                    {
+
+                    }
+                }
+               
+            }
+            
+        }
+
+        ~HttpClientContext()
+        {
+            Dispose();
+        }
     }
 }

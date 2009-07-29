@@ -126,7 +126,7 @@ namespace HttpServer
 
                 if (!OnAcceptingSocket(socket))
                 {
-                    //socket.Disconnect(true);  // Done in finalizer
+                    socket.Disconnect(true);  // Done in finalizer
                     return;
                 }
 

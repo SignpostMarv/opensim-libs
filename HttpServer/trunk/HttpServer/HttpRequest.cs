@@ -387,8 +387,8 @@ namespace HttpServer
                 throw new ArgumentOutOfRangeException("offset");
             if (length == 0)
                 return 0;
-            if (!_body.CanWrite) return 0;
-                //throw new InvalidOperationException("Body is not writable.");
+            if (!_body.CanWrite)
+                throw new InvalidOperationException("Body is not writable.");
 
             if (length > _bodyBytesLeft)
             {
