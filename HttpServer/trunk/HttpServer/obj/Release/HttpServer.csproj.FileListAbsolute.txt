@@ -1,0 +1,6 @@
+C:\Documents and Settings\dcolive\Desktop\svn\cswebserver\trunk\HttpServer\bin\Release\HttpServer_OpenSim.xml
+C:\Documents and Settings\dcolive\Desktop\svn\cswebserver\trunk\HttpServer\bin\Release\HttpServer_OpenSim.dll
+C:\Documents and Settings\dcolive\Desktop\svn\cswebserver\trunk\HttpServer\bin\Release\HttpServer_OpenSim.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\cswebserver\trunk\HttpServer\obj\Release\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\svn\cswebserver\trunk\HttpServer\obj\Release\HttpServer_OpenSim.dll
+C:\Documents and Settings\dcolive\Desktop\svn\cswebserver\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb
