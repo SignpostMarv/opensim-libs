@@ -73,6 +73,8 @@ namespace HttpServer
         /// </summary>
         void Close();
 
+        bool EndWhenDone { get; set; }
+
         /// <summary>
         /// The context have been disconnected.
         /// </summary>

@@ -210,6 +210,26 @@ namespace HttpServer
 			get { return _cookies; }
 		}
 
+	    public bool ReuseContext
+	    {
+	        get
+	        {
+	            if (_context != null)
+	            {
+	                return !_context.EndWhenDone;
+	            }
+	            return true;
+	        }
+            set
+            {
+                if (_context != null)
+                {
+                    _context.EndWhenDone = !value;
+                }
+            }
+	    }
+
+
 		/// <summary>
 		/// Add another header to the document.
 		/// </summary>
@@ -262,7 +282,7 @@ namespace HttpServer
 			}
 
             
-			if (Connection == ConnectionType.Close)
+			if (Connection == ConnectionType.Close && !_context.EndWhenDone)
 				_context.Disconnect(SocketError.Success);
             
 

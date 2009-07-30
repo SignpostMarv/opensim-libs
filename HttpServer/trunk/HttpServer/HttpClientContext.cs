@@ -26,7 +26,7 @@ namespace HttpServer
         private readonly Socket _sock;
 
         public bool Available = true;
-        public bool EndWhenDone = false;
+        private bool _endWhenDone = false;
 
 		/// <summary>
 		/// This context have been cleaned, which means that it can be reused.
@@ -77,6 +77,12 @@ namespace HttpServer
            
             _buffer = new byte[bufferSize];
 
+        }
+
+        public bool EndWhenDone
+        {
+            get { return _endWhenDone; }
+            set { _endWhenDone = value;}
         }
 
         /// <summary>
