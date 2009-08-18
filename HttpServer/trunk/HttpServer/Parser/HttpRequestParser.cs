@@ -320,7 +320,7 @@ namespace HttpServer.Parser
                                 _log.Write(this, LogPrio.Warning, "Missing header value for '" + _curHeaderName);
                                 throw new BadRequestException("Missing header value for '" + _curHeaderName);
                             }
-                            if (currentPos - startPos > 1024)
+                            if (currentPos - startPos > 4096)
                             {
                                 _log.Write(this, LogPrio.Warning, "Too large header value on line " + currentLine);
                                 throw new BadRequestException("Too large header value on line " + currentLine);
