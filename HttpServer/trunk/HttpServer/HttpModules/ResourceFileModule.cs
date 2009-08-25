@@ -135,9 +135,9 @@ namespace HttpServer.HttpModules
 
 			response.ContentType = contentType;
 			DateTime modifiedTime = DateTime.MinValue;
-			if (!string.IsNullOrEmpty(request.Headers["if-Modified-Since"]))
+			if (!string.IsNullOrEmpty(request.Headers["if-modified-since"]))
 			{
-				DateTime lastRequest = DateTime.Parse(request.Headers["if-Modified-Since"]);
+				DateTime lastRequest = DateTime.Parse(request.Headers["if-modified-since"]);
 				if (lastRequest.CompareTo(modifiedTime) <= 0)
 					response.Status = HttpStatusCode.NotModified;
 			}

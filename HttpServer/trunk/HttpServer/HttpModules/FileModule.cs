@@ -178,9 +178,9 @@ namespace HttpServer.HttpModules
 
 				using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 				{	
-					if (!string.IsNullOrEmpty(request.Headers["if-Modified-Since"]))
+					if (!string.IsNullOrEmpty(request.Headers["if-modified-since"]))
 					{
-						DateTime lastRequest = DateTime.Parse(request.Headers["if-Modified-Since"]);
+						DateTime lastRequest = DateTime.Parse(request.Headers["if-modified-since"]);
 						if (lastRequest.CompareTo(File.GetLastWriteTime(path)) <= 0)
 							response.Status = HttpStatusCode.NotModified;
 					}

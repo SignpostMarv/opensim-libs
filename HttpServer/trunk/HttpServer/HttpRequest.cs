@@ -311,7 +311,9 @@ namespace HttpServer
             if (string.IsNullOrEmpty(value))
                 throw new BadRequestException("Header '" + name + "' do not contain a value.");
 
-            switch (name.ToLower())
+            name = name.ToLowerInvariant();
+
+            switch (name)
             {
                 case "http_x_requested_with":
                 case "x-requested-with":
@@ -328,7 +330,7 @@ namespace HttpServer
                     if (!int.TryParse(value, out t))
                         throw new BadRequestException("Invalid content length.");
                     ContentLength = t;
-                    break; //todo: mayby throw an exception
+                    break; //todo: maybe throw an exception
                 case "host":
                     try
                     {

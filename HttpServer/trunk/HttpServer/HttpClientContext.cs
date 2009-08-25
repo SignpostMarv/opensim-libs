@@ -341,6 +341,13 @@ namespace HttpServer
         {
             _currentRequest.AddHeader("remote_addr", RemoteAddress);
             _currentRequest.AddHeader("remote_port", RemotePort);
+
+            // load cookies if they exist
+            RequestCookies cookies = _currentRequest.Headers["cookie"] != null
+                ? new RequestCookies(_currentRequest.Headers["cookie"])
+                : new RequestCookies(String.Empty);
+            _currentRequest.SetCookies(cookies);
+
             _currentRequest.Body.Seek(0, SeekOrigin.Begin);
             RequestReceived(this, new RequestEventArgs(_currentRequest));
 			_currentRequest.Clear();
