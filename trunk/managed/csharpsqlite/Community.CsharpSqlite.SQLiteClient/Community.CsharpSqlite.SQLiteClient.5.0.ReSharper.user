@@ -1,0 +1,70 @@
+<Configuration>
+  <SettingsComponent>
+    <string />
+    <integer />
+    <boolean>
+      <setting name="SolutionAnalysisEnabled">True</setting>
+    </boolean>
+  </SettingsComponent>
+  <RecentFiles>
+    <RecentFiles>
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnectionFactory.cs" caret="3386" fromTop="5" />
+      <File id="B83741E9-7012-491E-B15D-3B083506A143/d:TestDriver_src/f:SQLiteClientTestDriver.cs" caret="257" fromTop="10" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="3747" fromTop="14" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteError.cs" caret="0" fromTop="0" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteExceptions.cs" caret="84" fromTop="4" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteDataReader.cs" caret="7467" fromTop="14" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="4551" fromTop="12" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteParameter.cs" caret="3306" fromTop="74" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteParameterCollection.cs" caret="4868" fromTop="17" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:VdbeInt_h.cs" caret="10557" fromTop="16" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:sqlite3_h.cs" caret="167220" fromTop="16" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbeapi_c.cs" caret="7138" fromTop="15" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbemem_c.cs" caret="21883" fromTop="13" />
+    </RecentFiles>
+    <RecentEdits>
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="1978" fromTop="20" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnectionFactory.cs" caret="1267" fromTop="18" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnectionFactory.cs" caret="3728" fromTop="18" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="15207" fromTop="17" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="2159" fromTop="19" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="2081" fromTop="15" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="3116" fromTop="28" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="2914" fromTop="24" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="2691" fromTop="12" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="5868" fromTop="23" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="3393" fromTop="24" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="3358" fromTop="22" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="3838" fromTop="16" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteCommand.cs" caret="3835" fromTop="12" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="16007" fromTop="17" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="16291" fromTop="12" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="17107" fromTop="21" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="17642" fromTop="16" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="18186" fromTop="11" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="18651" fromTop="12" />
+      <File id="B83741E9-7012-491E-B15D-3B083506A143/d:TestDriver_src/f:SQLiteClientTestDriver.cs" caret="842" fromTop="17" />
+      <File id="B83741E9-7012-491E-B15D-3B083506A143/d:TestDriver_src/f:SQLiteClientTestDriver.cs" caret="3592" fromTop="17" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteConnection.cs" caret="7701" fromTop="10" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:src/f:SqliteParameterCollection.cs" caret="10072" fromTop="17" />
+    </RecentEdits>
+  </RecentFiles>
+  <NAntValidationSettings>
+    <NAntPath value="" />
+  </NAntValidationSettings>
+  <UnitTestRunner>
+    <Providers />
+  </UnitTestRunner>
+  <UnitTestRunnerNUnit>
+    <NUnitInstallDir>C:\Program Files\NUnit 2.4.8\bin\net-2.0\</NUnitInstallDir>
+    <UseAddins>Never</UseAddins>
+  </UnitTestRunnerNUnit>
+  <CompletionStatisticsManager>
+    <ItemStatistics item="Qualified:@Community.CsharpSqlite.Sqlite3">
+      <Item value="sqlite3`0" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Default">
+      <Item value="override" priority="1" />
+    </ItemStatistics>
+  </CompletionStatisticsManager>
+</Configuration>

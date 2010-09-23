@@ -1,0 +1,7 @@
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\bin\Debug\Community.Data.SQLiteClient.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\bin\Debug\Community.Data.SQLiteClient.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\bin\Debug\Community.Data.SQLite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\bin\Debug\Community.Data.SQLite.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\obj\Debug\Community.Data.SQLiteClient.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Mono.Data.SqliteClient\obj\Debug\Community.Data.SQLiteClient.pdb

@@ -1,0 +1,6 @@
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite\bin\Debug\Community.CsharpSqlite.dll.config
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite\bin\Debug\Community.CsharpSqlite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite\bin\Debug\Community.CsharpSqlite.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite\obj\Debug\Community.CsharpSqlite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite\obj\Debug\Community.CsharpSqlite.pdb

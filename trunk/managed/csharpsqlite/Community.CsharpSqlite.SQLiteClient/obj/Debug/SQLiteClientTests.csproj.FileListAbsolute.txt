@@ -1,0 +1,8 @@
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\bin\Debug\SQLiteClientTests.exe
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\bin\Debug\SQLiteClientTests.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\bin\Debug\Community.CsharpSqlite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\bin\Debug\Community.CsharpSqlite.SQLiteClient.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\bin\Debug\Community.CsharpSqlite.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\obj\Debug\SQLiteClientTests.exe
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.SQLiteClient\obj\Debug\SQLiteClientTests.pdb

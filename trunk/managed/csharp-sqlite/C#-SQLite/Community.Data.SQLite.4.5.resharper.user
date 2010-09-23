@@ -1,0 +1,93 @@
+<Configuration>
+  <SettingsComponent>
+    <string />
+    <integer />
+    <boolean>
+      <setting name="SolutionAnalysisEnabled">True</setting>
+    </boolean>
+  </SettingsComponent>
+  <NAntValidationSettings>
+    <NAntPath value="" />
+  </NAntValidationSettings>
+  <RecentFiles>
+    <RecentFiles>
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:btree_c.cs" caret="0" fromTop="0" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:delete_c.cs" caret="22650" fromTop="606" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:prepare_c.cs" caret="20584" fromTop="0" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbeapi_c.cs" caret="12239" fromTop="0" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbe_c.cs" caret="48276" fromTop="11" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbeaux_c.cs" caret="54443" fromTop="19" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vacuum_c.cs" caret="2411" fromTop="11" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:legacy_c.cs" caret="5818" fromTop="11" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:sqlite3_h.cs" caret="21472" fromTop="22" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:expr_c.cs" caret="24740" fromTop="12" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:sqliteInt_h.cs" caret="131122" fromTop="11" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:tokenize_c.cs" caret="18086" fromTop="11" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:VdbeInt_h.cs" caret="16982" fromTop="19" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:Delagates.cs" caret="1704" fromTop="15" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Mono.Data.SqliteClient/f:SqliteDataAdapter.cs" caret="0" fromTop="0" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Mono.Data.SqliteClient/f:SqliteCommand.cs" caret="18202" fromTop="4" />
+      <File id="59E27BF3-3D31-42E5-BA21-FAEE135E699F/f:SQLiteVdbe.cs" caret="0" fromTop="0" />
+      <File id="59E27BF3-3D31-42E5-BA21-FAEE135E699F/f:SQLiteDatabase.cs" caret="0" fromTop="0" />
+    </RecentFiles>
+    <RecentEdits>
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbeapi_c.cs" caret="31834" fromTop="15" />
+      <File id="F1653F20-D47D-4F29-8C55-3C835542AF5F/d:src/f:vdbeapi_c.cs" caret="27277" fromTop="15" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Mono.Data.SqliteClient/f:SqliteCommand.cs" caret="18202" fromTop="656" />
+      <File id="59E27BF3-3D31-42E5-BA21-FAEE135E699F/f:SQLiteDatabase.cs" caret="0" fromTop="0" />
+    </RecentEdits>
+  </RecentFiles>
+  <UnitTestRunner>
+    <Providers />
+  </UnitTestRunner>
+  <UnitTestRunnerMSTest>
+    <UseTestRunConfigFromMetadataFile>False</UseTestRunConfigFromMetadataFile>
+  </UnitTestRunnerMSTest>
+  <CompletionStatisticsManager>
+    <ItemStatistics item="Default">
+      <Item value="using" priority="0" />
+      <Item value="Community.Data" priority="0" />
+      <Item value="SqliteClient" priority="0" />
+      <Item value="return" priority="2" />
+      <Item value="int" priority="1" />
+      <Item value="csSQLite" priority="12" />
+      <Item value="CS_SQLite3" priority="1" />
+      <Item value="Handle" priority="0" />
+      <Item value="internal" priority="0" />
+      <Item value="ref" priority="1" />
+      <Item value="sqlite_handle2" priority="2" />
+      <Item value="busy_timeout" priority="0" />
+      <Item value="sqlite_handle" priority="0" />
+      <Item value="IntPtr" priority="0" />
+      <Item value="string" priority="0" />
+      <Item value="pzStart" priority="1" />
+      <Item value="pStmt" priority="0" />
+      <Item value="pzTail" priority="0" />
+      <Item value="null" priority="1" />
+      <Item value="parent_conn" priority="0" />
+      <Item value="System" priority="0" />
+      <Item value="Text" priority="0" />
+      <Item value="UTF8Encoding" priority="2" />
+      <Item value="new" priority="0" />
+      <Item value="Length" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:@Community.Data.SQLite.csSQLite">
+      <Item value="sqlite3" priority="1" />
+      <Item value="sqlite3_close" priority="0" />
+      <Item value="sqlite3_open" priority="0" />
+      <Item value="sqlite3_errmsg" priority="1" />
+      <Item value="sqlite3_busy_timeout" priority="0" />
+      <Item value="sqlite3_prepare" priority="0" />
+      <Item value="Vdbe" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.String">
+      <Item value="Length" priority="1" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:Community.Data.SQLiteClient.SqliteConnection">
+      <Item value="Handle2" priority="0" />
+    </ItemStatistics>
+    <ItemStatistics item="Qualified:System.Text.UTF8Encoding">
+      <Item value="GetBytes" priority="0" />
+    </ItemStatistics>
+  </CompletionStatisticsManager>
+</Configuration>

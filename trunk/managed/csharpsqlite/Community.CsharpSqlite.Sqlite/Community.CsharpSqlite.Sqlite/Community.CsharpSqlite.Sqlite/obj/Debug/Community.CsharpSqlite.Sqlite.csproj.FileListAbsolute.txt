@@ -1,0 +1,7 @@
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\bin\Debug\Community.CsharpSqlite.Sqlite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\bin\Debug\Community.CsharpSqlite.Sqlite.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\obj\Debug\Community.CsharpSqlite.Sqlite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\obj\Debug\Community.CsharpSqlite.Sqlite.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\bin\Debug\Community.CsharpSqlite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharpsqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\Community.CsharpSqlite.Sqlite\bin\Debug\Community.CsharpSqlite.pdb

@@ -1,0 +1,28 @@
+<Configuration>
+  <SettingsComponent>
+    <string />
+    <integer />
+    <boolean>
+      <setting name="SolutionAnalysisEnabled">False</setting>
+    </boolean>
+  </SettingsComponent>
+  <NAntValidationSettings>
+    <NAntPath value="" />
+  </NAntValidationSettings>
+  <RecentFiles>
+    <RecentFiles>
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Properties/f:AssemblyInfo.cs" caret="348" fromTop="16" />
+    </RecentFiles>
+    <RecentEdits>
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Properties/f:AssemblyInfo.cs" caret="315" fromTop="14" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Properties/f:AssemblyInfo.cs" caret="536" fromTop="25" />
+      <File id="7BC68E61-C64C-488C-975F-1E2248383B80/d:Properties/f:AssemblyInfo.cs" caret="623" fromTop="29" />
+    </RecentEdits>
+  </RecentFiles>
+  <UnitTestRunner>
+    <Providers />
+  </UnitTestRunner>
+  <UnitTestRunnerMSTest>
+    <UseTestRunConfigFromMetadataFile>False</UseTestRunConfigFromMetadataFile>
+  </UnitTestRunnerMSTest>
+</Configuration>

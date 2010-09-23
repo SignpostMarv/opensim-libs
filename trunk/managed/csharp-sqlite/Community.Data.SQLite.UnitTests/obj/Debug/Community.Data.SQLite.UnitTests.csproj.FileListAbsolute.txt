@@ -1,0 +1,8 @@
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\bin\Debug\Community.Data.SQLite.UnitTests.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\bin\Debug\Community.Data.SQLite.UnitTests.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\bin\Debug\Community.Data.SQLite.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\bin\Debug\xunit.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\bin\Debug\Community.Data.SQLite.pdb
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\obj\Debug\ResolveAssemblyReference.cache
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\obj\Debug\Community.Data.SQLite.UnitTests.dll
+C:\Documents and Settings\dcolive\Desktop\svn\csharp-sqlite\Community.Data.SQLite.UnitTests\obj\Debug\Community.Data.SQLite.UnitTests.pdb
