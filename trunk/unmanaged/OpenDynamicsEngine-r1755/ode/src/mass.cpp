@@ -46,7 +46,7 @@ int dMassCheck (const dMass *m)
   int i;
 
   if (m->mass <= 0) {
-    dDEBUGMSG ("mass must be > 0");
+//    dDEBUGMSG ("mass must be > 0");
     return 0;
   }
   if (!dIsPositiveDefinite (m->I,3,NULL)) {

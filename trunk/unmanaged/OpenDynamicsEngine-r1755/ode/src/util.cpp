@@ -482,6 +482,7 @@ static size_t BuildIslandsAndEstimateStepperMemoryRequirements(dxWorldProcessCon
     }
   } END_STATE_SAVE(context, stackstate);
 
+/*
 # ifndef dNODEBUG
   // if debugging, check that all objects (except for disabled bodies,
   // unconnected joints, and joints that are connected to disabled bodies)
@@ -508,6 +509,7 @@ static size_t BuildIslandsAndEstimateStepperMemoryRequirements(dxWorldProcessCon
     }
   }
 # endif
+*/
 
   int islandcount = (sizescurr - islandsizes) / sizeelements;
   context->SavePreallocations(islandcount, islandsizes, body, joint);
