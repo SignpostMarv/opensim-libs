@@ -1557,10 +1557,10 @@ namespace Ode.NET
 		public static extern bool MassCheck(ref Mass m);
 
 		[DllImport("ode", EntryPoint = "dMassRotate"), SuppressUnmanagedCodeSecurity]
-		public static extern void MassRotate(out Mass mass, ref Matrix3 R);
+		public static extern void MassRotate(ref Mass mass, ref Matrix3 R);
 
 		[DllImport("ode", EntryPoint = "dMassRotate"), SuppressUnmanagedCodeSecurity]
-		public static extern void MassRotate(out Mass mass, ref dReal M00);
+		public static extern void MassRotate(ref Mass mass, ref dReal M00);
 
 		[DllImport("ode", EntryPoint = "dMassSetBox"), SuppressUnmanagedCodeSecurity]
 		public static extern void MassSetBox(out Mass mass, dReal density, dReal lx, dReal ly, dReal lz);
@@ -1599,7 +1599,7 @@ namespace Ode.NET
 		public static extern void MassSetZero(out Mass mass);
 
 		[DllImport("ode", EntryPoint = "dMassTranslate"), SuppressUnmanagedCodeSecurity]
-		public static extern void MassTranslate(out Mass mass, dReal x, dReal y, dReal z);
+		public static extern void MassTranslate(ref Mass mass, dReal x, dReal y, dReal z);
 
 		[DllImport("ode", EntryPoint = "dMultiply0"), SuppressUnmanagedCodeSecurity]
 		public static extern void Multiply0(out dReal A00, ref dReal B00, ref dReal C00, int p, int q, int r);
