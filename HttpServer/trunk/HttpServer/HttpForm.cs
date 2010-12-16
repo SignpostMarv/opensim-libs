@@ -42,10 +42,13 @@ namespace HttpServer
 			if(file == null)
 				throw new ArgumentNullException("file");
 
-			if(_files.ContainsKey(file.Name))
-				throw new ArgumentException("File named '" + file.Name + "' already exists!");
+            lock (_files)
+            {
+                if(_files.ContainsKey(file.Name))
+                    throw new ArgumentException("File named '" + file.Name + "' already exists!");
 
-			_files.Add(file.Name, file);
+                _files.Add(file.Name, file);
+            }
 		}
 
 		/// <summary>
@@ -61,7 +64,12 @@ namespace HttpServer
 			if (string.IsNullOrEmpty(name))
 				throw new ArgumentNullException("name");
 
-			return _files.ContainsKey(name);
+			bool res;
+            lock (_files)
+            {
+                res = _files.ContainsKey(name);
+            }
+            return res;
 		}
 
 		/// <summary>
@@ -78,10 +86,15 @@ namespace HttpServer
 			if(string.IsNullOrEmpty(name))
 				throw new ArgumentNullException("name");
 
-			if(!_files.ContainsKey(name))
-				return null;
-				
-			return _files[name];
+            HttpFile res;
+
+            lock (_files)
+            {
+                if(!_files.ContainsKey(name))
+                    return null;
+				res = _files[name];
+            }
+			return res;
 		}
 
         /// <summary>
@@ -92,13 +105,16 @@ namespace HttpServer
         {
             get
             {
-                if (_files.Count == 0)
-                    return EmptyFileCollection;
+                lock (_files)
+                {
+                    if (_files.Count == 0)
+                        return EmptyFileCollection;
 
-                List<HttpFile> files = new List<HttpFile>();
-                foreach (HttpFile file in _files.Values)
-                    files.Add(file);
-                return files.AsReadOnly();
+                    List<HttpFile> files = new List<HttpFile>();
+                    foreach (HttpFile file in _files.Values)
+                        files.Add(file);
+                    return files.AsReadOnly();
+                }
             }
         }
 
@@ -109,10 +125,13 @@ namespace HttpServer
 		{
 			base.Clear();
 
-			foreach (KeyValuePair<string, HttpFile> pair in _files)
-				pair.Value.Dispose();
+            lock (_files)
+            {
+                foreach (KeyValuePair<string, HttpFile> pair in _files)
+                    pair.Value.Dispose();
 
-			_files.Clear();
+                _files.Clear();
+            }
 		}
 	}
 }
