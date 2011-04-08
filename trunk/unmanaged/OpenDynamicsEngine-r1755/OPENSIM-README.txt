@@ -2,7 +2,6 @@ OPENSIM README
 
 On Linux x86 (32 bit) this version of ODE as used in OpenSim was consumed with the following commands
 
-cd opende/trunk
 chmod a+x ou/bootstrap
 sh autogen.sh
 ./configure --enable-old-trimesh --disable-asserts --enable-shared
