@@ -1,0 +1,25 @@
+The OpenSimulator BulletSPlugin expects to use a "BulletSim.dll" which
+provides the linkage to the Bullet physics engine. BulletSim.dll is
+written in C++ and is statically linked with the Bullet engine.
+BulletSim.dll must be compiled separately as the OpenSimulator build
+environment only builds the C# code.
+
+At the moment, the build environment is for Visual Studio 2008.
+The steps are:
+
+1) Download Bullet v2.78 (http://code.google.com/p/bullet/downloads/)
+2) Unpack the tgz or zip into the BulletSim directory (so there is a new
+    directory "addon-modules/BulletSim/bullet-2.78/")
+3) cd into the bullet directory and build using your preferred method
+    For Visual Studio 2008, open "msvc/2008/BULLET_PHYSICS.sln"
+4) cd into "addon-modules/BulletSim/"
+5) Open and build with BulletSim.sln
+6) Copy "addon-modules/BulletSim/Release/BulletSim.dll" into the
+    OpenSimulator "bin/" directory
+
+
+This was developed with Bullet v2.78. If you use a different version, you will
+need to change the include and library directories for the BulletSim compilation.
+
+If you build Bullet as a 64 bit library, there is a "BulletSim-2010.sln"
+which will build a 64 bit version of "BulletSim.dll".
