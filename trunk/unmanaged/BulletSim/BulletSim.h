@@ -44,9 +44,8 @@
 typedef signed __int32		int32_t;
 typedef unsigned __int32	uint32_t;
 #else
-// What is the right definition for other C compilers?
-typedef signed __int32		int32_t;
-typedef unsigned __int32	uint32_t;
+typedef signed int int32_t;
+typedef unsigned int uint32_t;
 #endif
 
 #define MAX_UPDATES_PER_FRAME 2048
