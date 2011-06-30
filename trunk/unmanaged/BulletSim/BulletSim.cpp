@@ -35,7 +35,7 @@ static float gGravity = -9.80665f;
 
 static float gLinearDamping = 0.1f;
 static float gAngularDamping = 0.85f;
-static float gDeactivationTime = 0.2f;
+static float gBSDeactivationTime = 0.2f;
 static float gLinearSleepingThreshold = 0.8f;
 static float gAngularSleepingThreshold = 1.0f;
 
@@ -386,6 +386,7 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 	ShapeData::PhysicsShapeType type = data->Type;
 	unsigned long long meshKey = data->MeshKey;
 	Vector3 scale = data->Scale;
+	btVector3 scaleBt = scale.GetBtVector3();
 	HullsMapType::const_iterator it;
 
 	btCollisionShape* shape = NULL;
@@ -402,7 +403,7 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 			// boxes are defined by their half extents
 			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
 			shape->setMargin(gCollisionMargin);
-			AdjustScaleForCollisionMargin(shape, scale.GetBtVector3());
+			AdjustScaleForCollisionMargin(shape, scaleBt);
 			break;
 		case ShapeData::SHAPE_CONE:	// TODO:
 			shape = new btConeShapeZ(0.5, 1.0);
@@ -423,13 +424,13 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 				btCompoundShape* originalCompoundShape = it->second;
 				shape = DuplicateCompoundShape(originalCompoundShape);
 				shape->setMargin(gCollisionMargin);
-				AdjustScaleForCollisionMargin(shape, scale.GetBtVector3());
+				AdjustScaleForCollisionMargin(shape, scaleBt);
 			}
 			break;
 		case ShapeData::SHAPE_SPHERE:
 			shape = new btSphereShape(0.5);		// this is really a unit sphere
 			shape->setMargin(gCollisionMargin);
-			AdjustScaleForCollisionMargin(shape, scale.GetBtVector3());
+			AdjustScaleForCollisionMargin(shape, scaleBt);
 			break;
 	}
 
@@ -563,7 +564,7 @@ bool BulletSim::CreateObject(ShapeData* data)
 		body->setCcdMotionThreshold(0.5f);
 		body->setCcdSweptSphereRadius(0.2f);
 		body->setDamping(gLinearDamping, gAngularDamping);
-		body->setDeactivationTime(gDeactivationTime);
+		body->setDeactivationTime(gBSDeactivationTime);
 		body->setSleepingThresholds(gLinearSleepingThreshold, gAngularSleepingThreshold);
 		// disabling deactivation since we can't sense it to send zero values for linear and angular velocity
 		// body->setActivationState(WANTS_DEACTIVATION);
