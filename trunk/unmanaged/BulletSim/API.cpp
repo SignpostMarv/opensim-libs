@@ -33,14 +33,14 @@
 #ifdef WIN32
 	#define DLL_EXPORT __declspec( dllexport )
 	#define DLL_IMPORT __declspec( dllimport )
-	#ifdef __cplusplus
-		#define EXTERN_C extern "C"
-	#else
-		#define EXTERN_C extern
-	#endif
 #else
 	#define DLL_EXPORT
 	#define DLL_IMPORT
+#endif
+#ifdef __cplusplus
+    #define EXTERN_C extern "C"
+#else
+    #define EXTERN_C extern
 #endif
 
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
