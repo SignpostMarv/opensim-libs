@@ -50,12 +50,17 @@ static std::map<unsigned int, BulletSim*> m_simulations;
 /**
  * Initializes the physical simulation.
  * @param maxPosition Top north-east corner of the simulation, with Z being up. The bottom south-west corner is 0,0,0.
+ * @param maxCollisions maximum number of collisions that can be reported each tick
+ * @param updateArray pointer to pinned memory to return the collision info
+ * @param maxUpdates maximum number of property updates that can be reported each tick
+ * @param maxCollisions pointer to pinned memory to return the update information
  * @return worldID for the newly created simulation.
  */
-EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition)
+EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, int maxCollisions, CollisionDesc* collisionArray,
+											int maxUpdates, EntityProperties* updateArray)
 {
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
-	sim->initPhysics();
+	sim->initPhysics(maxCollisions, collisionArray, maxUpdates, updateArray);
 
 	unsigned int worldID = (unsigned int)m_simulations.size();
 	m_simulations[worldID] = sim;
@@ -97,7 +102,8 @@ EXTERN_C DLL_EXPORT void Shutdown(unsigned int worldID)
  * @param colliders Pointer to an array of colliding object IDs (in pairs of two).
  * @return Number of sub steps that were taken this call.
  */
-EXTERN_C DLL_EXPORT int PhysicsStep(unsigned int worldID, float timeStep, int maxSubSteps, float fixedTimeStep, int* updatedEntityCount, EntityProperties*** updatedEntities, int* collidersCount, unsigned int** colliders)
+EXTERN_C DLL_EXPORT int PhysicsStep(unsigned int worldID, float timeStep, int maxSubSteps, float fixedTimeStep, 
+			int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders)
 {
 	return m_simulations[worldID]->PhysicsStep(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
 }
@@ -157,15 +163,30 @@ EXTERN_C DLL_EXPORT void CreateLinkset(unsigned int worldID, int objectCount, Sh
  * @param hiAngular hi bounds of angular constraint
  */
 EXTERN_C DLL_EXPORT void AddConstraint(unsigned int worldID, unsigned int id1, unsigned int id2, 
-	Vector3 frame1, Vector3 frame2, Vector3 lowLinear, Vector3 hiLinear, Vector3 lowAngular, Vector3 hiAngular)
+	Vector3 frame1loc, Quaternion frame1rot,
+	Vector3 frame2loc, Quaternion frame2rot,
+	Vector3 lowLinear, Vector3 hiLinear, Vector3 lowAngular, Vector3 hiAngular)
 {
-	btVector3 frm1 = frame1.GetBtVector3();
-	btVector3 frm2 = frame2.GetBtVector3();
+	btVector3 frm1 = frame1loc.GetBtVector3();
+	btQuaternion rot1 = frame1rot.GetBtQuaternion();
+	btVector3 frm2 = frame2loc.GetBtVector3();
+	btQuaternion rot2 = frame2rot.GetBtQuaternion();
 	btVector3 lowLin = lowLinear.GetBtVector3();
 	btVector3 hiLin = hiLinear.GetBtVector3();
 	btVector3 lowAng = lowAngular.GetBtVector3();
 	btVector3 hiAng = hiAngular.GetBtVector3();
-	m_simulations[worldID]->AddConstraint(id1, id2, frm1, frm2, lowLin, hiLin, lowAng, hiAng);
+	m_simulations[worldID]->AddConstraint(id1, id2, frm1, rot1, frm2, rot2, lowLin, hiLin, lowAng, hiAng);
+}
+/**
+ * Remove a generic 6 degree of freedom constraint associated with this object.
+ * Safe to call of constraint does not exist
+ * @param worldID ID of the world to modify.
+ * @param id1 object to deconstrain
+ * @return 'true' if actually removed a constraint. 'false' if no constraint between objects
+ */
+EXTERN_C DLL_EXPORT bool RemoveConstraintByID(unsigned int worldID, unsigned int id1)
+{
+	return m_simulations[worldID]->RemoveConstraintByID(id1);
 }
 
 /**

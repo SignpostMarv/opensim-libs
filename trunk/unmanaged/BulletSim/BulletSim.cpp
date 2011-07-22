@@ -63,7 +63,9 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	}
 }
 
-int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, EntityProperties*** updatedEntities, int* collidersCount, unsigned int** colliders)
+int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
+						   int* updatedEntityCount, EntityProperties** updatedEntities, 
+						   int* collidersCount, CollisionDesc** colliders)
 {
 	int numSimSteps = 0;
 
@@ -74,25 +76,25 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		numSimSteps = m_dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
 		// Put all of the updates this frame into m_updatesThisFrameArray
-		int i = 0;
+		int updates = 0;
 		if (m_updatesThisFrame.size() > 0)
 		{
-			for(UpdatesThisFrameMapType::const_iterator it = m_updatesThisFrame.begin(); it != m_updatesThisFrame.end(); ++it)
+			for (UpdatesThisFrameMapType::const_iterator it = m_updatesThisFrame.begin(); it != m_updatesThisFrame.end(); ++it)
 			{
-				m_updatesThisFrameArray[i++] = it->second;
-				if (i >= MAX_UPDATES_PER_FRAME) break;
+				m_updatesThisFrameArray[updates] = *(it->second);
+				updates++;
+				if (updates >= m_maxUpdatesPerFrame) break;
 			}
-
 			m_updatesThisFrame.clear();
 		}
 
 		// Update the values passed by reference into this function
-		*updatedEntityCount = i;
+		*updatedEntityCount = updates;
 		*updatedEntities = m_updatesThisFrameArray;
 
 		// Put all of the colliders this frame into m_collidersThisFrameArray
 		std::set<unsigned long long> collidersThisFrame;
-		i = 0;
+		int collisions = 0;
 		int numManifolds = m_dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
 		{
@@ -103,19 +105,23 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
 			btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
 
-			// Get the IDs of colliding objects (stored in the one user definable field)
-			unsigned int idA = (unsigned int)objA->getCollisionShape()->getUserPointer();
-			unsigned int idB = (unsigned int)objB->getCollisionShape()->getUserPointer();
+			// when two objects collide, we only report one contact point
+			const btManifoldPoint& manifoldPoint = contactManifold->getContactPoint(0);
+			const btVector3& contactPoint = manifoldPoint.getPositionWorldOnB();
+			btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A
 
-			// Make sure idA is the lower ID
+			// Get the IDs of colliding objects (stored in the one user definable field)
+			unsigned int idA = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
+			unsigned int idB = CONVLOCALID(objB->getCollisionShape()->getUserPointer());
+
+			// Make sure idA is the lower ID so we don't record both 'A hit B' and 'B hit A'
 			if (idA > idB)
 			{
 				unsigned int temp = idA;
 				idA = idB;
 				idB = temp;
+				contactNormal = -contactNormal;
 			}
-
-			if (idA == ID_GROUND_PLANE) continue;	// don't report collisions with the ground plane
 
 			// Create a unique ID for this collision from the two colliding object IDs
 			unsigned long long collisionID = ((unsigned long long)idA << 32) | idB;
@@ -124,14 +130,17 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			if (collidersThisFrame.find(collisionID) == collidersThisFrame.end())
 			{
 				collidersThisFrame.insert(collisionID);
-				m_collidersThisFrameArray[i++] = idA;
-				m_collidersThisFrameArray[i++] = idB;
+				m_collidersThisFrameArray[collisions].aID = idA;
+				m_collidersThisFrameArray[collisions].bID = idB;
+				m_collidersThisFrameArray[collisions].point = contactPoint;
+				m_collidersThisFrameArray[collisions].normal = contactNormal;
+				collisions++;
 			}
 
-			if (i >= MAX_COLLIDERS_PER_FRAME) break;
+			if (collisions >= m_maxCollisionsPerFrame) break;
 		}
 
-		*collidersCount = i;
+		*collidersCount = collisions;
 		*colliders = m_collidersThisFrameArray;
 	}
 
@@ -148,8 +157,15 @@ void BulletSim::SetHeightmap(float* heightmap)
 	CreateTerrain();
 }
 
-void BulletSim::initPhysics()
+void BulletSim::initPhysics(int maxCollisions, CollisionDesc* collisionArray, 
+							int maxUpdates, EntityProperties* updateArray)
 {
+	// remember the pointers to pinned memory for returning collisions and property updates
+	m_maxCollisionsPerFrame = maxCollisions;
+	m_collidersThisFrameArray = collisionArray;
+	m_maxUpdatesPerFrame = maxUpdates;
+	m_updatesThisFrameArray = updateArray;
+
 	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 	
@@ -566,9 +582,6 @@ bool BulletSim::CreateObject(ShapeData* data)
 		body->setDamping(gLinearDamping, gAngularDamping);
 		body->setDeactivationTime(gBSDeactivationTime);
 		body->setSleepingThresholds(gLinearSleepingThreshold, gAngularSleepingThreshold);
-		// disabling deactivation since we can't sense it to send zero values for linear and angular velocity
-		// body->setActivationState(WANTS_DEACTIVATION);
-		body->setActivationState(DISABLE_DEACTIVATION);
 
 		body->setLinearVelocity(velocity);
 		// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
@@ -635,7 +648,9 @@ void BulletSim::CreateLinkset(int objectCount, ShapeData* shapes)
 	return;
 }
 
-void BulletSim::AddConstraint(unsigned int id1, unsigned int id2, btVector3& frame1, btVector3& frame2,
+void BulletSim::AddConstraint(unsigned int id1, unsigned int id2, 
+							  btVector3& frame1, btQuaternion& frame1rot,
+							  btVector3& frame2, btQuaternion& frame2rot,
 	btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular)
 {
 	RemoveConstraint(id1, id2);		// remove any existing constraint
@@ -646,17 +661,25 @@ void BulletSim::AddConstraint(unsigned int id1, unsigned int id2, btVector3& fra
 		BodiesMapType::iterator bit2 = m_bodies.find(id2);
 		if (bit2 != m_bodies.end())
 		{
+            // BSLog("AddConstraint: found body1=%d, body2=%d", id1, id2);
 			btRigidBody* body2 = bit2->second;
 			btTransform frame1t, frame2t;
 			frame1t.setIdentity();
 			frame1t.setOrigin(frame1);
+			frame1t.setRotation(frame1rot);
 			frame2t.setIdentity();
 			frame2t.setOrigin(frame2);
+			frame2t.setRotation(frame2rot);
 			btGeneric6DofConstraint* constraint = new btGeneric6DofConstraint(*body1, *body2, frame1t, frame2t, true);
+            m_dynamicsWorld->addConstraint(constraint, true);
 			constraint->setLinearLowerLimit(lowLinear);
 			constraint->setLinearUpperLimit(hiLinear);
 			constraint->setAngularLowerLimit(lowAngular);
 			constraint->setAngularUpperLimit(hiAngular);
+			constraint->setUseFrameOffset(false);
+			constraint->getTranslationalLimitMotor()->m_enableMotor[0] = true;
+			constraint->getTranslationalLimitMotor()->m_targetVelocity[0] = 5.0f;
+			constraint->getTranslationalLimitMotor()->m_maxMotorForce[0] = 0.1f;
 
 			// Create a unique ID for this constraint
 			unsigned long long constraintID = GenConstraintID(id1, id2);
@@ -671,15 +694,69 @@ void BulletSim::AddConstraint(unsigned int id1, unsigned int id2, btVector3& fra
 	return;
 }
 
+// When we are deleting and object, we need to make sure there are no constraints
+// associated with it.
+bool BulletSim::RemoveConstraintByID(unsigned int id1)
+{
+	bool removedSomething = false;
+	bool doAgain = true;
+	while (doAgain)
+	{
+		doAgain = false;	// start out thinking one time through is enough
+		ConstraintMapType::iterator it = m_constraints.begin();
+		while (it != m_constraints.end())
+		{
+			unsigned long long constraintID = it->first;
+			// if this constraint contains the passed localID, delete the constraint
+			if ((((unsigned int)(constraintID & 0xffffffff)) == id1)
+				|| (((unsigned int)(constraintID >> 32) & 0xffffffff) == id1))
+			{
+				btGeneric6DofConstraint* constraint = it->second;
+		 		m_dynamicsWorld->removeConstraint(constraint);
+				m_constraints.erase(it);
+				delete constraint;
+				removedSomething = true;
+				doAgain = true;	// if we deleted, we scan the list again for another match
+				break;
+
+			}
+			it++;
+		}
+	}
+	return removedSomething;	// return 'true' if we actually deleted a constraint
+}
+
+// When properties of the object change, the base transforms in the constraint should be recomputed
+bool BulletSim::RecalculateAllConstraintsByID(unsigned int id1)
+{
+	bool recalcuatedSomething = false;
+	ConstraintMapType::iterator it = m_constraints.begin();
+	while (it != m_constraints.end())
+	{
+		unsigned long long constraintID = it->first;
+		// if this constraint contains the passed localID, recalcuate its transforms
+		if ((((unsigned int)(constraintID & 0xffffffff)) == id1)
+			|| (((unsigned int)(constraintID >> 32) & 0xffffffff) == id1))
+		{
+			btGeneric6DofConstraint* constraint = it->second;
+			constraint->calculateTransforms();
+			recalcuatedSomething = true;
+		}
+		it++;
+	}
+	return recalcuatedSomething;	// return 'true' if we actually recalcuated a constraint
+}
+
 bool BulletSim::RemoveConstraint(unsigned int id1, unsigned int id2)
 {
 	unsigned long long constraintID = GenConstraintID(id1, id2);
 	ConstraintMapType::iterator it = m_constraints.find(constraintID);
 	if (it != m_constraints.end())
 	{
-		btTypedConstraint* constraint = m_constraints[constraintID];
-		delete constraint;
+		btGeneric6DofConstraint* constraint = m_constraints[constraintID];
+ 		m_dynamicsWorld->removeConstraint(constraint);
 		m_constraints.erase(it);
+		delete constraint;
 		return true;
 	}
 	return false;
@@ -930,6 +1007,10 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 	if (isDynamic)
 	{
 		body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_STATIC_OBJECT);
+		// We can't deactivate a physical object because Bullet does not tell us when
+		// the object goes idle. The lack of this event means small velocity values are
+		// left on the object and the viewer displays the object floating off.
+		body->setActivationState(DISABLE_DEACTIVATION);
 
 		// Recalculate local inertia based on the new mass
 		btVector3 localInertia(0, 0, 0);
@@ -937,15 +1018,20 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 
 		// Set the new mass
 		body->setMassProps(mass, localInertia);
+		// BSLog("SetObjectDynamic: dynamic. ID=%d, Mass = %f", CONVLOCALID(body->getCollisionShape()->getUserPointer()), mass);
 		body->updateInertiaTensor();
 
 		// NOTE: Workaround for issue http://code.google.com/p/bullet/issues/detail?id=364
 		// when setting mass
 		body->setGravity(body->getGravity());
+
+		// if there are any constraints on this object, recalcuate transforms for new mass
+		this->RecalculateAllConstraintsByID(CONVLOCALID(body->getCollisionShape()->getUserPointer()));
 	}
 	else
 	{
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
+		body->setActivationState(WANTS_DEACTIVATION);
 
 		// Clear all forces for this object
 		body->setLinearVelocity(ZERO_VECTOR);
@@ -954,6 +1040,7 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 
 		// Set the new mass (the caller should be passing zero)
 		body->setMassProps(mass, ZERO_VECTOR);
+		// BSLog("SetObjectDynamic: not dynamic. ID=%d, Mass = %f", CONVLOCALID(body->getCollisionShape()->getUserPointer()), mass);
 		body->updateInertiaTensor();
 		body->setGravity(body->getGravity());
 	}
@@ -1093,6 +1180,9 @@ bool BulletSim::DestroyObject(unsigned int id)
 		btRigidBody* body = bit->second;
 		btCollisionShape* shape = body->getCollisionShape();
 
+		// just in case, remove any constraint that might match this RigidBody
+		RemoveConstraintByID(id);
+
 		// Remove the rigid body from the map of rigid bodies
 		m_bodies.erase(bit);
 
@@ -1164,7 +1254,7 @@ SweepHit BulletSim::ConvexSweepTest(unsigned int id, btVector3& fromPos, btVecto
 
 			if (callback.hasHit())
 			{
-				hit.ID = (unsigned int)callback.m_hitCollisionObject->getCollisionShape()->getUserPointer();
+				hit.ID = CONVLOCALID(callback.m_hitCollisionObject->getCollisionShape()->getUserPointer());
 				hit.Fraction = callback.m_closestHitFraction;
 				hit.Normal = callback.m_hitNormalWorld;
 				hit.Point = callback.m_hitPointWorld;
@@ -1207,7 +1297,7 @@ RaycastHit BulletSim::RayTest(unsigned int id, btVector3& from, btVector3& to)
 
 		if (callback.hasHit())
 		{
-			hit.ID = (unsigned int)callback.m_collisionObject->getUserPointer();
+			hit.ID = CONVLOCALID(callback.m_collisionObject->getUserPointer());
 			hit.Fraction = callback.m_closestHitFraction;
 			hit.Normal = callback.m_hitNormalWorld;
 			//hit.Point = callback.m_hitPointWorld; // TODO: Is this useful?

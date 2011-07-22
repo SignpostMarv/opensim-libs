@@ -44,12 +44,16 @@
 typedef signed __int32		int32_t;
 typedef unsigned __int32	uint32_t;
 #else
-typedef signed int int32_t;
-typedef unsigned int uint32_t;
+typedef signed int			int32_t;
+typedef unsigned int		uint32_t;
 #endif
 
-#define MAX_UPDATES_PER_FRAME 2048
-#define MAX_COLLIDERS_PER_FRAME 4096	// really colliders * 2
+#ifdef __x86_64__
+// 64bit systems don't allow you to cast directly from a void* to an unsigned int
+#define CONVLOCALID(xx) (unsigned int)((unsigned long)(xx))
+#else
+#define CONVLOCALID(xx) (unsigned int)(xx)
+#endif
 
 #define ID_TERRAIN 0	// OpenSimulator identifies collisions with terrain by localID of zero
 #define ID_GROUND_PLANE 1
@@ -62,12 +66,11 @@ typedef unsigned int uint32_t;
 #define ANGULARVELOCITY_TOLERANCE 0.001f
 #define ROTATION_TOLERANCE 0.01f
 
-// #define BSTESTING
-
 // Helper method to determine if an object is phantom or not
 static bool IsPhantom(const btCollisionObject* obj)
 {
 	// Characters are never phantom, but everything else with CF_NO_CONTACT_RESPONSE is
+	// TODO: figure out of this assumption for phantom sensing is still true
 	return obj->getCollisionShape()->getShapeType() != CAPSULE_SHAPE_PROXYTYPE &&
 		(obj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
 };
@@ -112,6 +115,11 @@ struct Vector3
 		X = v.getX();
 		Y = v.getY();
 		Z = v.getZ();
+	}
+
+	bool operator==(const Vector3& b)
+	{
+		return (X == b.X && Y == b.Y && Z == b.Z);
 	}
 };
 
@@ -172,6 +180,15 @@ struct ShapeData
 	float Friction;
 	int32_t Static;	// object is non-moving. Otherwise gravity, etc
 	// note that bool's are passed as int's since bool size changes by language
+};
+
+// API-exposed structure for reporting a collision
+struct CollisionDesc
+{
+	uint32_t aID;
+	uint32_t bID;
+	Vector3 point;
+	Vector3 normal;
 };
 
 // API-exposed structure to input a convex hull
@@ -264,15 +281,19 @@ public:
 		// they float off.
 		// TODO: figure out how to generate a transform event when an object sleeps.
 		m_properties.Velocity = RigidBody->getLinearVelocity();
-		// m_properties.Velocity = Vector3(0.0f, 0.0f, 0.0f);
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
-		// m_properties.AngularVelocity = Vector3(0.0f, 0.0f, 0.0f);
 
 		// Is this transform any different from the previous one?
 		if (!m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE) ||
 			!m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE) ||
 			!m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE) ||
 			!m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE))
+		/*
+		if (!(m_properties.Position == m_lastProperties.Position) ||
+			!(m_properties.Rotation == m_lastProperties.Rotation) ||
+			!(m_properties.Velocity == m_lastProperties.Velocity) ||
+			!(m_properties.AngularVelocity == m_lastProperties.AngularVelocity))
+		*/
 		{
 			// If so, update the previous transform and add this update to the list of 
 			// updates this frame
@@ -396,7 +417,7 @@ class BulletSim
 	BodiesMapType m_bodies;
 	typedef std::map<unsigned int, btRigidBody*> CharactersMapType;
 	CharactersMapType m_characters;
-	typedef std::map<unsigned long long, btTypedConstraint*> ConstraintMapType;
+	typedef std::map<unsigned long long, btGeneric6DofConstraint*> ConstraintMapType;
 	ConstraintMapType m_constraints;
 
 	// Bullet world objects
@@ -412,10 +433,12 @@ class BulletSim
 	// Used to expose updates from Bullet to the BulletSim API
 	typedef std::map<unsigned int, EntityProperties*> UpdatesThisFrameMapType;
 	UpdatesThisFrameMapType m_updatesThisFrame;
-	EntityProperties* m_updatesThisFrameArray[MAX_UPDATES_PER_FRAME];
+	int m_maxUpdatesPerFrame;
+	EntityProperties* m_updatesThisFrameArray;
 
 	// Used to expose colliders from Bullet to the BulletSim API
-	uint32_t m_collidersThisFrameArray[MAX_COLLIDERS_PER_FRAME];
+	int m_maxCollisionsPerFrame;
+	CollisionDesc* m_collidersThisFrameArray;
 public:
 
 	BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ);
@@ -430,16 +453,21 @@ public:
 		return m_dynamicsWorld;
 	}
 
-	void initPhysics();
+	void initPhysics(int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
 	void exitPhysics();
 
-	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, EntityProperties*** updatedEntities, int* collidersCount, unsigned int** colliders);
+	// int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, EntityProperties*** updatedEntities, int* collidersCount, unsigned int** colliders);
+	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
+		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
 	void SetHeightmap(float* heightmap);
 	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
 	bool CreateObject(ShapeData* shapeData);
 	void CreateLinkset(int objectCount, ShapeData* shapeDatas);
-	void AddConstraint(unsigned int id1, unsigned int id2, btVector3& frame1, btVector3& frame2, 
-		btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular);
+	void AddConstraint(unsigned int id1, unsigned int id2, 
+				btVector3& frame1, btQuaternion& frame1rot, 
+				btVector3& frame2, btQuaternion& frame2rot,
+				btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular);
+	bool RemoveConstraintByID(unsigned int id1);
 	bool RemoveConstraint(unsigned int id1, unsigned int id2);
 	btVector3 GetObjectPosition(unsigned int id);
 	bool SetObjectTranslation(unsigned int id, btVector3& position, btQuaternion& rotation);
@@ -468,6 +496,7 @@ protected:
 	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
 	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
 	btCollisionShape* CreateShape(ShapeData* data);
+	bool RecalculateAllConstraintsByID(unsigned int id1);
 	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
 	SweepHit GenericConvexSweepTest(btCollisionObject* collisionObject, btVector3& fromPos, btVector3& targetPos);
 };
