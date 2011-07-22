@@ -1049,15 +1049,28 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 }
 
 // Adjust how gravity effects the object
+// neg=fall quickly, 0=1g, 1=0g, pos=float up
 bool BulletSim::SetObjectBuoyancy(unsigned int id, float buoy)
 {
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_characters.find(id);
+	float grav = gGravity * (1.0f - buoy);
+
+	CharactersMapType::iterator it = m_characters.find(id);
 	if (it != m_characters.end())
 	{
 		btRigidBody* body = it->second;
 
-		body->setGravity(btVector3(0, 0, gGravity * buoy));
+		body->setGravity(btVector3(0, 0, grav));
+
+		body->activate(true);
+		return true;
+	}
+	// Look for a rigid body
+	BodiesMapType::iterator bit = m_bodies.find(id);
+	if (bit != m_bodies.end())
+	{
+		btRigidBody* body = bit->second;
+
+		body->setGravity(btVector3(0, 0, grav));
 
 		body->activate(true);
 		return true;
