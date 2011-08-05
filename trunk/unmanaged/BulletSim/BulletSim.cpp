@@ -28,24 +28,6 @@
 
 #include <set>
 
-// constants that should be passed as parameters
-// static float gCollisionMargin = 0.04f;
-static float gCollisionMargin = 0.0f;
-static float gGravity = -9.80665f;
-
-static float gLinearDamping = 0.1f;
-static float gAngularDamping = 0.85f;
-static float gBSDeactivationTime = 0.2f;
-static float gLinearSleepingThreshold = 0.8f;
-static float gAngularSleepingThreshold = 1.0f;
-
-static float gTerrainFriction = 0.85f;	// sticky terrain
-static float gTerrainHitFriction = 0.8f;
-static float gTerrainRestitution = 0.2f;	// how bouncy the terrain is
-static float gAvatarFriction = 0.85f;
-static float gAvatarCapsuleRadius = 0.37f;
-static float gAvatarCapsuleHeight = 1.5f;	// 2.140599f;
-
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
 	int i_maxX = (int)maxX;
@@ -63,6 +45,114 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	}
 }
 
+void BulletSim::initPhysics(ParamBlock* parms, 
+							int maxCollisions, CollisionDesc* collisionArray, 
+							int maxUpdates, EntityProperties* updateArray)
+{
+	// all our parameters in a block of pinned memory
+	m_params = parms;
+
+	// remember the pointers to pinned memory for returning collisions and property updates
+	m_maxCollisionsPerFrame = maxCollisions;
+	m_collidersThisFrameArray = collisionArray;
+	m_maxUpdatesPerFrame = maxUpdates;
+	m_updatesThisFrameArray = updateArray;
+
+	// create the functional parts of the physics simulation
+	m_collisionConfiguration = new btDefaultCollisionConfiguration();
+	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+	
+	m_broadphase = new btDbvtBroadphase();
+
+	// the following is needed to enable GhostObjects
+	// m_broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
+	
+	m_solver = new btSequentialImpulseConstraintSolver();
+	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
+	
+	// disable the continuious recalculation of the static AABBs
+	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
+	m_dynamicsWorld->setForceUpdateAllAabbs(false);
+	
+	// Randomizing the solver order makes object stacking more stable at a slight performance cost
+	m_dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+
+	// Earth-like gravity
+	m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_params->gravity));
+
+	// Start with a ground plane and a flat terrain
+	CreateGroundPlane();
+	CreateTerrain();
+}
+
+void BulletSim::exitPhysics()
+{
+	if (!m_dynamicsWorld)
+		return;
+
+	// Clean up in the reverse order of creation/initialization
+
+	// Remove the rigidbodies from the dynamics world and delete them
+	for (int i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
+	{
+		btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
+		
+		// Delete motion states attached to rigid bodies
+		btRigidBody* body = btRigidBody::upcast(obj);
+		if (body && body->getMotionState())
+			delete body->getMotionState();
+		
+		// Remove the collision object from the scene
+		m_dynamicsWorld->removeCollisionObject(obj);
+		
+		// Delete the collision shape
+		btCollisionShape* shape = obj->getCollisionShape();
+		if (shape)
+			delete shape;
+
+		// Delete the collision object
+		delete obj;
+	}
+	m_bodies.clear();
+	m_characters.clear();
+
+	// Delete collision meshes
+	for (HullsMapType::const_iterator it = m_hulls.begin(); it != m_hulls.end(); ++it)
+    {
+		btCompoundShape* compoundShape = it->second;
+		delete compoundShape;
+	}
+	m_hulls.clear();
+
+	// Ground plane and terrain shapes were deleted above
+	m_planeShape = NULL;
+	m_heightfieldShape = NULL;
+
+	// Delete dynamics world
+	delete m_dynamicsWorld;
+	m_dynamicsWorld = NULL;
+
+	// Delete solver
+	delete m_solver;
+	m_solver = NULL;
+
+	// Delete broadphase
+	delete m_broadphase;
+	m_broadphase = NULL;
+
+	// Delete dispatcher
+	delete m_dispatcher;
+	m_dispatcher = NULL;
+
+	// Delete collision config
+	delete m_collisionConfiguration;
+	m_collisionConfiguration = NULL;
+
+	delete m_dynamicsWorld;
+	m_dynamicsWorld = NULL;
+}
+
+// Step the simulation forward by one full step and potentially some number of substeps
 int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
 						   int* updatedEntityCount, EntityProperties** updatedEntities, 
 						   int* collidersCount, CollisionDesc** colliders)
@@ -71,7 +161,6 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 
 	if (m_dynamicsWorld)
 	{
-		// Step the simulation forward by one full step and potentially some number of substeps
 		// The simulation calls the SimMotionState to put object updates into m_updatesThisFrame.
 		numSimSteps = m_dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
@@ -147,6 +236,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	return numSimSteps;
 }
 
+// Copy the passed heightmap into the memory block used by Bullet
 void BulletSim::SetHeightmap(float* heightmap)
 {
 	// Find the dimensions of our heightmap
@@ -157,113 +247,12 @@ void BulletSim::SetHeightmap(float* heightmap)
 	CreateTerrain();
 }
 
-void BulletSim::initPhysics(int maxCollisions, CollisionDesc* collisionArray, 
-							int maxUpdates, EntityProperties* updateArray)
-{
-	// remember the pointers to pinned memory for returning collisions and property updates
-	m_maxCollisionsPerFrame = maxCollisions;
-	m_collidersThisFrameArray = collisionArray;
-	m_maxUpdatesPerFrame = maxUpdates;
-	m_updatesThisFrameArray = updateArray;
-
-	m_collisionConfiguration = new btDefaultCollisionConfiguration();
-	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
-	
-	m_broadphase = new btDbvtBroadphase();
-
-	// the following is needed to enable GhostObjects
-	// m_broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
-	
-	m_solver = new btSequentialImpulseConstraintSolver();
-	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
-	
-	// disable the continuious recalculation of the static AABBs
-	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
-	m_dynamicsWorld->setForceUpdateAllAabbs(false);
-	
-	// Randomizing the solver order makes object stacking more stable at a slight performance cost
-	m_dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
-
-	// Earth-like gravity
-	m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, gGravity));
-
-	// Start with a ground plane and a flat terrain
-	CreateGroundPlane();
-	CreateTerrain();
-}
-
-void BulletSim::exitPhysics()
-{
-	if (!m_dynamicsWorld)
-		return;
-
-	// Clean up in the reverse order of creation/initialization
-
-	// Remove the rigidbodies from the dynamics world and delete them
-	for (int i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
-	{
-		btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
-		
-		// Delete motion states attached to rigid bodies
-		btRigidBody* body = btRigidBody::upcast(obj);
-		if (body && body->getMotionState())
-			delete body->getMotionState();
-		
-		// Remove the collision object from the scene
-		m_dynamicsWorld->removeCollisionObject(obj);
-		
-		// Delete the collision shape
-		btCollisionShape* shape = obj->getCollisionShape();
-		if (shape)
-			delete shape;
-
-		// Delete the collision object
-		delete obj;
-	}
-	m_bodies.clear();
-	m_characters.clear();
-
-	// Delete collision meshes
-	for (HullsMapType::const_iterator it = m_hulls.begin(); it != m_hulls.end(); ++it)
-    {
-		btCompoundShape* compoundShape = it->second;
-		delete compoundShape;
-	}
-	m_hulls.clear();
-
-	// Ground plane and terrain shapes were deleted above
-	m_planeShape = NULL;
-	m_heightfieldShape = NULL;
-
-	// Delete dynamics world
-	delete m_dynamicsWorld;
-	m_dynamicsWorld = NULL;
-
-	// Delete solver
-	delete m_solver;
-	m_solver = NULL;
-
-	// Delete broadphase
-	delete m_broadphase;
-	m_broadphase = NULL;
-
-	// Delete dispatcher
-	delete m_dispatcher;
-	m_dispatcher = NULL;
-
-	// Delete collision config
-	delete m_collisionConfiguration;
-	m_collisionConfiguration = NULL;
-
-	delete m_dynamicsWorld;
-	m_dynamicsWorld = NULL;
-}
-
+// Create a collision plane at height zero to stop things falling to oblivion
 void BulletSim::CreateGroundPlane()
 {
 	// Initialize the ground plane at height 0 (Z-up)
 	m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
-	m_planeShape->setMargin(gCollisionMargin);
+	m_planeShape->setMargin(m_params->collisionMargin);
 
 	m_planeShape->setUserPointer((void*)ID_GROUND_PLANE);
 
@@ -277,6 +266,7 @@ void BulletSim::CreateGroundPlane()
 	m_bodies[ID_GROUND_PLANE] = body;
 }
 
+// Based on the heightmap, create a mesh for the terrain and put it in the world
 void BulletSim::CreateTerrain()
 {
 	// Initialize the terrain that spans from 0,0,0 to m_maxPosition
@@ -327,9 +317,9 @@ void BulletSim::CreateTerrain()
 	btRigidBody* body = new btRigidBody(cInfo);
 
 	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-	body->setFriction(btScalar(gTerrainFriction));
-	body->setHitFraction(btScalar(gTerrainHitFriction));
-	body->setRestitution(btScalar(gTerrainRestitution));
+	body->setFriction(btScalar(m_params->terrainFriction));
+	body->setHitFraction(btScalar(m_params->terrainHitFriction));
+	body->setRestitution(btScalar(m_params->terrainRestitution));
 	// body->setActivationState(DISABLE_DEACTIVATION);
 	body->activate(true);
 	
@@ -353,7 +343,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 
 		btTransform childTrans;
 		childTrans.setIdentity();
-		compoundShape->setMargin(gCollisionMargin);
+		compoundShape->setMargin(m_params->collisionMargin);
 		
 		// Loop through all of the convex hulls and add them to our compound shape
 		int ii = 1;
@@ -368,7 +358,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 			// Create the child hull and add it to our compound shape
 			btScalar* hullVertices = (btScalar*)&hulls[ii+4];
 			btConvexHullShape* convexShape = new btConvexHullShape(hullVertices, vertexCount, sizeof(Vector3));
-			convexShape->setMargin(gCollisionMargin);
+			convexShape->setMargin(m_params->collisionMargin);
 			compoundShape->addChildShape(childTrans, convexShape);
 
 			ii += (vertexCount * 3 + 4);
@@ -410,24 +400,24 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 	switch (type)
 	{
 		case ShapeData::SHAPE_AVATAR:
-			shape = new btCapsuleShapeZ(gAvatarCapsuleRadius, gAvatarCapsuleHeight);
-			shape->setMargin(gCollisionMargin);
+			shape = new btCapsuleShapeZ(m_params->avatarCapsuleRadius, m_params->avatarCapsuleHeight);
+			shape->setMargin(m_params->collisionMargin);
 			break;
 		case ShapeData::SHAPE_BOX:
 			// btBoxShape subtracts the collision margin from the half extents, so no 
 			// fiddling with scale necessary
 			// boxes are defined by their half extents
 			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
-			shape->setMargin(gCollisionMargin);
+			shape->setMargin(m_params->collisionMargin);
 			AdjustScaleForCollisionMargin(shape, scaleBt);
 			break;
 		case ShapeData::SHAPE_CONE:	// TODO:
 			shape = new btConeShapeZ(0.5, 1.0);
-			shape->setMargin(gCollisionMargin);
+			shape->setMargin(m_params->collisionMargin);
 			break;
 		case ShapeData::SHAPE_CYLINDER:	// TODO:
 			shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
-			shape->setMargin(gCollisionMargin);
+			shape->setMargin(m_params->collisionMargin);
 			break;
 		case ShapeData::SHAPE_HULL:
 			it = m_hulls.find(data->MeshKey);
@@ -439,13 +429,13 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 				// inserted into the physics simulation
 				btCompoundShape* originalCompoundShape = it->second;
 				shape = DuplicateCompoundShape(originalCompoundShape);
-				shape->setMargin(gCollisionMargin);
+				shape->setMargin(m_params->collisionMargin);
 				AdjustScaleForCollisionMargin(shape, scaleBt);
 			}
 			break;
 		case ShapeData::SHAPE_SPHERE:
 			shape = new btSphereShape(0.5);		// this is really a unit sphere
-			shape->setMargin(gCollisionMargin);
+			shape->setMargin(m_params->collisionMargin);
 			AdjustScaleForCollisionMargin(shape, scaleBt);
 			break;
 	}
@@ -472,6 +462,7 @@ btCompoundShape* BulletSim::DuplicateCompoundShape(btCompoundShape* originalComp
 	return newCompoundShape;
 }
 
+// Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
 {
 	// If the object already exists, destroy it
@@ -491,7 +482,8 @@ bool BulletSim::CreateObject(ShapeData* data)
 	btVector3 velocity = data->Velocity.GetBtVector3();
 	btScalar maxScale = scale.m_floats[scale.maxAxis()];
 	btScalar mass = data->Mass;
-	float friction = data->Friction;
+	btScalar friction = btScalar(data->Friction);
+	btScalar restitution = btScalar(data->Restitution);
 	bool isStatic = (data->Static == 1);
 	bool isCollidable = (data->Collidable == 1);
 
@@ -526,13 +518,15 @@ bool BulletSim::CreateObject(ShapeData* data)
 		character->setCollisionFlags(character->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 
 		// Tweak continuous collision detection parameters
-		// only perform continuious collision detection (CCD) if movement last frame was more than threshold
-		// character->setCcdMotionThreshold(maxScale * 0.5f);
-		// character->setCcdSweptSphereRadius(maxScale * 0.2f);
-		character->setCcdMotionThreshold(0.5f);
-		character->setCcdSweptSphereRadius(0.2f);
+		// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
+		if (m_params->ccdMotionThreshold > 0.0f)
+		{
+			character->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
+			character->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
+		}
 
-		character->setFriction(btScalar(gAvatarFriction));
+		character->setFriction(friction);
+		character->setRestitution(restitution);
 		character->setActivationState(DISABLE_DEACTIVATION);
 		character->setContactProcessingThreshold(0.0);
 
@@ -573,15 +567,19 @@ bool BulletSim::CreateObject(ShapeData* data)
 		motionState->RigidBody = body;
 
 		// Set the dynamic and collision flags (for static and phantom objects)
-		body->setFriction(btScalar(friction));
+		body->setFriction(friction);
+		body->setRestitution(restitution);
 		SetObjectProperties(body, isStatic, isCollidable, false, mass);
 
 		// Tweak continuous collision detection parameters
-		body->setCcdMotionThreshold(0.5f);
-		body->setCcdSweptSphereRadius(0.2f);
-		body->setDamping(gLinearDamping, gAngularDamping);
-		body->setDeactivationTime(gBSDeactivationTime);
-		body->setSleepingThresholds(gLinearSleepingThreshold, gAngularSleepingThreshold);
+		if (m_params->ccdMotionThreshold > 0.0f)
+		{
+			body->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
+			body->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
+		}
+		body->setDamping(m_params->linearDamping, m_params->angularDamping);
+		body->setDeactivationTime(m_params->deactivationTime);
+		body->setSleepingThresholds(m_params->linearSleepingThreshold, m_params->angularSleepingThreshold);
 
 		body->setLinearVelocity(velocity);
 		// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
@@ -1052,7 +1050,7 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 // neg=fall quickly, 0=1g, 1=0g, pos=float up
 bool BulletSim::SetObjectBuoyancy(unsigned int id, float buoy)
 {
-	float grav = gGravity * (1.0f - buoy);
+	float grav = m_params->gravity * (1.0f - buoy);
 
 	CharactersMapType::iterator it = m_characters.find(id);
 	if (it != m_characters.end())
@@ -1125,7 +1123,7 @@ void BulletSim::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3
 	
 	// we use the constant margin because SPHERE getMargin does not return the real margin
 	// btScalar margin = shape->getMargin();
-	btScalar margin = gCollisionMargin;
+	btScalar margin = m_params->collisionMargin;
 	// the margin adjustment only has to happen to our compound shape. Internal shapes don't need it.
 	// if (shape->isCompound() && margin > 0.01)
 	// looks like internal shapes need it after all

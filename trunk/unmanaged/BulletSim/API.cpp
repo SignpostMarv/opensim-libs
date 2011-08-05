@@ -56,11 +56,12 @@ static std::map<unsigned int, BulletSim*> m_simulations;
  * @param maxCollisions pointer to pinned memory to return the update information
  * @return worldID for the newly created simulation.
  */
-EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, int maxCollisions, CollisionDesc* collisionArray,
+EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, ParamBlock* parms,
+											int maxCollisions, CollisionDesc* collisionArray,
 											int maxUpdates, EntityProperties* updateArray)
 {
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
-	sim->initPhysics(maxCollisions, collisionArray, maxUpdates, updateArray);
+	sim->initPhysics(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
 
 	unsigned int worldID = (unsigned int)m_simulations.size();
 	m_simulations[worldID] = sim;

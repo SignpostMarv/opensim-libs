@@ -63,8 +63,8 @@ typedef unsigned int		uint32_t;
 // these values match the ones in SceneObjectPart.SendScheduledUpdates()
 #define POSITION_TOLERANCE 0.05f
 #define VELOCITY_TOLERANCE 0.001f
-#define ANGULARVELOCITY_TOLERANCE 0.001f
 #define ROTATION_TOLERANCE 0.01f
+#define ANGULARVELOCITY_TOLERANCE 0.01f
 
 // Helper method to determine if an object is phantom or not
 static bool IsPhantom(const btCollisionObject* obj)
@@ -167,6 +167,7 @@ struct ShapeData
 		SHAPE_HULL = 5
 	};
 
+	// note that bool's are passed as int's since bool size changes by language
 	uint32_t ID;
 	PhysicsShapeType Type;
 	Vector3 Position;
@@ -176,10 +177,10 @@ struct ShapeData
 	float Mass;
 	float Buoyancy;		// gravity effect on the object
 	unsigned long long MeshKey;
-	int32_t Collidable;	// things can collide with this object
 	float Friction;
+	float Restitution;
+	int32_t Collidable;	// things can collide with this object
 	int32_t Static;	// object is non-moving. Otherwise gravity, etc
-	// note that bool's are passed as int's since bool size changes by language
 };
 
 // API-exposed structure for reporting a collision
@@ -244,6 +245,35 @@ struct EntityProperties
 	}
 };
 
+// Block of parameters passed from the managed code.
+// The memory layout MUST MATCH the layout in the managed code.
+// Rely on the fact that 'float' is always 32 bits in both C# and C++
+struct ParamBlock
+{
+    float defaultFriction;
+    float defaultDensity;
+	float defaultRestitution;
+    float collisionMargin;
+    float gravity;
+
+    float linearDamping;
+    float angularDamping;
+    float deactivationTime;
+    float linearSleepingThreshold;
+    float angularSleepingThreshold;
+	float ccdMotionThreshold;
+	float ccdSweptSphereRadius;
+
+    float terrainFriction;
+    float terrainHitFriction;
+    float terrainRestitution;
+    float avatarFriction;
+    float avatarDensity;
+    float avatarRestitution;
+    float avatarCapsuleRadius;
+    float avatarCapsuleHeight;
+};
+
 // Motion state for rigid bodies in the scene. Updates the map of changed 
 // entities whenever the setWorldTransform callback is fired
 class SimMotionState : public btMotionState
@@ -288,12 +318,6 @@ public:
 			!m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE) ||
 			!m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE) ||
 			!m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE))
-		/*
-		if (!(m_properties.Position == m_lastProperties.Position) ||
-			!(m_properties.Rotation == m_lastProperties.Rotation) ||
-			!(m_properties.Velocity == m_lastProperties.Velocity) ||
-			!(m_properties.AngularVelocity == m_lastProperties.AngularVelocity))
-		*/
 		{
 			// If so, update the previous transform and add this update to the list of 
 			// updates this frame
@@ -403,6 +427,9 @@ protected:
 // The main physics simulation class.
 class BulletSim
 {
+	// Pointer to block of parameters passed from the managed code on initialization
+	ParamBlock* m_params;
+
 	// Simulation
 	btDiscreteDynamicsWorld* m_dynamicsWorld;
 
@@ -439,6 +466,7 @@ class BulletSim
 	// Used to expose colliders from Bullet to the BulletSim API
 	int m_maxCollisionsPerFrame;
 	CollisionDesc* m_collidersThisFrameArray;
+
 public:
 
 	BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ);
@@ -453,7 +481,7 @@ public:
 		return m_dynamicsWorld;
 	}
 
-	void initPhysics(int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
+	void initPhysics(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
 	void exitPhysics();
 
 	// int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, EntityProperties*** updatedEntities, int* collidersCount, unsigned int** colliders);
