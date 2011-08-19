@@ -317,18 +317,23 @@ void BulletSim::CreateTerrain()
 	btRigidBody* body = new btRigidBody(cInfo);
 
 	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-	body->setFriction(btScalar(m_params->terrainFriction));
-	body->setHitFraction(btScalar(m_params->terrainHitFriction));
-	body->setRestitution(btScalar(m_params->terrainRestitution));
-	// body->setActivationState(DISABLE_DEACTIVATION);
-	body->activate(true);
-	
+	SetTerrainPhysicalParameters(body);
+
 	// if there is a previous terrain, remove it
 	DestroyObject(ID_TERRAIN);
 
 	m_dynamicsWorld->addRigidBody(body);
 	m_bodies[ID_TERRAIN] = body;
 	m_dynamicsWorld->updateSingleAabb(body);
+}
+
+void BulletSim::SetTerrainPhysicalParameters(btRigidBody* body)
+{
+	body->setFriction(btScalar(m_params->terrainFriction));
+	body->setHitFraction(btScalar(m_params->terrainHitFraction));
+	body->setRestitution(btScalar(m_params->terrainRestitution));
+	// body->setActivationState(DISABLE_DEACTIVATION);
+	body->activate(true);
 }
 
 // Create a hull based on convex hull information
@@ -481,7 +486,7 @@ bool BulletSim::CreateObject(ShapeData* data)
 	btVector3 scale = data->Scale.GetBtVector3();
 	btVector3 velocity = data->Velocity.GetBtVector3();
 	btScalar maxScale = scale.m_floats[scale.maxAxis()];
-	btScalar mass = data->Mass;
+	btScalar mass = btScalar(data->Mass);
 	btScalar friction = btScalar(data->Friction);
 	btScalar restitution = btScalar(data->Restitution);
 	bool isStatic = (data->Static == 1);
@@ -517,24 +522,7 @@ bool BulletSim::CreateObject(ShapeData* data)
 
 		character->setCollisionFlags(character->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 
-		// Tweak continuous collision detection parameters
-		// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
-		if (m_params->ccdMotionThreshold > 0.0f)
-		{
-			character->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
-			character->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
-		}
-
-		character->setFriction(friction);
-		character->setRestitution(restitution);
-		character->setActivationState(DISABLE_DEACTIVATION);
-		character->setContactProcessingThreshold(0.0);
-
-		character->setAngularFactor(btVector3(0, 0, 0));	// makes the capsule not fall over
-		character->setLinearVelocity(velocity);
-		character->setInterpolationLinearVelocity(btVector3(0, 0, 0));	// turns off unexpected interpolation
-		character->setInterpolationAngularVelocity(btVector3(0, 0, 0));
-		character->setInterpolationWorldTransform(character->getWorldTransform());
+		SetAvatarPhysicalParameters(character, friction, restitution, velocity);
 
 		m_dynamicsWorld->addRigidBody(character);
 		m_characters[id] = character;
@@ -566,26 +554,10 @@ bool BulletSim::CreateObject(ShapeData* data)
 		btRigidBody* body = new btRigidBody(cInfo);
 		motionState->RigidBody = body;
 
+		SetObjectPhysicalParameters(body, friction, restitution, velocity);
+
 		// Set the dynamic and collision flags (for static and phantom objects)
-		body->setFriction(friction);
-		body->setRestitution(restitution);
 		SetObjectProperties(body, isStatic, isCollidable, false, mass);
-
-		// Tweak continuous collision detection parameters
-		if (m_params->ccdMotionThreshold > 0.0f)
-		{
-			body->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
-			body->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
-		}
-		body->setDamping(m_params->linearDamping, m_params->angularDamping);
-		body->setDeactivationTime(m_params->deactivationTime);
-		body->setSleepingThresholds(m_params->linearSleepingThreshold, m_params->angularSleepingThreshold);
-
-		body->setLinearVelocity(velocity);
-		// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
-		body->setInterpolationLinearVelocity(btVector3(0, 0, 0));
-		body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
-		body->setInterpolationWorldTransform(body->getWorldTransform());
 
 		m_dynamicsWorld->addRigidBody(body);
 		m_bodies[id] = body;
@@ -594,10 +566,54 @@ bool BulletSim::CreateObject(ShapeData* data)
 	return true;
 }
 
+void BulletSim::SetAvatarPhysicalParameters(btRigidBody* character, btScalar frict, btScalar resti, const btVector3& velo)
+{
+	// Tweak continuous collision detection parameters
+	// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
+	if (m_params->ccdMotionThreshold > 0.0f)
+	{
+		character->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
+		character->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
+	}
+
+	character->setFriction(frict);
+	character->setRestitution(resti);
+	character->setActivationState(DISABLE_DEACTIVATION);
+	character->setContactProcessingThreshold(0.0);
+
+	character->setAngularFactor(btVector3(0, 0, 0));	// makes the capsule not fall over
+	character->setLinearVelocity(velo);
+	character->setInterpolationLinearVelocity(btVector3(0, 0, 0));	// turns off unexpected interpolation
+	character->setInterpolationAngularVelocity(btVector3(0, 0, 0));
+	character->setInterpolationWorldTransform(character->getWorldTransform());
+}
+
+void BulletSim::SetObjectPhysicalParameters(btRigidBody* body, btScalar frict, btScalar resti, const btVector3& velo)
+{
+	// Tweak continuous collision detection parameters
+	if (m_params->ccdMotionThreshold > 0.0f)
+	{
+		body->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
+		body->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
+	}
+	body->setDamping(m_params->linearDamping, m_params->angularDamping);
+	body->setDeactivationTime(m_params->deactivationTime);
+	body->setSleepingThresholds(m_params->linearSleepingThreshold, m_params->angularSleepingThreshold);
+
+	body->setFriction(frict);
+	body->setRestitution(resti);
+	body->setLinearVelocity(velo);
+	// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
+	body->setInterpolationLinearVelocity(btVector3(0, 0, 0));
+	body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
+	body->setInterpolationWorldTransform(body->getWorldTransform());
+}
+
 // A linkset is a compound collision object that is made up of the hulls
 // of all the parts of the linkset.
 // We are passed an array of shape data for all of the pieces. Their
 // hulls should have already been created.
+// NOTE: this way does not work and the code should be removed
 void BulletSim::CreateLinkset(int objectCount, ShapeData* shapes)
 {
 	// BSLog("CreateLinkset: total prims = %d", objectCount);
@@ -1333,4 +1349,134 @@ const btVector3 BulletSim::RecoverFromPenetration(unsigned int id)
 	}
 
 	return btVector3(0.0, 0.0, 0.0);
+}
+
+void BulletSim::UpdateParameter(unsigned int localID, const char* parm, float val)
+{
+	btScalar btVal = btScalar(val);
+
+	// changes to the environment
+	if (strcmp(parm, "gravity") == 0)
+	{
+		m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, val));
+		return;
+	}
+
+	// something changed in the terrain so reset all the terrain parameters to values from m_params
+	if (strcmp(parm, "terrain") == 0)
+	{
+		// some terrain physical parameter changed. Reset the terrain.
+		BodiesMapType::iterator bit = m_bodies.find(ID_TERRAIN);
+		if (bit != m_bodies.end())
+		{
+			btRigidBody* body = bit->second;
+			SetTerrainPhysicalParameters(body);
+		}
+		return;
+	}
+
+	// something changed in the avatar so reset all the terrain parameters to values from m_params
+	if (strcmp(parm, "avatar") == 0)
+	{
+		CharactersMapType::iterator cit = m_characters.find(localID);
+		if (cit != m_characters.end())
+		{
+			btRigidBody* character = cit->second;
+			SetAvatarPhysicalParameters(character, 
+					m_params->avatarFriction, 
+					m_params->avatarRestitution,
+					btVector3(0, 0, 0));
+		}
+		return;
+	}
+
+	// something changed in an object so reset all the terrain parameters to values from m_params
+	if (strcmp(parm, "object") == 0)
+	{
+		BodiesMapType::iterator bit = m_bodies.find(localID);
+		if (bit != m_bodies.end())
+		{
+			btRigidBody* body = bit->second;
+			SetObjectPhysicalParameters(body, 
+					m_params->defaultFriction, 
+					m_params->defaultRestitution,
+					btVector3(0, 0, 0));
+		}
+		return;
+	}
+
+	// changes to an object
+	btRigidBody* body = NULL;
+
+	CharactersMapType::iterator cit = m_characters.find(localID);
+	if (cit != m_characters.end())
+	{
+		body = cit->second;
+	}
+	if (body == NULL)
+	{
+		BodiesMapType::iterator bit = m_bodies.find(localID);
+		if (bit != m_bodies.end())
+		{
+			body = bit->second;
+		}
+	}
+	if (body == NULL)
+		return;
+
+	if (strcmp(parm, "lineardamping") == 0)
+	{
+		body->setDamping(btVal, m_params->angularDamping);
+		return;
+	}
+	if (strcmp(parm, "angulardamping") == 0)
+	{
+		body->setDamping(m_params->linearDamping, btVal);
+		return;
+	}
+	if (strcmp(parm, "deactivationtime") == 0)
+	{
+		body->setDeactivationTime(btVal);
+		return;
+	}
+	if (strcmp(parm, "linearsleepingthreshold") == 0)
+	{
+		body->setSleepingThresholds(btVal, m_params->angularSleepingThreshold);
+	}
+	if (strcmp(parm, "angularsleepingthreshold") == 0)
+	{
+		body->setSleepingThresholds(m_params->linearSleepingThreshold, btVal);
+	}
+	if (strcmp(parm, "ccdmotionthreshold") == 0)
+	{
+		body->setCcdMotionThreshold(btVal);
+	}
+	if (strcmp(parm, "ccdsweptsphereradius") == 0)
+	{
+		body->setCcdSweptSphereRadius(btVal);
+	}
+	if (strcmp(parm, "avatarfriction") == 0)
+	{
+		body->setFriction(btVal);
+	}
+	if (strcmp(parm, "avatarmass") == 0)
+	{
+		body->setMassProps(btVal, btVector3(0, 0, 0));
+	}
+	if (strcmp(parm, "avatarrestitution") == 0)
+	{
+		body->setRestitution(btVal);
+	}
+	if (strcmp(parm, "avatarcapsuleradius") == 0)
+	{
+		// can't change this without rebuilding the collision shape
+		// TODO: rebuild the capsule (remember to take scale into account)
+	}
+	if (strcmp(parm, "avatarcapsuleheight") == 0)
+	{
+		// can't change this without rebuilding the collision shape
+		// TODO: rebuild the capsule (remember to take scale into account)
+	}
+
+	return;
 }

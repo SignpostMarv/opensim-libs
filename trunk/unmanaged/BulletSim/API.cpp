@@ -48,6 +48,15 @@
 static std::map<unsigned int, BulletSim*> m_simulations;
 
 /**
+ * Returns a string that identifies the version of the BulletSim.dll
+ * @return static string of version information
+ */
+EXTERN_C DLL_EXPORT char* GetVersion()
+{
+	return &BulletSimVersionString[0];
+}
+
+/**
  * Initializes the physical simulation.
  * @param maxPosition Top north-east corner of the simulation, with Z being up. The bottom south-west corner is 0,0,0.
  * @param maxCollisions maximum number of collisions that can be reported each tick
@@ -67,6 +76,18 @@ EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, ParamBlock* par
 	m_simulations[worldID] = sim;
 
 	return worldID;
+}
+
+/**
+ * Update the internal value of a parameter. Some parameters require changing world state.
+ * @param worldID ID of the world to change the paramter in
+ * @param localID ID of the object to change the paramter on or special values for NONE or ALL
+ * @param parm the name of the parameter to change (must be passed in as lower case)
+ * @param value the value to change the parameter to
+ */
+EXTERN_C DLL_EXPORT void UpdateParameter(unsigned int worldID, unsigned int localID, const char* parm, float value)
+{
+	m_simulations[worldID]->UpdateParameter(localID, parm, value);
 }
 
 /**

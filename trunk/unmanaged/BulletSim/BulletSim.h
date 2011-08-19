@@ -66,6 +66,9 @@ typedef unsigned int		uint32_t;
 #define ROTATION_TOLERANCE 0.01f
 #define ANGULARVELOCITY_TOLERANCE 0.01f
 
+// TODO: find a way to build this
+static char BulletSimVersionString[] = "v0001 svn126";
+
 // Helper method to determine if an object is phantom or not
 static bool IsPhantom(const btCollisionObject* obj)
 {
@@ -265,7 +268,7 @@ struct ParamBlock
 	float ccdSweptSphereRadius;
 
     float terrainFriction;
-    float terrainHitFriction;
+    float terrainHitFraction;
     float terrainRestitution;
     float avatarFriction;
     float avatarDensity;
@@ -484,7 +487,6 @@ public:
 	void initPhysics(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
 	void exitPhysics();
 
-	// int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, EntityProperties*** updatedEntities, int* collidersCount, unsigned int** colliders);
 	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
 		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
 	void SetHeightmap(float* heightmap);
@@ -515,9 +517,14 @@ public:
 	RaycastHit RayTest(unsigned int id, btVector3& from, btVector3& to);
 	const btVector3 RecoverFromPenetration(unsigned int id);
 
+	void UpdateParameter(unsigned int localID, const char* parm, float value);
+
 protected:
 	void CreateGroundPlane();
 	void CreateTerrain();
+	void SetTerrainPhysicalParameters(btRigidBody* body);
+	void SetAvatarPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
+	void SetObjectPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
 	void SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass);
 	void SetObjectCollidable(btRigidBody* body, bool collidable);
 	unsigned long long GenConstraintID(unsigned int id1, unsigned int id2);
