@@ -144,13 +144,37 @@ EXTERN_C DLL_EXPORT bool CreateHull(unsigned int worldID, unsigned long long mes
 }
 
 /**
+ * Creates a Bullet representation of a mesh of an object.
+ * The resulting mesh representation is stored in the m_meshes structure
+ * @param meshKey Unique identifier for this object.
+ * @param hullCount Number of convex hulls that make up this object.
+ * @param hulls Convex hull array.
+ * @return True if the object was created, false if an object with meshKey already existed.
+ */
+EXTERN_C DLL_EXPORT bool CreateMesh(unsigned int worldID, unsigned long long meshKey, 
+									int indicesCount, int* indices, int verticesCount, float* vertices )
+{
+	return m_simulations[worldID]->CreateMesh(meshKey, indicesCount, indices, verticesCount, vertices);
+}
+
+/**
  * Deletes the bullet representation of a hull
  * @param meshKey Unique identifier for this object.
  * @return True if the object was deleted, false if we didn't have the hull
  */
-EXTERN_C DLL_EXPORT bool DestroyHull(unsigned int worldID, unsigned long long meshKey)
+EXTERN_C DLL_EXPORT bool DestroyHull(unsigned int worldID, unsigned long long hullKey)
 {
-	return m_simulations[worldID]->DestroyHull(meshKey);
+	return m_simulations[worldID]->DestroyHull(hullKey);
+}
+
+/**
+ * Deletes the bullet representation of a mesh
+ * @param meshKey Unique identifier for this object.
+ * @return True if the object was deleted, false if we didn't have the mesh
+ */
+EXTERN_C DLL_EXPORT bool DestroyMesh(unsigned int worldID, unsigned long long meshKey)
+{
+	return m_simulations[worldID]->DestroyMesh(meshKey);
 }
 
 /**

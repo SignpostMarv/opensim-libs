@@ -119,10 +119,18 @@ void BulletSim::exitPhysics()
 	// Delete collision meshes
 	for (HullsMapType::const_iterator it = m_hulls.begin(); it != m_hulls.end(); ++it)
     {
-		btCompoundShape* compoundShape = it->second;
-		delete compoundShape;
+		btCollisionShape* collisionShape = it->second;
+		delete collisionShape;
 	}
 	m_hulls.clear();
+
+	// Delete collision meshes
+	for (MeshesMapType::const_iterator it = m_meshes.begin(); it != m_meshes.end(); ++it)
+    {
+		btCollisionShape* collisionShape = it->second;
+		delete collisionShape;
+	}
+	m_meshes.clear();
 
 	// Ground plane and terrain shapes were deleted above
 	m_planeShape = NULL;
@@ -391,14 +399,68 @@ bool BulletSim::DestroyHull(unsigned long long meshKey)
 	return false;
 }
 
+// Create a mesh structure to be used for static objects
+bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
+{
+	// BSLog("CreateMesh: nIndices=%d, nVertices=%d, key=%ld", indicesCount, verticesCount, meshKey);
+	MeshesMapType::iterator it = m_meshes.find(meshKey);
+	if (it == m_meshes.end())
+	{
+		// We must copy the indices and vertices since the passed memory is released when this call returns.
+		btIndexedMesh indexedMesh;
+		int* copiedIndices = new int[indicesCount];
+		memcpy(copiedIndices, indices, indicesCount * sizeof(int));
+		float* copiedVertices = new float[verticesCount * 3];
+		memcpy(copiedVertices, vertices, verticesCount * 3 * sizeof(float));
+
+		indexedMesh.m_indexType = PHY_INTEGER;
+		indexedMesh.m_triangleIndexBase = (const unsigned char*)copiedIndices;
+		indexedMesh.m_triangleIndexStride = sizeof(int) * 3;
+		indexedMesh.m_numTriangles = indicesCount / 3;
+		indexedMesh.m_vertexType = PHY_FLOAT;
+		indexedMesh.m_numVertices = verticesCount;
+		indexedMesh.m_vertexBase = (const unsigned char*)copiedVertices;
+		indexedMesh.m_vertexStride = sizeof(float) * 3;
+
+		btTriangleIndexVertexArray* vertexArray = new btTriangleIndexVertexArray();
+		vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
+
+		btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+		
+		m_meshes[meshKey] = meshShape;
+	}
+	return false;
+}
+
+// Delete a mesh
+bool BulletSim::DestroyMesh(unsigned long long meshKey)
+{
+	// BSLog("DeleteMesh:");
+	MeshesMapType::iterator it = m_meshes.find(meshKey);
+	if (it != m_meshes.end())
+	{
+		btBvhTriangleMeshShape* tms = m_meshes[meshKey];
+		/* This causes memory corruption.
+		 * TODO: figure out when to properly release the memory allocated in CreateMesh.
+		btIndexedMesh* smi = (btIndexedMesh*)tms->getMeshInterface();
+		delete smi->m_triangleIndexBase;
+		delete smi->m_vertexBase;
+		*/
+		delete tms;
+		m_meshes.erase(it);
+		return true;
+	}
+	return false;
+}
+
 // Create and return the collision shape specified by the ShapeData.
 btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 {
 	ShapeData::PhysicsShapeType type = data->Type;
-	unsigned long long meshKey = data->MeshKey;
 	Vector3 scale = data->Scale;
 	btVector3 scaleBt = scale.GetBtVector3();
-	HullsMapType::const_iterator it;
+	MeshesMapType::const_iterator mt;
+	HullsMapType::const_iterator ht;
 
 	btCollisionShape* shape = NULL;
 
@@ -424,15 +486,28 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 			shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
 			shape->setMargin(m_params->collisionMargin);
 			break;
+		case ShapeData::SHAPE_MESH:
+			mt = m_meshes.find(data->MeshKey);
+			if (mt != m_meshes.end())
+			{
+				// BSLog("CreateShape: SHAPE_MESH. localID=%d", data->ID);
+				btBvhTriangleMeshShape* origionalMeshShape = mt->second;
+				// we have to copy the mesh shape because we don't keep use counters
+				shape = DuplicateMeshShape(origionalMeshShape);
+				shape->setMargin(m_params->collisionMargin);
+				AdjustScaleForCollisionMargin(shape, scaleBt);
+			}
+			break;
 		case ShapeData::SHAPE_HULL:
-			it = m_hulls.find(data->MeshKey);
-			if (it != m_hulls.end())
+			ht = m_hulls.find(data->HullKey);
+			if (ht != m_hulls.end())
 			{
 				// The compound shape stored in m_hulls is really just a storage container for
 				// the the individual convex hulls and their offsets. Here we copy each child
 				// convex hull and its offset to the new compound shape which will actually be
 				// inserted into the physics simulation
-				btCompoundShape* originalCompoundShape = it->second;
+				// BSLog("CreateShape: SHAPE_HULL. localID=%d", data->ID);
+				btCompoundShape* originalCompoundShape = ht->second;
 				shape = DuplicateCompoundShape(originalCompoundShape);
 				shape->setMargin(m_params->collisionMargin);
 				AdjustScaleForCollisionMargin(shape, scaleBt);
@@ -466,6 +541,13 @@ btCompoundShape* BulletSim::DuplicateCompoundShape(btCompoundShape* originalComp
 
 	return newCompoundShape;
 }
+
+btCollisionShape* BulletSim::DuplicateMeshShape(btBvhTriangleMeshShape* mShape)
+{
+	btBvhTriangleMeshShape* newTMS = new btBvhTriangleMeshShape(mShape->getMeshInterface(), true, true);
+	return newTMS;
+}
+
 
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
@@ -1200,6 +1282,9 @@ bool BulletSim::DestroyObject(unsigned int id)
 		return true;
 	}
 
+	// Remove any constraints associated with this object
+	RemoveConstraintByID(id);
+
 	// Look for a rigid body
 	BodiesMapType::iterator bit = m_bodies.find(id);
 	if (bit != m_bodies.end())
@@ -1223,7 +1308,6 @@ bool BulletSim::DestroyObject(unsigned int id)
 		
 		// Delete the body and shape
 		delete body;
-		// TODO: Handle linksets
 		delete shape;
 
 		return true;

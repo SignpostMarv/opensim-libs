@@ -167,7 +167,8 @@ struct ShapeData
 		SHAPE_CONE = 2,
 		SHAPE_CYLINDER = 3,
 		SHAPE_SPHERE = 4,
-		SHAPE_HULL = 5
+		SHAPE_MESH = 5,
+		SHAPE_HULL = 6
 	};
 
 	// note that bool's are passed as int's since bool size changes by language
@@ -179,6 +180,7 @@ struct ShapeData
 	Vector3 Scale;
 	float Mass;
 	float Buoyancy;		// gravity effect on the object
+	unsigned long long HullKey;
 	unsigned long long MeshKey;
 	float Friction;
 	float Restitution;
@@ -277,6 +279,13 @@ struct ParamBlock
     float avatarCapsuleHeight;
 };
 
+// ============================================================================================
+// Callback to managed code for logging
+typedef void DebugLogCallback(const char*);
+extern DebugLogCallback* debugLogCallback;
+extern void BSLog(const char*, ...);
+
+// ============================================================================================
 // Motion state for rigid bodies in the scene. Updates the map of changed 
 // entities whenever the setWorldTransform callback is fired
 class SimMotionState : public btMotionState
@@ -337,6 +346,7 @@ protected:
 	EntityProperties m_lastProperties;
 };
 
+// ============================================================================================
 // Callback for convex sweeps that excludes the object being swept
 class ClosestNotMeConvexResultCallback : public btCollisionWorld::ClosestConvexResultCallback
 {
@@ -358,6 +368,7 @@ protected:
 	btCollisionObject* m_me;
 };
 
+// ============================================================================================
 // Callback for raycasts that excludes the object doing the raycast
 class ClosestNotMeRayResultCallback : public btCollisionWorld::ClosestRayResultCallback
 {
@@ -378,6 +389,7 @@ protected:
 	btCollisionObject* m_me;
 };
 
+// ============================================================================================
 // Callback for non-moving overlap tests
 class ContactSensorCallback : public btCollisionWorld::ContactResultCallback
 {
@@ -427,6 +439,7 @@ protected:
 	btScalar m_maxPenetration;
 };
 
+// ============================================================================================
 // The main physics simulation class.
 class BulletSim
 {
@@ -441,6 +454,8 @@ class BulletSim
 	btHeightfieldTerrainShape* m_heightfieldShape;
 
 	// Mesh data and scene objects
+	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
+	MeshesMapType m_meshes;
 	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
 	HullsMapType m_hulls;
 	typedef std::map<unsigned int, btRigidBody*> BodiesMapType;
@@ -491,6 +506,7 @@ public:
 		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
 	void SetHeightmap(float* heightmap);
 	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
+	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
 	bool CreateObject(ShapeData* shapeData);
 	void CreateLinkset(int objectCount, ShapeData* shapeDatas);
 	void AddConstraint(unsigned int id1, unsigned int id2, 
@@ -510,9 +526,9 @@ public:
 	bool SetObjectBuoyancy(unsigned int id, float buoyancy);
 	bool SetObjectProperties(unsigned int id, bool isStatic, bool isSolid, bool genCollisions, float mass);
 	bool HasObject(unsigned int id);
-	bool DestroyHull(unsigned long long meshKey);
 	bool DestroyObject(unsigned int id);
-	bool DestroyMesh(unsigned int id);
+	bool DestroyHull(unsigned long long meshKey);
+	bool DestroyMesh(unsigned long long id);
 	SweepHit ConvexSweepTest(unsigned int id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(unsigned int id, btVector3& from, btVector3& to);
 	const btVector3 RecoverFromPenetration(unsigned int id);
@@ -533,12 +549,8 @@ protected:
 	btCollisionShape* CreateShape(ShapeData* data);
 	bool RecalculateAllConstraintsByID(unsigned int id1);
 	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
+	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
 	SweepHit GenericConvexSweepTest(btCollisionObject* collisionObject, btVector3& fromPos, btVector3& targetPos);
 };
-
-// Callback to managed code for logging
-typedef void DebugLogCallback(const char*);
-extern DebugLogCallback* debugLogCallback;
-extern void BSLog(const char*, ...);
 
 #endif //BULLET_SIM_H
