@@ -1,5 +1,0 @@
-C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonWindow\obj\Debug\ResolveAssemblyReference.cache
-C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonWindow\obj\Debug\ipyw.exe
-C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\Src\IronPythonWindow\obj\Debug\ipyw.pdb
-C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\ipyw.exe
-C:\Users\Adam\Downloads\IronPython-1.1.1-Src\IronPython-1.1.1\ipyw.pdb
