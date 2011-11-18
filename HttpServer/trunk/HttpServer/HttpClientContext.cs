@@ -243,7 +243,6 @@ namespace HttpServer
             }
         }
 
-        /// <exception cref="BadRequestException"><c>BadRequestException</c>.</exception>
         private void OnReceive(IAsyncResult ar)
         {
             try
@@ -333,6 +332,11 @@ namespace HttpServer
             catch (NullReferenceException err)
             {
                 LogWriter.Write(this, LogPrio.Debug, "Failed to end receive : NullRef: " + err.Message);
+                Disconnect(SocketError.NoRecovery);
+            }
+            catch (Exception err)
+            {
+                LogWriter.Write(this, LogPrio.Debug, "Failed to end receive: " + err.Message);
                 Disconnect(SocketError.NoRecovery);
             }
         }

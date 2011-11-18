@@ -1830,9 +1830,6 @@
             </summary>
             <param name="error">error to report in the <see cref="E:HttpServer.HttpClientContext.Disconnected"/> event.</param>
         </member>
-        <member name="M:HttpServer.HttpClientContext.OnReceive(System.IAsyncResult)">
-            <exception cref="T:HttpServer.Exceptions.BadRequestException"><c>BadRequestException</c>.</exception>
-        </member>
         <member name="M:HttpServer.HttpClientContext.Respond(System.String,System.Net.HttpStatusCode,System.String,System.String,System.String)">
             <summary>
             Send a response.
