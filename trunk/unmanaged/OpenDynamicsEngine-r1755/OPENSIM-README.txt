@@ -8,11 +8,11 @@ chmod a+x ou/bootstrap
 sh autogen.sh
 ./configure --enable-old-trimesh --disable-asserts --enable-shared
 make
-cp .libs/libode.so $OPENSIM/bin
+cp ode/src/.libs/libode.so $OPENSIM/bin
 
 You can use the same commands to build on a 64 bit machine, but in this case the final command is
 
-cp .libs/libode.so $OPENSIM/bin/libode-x86_64.so
+cp ode/src/.libs/libode.so $OPENSIM/bin/libode-x86_64.so
 
 == On Windows x86 (32 bit) ==
 
