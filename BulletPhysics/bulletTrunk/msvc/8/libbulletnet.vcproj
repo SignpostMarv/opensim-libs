@@ -308,6 +308,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\libbulletnet\ContactCollisionHandler_net.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\libbulletnet\conversion.cpp"
 				>
 			</File>
@@ -427,6 +431,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\libbulletnet\ClosestNotMeRaycastResultCallback_net.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\libbulletnet\ContactCollisionHandler_net.h"
 				>
 			</File>
 			<File

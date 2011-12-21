@@ -57,7 +57,7 @@ namespace HttpServer
                     case 3:
                         if (ch == ';')
                         {
-                            if (start != -1)
+                            if (start >= -1)
                                 Add(new RequestCookie(name, cookies.Substring(start, i - start)));
                             start = -1;
                             state = 0;

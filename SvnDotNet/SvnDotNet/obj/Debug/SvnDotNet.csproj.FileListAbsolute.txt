@@ -1,5 +1,0 @@
-C:\Users\Adam\Projects\SvnDotNet\bin\Debug\PumaCode.SvnDotNet.dll
-C:\Users\Adam\Projects\SvnDotNet\bin\Debug\PumaCode.SvnDotNet.pdb
-C:\Users\Adam\Projects\SvnDotNet\obj\Debug\ResolveAssemblyReference.cache
-C:\Users\Adam\Projects\SvnDotNet\obj\Debug\PumaCode.SvnDotNet.dll
-C:\Users\Adam\Projects\SvnDotNet\obj\Debug\PumaCode.SvnDotNet.pdb

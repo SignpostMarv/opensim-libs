@@ -14,6 +14,12 @@ namespace BulletDotNET
             
         }
 
+        public static btCollisionWorld FromIntPtr(IntPtr handle)
+        {
+            return (btCollisionWorld)Native.GetObject(handle, typeof(btCollisionWorld));
+        }
+
+
         public btCollisionWorld(IntPtr handle)
         {
             m_handle = handle;

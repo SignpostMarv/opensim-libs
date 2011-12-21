@@ -292,16 +292,18 @@ namespace HttpServer
 		protected override void Dispose(bool disposing)
 		{
 
+            try
+            {
             if (!disposed)
             {
                 disposed = true;
                 if (Socket != null && Socket.Connected)
                     Socket.Disconnect(true);
 
-
-                
             }
             base.Dispose(disposing);
+		}
+            catch { } // Best effort, ignore fails
 		}
 	}
 
