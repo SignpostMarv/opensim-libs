@@ -8,14 +8,17 @@ These instructions are to rebuild the libraries if necessary.
 
 == On Linux 32-bit ==
 ./configure --with-trimesh=gimpact --disable-asserts --enable-shared --disable-demos --without-x
+make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/libode.so
 
 == On Linux 64-bit ==
 ./configure --with-trimesh=gimpact --disable-asserts --enable-shared --disable-demos --without-x
+make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/libode-x86_64.so
 
 == On Linux 64-bit to cross-compile to 32-bit ==
 CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --with-trimesh=gimpact --disable-asserts --enable-shared --disable-demos --without-x
+make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/libode.so
 
 == On Windows 64-bit to compile to 32-bit ==
@@ -29,8 +32,8 @@ This is necessary because on Windows we can currently only run OpenSimulator in 
 
 == On Mac OS X Intel 64-bit to compile to a 32-bit, 64-bit Intel and PowerPC universal binary ==
 CFLAGS="-g -O2 -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch x86_64 -arch ppc" CXXFLAGS="-g -O2 -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch x86_64 -arch ppc" LDFLAGS="-arch i386 -arch x86_64 -arch ppc" ./configure --with-trimesh=gimpact --disable-asserts --enable-shared --disable-dependency-tracking --disable-demos --without-x
+make
 cp ode/src/.libs/libode.dylib $OPENSIM/bin/libode.dylib
-
 
 = OLD BUILD INSTRUCTIONS =
 
