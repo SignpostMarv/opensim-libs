@@ -266,8 +266,9 @@ struct ParamBlock
     float deactivationTime;
     float linearSleepingThreshold;
     float angularSleepingThreshold;
-	float ccdMotionThreshold;
-	float ccdSweptSphereRadius;
+    float ccdMotionThreshold;
+    float ccdSweptSphereRadius;
+    float contactProcessingThreshold;
 
     float terrainFriction;
     float terrainHitFraction;
@@ -313,6 +314,7 @@ public:
     virtual void setWorldTransform(const btTransform& worldTrans)
 	{
 		m_xform = worldTrans;
+		Vector3 ZeroVect;
 
 		// Put the new transform into m_properties
 		m_properties.Position = m_xform.getOrigin();
@@ -328,8 +330,15 @@ public:
 		// Is this transform any different from the previous one?
 		if (!m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE) ||
 			!m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE) ||
-			!m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE) ||
-			!m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE))
+			// AlmostEqual doesn't catch very small changes when deactivating
+			// !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE) ||
+			// !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE))
+			// Maybe just push when the properties are being forced to deactivation
+			// || (m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
+			// Check for exact changing in these because we don't want to miss deactivation
+			!(m_properties.Velocity == m_lastProperties.Velocity) ||
+			!(m_properties.AngularVelocity == m_lastProperties.AngularVelocity)
+			)
 		{
 			// If so, update the previous transform and add this update to the list of 
 			// updates this frame
@@ -473,6 +482,7 @@ class BulletSim
 
 	// Terrain and world metadata
 	float* m_heightmapData;
+	btVector3 m_minPosition;
 	btVector3 m_maxPosition;
 
 	// Used to expose updates from Bullet to the BulletSim API
@@ -534,6 +544,7 @@ public:
 	const btVector3 RecoverFromPenetration(unsigned int id);
 
 	void UpdateParameter(unsigned int localID, const char* parm, float value);
+	void DumpPhysicsStats();
 
 protected:
 	void CreateGroundPlane();

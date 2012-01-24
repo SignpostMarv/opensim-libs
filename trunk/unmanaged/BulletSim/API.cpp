@@ -447,6 +447,16 @@ EXTERN_C DLL_EXPORT Vector3 RecoverFromPenetration(unsigned int worldID, unsigne
 	return Vector3(v.getX(), v.getY(), v.getZ());
 }
 
+/**
+ * Causes the detailed physics performance statistics to be logged.
+ */
+EXTERN_C DLL_EXPORT void DumpPhysicsStatistics(unsigned int worldID)
+{
+	if (debugLogCallback == NULL) return;
+	m_simulations[worldID]->DumpPhysicsStats();
+	return;
+}
+
 DebugLogCallback* debugLogCallback;
 EXTERN_C DLL_EXPORT void SetDebugLogCallback(DebugLogCallback* dlc) {
 	debugLogCallback = dlc;

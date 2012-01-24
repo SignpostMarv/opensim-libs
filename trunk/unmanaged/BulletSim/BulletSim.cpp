@@ -25,6 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "BulletSim.h"
+#include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
 #include <set>
 
@@ -33,6 +34,7 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	int i_maxX = (int)maxX;
 	int i_maxY = (int)maxY;
 
+	m_minPosition = btVector3(0, 0, 0);
 	m_maxPosition = btVector3(maxX, maxY, maxZ);
 	m_heightmapData = new float[i_maxX * i_maxY];
 
@@ -59,8 +61,11 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	m_updatesThisFrameArray = updateArray;
 
 	// create the functional parts of the physics simulation
-	m_collisionConfiguration = new btDefaultCollisionConfiguration();
+	btDefaultCollisionConstructionInfo cci;
+	// cci.m_defaultMaxPersistentManifoldPoolSize = 32768;
+	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+	// m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
 	
 	m_broadphase = new btDbvtBroadphase();
 
@@ -68,14 +73,29 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// m_broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 	
 	m_solver = new btSequentialImpulseConstraintSolver();
+
+	// Create the world
 	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 	
 	// disable the continuious recalculation of the static AABBs
 	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
+	// Note that movement or changes to a static object will not update the AABB. Do it explicitly.
 	m_dynamicsWorld->setForceUpdateAllAabbs(false);
 	
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
 	m_dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+
+	// setting to false means the islands are not reordered and split up for individual processing
+	m_dynamicsWorld->getSimulationIslandManager()->setSplitIslands(false);
+
+	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
+	// Actually a NOOP unless Bullet is compiled with USE_SEPDISTANCE_UTIL2 set.
+	m_dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
+	m_dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = btScalar(0.01);
+
+	// Performance speedup: from BenchmarkDemo.cpp, ln 381
+	// m_dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
+	// m_dynamicsWorld->getSolverInfo().m_numIterations = 5; //few solver iterations 
 
 	// Earth-like gravity
 	m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_params->gravity));
@@ -122,6 +142,7 @@ void BulletSim::exitPhysics()
 		btCollisionShape* collisionShape = it->second;
 		delete collisionShape;
 	}
+
 	m_hulls.clear();
 
 	// Delete collision meshes
@@ -343,6 +364,11 @@ void BulletSim::SetTerrainPhysicalParameters(btRigidBody* body)
 	// body->setActivationState(DISABLE_DEACTIVATION);
 	body->activate(true);
 }
+
+// If using Bullet' convex hull code, refer to following link for parameter setting
+// http://kmamou.blogspot.com/2011/11/hacd-parameters.html
+// Another useful reference for ConvexDecomp
+// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
 
 // Create a hull based on convex hull information
 bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hulls)
@@ -681,6 +707,7 @@ void BulletSim::SetObjectPhysicalParameters(btRigidBody* body, btScalar frict, b
 	body->setDamping(m_params->linearDamping, m_params->angularDamping);
 	body->setDeactivationTime(m_params->deactivationTime);
 	body->setSleepingThresholds(m_params->linearSleepingThreshold, m_params->angularSleepingThreshold);
+	body->setContactProcessingThreshold(m_params->contactProcessingThreshold);
 
 	body->setFriction(frict);
 	body->setRestitution(resti);
@@ -930,7 +957,7 @@ bool BulletSim::SetObjectTranslation(unsigned int id, btVector3& position, btQua
 		body->setWorldTransform(transform);
 		body->getMotionState()->setWorldTransform(transform);
 
-		body->activate(true);
+		body->activate(false);
 		return true;
 	}
 
@@ -958,7 +985,7 @@ bool BulletSim::SetObjectVelocity(unsigned int id, btVector3& velocity)
 
 		// Set the linear velocity for this object
 		body->setLinearVelocity(velocity);
-		body->activate(true);
+		body->activate(false);
 		return true;
 	}
 	return false;
@@ -990,7 +1017,7 @@ bool BulletSim::SetObjectForce(unsigned int id, btVector3& force)
 
 		// Apply the force to this object
 		body->applyCentralForce(force);
-		body->activate(true);
+		body->activate(false);
 		return true;
 	}
 
@@ -1045,7 +1072,7 @@ bool BulletSim::SetObjectScaleMass(unsigned int id, btVector3& scale, float mass
 		// Calculate a new AABB for this object
 		m_dynamicsWorld->updateSingleAabb(body);
 
-		body->activate(true);
+		body->activate(false);
 		return true;
 	}
 
@@ -1073,7 +1100,9 @@ void BulletSim::SetObjectCollidable(btRigidBody* body, bool collidable)
 	else
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
-	body->activate(true);
+	body->activate(false);
+	// BSLog("SetObjectCollidable: after activate: id=%u, collidable=%d",
+	// 	CONVLOCALID(body->getCollisionShape()->getUserPointer()), collidable);
 	return;
 }
 
@@ -1088,7 +1117,7 @@ bool BulletSim::SetObjectDynamic(unsigned int id, bool isDynamic, float mass)
 		SetObjectDynamic(body, isDynamic, mass);
 		m_dynamicsWorld->addRigidBody(body);
 		m_dynamicsWorld->updateSingleAabb(body);
-		body->activate(true);
+		body->activate(false);
 		return true;
 	}
 	return false;
@@ -1106,7 +1135,8 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 		// We can't deactivate a physical object because Bullet does not tell us when
 		// the object goes idle. The lack of this event means small velocity values are
 		// left on the object and the viewer displays the object floating off.
-		body->setActivationState(DISABLE_DEACTIVATION);
+		// body->setActivationState(DISABLE_DEACTIVATION);
+		// Change for if Bullet has been modified to call MotionState when body goes inactive
 
 		// Recalculate local inertia based on the new mass
 		btVector3 localInertia(0, 0, 0);
@@ -1127,7 +1157,9 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 	else
 	{
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
-		body->setActivationState(WANTS_DEACTIVATION);
+		// body->setActivationState(WANTS_DEACTIVATION);
+		// force the static object to be inactive
+		body->forceActivationState(ISLAND_SLEEPING);
 
 		// Clear all forces for this object
 		body->setLinearVelocity(ZERO_VECTOR);
@@ -1140,7 +1172,8 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 		body->updateInertiaTensor();
 		body->setGravity(body->getGravity());
 	}
-	body->activate(true);
+	// don't force activation so we don't undo the "ISLAND_SLEEPING" for static objects
+	body->activate(false);
 	return;
 }
 
@@ -1168,7 +1201,7 @@ bool BulletSim::SetObjectBuoyancy(unsigned int id, float buoy)
 
 		body->setGravity(btVector3(0, 0, grav));
 
-		body->activate(true);
+		body->activate(false);
 		return true;
 	}
 	return false;
@@ -1184,8 +1217,9 @@ bool BulletSim::SetObjectProperties(unsigned int id, bool isStatic, bool isSolid
 		m_dynamicsWorld->removeRigidBody(body);
 		SetObjectProperties(body, isStatic, isSolid, genCollisions, mass);
 		m_dynamicsWorld->addRigidBody(body);
-		m_dynamicsWorld->updateSingleAabb(body);
-		body->activate(true);
+		// Why is this commented out?
+		// m_dynamicsWorld->updateSingleAabb(body);
+		body->activate(false);
 		return true;
 	}
 	return false;
@@ -1194,8 +1228,8 @@ bool BulletSim::SetObjectProperties(unsigned int id, bool isStatic, bool isSolid
 
 void BulletSim::SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass)
 {
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
-
+	// BSLog("SetObjectProperties: id=%u, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
+	// 	CONVLOCALID(body->getCollisionShape()->getUserPointer()), isStatic, isSolid, genCollisions, mass);
 	SetObjectDynamic(body, !isStatic, mass);		// this handles the static part
 	SetObjectCollidable(body, isSolid);
 	if (genCollisions)
@@ -1564,3 +1598,14 @@ void BulletSim::UpdateParameter(unsigned int localID, const char* parm, float va
 
 	return;
 }
+
+// #include "LinearMath/btQuickprof.h"
+void BulletSim::DumpPhysicsStats()
+{
+	// call Bullet to dump its performance stats
+	// CProfileManager::dumpAll();
+	return;
+}
+
+
+
