@@ -6,40 +6,63 @@ environment only builds the C# code.
 
 For Visual Studio 2008, the steps are:
 
-1) Download Bullet v2.78 (http://code.google.com/p/bullet/downloads/)
+1) Download Bullet v2.79 (http://code.google.com/p/bullet/downloads/)
+1a) If you are adventurous, you can fetch the latest v2.* from svn
+    (http://code.google.com/p/bullet/source/checkout).
+    As of this writing (Jan 23, 2012), Bullet development is only doing
+    bug fixes on the v2 branch and new development is happening
+    on a new v3 branch.  When Bullet advances to v3, BulletSim
+    will probably not build or link and will require rework.
+    In the mean time, any of the v2.79+ versions should work.
 2) Unpack the tgz or zip into the BulletSim directory (so there is a new
-    directory "BulletSim/bullet-2.78/")
-3) cd into the bullet directory and build using your preferred method
-    For Visual Studio 2008, open "msvc/2008/BULLET_PHYSICS.sln"
-4) cd into "BulletSim/"
-5) Open and build with BulletSim.sln
-6) Copy "BulletSim/Release/BulletSim.dll" into the
+    directory "BulletSim/bullet-2.79/")
+3) Apply all the patches for bullet:
+	cd bullet-2.79 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
+4) cd into the bullet directory and build using your preferred method
+    For Visual Studio 2008, open "msvc/2008/0BulletSolution.sln"
+    Build a "Release" version.
+    To select, 32 or 64 bit versions, make sure the target system
+    is the desired architecture. Windows does not select which DLL
+    to run depending on the system type so you must put the correct
+    architectured version in "BulletSim.dll". BulletSim is distributed
+    with a 32 bit version named "BulletSim.dll" and a 64 bit version
+    named "BulletSim-x86_64.dll".
+4b) There is a Solution file for VS2010 named Bullet-2010.sln.
+    While this does built BulletSim, make sure the Framework is
+    set to 3.5 which is the version guaranteed to work with OpenSim.
+5) cd into "BulletSim/"
+6) Open and build with BulletSim.sln
+7) Copy "BulletSim/Release/BulletSim.dll" into the
     OpenSimulator "bin/" directory
 
 For Linux (tested on Ubuntu)
-1) Download Bullet v2.78 (http://code.google.com/p/bullet/downloads/)
+1) Download Bullet v2.79 (http://code.google.com/p/bullet/downloads/)
+1b) As noted above, you can also fetch the latest Subversion
+    version of the version 2 Bullet.
 2) Unpack the tgz or zip into the BulletSim directory somewhere
-3) Following the Bullet build instructions 
+3) Apply 'bullet-2.79.patch':
+	cat bullet-2.79.patch | patch -p1
+4) Follow the Bullet build instructions 
     (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation),
     create the directory "bullet-build" and cd into that directory.
     Do "cmake ../path/to/bullet/dir -G 'Unix Makefiles'"
     then "make -j4"
     then "sudo make install"
     This builds bullet and installs it into /usr/local.
-4) cd back to the BulletSim directory
-5) Do "make"
-6) Copy "BulletSim.so" into the OpenSimulator "bin/" directory
+5) cd back to the BulletSim directory
+6) Do "make"
+7) Copy "BulletSim.so" into the OpenSimulator "bin/" directory
 
 
-This was developed with Bullet v2.78. If you use a different version, you will
+This was developed with Bullet v2.79. If you use a different version, you will
 need to change the include and library directories for the BulletSim compilation.
 
-Building a 64 bit version is a little different because of problems
+Building a 64 bit Linux version is a little different because of problems
 with linking static libraries into shared libraries. Because of this, you
 need to build Bullet as a shared library (add the
 "-DBUILD_SHARED_LIBS=ON" as explained at 
 http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation#Building
 This will cause the installation to install .so files which you can
-then build BulletSim against. You will also need to copy the Bullet .so's
+then build BulletSim against. You also need to copy the Bullet .so's
 into the OpenSim bin/ directory.
 

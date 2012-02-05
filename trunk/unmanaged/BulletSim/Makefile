@@ -1,4 +1,4 @@
-# Scratch makefile for linux
+# Build BulletSim
 
 IDIR = /usr/local/include/bullet
 LDIR = /usr/local/lib

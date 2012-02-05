@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.78\src&quot;;&quot;.\bullet-2.78\Extras\ConvexDecomposition&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.79\src&quot;;&quot;.\bullet-2.79\Extras\ConvexDecomposition&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -65,7 +65,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib BulletWorldImporter.lib ConvexDecomposition.lib $(NOINHERIT)"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.78\msvc\2008\lib\Release&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.79\lib&quot;"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
@@ -118,7 +118,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.78\src&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.79\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -138,7 +138,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib $(NOINHERIT)"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.78\msvc\2008\lib\Release&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.79\lib&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -191,7 +191,7 @@
  			<Tool
  				Name="VCCLCompilerTool"
  				Optimization="0"
- 				AdditionalIncludeDirectories="&quot;.\bullet-2.78-64\src&quot;;&quot;.\bullet-2.78-64\Extras\ConvexDecomposition&quot;"
+ 				AdditionalIncludeDirectories="&quot;.\bullet-2.79\src&quot;;&quot;.\bullet-2.79\Extras\ConvexDecomposition&quot;"
  				PreprocessorDefinitions="WIN32;_DEBUG"
  				RuntimeLibrary="3"
  				UsePrecompiledHeader="0"
@@ -209,9 +209,9 @@
  			/>
  			<Tool
  				Name="VCLinkerTool"
- 				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib BulletWorldImporter.lib ConvexDecomposition.lib $(NOINHERIT)"
+ 				AdditionalDependencies="BulletCollision_x64.lib BulletDynamics_x64.lib LinearMath_x64.lib ConvexDecomposition_x64.lib $(NOINHERIT)"
  				LinkIncremental="2"
- 				AdditionalLibraryDirectories="&quot;.\bullet-2.78-64\msvc\2008\lib\Release&quot;"
+ 				AdditionalLibraryDirectories="&quot;.\bullet-2.79\lib&quot;"
  				GenerateDebugInformation="true"
  				AssemblyDebug="1"
  				TargetMachine="17"
@@ -265,7 +265,7 @@
  			/>
  			<Tool
  				Name="VCCLCompilerTool"
- 				AdditionalIncludeDirectories="&quot;.\bullet-2.78-64\src&quot;"
+ 				AdditionalIncludeDirectories="&quot;.\bullet-2.79\src&quot;"
  				PreprocessorDefinitions="WIN32;NDEBUG"
  				RuntimeLibrary="2"
  				UsePrecompiledHeader="0"
@@ -283,9 +283,9 @@
  			/>
  			<Tool
  				Name="VCLinkerTool"
- 				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib $(NOINHERIT)"
+ 				AdditionalDependencies="BulletCollision_x64.lib BulletDynamics_x64.lib LinearMath_x64.lib $(NOINHERIT)"
  				LinkIncremental="1"
- 				AdditionalLibraryDirectories="&quot;.\bullet-2.78-64\msvc\2008\lib\Release&quot;"
+ 				AdditionalLibraryDirectories="&quot;.\bullet-2.79\lib&quot;"
  				GenerateDebugInformation="true"
  				TargetMachine="17"
  			/>
