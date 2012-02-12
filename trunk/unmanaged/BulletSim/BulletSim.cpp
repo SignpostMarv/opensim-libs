@@ -603,9 +603,6 @@ bool BulletSim::CreateObject(ShapeData* data)
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
 	shape->setUserPointer((void*)id);
 	
-	// Set the scale and adjust for collision margin
-	AdjustScaleForCollisionMargin(shape, scale);
-
 	// Create a starting transform
 	btTransform startTransform;
 	startTransform.setIdentity();
@@ -1296,6 +1293,9 @@ bool BulletSim::HasObject(unsigned int id)
 
 bool BulletSim::DestroyObject(unsigned int id)
 {
+	// Remove any constraints associated with this object
+	RemoveConstraintByID(id);
+
 	// Look for a character
 	CharactersMapType::iterator cit = m_characters.find(id);
 	if (cit != m_characters.end())
@@ -1316,18 +1316,12 @@ bool BulletSim::DestroyObject(unsigned int id)
 		return true;
 	}
 
-	// Remove any constraints associated with this object
-	RemoveConstraintByID(id);
-
 	// Look for a rigid body
 	BodiesMapType::iterator bit = m_bodies.find(id);
 	if (bit != m_bodies.end())
 	{
 		btRigidBody* body = bit->second;
 		btCollisionShape* shape = body->getCollisionShape();
-
-		// just in case, remove any constraint that might match this RigidBody
-		RemoveConstraintByID(id);
 
 		// Remove the rigid body from the map of rigid bodies
 		m_bodies.erase(bit);
