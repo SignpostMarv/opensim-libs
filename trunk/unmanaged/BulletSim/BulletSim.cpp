@@ -724,7 +724,7 @@ void BulletSim::CreateLinkset(int objectCount, ShapeData* shapes)
 {
 	// BSLog("CreateLinkset: total prims = %d", objectCount);
 	// the first shape is the base shape that we will replace with the linkset
-	int32_t baseID = shapes[0].ID;
+	IDTYPE baseID = shapes[0].ID;
 
 	// the base shape is forced to always be a compound shape by the mesh creation code
 	btCollisionShape* collisionShape = CreateShape(&shapes[0]);

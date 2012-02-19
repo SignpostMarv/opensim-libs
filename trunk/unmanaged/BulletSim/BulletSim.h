@@ -48,6 +48,8 @@ typedef signed int			int32_t;
 typedef unsigned int		uint32_t;
 #endif
 
+#define IDTYPE uint32_t;
+
 #ifdef __x86_64__
 // 64bit systems don't allow you to cast directly from a void* to an unsigned int
 #define CONVLOCALID(xx) (unsigned int)((unsigned long)(xx))
@@ -172,7 +174,7 @@ struct ShapeData
 	};
 
 	// note that bool's are passed as int's since bool size changes by language
-	uint32_t ID;
+	IDTYPE ID;
 	PhysicsShapeType Type;
 	Vector3 Position;
 	Quaternion Rotation;
@@ -191,8 +193,8 @@ struct ShapeData
 // API-exposed structure for reporting a collision
 struct CollisionDesc
 {
-	uint32_t aID;
-	uint32_t bID;
+	IDTYPE aID;
+	IDTYPE bID;
 	Vector3 point;
 	Vector3 normal;
 };
@@ -208,7 +210,7 @@ struct ConvexHull
 // API-exposed structured to return a raycast result
 struct RaycastHit
 {
-	uint32_t ID;
+	IDTYPE ID;
 	float Fraction;
 	Vector3 Normal;
 };
@@ -216,7 +218,7 @@ struct RaycastHit
 // API-exposed structure to return a convex sweep result
 struct SweepHit
 {
-	uint32_t ID;
+	IDTYPE ID;
 	float Fraction;
 	Vector3 Normal;
 	Vector3 Point;
@@ -225,7 +227,7 @@ struct SweepHit
 // API-exposed structure to return physics updates from Bullet
 struct EntityProperties
 {
-	uint32_t ID;
+	IDTYPE ID;
 	Vector3 Position;
 	Quaternion Rotation;
 	Vector3 Velocity;
@@ -550,17 +552,23 @@ protected:
 	void CreateGroundPlane();
 	void CreateTerrain();
 	void SetTerrainPhysicalParameters(btRigidBody* body);
+
+	btCollisionShape* CreateShape(ShapeData* data);
+
 	void SetAvatarPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
 	void SetObjectPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
 	void SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass);
 	void SetObjectCollidable(btRigidBody* body, bool collidable);
-	unsigned long long GenConstraintID(unsigned int id1, unsigned int id2);
-	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
 	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
-	btCollisionShape* CreateShape(ShapeData* data);
+
+	unsigned long long GenConstraintID(unsigned int id1, unsigned int id2);
 	bool RecalculateAllConstraintsByID(unsigned int id1);
+
+	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
+
 	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
 	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
+
 	SweepHit GenericConvexSweepTest(btCollisionObject* collisionObject, btVector3& fromPos, btVector3& targetPos);
 };
 
