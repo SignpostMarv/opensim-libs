@@ -30,13 +30,17 @@
 #define AVATAROBJECT_H
 
 #include "IPhysObject.h"
+#include "APIData.h"
 
 class AvatarObject :
 	public IPhysObject
 {
 public:
-	AvatarObject(void);
+	AvatarObject(const ShapeData*);
 	~AvatarObject(void);
+
+	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
+	bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity);
 };
 
 #endif // AVATAROBJECT_H

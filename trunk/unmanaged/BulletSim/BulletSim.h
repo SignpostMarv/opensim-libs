@@ -29,6 +29,11 @@
 #ifndef BULLET_SIM_H
 #define BULLET_SIM_H
 
+#include "ArchStuff.h"
+#include "APIData.h"
+#include "IPhysObject.h"
+#include "ObjectCollection.h"
+
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "BulletCollision/Gimpact/btGImpactShape.h"
@@ -38,24 +43,6 @@
 #include "btBulletDynamicsCommon.h"
 
 #include <map>
-
-// define types that are always 32bits (don't change on 64 bit systems)
-#ifdef _MSC_VER
-typedef signed __int32		int32_t;
-typedef unsigned __int32	uint32_t;
-#else
-typedef signed int			int32_t;
-typedef unsigned int		uint32_t;
-#endif
-
-#define IDTYPE uint32_t;
-
-#ifdef __x86_64__
-// 64bit systems don't allow you to cast directly from a void* to an unsigned int
-#define CONVLOCALID(xx) (unsigned int)((unsigned long)(xx))
-#else
-#define CONVLOCALID(xx) (unsigned int)(xx)
-#endif
 
 #define ID_TERRAIN 0	// OpenSimulator identifies collisions with terrain by localID of zero
 #define ID_GROUND_PLANE 1
@@ -69,7 +56,7 @@ typedef unsigned int		uint32_t;
 #define ANGULARVELOCITY_TOLERANCE 0.01f
 
 // TODO: find a way to build this
-static char BulletSimVersionString[] = "v0001 svn126";
+static char BulletSimVersionString[] = "v0002";
 
 // Helper method to determine if an object is phantom or not
 static bool IsPhantom(const btCollisionObject* obj)
@@ -80,177 +67,6 @@ static bool IsPhantom(const btCollisionObject* obj)
 		(obj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
 };
 
-
-// API-exposed structure for a 3D vector
-struct Vector3
-{
-	float X;
-	float Y;
-	float Z;
-
-	Vector3()
-	{
-		X = 0.0;
-		Y = 0.0;
-		Z = 0.0;
-	}
-
-	Vector3(float x, float y, float z)
-	{
-		X = x;
-		Y = y;
-		Z = z;
-	}
-
-	bool AlmostEqual(const Vector3& v, const float nEpsilon)
-	{
-		return
-			(((v.X - nEpsilon) < X) && (X < (v.X + nEpsilon))) &&
-			(((v.Y - nEpsilon) < Y) && (Y < (v.Y + nEpsilon))) &&
-			(((v.Z - nEpsilon) < Z) && (Z < (v.Z + nEpsilon)));
-	}
-
-	btVector3 GetBtVector3()
-	{
-		return btVector3(X, Y, Z);
-	}
-
-	void operator= (const btVector3& v)
-	{
-		X = v.getX();
-		Y = v.getY();
-		Z = v.getZ();
-	}
-
-	bool operator==(const Vector3& b)
-	{
-		return (X == b.X && Y == b.Y && Z == b.Z);
-	}
-};
-
-// API-exposed structure for a rotation
-struct Quaternion
-{
-	float X;
-	float Y;
-	float Z;
-	float W;
-
-	bool AlmostEqual(const Quaternion& q, float nEpsilon)
-	{
-		return
-			(((q.X - nEpsilon) < X) && (X < (q.X + nEpsilon))) &&
-			(((q.Y - nEpsilon) < Y) && (Y < (q.Y + nEpsilon))) &&
-			(((q.Z - nEpsilon) < Z) && (Z < (q.Z + nEpsilon))) &&
-			(((q.W - nEpsilon) < W) && (W < (q.W + nEpsilon)));
-	}
-
-	btQuaternion GetBtQuaternion()
-	{
-		return btQuaternion(X, Y, Z, W);
-	}
-
-	void operator= (const btQuaternion& q)
-	{
-		X = q.getX();
-		Y = q.getY();
-		Z = q.getZ();
-		W = q.getW();
-	}
-};
-
-// API-exposed structure defining an object
-struct ShapeData
-{
-	enum PhysicsShapeType
-	{
-		SHAPE_AVATAR = 0,
-		SHAPE_BOX = 1,
-		SHAPE_CONE = 2,
-		SHAPE_CYLINDER = 3,
-		SHAPE_SPHERE = 4,
-		SHAPE_MESH = 5,
-		SHAPE_HULL = 6
-	};
-
-	// note that bool's are passed as int's since bool size changes by language
-	IDTYPE ID;
-	PhysicsShapeType Type;
-	Vector3 Position;
-	Quaternion Rotation;
-	Vector3 Velocity;
-	Vector3 Scale;
-	float Mass;
-	float Buoyancy;		// gravity effect on the object
-	unsigned long long HullKey;
-	unsigned long long MeshKey;
-	float Friction;
-	float Restitution;
-	int32_t Collidable;	// things can collide with this object
-	int32_t Static;	// object is non-moving. Otherwise gravity, etc
-};
-
-// API-exposed structure for reporting a collision
-struct CollisionDesc
-{
-	IDTYPE aID;
-	IDTYPE bID;
-	Vector3 point;
-	Vector3 normal;
-};
-
-// API-exposed structure to input a convex hull
-struct ConvexHull
-{
-	Vector3 Offset;
-	uint32_t VertexCount;
-	Vector3* Vertices;
-};
-
-// API-exposed structured to return a raycast result
-struct RaycastHit
-{
-	IDTYPE ID;
-	float Fraction;
-	Vector3 Normal;
-};
-
-// API-exposed structure to return a convex sweep result
-struct SweepHit
-{
-	IDTYPE ID;
-	float Fraction;
-	Vector3 Normal;
-	Vector3 Point;
-};
-
-// API-exposed structure to return physics updates from Bullet
-struct EntityProperties
-{
-	IDTYPE ID;
-	Vector3 Position;
-	Quaternion Rotation;
-	Vector3 Velocity;
-	Vector3 Acceleration;
-	Vector3 AngularVelocity;
-
-	EntityProperties(unsigned int id, const btTransform& startTransform)
-	{
-		ID = id;
-		Position = startTransform.getOrigin();
-		Rotation = startTransform.getRotation();
-	}
-
-	void operator= (const EntityProperties& e)
-	{
-		ID = e.ID;
-		Position = e.Position;
-		Rotation = e.Rotation;
-		Velocity = e.Velocity;
-		Acceleration = e.Acceleration;
-		AngularVelocity = e.AngularVelocity;
-	}
-};
 
 // Block of parameters passed from the managed code.
 // The memory layout MUST MATCH the layout in the managed code.
@@ -284,6 +100,8 @@ struct ParamBlock
 
 // ============================================================================================
 // Callback to managed code for logging
+// This is a callback into the managed code that writes a text message to the log.
+// This callback is only initialized if the simulator is running in DEBUG mode.
 typedef void DebugLogCallback(const char*);
 extern DebugLogCallback* debugLogCallback;
 extern void BSLog(const char*, ...);
@@ -296,7 +114,7 @@ class SimMotionState : public btMotionState
 public:
 	btRigidBody* RigidBody;
 
-    SimMotionState(unsigned int id, const btTransform& startTransform, std::map<unsigned int, EntityProperties*>* updatesThisFrame)
+    SimMotionState(IDTYPE id, const btTransform& startTransform, std::map<IDTYPE, EntityProperties*>* updatesThisFrame)
 		: m_properties(id, startTransform), m_lastProperties(id, startTransform)
 	{
         m_xform = startTransform;
@@ -321,11 +139,11 @@ public:
 		// Put the new transform into m_properties
 		m_properties.Position = m_xform.getOrigin();
 		m_properties.Rotation = m_xform.getRotation();
-		// The problem is that we don't get an event when an object is slept.
+		// A problem is that, in stock Bullet, we don't get an event when an object is slept.
 		// This means that the last non-zero values for linear and angular velocity
 		// are left in the viewer who does dead reconning and the objects look like
 		// they float off.
-		// TODO: figure out how to generate a transform event when an object sleeps.
+		// BulletSim ships with a patch to Bullet that creates such an event.
 		m_properties.Velocity = RigidBody->getLinearVelocity();
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
@@ -349,9 +167,8 @@ public:
 		}
     }
 
-protected:
-	// forward reference: UpdatesThisFrameMapType* m_updatesThisFrame;
-	std::map<unsigned int, EntityProperties*>* m_updatesThisFrame;
+private:
+	std::map<IDTYPE, EntityProperties*>* m_updatesThisFrame;
     btTransform m_xform;
 	EntityProperties m_properties;
 	EntityProperties m_lastProperties;
@@ -464,14 +281,22 @@ class BulletSim
 	btStaticPlaneShape* m_planeShape;
 	btHeightfieldTerrainShape* m_heightfieldShape;
 
+	// Objects in this world
+	// We create a class instance (using IPhysObjectFactory()) for each of the
+	// object types kept in the world. This separates the code for handling
+	// the physical object from the interface to the simulator.
+	// Once collection object is created to hold the objects. This also
+	// has the list manipulation functions.
+	ObjectCollection* m_objects;
+
 	// Mesh data and scene objects
 	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
 	MeshesMapType m_meshes;
 	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
 	HullsMapType m_hulls;
-	typedef std::map<unsigned int, btRigidBody*> BodiesMapType;
+	typedef std::map<IDTYPE, btRigidBody*> BodiesMapType;
 	BodiesMapType m_bodies;
-	typedef std::map<unsigned int, btRigidBody*> CharactersMapType;
+	typedef std::map<IDTYPE, btRigidBody*> CharactersMapType;
 	CharactersMapType m_characters;
 	typedef std::map<unsigned long long, btGeneric6DofConstraint*> ConstraintMapType;
 	ConstraintMapType m_constraints;
@@ -488,7 +313,7 @@ class BulletSim
 	btVector3 m_maxPosition;
 
 	// Used to expose updates from Bullet to the BulletSim API
-	typedef std::map<unsigned int, EntityProperties*> UpdatesThisFrameMapType;
+	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
 	UpdatesThisFrameMapType m_updatesThisFrame;
 	int m_maxUpdatesPerFrame;
 	EntityProperties* m_updatesThisFrameArray;
@@ -521,31 +346,31 @@ public:
 	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
 	bool CreateObject(ShapeData* shapeData);
 	void CreateLinkset(int objectCount, ShapeData* shapeDatas);
-	void AddConstraint(unsigned int id1, unsigned int id2, 
+	void AddConstraint(IDTYPE id1, IDTYPE id2, 
 				btVector3& frame1, btQuaternion& frame1rot, 
 				btVector3& frame2, btQuaternion& frame2rot,
 				btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular);
-	bool RemoveConstraintByID(unsigned int id1);
-	bool RemoveConstraint(unsigned int id1, unsigned int id2);
-	btVector3 GetObjectPosition(unsigned int id);
-	bool SetObjectTranslation(unsigned int id, btVector3& position, btQuaternion& rotation);
-	bool SetObjectVelocity(unsigned int id, btVector3& velocity);
-	bool SetObjectAngularVelocity(unsigned int id, btVector3& angularVelocity);
-	bool SetObjectForce(unsigned int id, btVector3& force);
-	bool SetObjectScaleMass(unsigned int id, btVector3& scale, float mass, bool isDynamic);
-	bool SetObjectCollidable(unsigned int id, bool collidable);
-	bool SetObjectDynamic(unsigned int id, bool isDynamic, float mass);
-	bool SetObjectBuoyancy(unsigned int id, float buoyancy);
-	bool SetObjectProperties(unsigned int id, bool isStatic, bool isSolid, bool genCollisions, float mass);
-	bool HasObject(unsigned int id);
-	bool DestroyObject(unsigned int id);
+	bool RemoveConstraintByID(IDTYPE id1);
+	bool RemoveConstraint(IDTYPE id1, IDTYPE id2);
+	btVector3 GetObjectPosition(IDTYPE id);
+	bool SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation);
+	bool SetObjectVelocity(IDTYPE id, btVector3& velocity);
+	bool SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity);
+	bool SetObjectForce(IDTYPE id, btVector3& force);
+	bool SetObjectScaleMass(IDTYPE id, btVector3& scale, float mass, bool isDynamic);
+	bool SetObjectCollidable(IDTYPE id, bool collidable);
+	bool SetObjectDynamic(IDTYPE id, bool isDynamic, float mass);
+	bool SetObjectBuoyancy(IDTYPE id, float buoyancy);
+	bool SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass);
+	bool HasObject(IDTYPE id);
+	bool DestroyObject(IDTYPE id);
 	bool DestroyHull(unsigned long long meshKey);
 	bool DestroyMesh(unsigned long long id);
-	SweepHit ConvexSweepTest(unsigned int id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
-	RaycastHit RayTest(unsigned int id, btVector3& from, btVector3& to);
-	const btVector3 RecoverFromPenetration(unsigned int id);
+	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
+	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
+	const btVector3 RecoverFromPenetration(IDTYPE id);
 
-	void UpdateParameter(unsigned int localID, const char* parm, float value);
+	void UpdateParameter(IDTYPE localID, const char* parm, float value);
 	void DumpPhysicsStats();
 
 protected:
@@ -561,8 +386,8 @@ protected:
 	void SetObjectCollidable(btRigidBody* body, bool collidable);
 	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
 
-	unsigned long long GenConstraintID(unsigned int id1, unsigned int id2);
-	bool RecalculateAllConstraintsByID(unsigned int id1);
+	unsigned long long GenConstraintID(IDTYPE id1, IDTYPE id2);
+	bool RecalculateAllConstraintsByID(IDTYPE id1);
 
 	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
 

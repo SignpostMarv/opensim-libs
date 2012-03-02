@@ -26,13 +26,52 @@
  */
 
 #include "PrimObject.h"
+#include "btBulletDynamicsCommon.h"
 
-PrimObject::PrimObject(void)
-{
+PrimObject::PrimObject(const ShapeData* data) {
+
+	// Unpack ShapeData
+	unsigned int id = data->ID;
+	btVector3 position = data->Position.GetBtVector3();
+	btQuaternion rotation = data->Rotation.GetBtQuaternion();
+	btVector3 scale = data->Scale.GetBtVector3();
+	btVector3 velocity = data->Velocity.GetBtVector3();
+	btScalar maxScale = scale.m_floats[scale.maxAxis()];
+	btScalar mass = btScalar(data->Mass);
+	btScalar friction = btScalar(data->Friction);
+	btScalar restitution = btScalar(data->Restitution);
+	bool isStatic = (data->Static == 1);
+	bool isCollidable = (data->Collidable == 1);
+
+	// Save the ID for this shape in the user settable variable (used to know what is colliding)
+	shape->setUserPointer((void*)id);
+	
+	// Create a starting transform
+	btTransform startTransform;
+	startTransform.setIdentity();
+	startTransform.setOrigin(position);
+	startTransform.setRotation(rotation);
+
+	// Building a rigid body
+	btVector3 localInertia(0, 0, 0);
+	shape->calculateLocalInertia(mass, localInertia);
+
+	// Create the motion state and rigid body
+	SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &m_updatesThisFrame);
+	btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
+	btRigidBody* body = new btRigidBody(cInfo);
+	motionState->RigidBody = body;
+
+	SetObjectPhysicalParameters(body, friction, restitution, velocity);
+
+	// Set the dynamic and collision flags (for static and phantom objects)
+	SetObjectProperties(body, isStatic, isCollidable, false, mass);
+
+	m_dynamicsWorld->addRigidBody(body);
+	m_bodies[id] = body;
 }
 
-PrimObject::~PrimObject(void)
-{
+PrimObject::~PrimObject(void) {
 }
 
 bool PrimObject::SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {

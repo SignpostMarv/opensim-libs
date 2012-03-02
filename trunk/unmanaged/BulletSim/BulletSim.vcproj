@@ -348,7 +348,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\BulletSimOrig.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\IPhysObject.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ObjectCollection.cpp"
 				>
 			</File>
 			<File
@@ -362,6 +370,14 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\APIData.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ArchStuff.h"
+				>
+			</File>
+			<File
 				RelativePath=".\AvatarObject.h"
 				>
 			</File>
@@ -371,6 +387,10 @@
 			</File>
 			<File
 				RelativePath=".\IPhysObject.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ObjectCollection.h"
 				>
 			</File>
 			<File

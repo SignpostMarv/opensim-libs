@@ -29,7 +29,8 @@
 #ifndef IPHYSOBJECT_H
 #define IPHYSOBJECT_H
 
-#include "BulletSim.h"
+#include "APIData.h"
+#include "btBulletDynamicsCommon.h"
 
 class IPhysObject
 {
@@ -37,7 +38,9 @@ public:
 	IPhysObject(void);
 	~IPhysObject(void);
 
-	static IPhysObject* PhysObjectFactory(const ParamBlock*);
+	// Passed a parameter block, create a new instance of the proper object
+	static IPhysObject* PhysObjectFactory(const ShapeData*);
+
 	virtual bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) = 0;
 	virtual bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) = 0;
 

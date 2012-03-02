@@ -26,12 +26,13 @@
  */
 #pragma once
 #include "IPhysObject.h"
+#include "APIData.h"
 
 class PrimObject :
 	public IPhysObject
 {
 public:
-	PrimObject(void);
+	PrimObject(const ShapeData*);
 	~PrimObject(void);
 
 	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);

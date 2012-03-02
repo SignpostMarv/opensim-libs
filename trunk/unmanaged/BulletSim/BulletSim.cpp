@@ -100,6 +100,12 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// Earth-like gravity
 	m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_params->gravity));
 
+	// Information on creating a custom collision computation routine and a pointer to the computation
+	// of friction and restitution at:
+	// http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=7922
+	// foreach body that you want the callback, enable it with:
+	// body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+
 	// Start with a ground plane and a flat terrain
 	CreateGroundPlane();
 	CreateTerrain();
@@ -229,13 +235,13 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A
 
 			// Get the IDs of colliding objects (stored in the one user definable field)
-			unsigned int idA = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
-			unsigned int idB = CONVLOCALID(objB->getCollisionShape()->getUserPointer());
+			IDTYPE idA = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
+			IDTYPE idB = CONVLOCALID(objB->getCollisionShape()->getUserPointer());
 
 			// Make sure idA is the lower ID so we don't record both 'A hit B' and 'B hit A'
 			if (idA > idB)
 			{
-				unsigned int temp = idA;
+				IDTYPE temp = idA;
 				idA = idB;
 				idB = temp;
 				contactNormal = -contactNormal;
@@ -579,94 +585,10 @@ btCollisionShape* BulletSim::DuplicateMeshShape(btBvhTriangleMeshShape* mShape)
 bool BulletSim::CreateObject(ShapeData* data)
 {
 	// If the object already exists, destroy it
-	DestroyObject(data->ID);
+	m_objects->DestroyObject(data->ID);
 
-	// Create the appropriate collision shape that will go into the body
-	btCollisionShape* shape = CreateShape(data);
-
-	if (!shape || shape->getShapeType() == INVALID_SHAPE_PROXYTYPE)
-		return false;
-
-	// Unpack ShapeData
-	unsigned int id = data->ID;
-	btVector3 position = data->Position.GetBtVector3();
-	btQuaternion rotation = data->Rotation.GetBtQuaternion();
-	btVector3 scale = data->Scale.GetBtVector3();
-	btVector3 velocity = data->Velocity.GetBtVector3();
-	btScalar maxScale = scale.m_floats[scale.maxAxis()];
-	btScalar mass = btScalar(data->Mass);
-	btScalar friction = btScalar(data->Friction);
-	btScalar restitution = btScalar(data->Restitution);
-	bool isStatic = (data->Static == 1);
-	bool isCollidable = (data->Collidable == 1);
-
-	// Save the ID for this shape in the user settable variable (used to know what is colliding)
-	shape->setUserPointer((void*)id);
-	
-	// Create a starting transform
-	btTransform startTransform;
-	startTransform.setIdentity();
-	startTransform.setOrigin(position);
-	startTransform.setRotation(rotation);
-
-	if (data->Type == ShapeData::SHAPE_AVATAR)
-	{
-		// Building an avatar
-		// Avatars are created as rigid objects so they collide and have gravity
-
-		// Inertia calculation for physical objects (non-zero mass)
-		btVector3 localInertia(0, 0, 0);
-		if (mass != 0.0f)
-			shape->calculateLocalInertia(mass, localInertia);
-
-		// Create the motion state and rigid body
-		SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &m_updatesThisFrame);
-		btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
-		btRigidBody* character = new btRigidBody(cInfo);
-		motionState->RigidBody = character;
-
-		character->setCollisionFlags(character->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
-
-		SetAvatarPhysicalParameters(character, friction, restitution, velocity);
-
-		m_dynamicsWorld->addRigidBody(character);
-		m_characters[id] = character;
-
-		/*
-		// NOTE: Old code kept for reference
-		// Building a kinematic character controller
-		btPairCachingGhostObject* character = new btPairCachingGhostObject();
-		character->setWorldTransform(startTransform);
-		character->setCollisionShape(shape);
-		character->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-		character->setActivationState(DISABLE_DEACTIVATION);
-		character->setContactProcessingThreshold(0.0);
-
-		m_dynamicsWorld->addCollisionObject(character, btBroadphaseProxy::CharacterFilter);
-		m_characters[id] = character;
-		*/
-	}
-	else
-	{
-		// Building a rigid body
-
-		btVector3 localInertia(0, 0, 0);
-		shape->calculateLocalInertia(mass, localInertia);
-
-		// Create the motion state and rigid body
-		SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &m_updatesThisFrame);
-		btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
-		btRigidBody* body = new btRigidBody(cInfo);
-		motionState->RigidBody = body;
-
-		SetObjectPhysicalParameters(body, friction, restitution, velocity);
-
-		// Set the dynamic and collision flags (for static and phantom objects)
-		SetObjectProperties(body, isStatic, isCollidable, false, mass);
-
-		m_dynamicsWorld->addRigidBody(body);
-		m_bodies[id] = body;
-	}
+	// Create and add the new physical object
+	m_objects.AddObject(data->ID, new IPhysObject::PhysObjectFactory(data));
 
 	return true;
 }
@@ -768,7 +690,7 @@ void BulletSim::CreateLinkset(int objectCount, ShapeData* shapes)
 	return;
 }
 
-void BulletSim::AddConstraint(unsigned int id1, unsigned int id2, 
+void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2, 
 							  btVector3& frame1, btQuaternion& frame1rot,
 							  btVector3& frame2, btQuaternion& frame2rot,
 	btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular)
@@ -816,7 +738,7 @@ void BulletSim::AddConstraint(unsigned int id1, unsigned int id2,
 
 // When we are deleting and object, we need to make sure there are no constraints
 // associated with it.
-bool BulletSim::RemoveConstraintByID(unsigned int id1)
+bool BulletSim::RemoveConstraintByID(IDTYPE id1)
 {
 	bool removedSomething = false;
 	bool doAgain = true;
@@ -828,8 +750,8 @@ bool BulletSim::RemoveConstraintByID(unsigned int id1)
 		{
 			unsigned long long constraintID = it->first;
 			// if this constraint contains the passed localID, delete the constraint
-			if ((((unsigned int)(constraintID & 0xffffffff)) == id1)
-				|| (((unsigned int)(constraintID >> 32) & 0xffffffff) == id1))
+			if ((((IDTYPE)(constraintID & 0xffffffff)) == id1)
+				|| (((IDTYPE)(constraintID >> 32) & 0xffffffff) == id1))
 			{
 				btGeneric6DofConstraint* constraint = it->second;
 		 		m_dynamicsWorld->removeConstraint(constraint);
@@ -847,7 +769,7 @@ bool BulletSim::RemoveConstraintByID(unsigned int id1)
 }
 
 // When properties of the object change, the base transforms in the constraint should be recomputed
-bool BulletSim::RecalculateAllConstraintsByID(unsigned int id1)
+bool BulletSim::RecalculateAllConstraintsByID(IDTYPE id1)
 {
 	bool recalcuatedSomething = false;
 	ConstraintMapType::iterator it = m_constraints.begin();
@@ -855,8 +777,8 @@ bool BulletSim::RecalculateAllConstraintsByID(unsigned int id1)
 	{
 		unsigned long long constraintID = it->first;
 		// if this constraint contains the passed localID, recalcuate its transforms
-		if ((((unsigned int)(constraintID & 0xffffffff)) == id1)
-			|| (((unsigned int)(constraintID >> 32) & 0xffffffff) == id1))
+		if ((((IDTYPE)(constraintID & 0xffffffff)) == id1)
+			|| (((IDTYPE)(constraintID >> 32) & 0xffffffff) == id1))
 		{
 			btGeneric6DofConstraint* constraint = it->second;
 			constraint->calculateTransforms();
@@ -867,7 +789,7 @@ bool BulletSim::RecalculateAllConstraintsByID(unsigned int id1)
 	return recalcuatedSomething;	// return 'true' if we actually recalcuated a constraint
 }
 
-bool BulletSim::RemoveConstraint(unsigned int id1, unsigned int id2)
+bool BulletSim::RemoveConstraint(IDTYPE id1, IDTYPE id2)
 {
 	unsigned long long constraintID = GenConstraintID(id1, id2);
 	ConstraintMapType::iterator it = m_constraints.find(constraintID);
@@ -884,7 +806,7 @@ bool BulletSim::RemoveConstraint(unsigned int id1, unsigned int id2)
 
 // There can be only one constraint between objects. Always use the lowest id as the first part
 // of the key so the same constraint will be found no matter what order the caller passes them.
-unsigned long long BulletSim::GenConstraintID(unsigned int id1, unsigned int id2)
+unsigned long long BulletSim::GenConstraintID(IDTYPE id1, IDTYPE id2)
 {
 	if (id1 < id2)
 		return ((unsigned long long)id1 << 32) | id2;
@@ -893,7 +815,7 @@ unsigned long long BulletSim::GenConstraintID(unsigned int id1, unsigned int id2
 	return 0;
 }
 
-btVector3 BulletSim::GetObjectPosition(unsigned int id)
+btVector3 BulletSim::GetObjectPosition(IDTYPE id)
 {
 	// Look for a character
 	CharactersMapType::iterator cit = m_characters.find(id);
@@ -918,7 +840,7 @@ btVector3 BulletSim::GetObjectPosition(unsigned int id)
 	return btVector3(0.0, 0.0, 0.0);
 }
 
-bool BulletSim::SetObjectTranslation(unsigned int id, btVector3& position, btQuaternion& rotation)
+bool BulletSim::SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation)
 {
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
 
@@ -961,7 +883,7 @@ bool BulletSim::SetObjectTranslation(unsigned int id, btVector3& position, btQua
 	return false;
 }
 
-bool BulletSim::SetObjectVelocity(unsigned int id, btVector3& velocity)
+bool BulletSim::SetObjectVelocity(IDTYPE id, btVector3& velocity)
 {
 	// Look for a character
 	CharactersMapType::iterator cit = m_characters.find(id);
@@ -988,7 +910,7 @@ bool BulletSim::SetObjectVelocity(unsigned int id, btVector3& velocity)
 	return false;
 }
 
-bool BulletSim::SetObjectAngularVelocity(unsigned int id, btVector3& angularVelocity)
+bool BulletSim::SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity)
 {
 	// Look for a rigid body
 	BodiesMapType::iterator it = m_bodies.find(id);
@@ -1004,7 +926,7 @@ bool BulletSim::SetObjectAngularVelocity(unsigned int id, btVector3& angularVelo
 	return false;
 }
 
-bool BulletSim::SetObjectForce(unsigned int id, btVector3& force)
+bool BulletSim::SetObjectForce(IDTYPE id, btVector3& force)
 {
 	// Look for a rigid body
 	BodiesMapType::iterator it = m_bodies.find(id);
@@ -1021,7 +943,7 @@ bool BulletSim::SetObjectForce(unsigned int id, btVector3& force)
 	return false;
 }
 
-bool BulletSim::SetObjectScaleMass(unsigned int id, btVector3& scale, float mass, bool isDynamic)
+bool BulletSim::SetObjectScaleMass(IDTYPE id, btVector3& scale, float mass, bool isDynamic)
 {
 	// BSLog("SetObjectScaleMass: mass=%f", mass);
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
@@ -1076,7 +998,7 @@ bool BulletSim::SetObjectScaleMass(unsigned int id, btVector3& scale, float mass
 	return false;
 }
 
-bool BulletSim::SetObjectCollidable(unsigned int id, bool collidable)
+bool BulletSim::SetObjectCollidable(IDTYPE id, bool collidable)
 {
 	// Look for a rigid body
 	BodiesMapType::iterator it = m_bodies.find(id);
@@ -1103,7 +1025,7 @@ void BulletSim::SetObjectCollidable(btRigidBody* body, bool collidable)
 	return;
 }
 
-bool BulletSim::SetObjectDynamic(unsigned int id, bool isDynamic, float mass)
+bool BulletSim::SetObjectDynamic(IDTYPE id, bool isDynamic, float mass)
 {
 	// Look for a rigid body
 	BodiesMapType::iterator it = m_bodies.find(id);
@@ -1176,7 +1098,7 @@ void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
 
 // Adjust how gravity effects the object
 // neg=fall quickly, 0=1g, 1=0g, pos=float up
-bool BulletSim::SetObjectBuoyancy(unsigned int id, float buoy)
+bool BulletSim::SetObjectBuoyancy(IDTYPE id, float buoy)
 {
 	float grav = m_params->gravity * (1.0f - buoy);
 
@@ -1204,7 +1126,7 @@ bool BulletSim::SetObjectBuoyancy(unsigned int id, float buoy)
 	return false;
 }
 
-bool BulletSim::SetObjectProperties(unsigned int id, bool isStatic, bool isSolid, bool genCollisions, float mass)
+bool BulletSim::SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass)
 {
 	// Look for a rigid body
 	BodiesMapType::iterator it = m_bodies.find(id);
@@ -1279,7 +1201,7 @@ void BulletSim::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3
 	return;
 }
 
-bool BulletSim::HasObject(unsigned int id)
+bool BulletSim::HasObject(IDTYPE id)
 {
 	// Look for a character
 	CharactersMapType::iterator cit = m_characters.find(id);
@@ -1291,7 +1213,7 @@ bool BulletSim::HasObject(unsigned int id)
 	return (bit != m_bodies.end());
 }
 
-bool BulletSim::DestroyObject(unsigned int id)
+bool BulletSim::DestroyObject(IDTYPE id)
 {
 	// Remove any constraints associated with this object
 	RemoveConstraintByID(id);
@@ -1344,7 +1266,7 @@ bool BulletSim::DestroyObject(unsigned int id)
 	return false;
 }
 
-SweepHit BulletSim::ConvexSweepTest(unsigned int id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin)
+SweepHit BulletSim::ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin)
 {
 	SweepHit hit;
 	hit.ID = ID_INVALID_HIT;
@@ -1406,7 +1328,7 @@ SweepHit BulletSim::ConvexSweepTest(unsigned int id, btVector3& fromPos, btVecto
 	return hit;
 }
 
-RaycastHit BulletSim::RayTest(unsigned int id, btVector3& from, btVector3& to)
+RaycastHit BulletSim::RayTest(IDTYPE id, btVector3& from, btVector3& to)
 {
 	RaycastHit hit;
 	hit.ID = ID_INVALID_HIT;
@@ -1446,7 +1368,7 @@ RaycastHit BulletSim::RayTest(unsigned int id, btVector3& from, btVector3& to)
 	return hit;
 }
 
-const btVector3 BulletSim::RecoverFromPenetration(unsigned int id)
+const btVector3 BulletSim::RecoverFromPenetration(IDTYPE id)
 {
 	// Look for a character
 	CharactersMapType::iterator cit = m_characters.find(id);
@@ -1463,7 +1385,7 @@ const btVector3 BulletSim::RecoverFromPenetration(unsigned int id)
 	return btVector3(0.0, 0.0, 0.0);
 }
 
-void BulletSim::UpdateParameter(unsigned int localID, const char* parm, float val)
+void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 {
 	btScalar btVal = btScalar(val);
 
