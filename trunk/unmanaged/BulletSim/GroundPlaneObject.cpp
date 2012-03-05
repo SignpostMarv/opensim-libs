@@ -24,74 +24,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "ObjectCollection.h"
+#include "GroundPlaneObject.h"
 
-ObjectCollection::ObjectCollection(void)
+GroundPlaneObject::GroundPlaneObject(void)
 {
+	// Initialize the ground plane at height 0 (Z-up)
+	m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
+	m_planeShape->setMargin(m_params->collisionMargin);
+
+	m_planeShape->setUserPointer((void*)ID_GROUND_PLANE);
+
+	btDefaultMotionState* motionState = new btDefaultMotionState();
+	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, m_planeShape);
+	btRigidBody* body = new btRigidBody(cInfo);
+
+	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+	
+	m_worldData.dynamicsWorld->addRigidBody(body);
 }
 
-ObjectCollection::~ObjectCollection(void)
+GroundPlaneObject::~GroundPlaneObject(void)
 {
-	// Clean out the collection if it already hasn't been cleaned out
-	Clear();
-}
-
-void ObjectCollection::Clear()
-{
-	// Delete all the objects in the object list
-	for (ObjectMapType::const_iterator it = m_objects.begin(); it != m_objects.end(); ++it)
-    {
-		IPhysObject* obj = it->second;
-		delete obj;
-	}
-
-	m_objects.clear();
-	return;
-}
-
-bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
-{
-	return false;
-}
-
-bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** obj)
-{
-	bool ret = false;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		ret = true;
-	}
-	return ret;
-}
-
-bool ObjectCollection::HasObject(IDTYPE id)
-{
-	IPhysObject* obj;
-	return TryGetObject(id, &obj);
-}
-
-IPhysObject* ObjectCollection::RemoveObject(IDTYPE id)
-{
-	IPhysObject* obj = NULL;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		m_objects.erase(it);
-	}
-	return obj;
-}
-
-bool ObjectCollection::RemoveAndDestroyObject(IDTYPE id)
-{
-	bool ret = false;
-	IPhysObject* obj = RemoveObject(id);
-	if (obj)
-	{
-		delete obj;
-		ret = true;
-	}
-	return ret;
 }

@@ -24,74 +24,32 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "ObjectCollection.h"
+#pragma once
 
-ObjectCollection::ObjectCollection(void)
+#ifndef CONSTRAINT_COLLECTION_H
+#define CONSTRAINT_COLLECTION_H
+
+#include "ArchStuff.h"
+
+#include "btBulletDynamicsCommon.h"
+
+#define CONSTRAINTIDTYPE unsigned long long
+
+class ConstraintCollection
 {
-}
+public:
+	ConstraintCollection(void);
+	~ConstraintCollection(void);
 
-ObjectCollection::~ObjectCollection(void)
-{
-	// Clean out the collection if it already hasn't been cleaned out
-	Clear();
-}
+	bool AddConstraint(IDTYPE, IDTYPE, btTypedConstraint*);
 
-void ObjectCollection::Clear()
-{
-	// Delete all the objects in the object list
-	for (ObjectMapType::const_iterator it = m_objects.begin(); it != m_objects.end(); ++it)
-    {
-		IPhysObject* obj = it->second;
-		delete obj;
-	}
+	bool RemoveConstraints(IDTYPE, IDTYPE);
 
-	m_objects.clear();
-	return;
-}
+	// one or more objects changed shape/mass. Recompute the constraint transforms.
+	void RecalculateAllConstraints(IDTYPE);
 
-bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
-{
-	return false;
-}
+private:
+	CONSTRAINTIDTYPE ConstraintCollection::GenConstraintID(IDTYPE id1, IDTYPE id2);
+};
 
-bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** obj)
-{
-	bool ret = false;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		ret = true;
-	}
-	return ret;
-}
-
-bool ObjectCollection::HasObject(IDTYPE id)
-{
-	IPhysObject* obj;
-	return TryGetObject(id, &obj);
-}
-
-IPhysObject* ObjectCollection::RemoveObject(IDTYPE id)
-{
-	IPhysObject* obj = NULL;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		m_objects.erase(it);
-	}
-	return obj;
-}
-
-bool ObjectCollection::RemoveAndDestroyObject(IDTYPE id)
-{
-	bool ret = false;
-	IPhysObject* obj = RemoveObject(id);
-	if (obj)
-	{
-		delete obj;
-		ret = true;
-	}
-	return ret;
-}
+#endif   // CONSTRAINT_COLLECTION_H

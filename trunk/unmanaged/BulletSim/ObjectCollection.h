@@ -37,9 +37,26 @@ public:
 	ObjectCollection(void);
 	~ObjectCollection(void);
 
-	void AddObject(IDTYPE id, IPhysObject* obj);
+	// Remove and destroy all objects in the collection
+	void Clear();
+
+	// Add an object to collection.
+	// Return 'true' if successfully added.
+	bool AddObject(IDTYPE id, IPhysObject* obj);
+
+	// Fetch the object.
+	// Return true of the object was found.
+	bool TryGetObject(IDTYPE id, IPhysObject** obj);
+
+	// Return 'true' if the object is in the collection
 	bool HasObject(IDTYPE id);
-	bool DestroyObject(IDTYPE id);
+
+	// Remove the object from the collection and return the object.
+	IPhysObject* RemoveObject(IDTYPE id);
+
+	// Remove the obejct from the collection and delete the object.
+	// Return 'true' if successfully removed and deleted.
+	bool RemoveAndDestroyObject(IDTYPE id);
 
 private:
 	typedef std::map<IDTYPE, IPhysObject*> ObjectMapType;

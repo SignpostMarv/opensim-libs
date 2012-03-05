@@ -31,16 +31,28 @@
 
 #include "IPhysObject.h"
 #include "APIData.h"
+#include "WorldData.h"
 
 class AvatarObject :
 	public IPhysObject
 {
 public:
-	AvatarObject(const ShapeData*);
+	AvatarObject(WorldData*, ShapeData*);
 	~AvatarObject(void);
 
 	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
 	bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity);
+
+	btVector3 GetObjectPosition(void);
+
+	bool SetDynamic(const bool isPhysical, const float mass);
+	bool SetScaleMass(const float scale, const float mass);
+	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
+	bool SetObjectVelocity(btVector3& velocity);
+	bool SetObjectAngularVelocity(btVector3& angularVelocity);
+	bool SetObjectForce(btVector3& force);
+	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
+	bool SetObjectCollidable(bool collidable);
 };
 
 #endif // AVATAROBJECT_H

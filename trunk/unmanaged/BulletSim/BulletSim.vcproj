@@ -348,7 +348,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\BulletSimOrig.cpp"
+				RelativePath=".\ConstraintCollection.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GroundPlaneObject.cpp"
 				>
 			</File>
 			<File
@@ -386,6 +390,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ConstraintCollection.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GroundPlaneObject.h"
+				>
+			</File>
+			<File
 				RelativePath=".\IPhysObject.h"
 				>
 			</File>
@@ -395,6 +407,10 @@
 			</File>
 			<File
 				RelativePath=".\PrimObject.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WorldData.h"
 				>
 			</File>
 		</Filter>

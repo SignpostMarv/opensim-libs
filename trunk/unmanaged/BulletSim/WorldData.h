@@ -24,74 +24,41 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#pragma once
+
+#ifndef WORLD_DATA_H
+#define WORLD_DATA_H
+
+#include "APIData.h"
 #include "ObjectCollection.h"
+#include "ConstraintCollection.h"
+#include "btBulletDynamicsCommon.h"
 
-ObjectCollection::ObjectCollection(void)
+#include <map>
+
+// Structure to hold the world data that is common to all the objects in the world
+struct WorldData
 {
-}
+	ParamBlock* params;
+	
+	// pointer to the containing world control structure
+	btDynamicsWorld* dynamicsWorld;
 
-ObjectCollection::~ObjectCollection(void)
-{
-	// Clean out the collection if it already hasn't been cleaned out
-	Clear();
-}
+	// Used to expose updates from Bullet to the BulletSim API
+	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
+	UpdatesThisFrameMapType updatesThisFrame;
 
-void ObjectCollection::Clear()
-{
-	// Delete all the objects in the object list
-	for (ObjectMapType::const_iterator it = m_objects.begin(); it != m_objects.end(); ++it)
-    {
-		IPhysObject* obj = it->second;
-		delete obj;
-	}
+	// Objects in this world
+	// We create a class instance (using IPhysObjectFactory()) for each of the
+	// object types kept in the world. This separates the code for handling
+	// the physical object from the interface to the simulator.
+	// Once collection object is created to hold the objects. This also
+	// has the list manipulation functions.
+	ObjectCollection* objects;
 
-	m_objects.clear();
-	return;
-}
+	// Constraints created in this world
+	ConstraintCollection* constraints;
+};
 
-bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
-{
-	return false;
-}
-
-bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** obj)
-{
-	bool ret = false;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		ret = true;
-	}
-	return ret;
-}
-
-bool ObjectCollection::HasObject(IDTYPE id)
-{
-	IPhysObject* obj;
-	return TryGetObject(id, &obj);
-}
-
-IPhysObject* ObjectCollection::RemoveObject(IDTYPE id)
-{
-	IPhysObject* obj = NULL;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		m_objects.erase(it);
-	}
-	return obj;
-}
-
-bool ObjectCollection::RemoveAndDestroyObject(IDTYPE id)
-{
-	bool ret = false;
-	IPhysObject* obj = RemoveObject(id);
-	if (obj)
-	{
-		delete obj;
-		ret = true;
-	}
-	return ret;
-}
+#endif // WORLD_DATA_H

@@ -30,6 +30,7 @@
 #define IPHYSOBJECT_H
 
 #include "APIData.h"
+#include "WorldData.h"
 #include "btBulletDynamicsCommon.h"
 
 class IPhysObject
@@ -39,13 +40,63 @@ public:
 	~IPhysObject(void);
 
 	// Passed a parameter block, create a new instance of the proper object
-	static IPhysObject* PhysObjectFactory(const ShapeData*);
+	static IPhysObject* PhysObjectFactory(WorldData*, ShapeData*);
 
-	virtual bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) = 0;
-	virtual bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) = 0;
+	// These functions have a default null implementation so all sub-classes don't need
+	//   to define the method if it is not used by that object type.
+	virtual bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) { return false; };
+	virtual bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) { return false; };
+
+	virtual btVector3 GetObjectPosition(void) { return btVector3(0.0, 0.0, 0.0); };
+
+	virtual bool SetDynamic(const bool isPhysical, const float mass) { return false; };
+	virtual bool SetScaleMass(const float scale, const float mass) { return false; };
+	virtual bool SetObjectTranslation(btVector3& position, btQuaternion& rotation) { return false; };
+	virtual bool SetObjectVelocity(btVector3& velocity) { return false; };
+	virtual bool SetObjectAngularVelocity(btVector3& angularVelocity) { return false; };
+	virtual bool SetObjectForce(btVector3& force) { return false; };
+	virtual bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic) { return false; };
+	virtual bool SetObjectCollidable(bool collidable) { return false; };
+
+	virtual void UpdateParameter(const char* parm, const float val) { };
+
+// Adjust how gravity effects the object
+// neg=fall quickly, 0=1g, 1=0g, pos=float up
+bool BulletSim::SetObjectBuoyancy(IDTYPE id, float buoy)
+{
+	float grav = m_worldData.params->gravity * (1.0f - buoy);
+
+	CharactersMapType::iterator it = m_characters.find(id);
+	if (it != m_characters.end())
+	{
+		btRigidBody* body = it->second;
+
+		body->setGravity(btVector3(0, 0, grav));
+
+		body->activate(true);
+		return true;
+	}
+	// Look for a rigid body
+	BodiesMapType::iterator bit = m_bodies.find(id);
+	if (bit != m_bodies.end())
+	{
+		btRigidBody* body = bit->second;
+
+		body->setGravity(btVector3(0, 0, grav));
+
+		body->activate(false);
+		return true;
+	}
+	return false;
+}
+
 
 protected:
-	btRigidBody* m_body;
+	IDTYPE m_id;			// the ID used to identify this object
+
+	btRigidBody* m_body;	// pointer to the physics instance
+
+	WorldData* m_worldData;	// pointer to the physics context for this object
 };
 
 #endif	// IPHYSOBJECT_H

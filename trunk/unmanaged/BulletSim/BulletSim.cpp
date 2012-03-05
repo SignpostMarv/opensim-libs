@@ -31,6 +31,10 @@
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
+	m_worldData.dynamicsWorld = NULL;
+	m_worldData.objects = NULL;
+	m_worldData.constraints = NULL;
+
 	int i_maxX = (int)maxX;
 	int i_maxY = (int)maxY;
 
@@ -51,14 +55,18 @@ void BulletSim::initPhysics(ParamBlock* parms,
 							int maxCollisions, CollisionDesc* collisionArray, 
 							int maxUpdates, EntityProperties* updateArray)
 {
-	// all our parameters in a block of pinned memory
-	m_params = parms;
-
 	// remember the pointers to pinned memory for returning collisions and property updates
 	m_maxCollisionsPerFrame = maxCollisions;
 	m_collidersThisFrameArray = collisionArray;
 	m_maxUpdatesPerFrame = maxUpdates;
 	m_updatesThisFrameArray = updateArray;
+
+	// Parameters are in a block of pinned memory
+	m_worldData.params = parms;
+	// the collection of all the objects that are passed to the physics engine
+	m_worldData.objects = new ObjectCollection();
+	// the collection of the constraints that are used to create linkset
+	m_worldData.constraints = new ConstraintCollection();
 
 	// create the functional parts of the physics simulation
 	btDefaultCollisionConstructionInfo cci;
@@ -75,30 +83,31 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	m_solver = new btSequentialImpulseConstraintSolver();
 
 	// Create the world
-	m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
+	btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
+	m_worldData.dynamicsWorld = dynamicsWorld;
 	
 	// disable the continuious recalculation of the static AABBs
 	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
 	// Note that movement or changes to a static object will not update the AABB. Do it explicitly.
-	m_dynamicsWorld->setForceUpdateAllAabbs(false);
+	dynamicsWorld->setForceUpdateAllAabbs(false);
 	
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
-	m_dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+	dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
 
 	// setting to false means the islands are not reordered and split up for individual processing
-	m_dynamicsWorld->getSimulationIslandManager()->setSplitIslands(false);
+	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(false);
 
 	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
 	// Actually a NOOP unless Bullet is compiled with USE_SEPDISTANCE_UTIL2 set.
-	m_dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
-	m_dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = btScalar(0.01);
+	dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
+	dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = btScalar(0.01);
 
 	// Performance speedup: from BenchmarkDemo.cpp, ln 381
-	// m_dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
-	// m_dynamicsWorld->getSolverInfo().m_numIterations = 5; //few solver iterations 
+	// m_worldData.dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
+	// m_worldData.dynamicsWorld->getSolverInfo().m_numIterations = 5; //few solver iterations 
 
 	// Earth-like gravity
-	m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_params->gravity));
+	dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_worldData.params->gravity));
 
 	// Information on creating a custom collision computation routine and a pointer to the computation
 	// of friction and restitution at:
@@ -113,34 +122,24 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 void BulletSim::exitPhysics()
 {
-	if (!m_dynamicsWorld)
+	if (!m_worldData.dynamicsWorld)
 		return;
 
 	// Clean up in the reverse order of creation/initialization
 
-	// Remove the rigidbodies from the dynamics world and delete them
-	for (int i = m_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
+	if (m_worldData.objects)
 	{
-		btCollisionObject* obj = m_dynamicsWorld->getCollisionObjectArray()[i];
-		
-		// Delete motion states attached to rigid bodies
-		btRigidBody* body = btRigidBody::upcast(obj);
-		if (body && body->getMotionState())
-			delete body->getMotionState();
-		
-		// Remove the collision object from the scene
-		m_dynamicsWorld->removeCollisionObject(obj);
-		
-		// Delete the collision shape
-		btCollisionShape* shape = obj->getCollisionShape();
-		if (shape)
-			delete shape;
-
-		// Delete the collision object
-		delete obj;
+		m_worldData.objects->Clear();
+		delete m_worldData.objects;
+		m_worldData.objects = NULL;
 	}
-	m_bodies.clear();
-	m_characters.clear();
+
+	if (m_worldData.constraints)
+	{
+		m_worldData.constraints->Clear();
+		delete m_worldData.constraints;
+		m_worldData.constraints = NULL;
+	}
 
 	// Delete collision meshes
 	for (HullsMapType::const_iterator it = m_hulls.begin(); it != m_hulls.end(); ++it)
@@ -163,10 +162,6 @@ void BulletSim::exitPhysics()
 	m_planeShape = NULL;
 	m_heightfieldShape = NULL;
 
-	// Delete dynamics world
-	delete m_dynamicsWorld;
-	m_dynamicsWorld = NULL;
-
 	// Delete solver
 	delete m_solver;
 	m_solver = NULL;
@@ -183,8 +178,8 @@ void BulletSim::exitPhysics()
 	delete m_collisionConfiguration;
 	m_collisionConfiguration = NULL;
 
-	delete m_dynamicsWorld;
-	m_dynamicsWorld = NULL;
+	delete m_worldData.dynamicsWorld;
+	m_worldData.dynamicsWorld = NULL;
 }
 
 // Step the simulation forward by one full step and potentially some number of substeps
@@ -194,22 +189,23 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 {
 	int numSimSteps = 0;
 
-	if (m_dynamicsWorld)
+	if (m_worldData.dynamicsWorld)
 	{
-		// The simulation calls the SimMotionState to put object updates into m_updatesThisFrame.
-		numSimSteps = m_dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
+		// The simulation calls the SimMotionState to put object updates into updatesThisFrame.
+		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
 		// Put all of the updates this frame into m_updatesThisFrameArray
 		int updates = 0;
-		if (m_updatesThisFrame.size() > 0)
+		if (m_worldData.updatesThisFrame.size() > 0)
 		{
-			for (UpdatesThisFrameMapType::const_iterator it = m_updatesThisFrame.begin(); it != m_updatesThisFrame.end(); ++it)
+			for (WorldData::UpdatesThisFrameMapType::const_iterator it = m_worldData.updatesThisFrame.begin(); 
+										it != m_worldData.updatesThisFrame.end(); ++it)
 			{
 				m_updatesThisFrameArray[updates] = *(it->second);
 				updates++;
 				if (updates >= m_maxUpdatesPerFrame) break;
 			}
-			m_updatesThisFrame.clear();
+			m_worldData.updatesThisFrame.clear();
 		}
 
 		// Update the values passed by reference into this function
@@ -219,10 +215,10 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		// Put all of the colliders this frame into m_collidersThisFrameArray
 		std::set<unsigned long long> collidersThisFrame;
 		int collisions = 0;
-		int numManifolds = m_dynamicsWorld->getDispatcher()->getNumManifolds();
+		int numManifolds = m_worldData.dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
 		{
-			btPersistentManifold* contactManifold = m_dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(j);
+			btPersistentManifold* contactManifold = m_worldData.dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(j);
 			int numContacts = contactManifold->getNumContacts();
 			if (numContacts == 0) continue;
 
@@ -285,20 +281,7 @@ void BulletSim::SetHeightmap(float* heightmap)
 // Create a collision plane at height zero to stop things falling to oblivion
 void BulletSim::CreateGroundPlane()
 {
-	// Initialize the ground plane at height 0 (Z-up)
-	m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
-	m_planeShape->setMargin(m_params->collisionMargin);
-
-	m_planeShape->setUserPointer((void*)ID_GROUND_PLANE);
-
-	btDefaultMotionState* motionState = new btDefaultMotionState();
-	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, m_planeShape);
-	btRigidBody* body = new btRigidBody(cInfo);
-
-	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-	
-	m_dynamicsWorld->addRigidBody(body);
-	m_bodies[ID_GROUND_PLANE] = body;
+	m_worldData.objects->AddObject(ID_GROUND_PLANE, new GroundPlaneObject(&m_worldData));
 }
 
 // Based on the heightmap, create a mesh for the terrain and put it in the world
@@ -357,16 +340,16 @@ void BulletSim::CreateTerrain()
 	// if there is a previous terrain, remove it
 	DestroyObject(ID_TERRAIN);
 
-	m_dynamicsWorld->addRigidBody(body);
+	m_worldData.dynamicsWorld->addRigidBody(body);
 	m_bodies[ID_TERRAIN] = body;
-	m_dynamicsWorld->updateSingleAabb(body);
+	m_worldData.dynamicsWorld->updateSingleAabb(body);
 }
 
 void BulletSim::SetTerrainPhysicalParameters(btRigidBody* body)
 {
-	body->setFriction(btScalar(m_params->terrainFriction));
-	body->setHitFraction(btScalar(m_params->terrainHitFraction));
-	body->setRestitution(btScalar(m_params->terrainRestitution));
+	body->setFriction(btScalar(m_worldData.params->terrainFriction));
+	body->setHitFraction(btScalar(m_worldData.params->terrainHitFraction));
+	body->setRestitution(btScalar(m_worldData.params->terrainRestitution));
 	// body->setActivationState(DISABLE_DEACTIVATION);
 	body->activate(true);
 }
@@ -388,7 +371,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 
 		btTransform childTrans;
 		childTrans.setIdentity();
-		compoundShape->setMargin(m_params->collisionMargin);
+		compoundShape->setMargin(m_worldData.params->collisionMargin);
 		
 		// Loop through all of the convex hulls and add them to our compound shape
 		int ii = 1;
@@ -403,7 +386,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 			// Create the child hull and add it to our compound shape
 			btScalar* hullVertices = (btScalar*)&hulls[ii+4];
 			btConvexHullShape* convexShape = new btConvexHullShape(hullVertices, vertexCount, sizeof(Vector3));
-			convexShape->setMargin(m_params->collisionMargin);
+			convexShape->setMargin(m_worldData.params->collisionMargin);
 			compoundShape->addChildShape(childTrans, convexShape);
 
 			ii += (vertexCount * 3 + 4);
@@ -499,24 +482,24 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 	switch (type)
 	{
 		case ShapeData::SHAPE_AVATAR:
-			shape = new btCapsuleShapeZ(m_params->avatarCapsuleRadius, m_params->avatarCapsuleHeight);
-			shape->setMargin(m_params->collisionMargin);
+			shape = new btCapsuleShapeZ(m_worldData.params->avatarCapsuleRadius, m_worldData.params->avatarCapsuleHeight);
+			shape->setMargin(m_worldData.params->collisionMargin);
 			break;
 		case ShapeData::SHAPE_BOX:
 			// btBoxShape subtracts the collision margin from the half extents, so no 
 			// fiddling with scale necessary
 			// boxes are defined by their half extents
 			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
-			shape->setMargin(m_params->collisionMargin);
+			shape->setMargin(m_worldData.params->collisionMargin);
 			AdjustScaleForCollisionMargin(shape, scaleBt);
 			break;
 		case ShapeData::SHAPE_CONE:	// TODO:
 			shape = new btConeShapeZ(0.5, 1.0);
-			shape->setMargin(m_params->collisionMargin);
+			shape->setMargin(m_worldData.params->collisionMargin);
 			break;
 		case ShapeData::SHAPE_CYLINDER:	// TODO:
 			shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
-			shape->setMargin(m_params->collisionMargin);
+			shape->setMargin(m_worldData.params->collisionMargin);
 			break;
 		case ShapeData::SHAPE_MESH:
 			mt = m_meshes.find(data->MeshKey);
@@ -526,7 +509,7 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 				btBvhTriangleMeshShape* origionalMeshShape = mt->second;
 				// we have to copy the mesh shape because we don't keep use counters
 				shape = DuplicateMeshShape(origionalMeshShape);
-				shape->setMargin(m_params->collisionMargin);
+				shape->setMargin(m_worldData.params->collisionMargin);
 				AdjustScaleForCollisionMargin(shape, scaleBt);
 			}
 			break;
@@ -541,13 +524,13 @@ btCollisionShape* BulletSim::CreateShape(ShapeData* data)
 				// BSLog("CreateShape: SHAPE_HULL. localID=%d", data->ID);
 				btCompoundShape* originalCompoundShape = ht->second;
 				shape = DuplicateCompoundShape(originalCompoundShape);
-				shape->setMargin(m_params->collisionMargin);
+				shape->setMargin(m_worldData.params->collisionMargin);
 				AdjustScaleForCollisionMargin(shape, scaleBt);
 			}
 			break;
 		case ShapeData::SHAPE_SPHERE:
 			shape = new btSphereShape(0.5);		// this is really a unit sphere
-			shape->setMargin(m_params->collisionMargin);
+			shape->setMargin(m_worldData.params->collisionMargin);
 			AdjustScaleForCollisionMargin(shape, scaleBt);
 			break;
 	}
@@ -584,23 +567,30 @@ btCollisionShape* BulletSim::DuplicateMeshShape(btBvhTriangleMeshShape* mShape)
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
 {
+	bool ret = false;
+
 	// If the object already exists, destroy it
-	m_objects->DestroyObject(data->ID);
+	m_worldData.objects->DestroyObject(data->ID);
 
 	// Create and add the new physical object
-	m_objects.AddObject(data->ID, new IPhysObject::PhysObjectFactory(data));
+	IPhysObject* newObject = IPhysObject::PhysObjectFactory(&m_worldData, data);
+	if (newObject != NULL)
+	{
+		m_worldData.objects->AddObject(data->ID, newObject);
+		ret = true;
+	}
 
-	return true;
+	return ret;
 }
 
 void BulletSim::SetAvatarPhysicalParameters(btRigidBody* character, btScalar frict, btScalar resti, const btVector3& velo)
 {
 	// Tweak continuous collision detection parameters
 	// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
-	if (m_params->ccdMotionThreshold > 0.0f)
+	if (m_worldData.params->ccdMotionThreshold > 0.0f)
 	{
-		character->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
-		character->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
+		character->setCcdMotionThreshold(btScalar(m_worldData.params->ccdMotionThreshold));
+		character->setCcdSweptSphereRadius(btScalar(m_worldData.params->ccdSweptSphereRadius));
 	}
 
 	character->setFriction(frict);
@@ -618,15 +608,15 @@ void BulletSim::SetAvatarPhysicalParameters(btRigidBody* character, btScalar fri
 void BulletSim::SetObjectPhysicalParameters(btRigidBody* body, btScalar frict, btScalar resti, const btVector3& velo)
 {
 	// Tweak continuous collision detection parameters
-	if (m_params->ccdMotionThreshold > 0.0f)
+	if (m_worldData.params->ccdMotionThreshold > 0.0f)
 	{
-		body->setCcdMotionThreshold(btScalar(m_params->ccdMotionThreshold));
-		body->setCcdSweptSphereRadius(btScalar(m_params->ccdSweptSphereRadius));
+		body->setCcdMotionThreshold(btScalar(m_worldData.params->ccdMotionThreshold));
+		body->setCcdSweptSphereRadius(btScalar(m_worldData.params->ccdSweptSphereRadius));
 	}
-	body->setDamping(m_params->linearDamping, m_params->angularDamping);
-	body->setDeactivationTime(m_params->deactivationTime);
-	body->setSleepingThresholds(m_params->linearSleepingThreshold, m_params->angularSleepingThreshold);
-	body->setContactProcessingThreshold(m_params->contactProcessingThreshold);
+	body->setDamping(m_worldData.params->linearDamping, m_worldData.params->angularDamping);
+	body->setDeactivationTime(m_worldData.params->deactivationTime);
+	body->setSleepingThresholds(m_worldData.params->linearSleepingThreshold, m_worldData.params->angularSleepingThreshold);
+	body->setContactProcessingThreshold(m_worldData.params->contactProcessingThreshold);
 
 	body->setFriction(frict);
 	body->setRestitution(resti);
@@ -695,16 +685,17 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 							  btVector3& frame2, btQuaternion& frame2rot,
 	btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular)
 {
-	RemoveConstraint(id1, id2);		// remove any existing constraint
-	BodiesMapType::iterator bit1 = m_bodies.find(id1);
-	if (bit1 != m_bodies.end())
+	m_constraints->RemoveConstraint(id1, id2);		// remove any existing constraint
+
+	IPhysObject* obj1;
+	IPhysObject* obj2;
+	if (m_worldData.objects->TryGetObject(id1, &obj1))
 	{
-		btRigidBody* body1 = bit1->second;
-		BodiesMapType::iterator bit2 = m_bodies.find(id2);
-		if (bit2 != m_bodies.end())
-		{
+		if (m_worldData.objects->TryGetObject(id2, &obj2))
             // BSLog("AddConstraint: found body1=%d, body2=%d", id1, id2);
-			btRigidBody* body2 = bit2->second;
+			btRigidBody* body1 = obj1->m_body;
+			btRigidBody* body2 = obj2->m_body;
+
 			btTransform frame1t, frame2t;
 			frame1t.setIdentity();
 			frame1t.setOrigin(frame1);
@@ -713,7 +704,7 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 			frame2t.setOrigin(frame2);
 			frame2t.setRotation(frame2rot);
 			btGeneric6DofConstraint* constraint = new btGeneric6DofConstraint(*body1, *body2, frame1t, frame2t, true);
-            m_dynamicsWorld->addConstraint(constraint, true);
+            m_worldData.dynamicsWorld->addConstraint(constraint, true);
 			constraint->setLinearLowerLimit(lowLinear);
 			constraint->setLinearUpperLimit(hiLinear);
 			constraint->setAngularLowerLimit(lowAngular);
@@ -723,14 +714,7 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 			constraint->getTranslationalLimitMotor()->m_targetVelocity[0] = 5.0f;
 			constraint->getTranslationalLimitMotor()->m_maxMotorForce[0] = 0.1f;
 
-			// Create a unique ID for this constraint
-			unsigned long long constraintID = GenConstraintID(id1, id2);
-
-			// this constraint should not be in the list (deleted before)
-			if (m_constraints.find(constraintID) == m_constraints.end())
-			{
-				m_constraints[constraintID] = constraint;
-			}
+			m_constraints->AddConstraint(id1, id2, constraint);
 		}
 	}
 	return;
@@ -754,7 +738,7 @@ bool BulletSim::RemoveConstraintByID(IDTYPE id1)
 				|| (((IDTYPE)(constraintID >> 32) & 0xffffffff) == id1))
 			{
 				btGeneric6DofConstraint* constraint = it->second;
-		 		m_dynamicsWorld->removeConstraint(constraint);
+		 		m_worldData.dynamicsWorld->removeConstraint(constraint);
 				m_constraints.erase(it);
 				delete constraint;
 				removedSomething = true;
@@ -791,371 +775,145 @@ bool BulletSim::RecalculateAllConstraintsByID(IDTYPE id1)
 
 bool BulletSim::RemoveConstraint(IDTYPE id1, IDTYPE id2)
 {
+	m_worldData.constraints->RemoveConstraints(id1, id2);
+
+	/*
 	unsigned long long constraintID = GenConstraintID(id1, id2);
 	ConstraintMapType::iterator it = m_constraints.find(constraintID);
 	if (it != m_constraints.end())
 	{
 		btGeneric6DofConstraint* constraint = m_constraints[constraintID];
- 		m_dynamicsWorld->removeConstraint(constraint);
+ 		m_worldData.dynamicsWorld->removeConstraint(constraint);
 		m_constraints.erase(it);
 		delete constraint;
 		return true;
 	}
 	return false;
-}
-
-// There can be only one constraint between objects. Always use the lowest id as the first part
-// of the key so the same constraint will be found no matter what order the caller passes them.
-unsigned long long BulletSim::GenConstraintID(IDTYPE id1, IDTYPE id2)
-{
-	if (id1 < id2)
-		return ((unsigned long long)id1 << 32) | id2;
-	else
-		return ((unsigned long long)id2 << 32) | id1;
-	return 0;
+	*/
 }
 
 btVector3 BulletSim::GetObjectPosition(IDTYPE id)
 {
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
-	{
-		btRigidBody* character = cit->second;
+	btVector3 ret = btVector3(0.0, 0.0, 0.0);
 
-		btTransform xform = character->getWorldTransform();
-		return xform.getOrigin();
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
+		ret = obj->GetObjectPosition();
 	}
 
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	if (bit != m_bodies.end())
-	{
-		btRigidBody* body = bit->second;
-
-		btTransform xform = body->getWorldTransform();
-		return xform.getOrigin();
-	}
-
-	return btVector3(0.0, 0.0, 0.0);
+	return ret;
 }
 
 bool BulletSim::SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation)
 {
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
+	bool ret = false;
 
-	// Build a transform containing the new position and rotation
-	btTransform transform;
-	transform.setIdentity();
-	transform.setOrigin(position);
-	transform.setRotation(rotation);
-
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
 	{
-		btRigidBody* character = cit->second;
-
-		// Set the new transform for this character controller
-		character->setWorldTransform(transform);
-		return true;
+		obj->SetObjectTranslation(position, rotation);
+		ret = true;
 	}
 
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	if (bit != m_bodies.end())
-	{
-		btRigidBody* body = bit->second;
-
-		// Clear all forces for this object
-		body->setLinearVelocity(ZERO_VECTOR);
-		body->setAngularVelocity(ZERO_VECTOR);
-		body->clearForces();
-
-		// Set the new transform for the rigid body and the motion state
-		body->setWorldTransform(transform);
-		body->getMotionState()->setWorldTransform(transform);
-
-		body->activate(false);
-		return true;
-	}
-
-	return false;
+	return ret;
 }
 
 bool BulletSim::SetObjectVelocity(IDTYPE id, btVector3& velocity)
 {
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
-	{
-		btRigidBody* character = cit->second;
+	bool ret = false;
 
-		character->setLinearVelocity(velocity);
-		character->activate(true);
-		return true;
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
+	{
+		obj->SetObjectVelocity(velocity);
+		ret = true;
 	}
 
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_bodies.find(id);
-	if (it != m_bodies.end())
-	{
-		btRigidBody* body = it->second;
-
-		// Set the linear velocity for this object
-		body->setLinearVelocity(velocity);
-		body->activate(false);
-		return true;
-	}
-	return false;
+	return ret;
 }
 
 bool BulletSim::SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity)
 {
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_bodies.find(id);
-	if (it != m_bodies.end())
-	{
-		btRigidBody* body = it->second;
+	bool ret = false;
 
-		// Set the linear velocity for this object
-		body->setAngularVelocity(angularVelocity);
-		body->activate(true);
-		return true;
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
+	{
+		obj->SetObjectAngularVelocity(angularVelocity);
+		ret = true;
 	}
-	return false;
+
+	return ret;
 }
 
 bool BulletSim::SetObjectForce(IDTYPE id, btVector3& force)
 {
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_bodies.find(id);
-	if (it != m_bodies.end())
-	{
-		btRigidBody* body = it->second;
+	bool ret = false;
 
-		// Apply the force to this object
-		body->applyCentralForce(force);
-		body->activate(false);
-		return true;
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
+	{
+		obj->SetObjectForce(force);
+		ret = true;
 	}
 
-	return false;
+	return ret;
 }
 
 bool BulletSim::SetObjectScaleMass(IDTYPE id, btVector3& scale, float mass, bool isDynamic)
 {
-	// BSLog("SetObjectScaleMass: mass=%f", mass);
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
+	bool ret = false;
 
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
 	{
-		btRigidBody* character = cit->second;
-		btCollisionShape* shape = character->getCollisionShape();
-
-		// Set the new scale
-		shape->setLocalScaling(scale);
-
-		return true;
+		obj->SetObjectScaleMass(scale, mass, isDynamic);
+		ret = true;
 	}
 
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	if (bit != m_bodies.end())
-	{
-		btRigidBody* body = bit->second;
-		btCollisionShape* shape = body->getCollisionShape();
-
-		// NOTE: From the author of Bullet: "If you want to change important data 
-		// from objects, you have to remove them from the world first, then make the 
-		// change, and re-add them to the world." It's my understanding that some of
-		// the following changes, including mass, constitute "important data"
-		m_dynamicsWorld->removeRigidBody(body);
-
-		// Clear all forces for this object
-		body->setLinearVelocity(ZERO_VECTOR);
-		body->setAngularVelocity(ZERO_VECTOR);
-		body->clearForces();
-
-		// Set the new scale
-		AdjustScaleForCollisionMargin(shape, scale);
-
-		// apply the mass and dynamicness
-		SetObjectDynamic(body, isDynamic, mass);
-
-		// Add the rigid body back to the simulation
-		m_dynamicsWorld->addRigidBody(body);
-
-		// Calculate a new AABB for this object
-		m_dynamicsWorld->updateSingleAabb(body);
-
-		body->activate(false);
-		return true;
-	}
-
-	return false;
+	return ret;
 }
 
 bool BulletSim::SetObjectCollidable(IDTYPE id, bool collidable)
 {
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_bodies.find(id);
-	if (it != m_bodies.end())
+	bool ret = false;
+
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
 	{
-		btRigidBody* body = it->second;
-		SetObjectCollidable(body, collidable);
-		return true;
+		obj->SetObjectCollidable(collidable);
+		ret = true;
 	}
-	return false;
-}
 
-void BulletSim::SetObjectCollidable(btRigidBody* body, bool collidable)
-{
-	// Toggle the CF_NO_CONTACT_RESPONSE on or off for the object to enable/disable phantom behavior
-	if (collidable)
-		body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
-	else
-		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-
-	body->activate(false);
-	// BSLog("SetObjectCollidable: after activate: id=%u, collidable=%d",
-	// 	CONVLOCALID(body->getCollisionShape()->getUserPointer()), collidable);
-	return;
-}
-
-bool BulletSim::SetObjectDynamic(IDTYPE id, bool isDynamic, float mass)
-{
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_bodies.find(id);
-	if (it != m_bodies.end())
-	{
-		btRigidBody* body = it->second;
-		m_dynamicsWorld->removeRigidBody(body);
-		SetObjectDynamic(body, isDynamic, mass);
-		m_dynamicsWorld->addRigidBody(body);
-		m_dynamicsWorld->updateSingleAabb(body);
-		body->activate(false);
-		return true;
-	}
-	return false;
-
-}
-
-void BulletSim::SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass)
-{
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
-
-	// BSLog("SetObjectDynamic: isDynamic=%d, mass=%f", isDynamic, mass);
-	if (isDynamic)
-	{
-		body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_STATIC_OBJECT);
-		// We can't deactivate a physical object because Bullet does not tell us when
-		// the object goes idle. The lack of this event means small velocity values are
-		// left on the object and the viewer displays the object floating off.
-		// body->setActivationState(DISABLE_DEACTIVATION);
-		// Change for if Bullet has been modified to call MotionState when body goes inactive
-
-		// Recalculate local inertia based on the new mass
-		btVector3 localInertia(0, 0, 0);
-		body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
-
-		// Set the new mass
-		body->setMassProps(mass, localInertia);
-		// BSLog("SetObjectDynamic: dynamic. ID=%d, Mass = %f", CONVLOCALID(body->getCollisionShape()->getUserPointer()), mass);
-		body->updateInertiaTensor();
-
-		// NOTE: Workaround for issue http://code.google.com/p/bullet/issues/detail?id=364
-		// when setting mass
-		body->setGravity(body->getGravity());
-
-		// if there are any constraints on this object, recalcuate transforms for new mass
-		this->RecalculateAllConstraintsByID(CONVLOCALID(body->getCollisionShape()->getUserPointer()));
-	}
-	else
-	{
-		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
-		// body->setActivationState(WANTS_DEACTIVATION);
-		// force the static object to be inactive
-		body->forceActivationState(ISLAND_SLEEPING);
-
-		// Clear all forces for this object
-		body->setLinearVelocity(ZERO_VECTOR);
-		body->setAngularVelocity(ZERO_VECTOR);
-		body->clearForces();
-
-		// Set the new mass (the caller should be passing zero)
-		body->setMassProps(mass, ZERO_VECTOR);
-		// BSLog("SetObjectDynamic: not dynamic. ID=%d, Mass = %f", CONVLOCALID(body->getCollisionShape()->getUserPointer()), mass);
-		body->updateInertiaTensor();
-		body->setGravity(body->getGravity());
-	}
-	// don't force activation so we don't undo the "ISLAND_SLEEPING" for static objects
-	body->activate(false);
-	return;
+	return ret;
 }
 
 // Adjust how gravity effects the object
 // neg=fall quickly, 0=1g, 1=0g, pos=float up
 bool BulletSim::SetObjectBuoyancy(IDTYPE id, float buoy)
 {
-	float grav = m_params->gravity * (1.0f - buoy);
+	bool ret = false;
 
-	CharactersMapType::iterator it = m_characters.find(id);
-	if (it != m_characters.end())
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
 	{
-		btRigidBody* body = it->second;
-
-		body->setGravity(btVector3(0, 0, grav));
-
-		body->activate(true);
-		return true;
+		obj->SetObjectBuoyancy(buoy);
+		ret = true;
 	}
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	if (bit != m_bodies.end())
-	{
-		btRigidBody* body = bit->second;
 
-		body->setGravity(btVector3(0, 0, grav));
-
-		body->activate(false);
-		return true;
-	}
-	return false;
+	return ret;
 }
 
 bool BulletSim::SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass)
 {
-	// Look for a rigid body
-	BodiesMapType::iterator it = m_bodies.find(id);
-	if (it != m_bodies.end())
+	bool ret = false;
+	IPhysObject* obj;
+	m_worldData.objects->TryGetObject(id, obj))
 	{
-		btRigidBody* body = it->second;
-		m_dynamicsWorld->removeRigidBody(body);
-		SetObjectProperties(body, isStatic, isSolid, genCollisions, mass);
-		m_dynamicsWorld->addRigidBody(body);
-		// Why is this commented out?
-		// m_dynamicsWorld->updateSingleAabb(body);
-		body->activate(false);
-		return true;
+		obj->SetProperties(isStatic, isSolid, genCollisions, mass);
+		ret = true;
 	}
-	return false;
-
-}
-
-void BulletSim::SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass)
-{
-	// BSLog("SetObjectProperties: id=%u, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
-	// 	CONVLOCALID(body->getCollisionShape()->getUserPointer()), isStatic, isSolid, genCollisions, mass);
-	SetObjectDynamic(body, !isStatic, mass);		// this handles the static part
-	SetObjectCollidable(body, isSolid);
-	if (genCollisions)
-	{
-		// for the moment, everything generates collisions
-		// TODO: Add a flag to CollisionFlags that is checked in StepSimulation on whether to pass up or not
-	}
+	return ret;
 }
 
 // Bullet has a 'collisionMargin' that makes the mesh a little bigger. This routine
@@ -1174,7 +932,7 @@ void BulletSim::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3
 	
 	// we use the constant margin because SPHERE getMargin does not return the real margin
 	// btScalar margin = shape->getMargin();
-	btScalar margin = m_params->collisionMargin;
+	btScalar margin = m_worldData.params->collisionMargin;
 	// the margin adjustment only has to happen to our compound shape. Internal shapes don't need it.
 	// if (shape->isCompound() && margin > 0.01)
 	// looks like internal shapes need it after all
@@ -1203,14 +961,7 @@ void BulletSim::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3
 
 bool BulletSim::HasObject(IDTYPE id)
 {
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
-		return true;
-
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	return (bit != m_bodies.end());
+	return m_worldData.objects->HasObject(id);
 }
 
 bool BulletSim::DestroyObject(IDTYPE id)
@@ -1218,52 +969,7 @@ bool BulletSim::DestroyObject(IDTYPE id)
 	// Remove any constraints associated with this object
 	RemoveConstraintByID(id);
 
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
-	{
-		btRigidBody* character = cit->second;
-		btCollisionShape* shape = character->getCollisionShape();
-
-		// Remove the character from the map of characters
-		m_characters.erase(cit);
-
-		// Remove the character from the scene
-		m_dynamicsWorld->removeCollisionObject(character);
-
-		// Delete the character and character shape
-		delete character;
-		delete shape;
-
-		return true;
-	}
-
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	if (bit != m_bodies.end())
-	{
-		btRigidBody* body = bit->second;
-		btCollisionShape* shape = body->getCollisionShape();
-
-		// Remove the rigid body from the map of rigid bodies
-		m_bodies.erase(bit);
-
-		// Remove the rigid body from the scene
-		m_dynamicsWorld->removeRigidBody(body);
-
-		// Delete the MotionState
-		btMotionState* motionState = body->getMotionState();
-		if (motionState)
-			delete motionState;
-		
-		// Delete the body and shape
-		delete body;
-		delete shape;
-
-		return true;
-	}
-
-	return false;
+	return m_worldData.objects->RemoveAndDestroyObject(id);
 }
 
 SweepHit BulletSim::ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin)
@@ -1311,7 +1017,7 @@ SweepHit BulletSim::ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& ta
 			ClosestNotMeConvexResultCallback callback(castingObject);
 
 			// Do the sweep test
-			m_dynamicsWorld->convexSweepTest(convex, from, to, callback, m_dynamicsWorld->getDispatchInfo().m_allowedCcdPenetration);
+			m_worldData.dynamicsWorld->convexSweepTest(convex, from, to, callback, m_worldData.dynamicsWorld->getDispatchInfo().m_allowedCcdPenetration);
 
 			if (callback.hasHit())
 			{
@@ -1354,7 +1060,7 @@ RaycastHit BulletSim::RayTest(IDTYPE id, btVector3& from, btVector3& to)
 		ClosestNotMeRayResultCallback callback(castingObject);
 
 		// Do the raycast test
-		m_dynamicsWorld->rayTest(from, to, callback);
+		m_worldData.dynamicsWorld->rayTest(from, to, callback);
 
 		if (callback.hasHit())
 		{
@@ -1377,7 +1083,7 @@ const btVector3 BulletSim::RecoverFromPenetration(IDTYPE id)
 		btCollisionObject* character = cit->second;
 
 		ContactSensorCallback contactCallback(character);
-		m_dynamicsWorld->contactTest(character, contactCallback);
+		m_worldData.dynamicsWorld->contactTest(character, contactCallback);
 
 		return contactCallback.mOffset;
 	}
@@ -1392,11 +1098,11 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 	// changes to the environment
 	if (strcmp(parm, "gravity") == 0)
 	{
-		m_dynamicsWorld->setGravity(btVector3(0.f, 0.f, val));
+		m_worldData.dynamicsWorld->setGravity(btVector3(0.f, 0.f, val));
 		return;
 	}
 
-	// something changed in the terrain so reset all the terrain parameters to values from m_params
+	// something changed in the terrain so reset all the terrain parameters to values from m_worldData.params
 	if (strcmp(parm, "terrain") == 0)
 	{
 		// some terrain physical parameter changed. Reset the terrain.
@@ -1409,7 +1115,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		return;
 	}
 
-	// something changed in the avatar so reset all the terrain parameters to values from m_params
+	// something changed in the avatar so reset all the terrain parameters to values from m_worldData.params
 	if (strcmp(parm, "avatar") == 0)
 	{
 		CharactersMapType::iterator cit = m_characters.find(localID);
@@ -1417,14 +1123,14 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		{
 			btRigidBody* character = cit->second;
 			SetAvatarPhysicalParameters(character, 
-					m_params->avatarFriction, 
-					m_params->avatarRestitution,
+					m_worldData.params->avatarFriction, 
+					m_worldData.params->avatarRestitution,
 					btVector3(0, 0, 0));
 		}
 		return;
 	}
 
-	// something changed in an object so reset all the terrain parameters to values from m_params
+	// something changed in an object so reset all the terrain parameters to values from m_worldData.params
 	if (strcmp(parm, "object") == 0)
 	{
 		BodiesMapType::iterator bit = m_bodies.find(localID);
@@ -1432,8 +1138,8 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		{
 			btRigidBody* body = bit->second;
 			SetObjectPhysicalParameters(body, 
-					m_params->defaultFriction, 
-					m_params->defaultRestitution,
+					m_worldData.params->defaultFriction, 
+					m_worldData.params->defaultRestitution,
 					btVector3(0, 0, 0));
 		}
 		return;
@@ -1460,12 +1166,12 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 
 	if (strcmp(parm, "lineardamping") == 0)
 	{
-		body->setDamping(btVal, m_params->angularDamping);
+		body->setDamping(btVal, m_worldData.params->angularDamping);
 		return;
 	}
 	if (strcmp(parm, "angulardamping") == 0)
 	{
-		body->setDamping(m_params->linearDamping, btVal);
+		body->setDamping(m_worldData.params->linearDamping, btVal);
 		return;
 	}
 	if (strcmp(parm, "deactivationtime") == 0)
@@ -1475,11 +1181,11 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 	}
 	if (strcmp(parm, "linearsleepingthreshold") == 0)
 	{
-		body->setSleepingThresholds(btVal, m_params->angularSleepingThreshold);
+		body->setSleepingThresholds(btVal, m_worldData.params->angularSleepingThreshold);
 	}
 	if (strcmp(parm, "angularsleepingthreshold") == 0)
 	{
-		body->setSleepingThresholds(m_params->linearSleepingThreshold, btVal);
+		body->setSleepingThresholds(m_worldData.params->linearSleepingThreshold, btVal);
 	}
 	if (strcmp(parm, "ccdmotionthreshold") == 0)
 	{

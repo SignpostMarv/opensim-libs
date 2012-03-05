@@ -26,11 +26,17 @@
  */
 #include "AvatarObject.h"
 #include "btBulletDynamicsCommon.h"
+#include "BulletSim.h"
 
-AvatarObject::AvatarObject(const ShapeData* data) {
+AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
+
+	m_worldData = world;
+
+	btCollisionShape* shape = NULL;
 
 	// Unpack ShapeData
 	IDTYPE id = data->ID;
+	m_id = id;
 	btVector3 position = data->Position.GetBtVector3();
 	btQuaternion rotation = data->Rotation.GetBtQuaternion();
 	btVector3 scale = data->Scale.GetBtVector3();
@@ -60,17 +66,17 @@ AvatarObject::AvatarObject(const ShapeData* data) {
 		shape->calculateLocalInertia(mass, localInertia);
 
 	// Create the motion state and rigid body
-	SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &m_updatesThisFrame);
+	SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &(m_worldData->updatesThisFrame));
 	btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
 	btRigidBody* character = new btRigidBody(cInfo);
 	motionState->RigidBody = character;
 
 	character->setCollisionFlags(character->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 
-	SetAvatarPhysicalParameters(character, friction, restitution, velocity);
+	this->SetPhysicalProperties(friction, restitution, velocity);
 
-	m_dynamicsWorld->addRigidBody(character);
-	m_characters[id] = character;
+	m_body = character;
+	m_worldData->dynamicsWorld->addRigidBody(character);
 
 	/*
 	// NOTE: Old code kept for reference
@@ -82,18 +88,102 @@ AvatarObject::AvatarObject(const ShapeData* data) {
 	character->setActivationState(DISABLE_DEACTIVATION);
 	character->setContactProcessingThreshold(0.0);
 
-	m_dynamicsWorld->addCollisionObject(character, btBroadphaseProxy::CharacterFilter);
+	m_worldData->dynamicsWorld->addCollisionObject(character, btBroadphaseProxy::CharacterFilter);
 	m_characters[id] = character;
 	*/
 }
 
 AvatarObject::~AvatarObject(void) {
+	if (m_rigidBody)
+	{
+		btCollisionShape* shape = m_rigidBody->getCollisionShape();
+
+		// Remove the object from the world
+		m_worldData->dynamicsWorld->removeCollisionObject(m_rigidBody);
+
+		// If we added a motionState to the object, delete that
+		btMotionState* motionState = m_rigidBody->getMotionState();
+		if (motionState)
+			delete motionState;
+		
+		// Delete the rest of the memory allocated to this object
+		if (shape) 
+			delete shape;
+		delete m_rigidBody;
+
+		m_rigidBody = NULL;
+	}
 }
 
-bool PrimObject::SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {
+bool AvatarObject::SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {
 	return false;
 }
 
-bool PrimObject::SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) {
+bool AvatarObject::SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) {
 	return false;
+}
+
+btVector3 AvatarObject::GetObjectPosition()
+{
+	btTransform xform = m_body->getWorldTransform();
+	return xform.getOrigin();
+}
+
+bool AvatarObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
+{
+	// Build a transform containing the new position and rotation
+	btTransform transform;
+	transform.setIdentity();
+	transform.setOrigin(position);
+	transform.setRotation(rotation);
+
+	// Set the new transform for this character controller
+	m_body->setWorldTransform(transform);
+	return true;
+}
+
+bool AvatarObject::SetObjectVelocity(btVector3& velocity)
+{
+	m_body->setLinearVelocity(velocity);
+	m_body->activate(true);
+	return true;
+}
+
+bool AvatarObject::SetObjectAngularVelocity(btVector3& angularVelocity)
+{
+	// Don't do anything for an avatar
+	return true;
+}
+
+bool AvatarObject::SetObjectForce(btVector3& force)
+{
+	// Don't do anything for an avatar
+	return true;
+}
+
+bool AvatarObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic)
+{
+	// BSLog("AvatarObject::SetObjectScaleMass: mass=%f", mass);
+	btCollisionShape* shape = m_body->getCollisionShape();
+	shape->setLocalScaling(scale);
+
+	return true;
+	}
+}
+
+bool AvatarObject::SetObjectCollidable(bool collidable)
+{
+	// do nothing for an avatar (they don't go phantom)
+	return true;
+}
+
+// Adjust how gravity effects the object
+// neg=fall quickly, 0=1g, 1=0g, pos=float up
+bool AvatarObject::SetObjectBuoyancy(float buoy)
+{
+	float grav = m_worldData->params->gravity * (1.0f - buoy);
+	m_body->setGravity(btVector3(0, 0, grav));
+	m_body->activate(true);
+
+	return true;
 }

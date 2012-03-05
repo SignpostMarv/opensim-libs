@@ -24,74 +24,43 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "ObjectCollection.h"
 
-ObjectCollection::ObjectCollection(void)
+#include "ConstraintCollection.h"
+
+ConstraintCollection::ConstraintCollection()
 {
 }
 
-ObjectCollection::~ObjectCollection(void)
+ConstraintCollection::~ConstraintCollection()
 {
-	// Clean out the collection if it already hasn't been cleaned out
-	Clear();
 }
 
-void ObjectCollection::Clear()
-{
-	// Delete all the objects in the object list
-	for (ObjectMapType::const_iterator it = m_objects.begin(); it != m_objects.end(); ++it)
-    {
-		IPhysObject* obj = it->second;
-		delete obj;
-	}
-
-	m_objects.clear();
-	return;
-}
-
-bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
+bool ConstraintCollection::AddConstraint(IDTYPE id1, IDTYPE id2, btTypedConstraint* constraint)
 {
 	return false;
 }
 
-bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** obj)
+bool ConstraintCollection::RemoveConstraints(IDTYPE id1, IDTYPE id2)
 {
-	bool ret = false;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		ret = true;
-	}
-	return ret;
+	return false;
 }
 
-bool ObjectCollection::HasObject(IDTYPE id)
+// one or more objects changed shape/mass. Recompute the constraint transforms.
+void ConstraintCollection::RecalculateAllConstraints(IDTYPE id1)
 {
-	IPhysObject* obj;
-	return TryGetObject(id, &obj);
+	return;
 }
 
-IPhysObject* ObjectCollection::RemoveObject(IDTYPE id)
+// There can be only one constraint between objects. Always use the lowest id as the first part
+// of the key so the same constraint will be found no matter what order the caller passes them.
+CONSTRAINTIDTYPE ConstraintCollection::GenConstraintID(IDTYPE id1, IDTYPE id2)
 {
-	IPhysObject* obj = NULL;
-	ObjectMapType::iterator it = m_objects.find(id);
-	if (it != m_objects.end())
-    {
-		IPhysObject* obj = it->second;
-		m_objects.erase(it);
-	}
-	return obj;
+	CONSTRAINTIDTYPE newID = 0;
+	if (id1 < id2)
+		newID = ((CONSTRAINTIDTYPE)id1 << 32) | id2;
+	else
+		newID = ((CONSTRAINTIDTYPE)id2 << 32) | id1;
+
+	return newID;
 }
 
-bool ObjectCollection::RemoveAndDestroyObject(IDTYPE id)
-{
-	bool ret = false;
-	IPhysObject* obj = RemoveObject(id);
-	if (obj)
-	{
-		delete obj;
-		ret = true;
-	}
-	return ret;
-}

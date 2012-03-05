@@ -33,6 +33,8 @@
 #include "APIData.h"
 #include "IPhysObject.h"
 #include "ObjectCollection.h"
+#include "ConstraintCollection.h"
+#include "WorldData.h"
 
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
@@ -274,32 +276,21 @@ class BulletSim
 	// Pointer to block of parameters passed from the managed code on initialization
 	ParamBlock* m_params;
 
-	// Simulation
-	btDiscreteDynamicsWorld* m_dynamicsWorld;
-
 	// Collision shapes
 	btStaticPlaneShape* m_planeShape;
 	btHeightfieldTerrainShape* m_heightfieldShape;
-
-	// Objects in this world
-	// We create a class instance (using IPhysObjectFactory()) for each of the
-	// object types kept in the world. This separates the code for handling
-	// the physical object from the interface to the simulator.
-	// Once collection object is created to hold the objects. This also
-	// has the list manipulation functions.
-	ObjectCollection* m_objects;
 
 	// Mesh data and scene objects
 	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
 	MeshesMapType m_meshes;
 	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
 	HullsMapType m_hulls;
-	typedef std::map<IDTYPE, btRigidBody*> BodiesMapType;
-	BodiesMapType m_bodies;
-	typedef std::map<IDTYPE, btRigidBody*> CharactersMapType;
-	CharactersMapType m_characters;
-	typedef std::map<unsigned long long, btGeneric6DofConstraint*> ConstraintMapType;
-	ConstraintMapType m_constraints;
+	// typedef std::map<IDTYPE, btRigidBody*> BodiesMapType;
+	// BodiesMapType m_bodies;
+	// typedef std::map<IDTYPE, btRigidBody*> CharactersMapType;
+	// CharactersMapType m_characters;
+	// typedef std::map<unsigned long long, btGeneric6DofConstraint*> ConstraintMapType;
+	// ConstraintMapType m_constraints;
 
 	// Bullet world objects
 	btBroadphaseInterface* m_broadphase;
@@ -312,9 +303,8 @@ class BulletSim
 	btVector3 m_minPosition;
 	btVector3 m_maxPosition;
 
-	// Used to expose updates from Bullet to the BulletSim API
-	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
-	UpdatesThisFrameMapType m_updatesThisFrame;
+	WorldData m_worldData;
+
 	int m_maxUpdatesPerFrame;
 	EntityProperties* m_updatesThisFrameArray;
 
@@ -329,11 +319,6 @@ public:
 	virtual ~BulletSim()
 	{
 		exitPhysics();
-	}
-
-	btDynamicsWorld* GetDynamicsWorld()
-	{
-		return m_dynamicsWorld;
 	}
 
 	void initPhysics(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
@@ -382,7 +367,6 @@ protected:
 
 	void SetAvatarPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
 	void SetObjectPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
-	void SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass);
 	void SetObjectCollidable(btRigidBody* body, bool collidable);
 	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
 

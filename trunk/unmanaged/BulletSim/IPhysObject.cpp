@@ -40,17 +40,17 @@ IPhysObject::~IPhysObject(void)
  * Create a subclass of IPhysObject that supports the type of object.
  * There are two object types: Prims and avatars.
  * Return the initialized object.
+ * Return 'null' if the device could not be created from the passed ShapeData.
  */
-IPhysObject* IPhysObject::PhysObjectFactory(const ShapeData* data) {
-	IPhysObject* theObject;
+IPhysObject* IPhysObject::PhysObjectFactory(WorldData* world, ShapeData* data) {
+	IPhysObject* theObject = NULL;
 
 	if (data->Type == ShapeData::SHAPE_AVATAR) {
-		theObject = new AvatarObject(data);
+		theObject = new AvatarObject(world, data);
 	}
 	else {
-		theObject = new PrimObject(data);
+		theObject = new PrimObject(world, data);
 	}
 
 	return theObject;
 }
-};

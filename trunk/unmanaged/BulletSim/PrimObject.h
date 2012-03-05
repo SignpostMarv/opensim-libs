@@ -27,14 +27,31 @@
 #pragma once
 #include "IPhysObject.h"
 #include "APIData.h"
+#include "WorldData.h"
 
 class PrimObject :
 	public IPhysObject
 {
 public:
-	PrimObject(const ShapeData*);
+	PrimObject(WorldData*, ShapeData*);
 	~PrimObject(void);
 
 	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
 	bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity);
+
+	btVector3 GetObjectPosition(void);
+
+	bool SetDynamic(const bool isPhysical, const float mass);
+	bool SetScaleMass(const float scale, const float mass);
+	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
+	bool SetObjectVelocity(btVector3& velocity);
+	bool SetObjectAngularVelocity(btVector3& angularVelocity);
+	bool SetObjectForce(btVector3& force);
+	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
+	bool SetObjectCollidable(bool collidable);
+
+private:
+	void SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass);
+	void SetObjectDynamic(bool isDynamic, float mass);
+	void SetObjectCollidable(bool collidable);
 };
