@@ -49,9 +49,15 @@ public:
 	bool SetObjectForce(btVector3& force);
 	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
 	bool SetObjectCollidable(bool collidable);
+	bool SetObjectBuoyancy(float buoy);
+
+	void UpdateParameter(const char* parm, const float val);
+	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
 
 private:
 	void SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass);
 	void SetObjectDynamic(bool isDynamic, float mass);
-	void SetObjectCollidable(bool collidable);
+	void SetCollidable(bool collidable);
+
+	void AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3& scale);
 };

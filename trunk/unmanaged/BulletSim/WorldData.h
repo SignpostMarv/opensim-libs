@@ -30,12 +30,18 @@
 #ifndef WORLD_DATA_H
 #define WORLD_DATA_H
 
+#include "ArchStuff.h"
 #include "APIData.h"
-#include "ObjectCollection.h"
-#include "ConstraintCollection.h"
+// #include "ObjectCollection.h"
+// #include "ConstraintCollection.h"
 #include "btBulletDynamicsCommon.h"
 
 #include <map>
+
+// Forward references
+class ObjectCollection;
+class ConstraintCollection;
+class HeightMapData;
 
 // Structure to hold the world data that is common to all the objects in the world
 struct WorldData
@@ -44,6 +50,9 @@ struct WorldData
 	
 	// pointer to the containing world control structure
 	btDynamicsWorld* dynamicsWorld;
+
+	// the terrain is based on a heightmap
+	HeightMapData* heightMap;
 
 	// Used to expose updates from Bullet to the BulletSim API
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;

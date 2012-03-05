@@ -29,8 +29,12 @@
 #ifndef GROUND_PLANE_OBJECT_H
 #define GROUND_PLANE_OBJECT_H
 
+#include "APIData.h"
 #include "IPhysObject.h"
 #include "WorldData.h"
+
+#include "btBulletDynamicsCommon.h"
+#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 
 class GroundPlaneObject :
 	public IPhysObject
@@ -38,6 +42,11 @@ class GroundPlaneObject :
 public:
 	GroundPlaneObject(WorldData*);
 	~GroundPlaneObject(void);
+
+private:
+	// Collision shapes
+	btStaticPlaneShape* m_planeShape;
+	btHeightfieldTerrainShape* m_heightfieldShape;
 };
 
 #endif   // GROUND_PLANE_OBJECT_H

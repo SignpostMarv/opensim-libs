@@ -94,24 +94,24 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 }
 
 AvatarObject::~AvatarObject(void) {
-	if (m_rigidBody)
+	if (m_body)
 	{
-		btCollisionShape* shape = m_rigidBody->getCollisionShape();
+		btCollisionShape* shape = m_body->getCollisionShape();
 
 		// Remove the object from the world
-		m_worldData->dynamicsWorld->removeCollisionObject(m_rigidBody);
+		m_worldData->dynamicsWorld->removeCollisionObject(m_body);
 
 		// If we added a motionState to the object, delete that
-		btMotionState* motionState = m_rigidBody->getMotionState();
+		btMotionState* motionState = m_body->getMotionState();
 		if (motionState)
 			delete motionState;
 		
 		// Delete the rest of the memory allocated to this object
 		if (shape) 
 			delete shape;
-		delete m_rigidBody;
+		delete m_body;
 
-		m_rigidBody = NULL;
+		m_body = NULL;
 	}
 }
 
@@ -168,7 +168,6 @@ bool AvatarObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynam
 	shape->setLocalScaling(scale);
 
 	return true;
-	}
 }
 
 bool AvatarObject::SetObjectCollidable(bool collidable)
@@ -186,4 +185,85 @@ bool AvatarObject::SetObjectBuoyancy(float buoy)
 	m_body->activate(true);
 
 	return true;
+}
+
+void AvatarObject::UpdateParameter(const char* parm, const float val)
+{
+	btScalar btVal = btScalar(val);
+
+	if (strcmp(parm, "lineardamping") == 0)
+	{
+		m_body->setDamping(btVal, m_worldData->params->angularDamping);
+		return;
+	}
+	if (strcmp(parm, "angulardamping") == 0)
+	{
+		m_body->setDamping(m_worldData->params->linearDamping, btVal);
+		return;
+	}
+	if (strcmp(parm, "deactivationtime") == 0)
+	{
+		m_body->setDeactivationTime(btVal);
+		return;
+	}
+	if (strcmp(parm, "linearsleepingthreshold") == 0)
+	{
+		m_body->setSleepingThresholds(btVal, m_worldData->params->angularSleepingThreshold);
+	}
+	if (strcmp(parm, "angularsleepingthreshold") == 0)
+	{
+		m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, btVal);
+	}
+	if (strcmp(parm, "ccdmotionthreshold") == 0)
+	{
+		m_body->setCcdMotionThreshold(btVal);
+	}
+	if (strcmp(parm, "ccdsweptsphereradius") == 0)
+	{
+		m_body->setCcdSweptSphereRadius(btVal);
+	}
+	if (strcmp(parm, "avatarfriction") == 0)
+	{
+		m_body->setFriction(btVal);
+	}
+	if (strcmp(parm, "avatarmass") == 0)
+	{
+		m_body->setMassProps(btVal, btVector3(0, 0, 0));
+	}
+	if (strcmp(parm, "avatarrestitution") == 0)
+	{
+		m_body->setRestitution(btVal);
+	}
+	if (strcmp(parm, "avatarcapsuleradius") == 0)
+	{
+		// can't change this without rebuilding the collision shape
+		// TODO: rebuild the capsule (remember to take scale into account)
+	}
+	if (strcmp(parm, "avatarcapsuleheight") == 0)
+	{
+		// can't change this without rebuilding the collision shape
+		// TODO: rebuild the capsule (remember to take scale into account)
+	}
+	return;
+}
+void AvatarObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
+{
+	// Tweak continuous collision detection parameters
+	// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
+	if (m_worldData->params->ccdMotionThreshold > 0.0f)
+	{
+		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
+		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
+	}
+
+	m_body->setFriction(frict);
+	m_body->setRestitution(resti);
+	m_body->setActivationState(DISABLE_DEACTIVATION);
+	m_body->setContactProcessingThreshold(0.0);
+
+	m_body->setAngularFactor(btVector3(0, 0, 0));	// makes the capsule not fall over
+	m_body->setLinearVelocity(velo);
+	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));	// turns off unexpected interpolation
+	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
+	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }

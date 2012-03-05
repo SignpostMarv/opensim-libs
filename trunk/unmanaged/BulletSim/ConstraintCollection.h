@@ -30,7 +30,7 @@
 #define CONSTRAINT_COLLECTION_H
 
 #include "ArchStuff.h"
-
+#include "WorldData.h"
 #include "btBulletDynamicsCommon.h"
 
 #define CONSTRAINTIDTYPE unsigned long long
@@ -38,18 +38,26 @@
 class ConstraintCollection
 {
 public:
-	ConstraintCollection(void);
+	ConstraintCollection(WorldData*);
 	~ConstraintCollection(void);
+
+	void Clear(void);
 
 	bool AddConstraint(IDTYPE, IDTYPE, btTypedConstraint*);
 
-	bool RemoveConstraints(IDTYPE, IDTYPE);
+	// Remove all constraints that reference this ID
+	bool RemoveConstraints(IDTYPE);
 
-	// one or more objects changed shape/mass. Recompute the constraint transforms.
-	void RecalculateAllConstraints(IDTYPE);
+	// Remove the constraint between these two objects
+	bool RemoveConstraint(IDTYPE, IDTYPE);
+
+	// An object has changed shape/mass. Recompute the constraint transforms.
+	bool RecalculateAllConstraints(IDTYPE);
 
 private:
-	CONSTRAINTIDTYPE ConstraintCollection::GenConstraintID(IDTYPE id1, IDTYPE id2);
+	WorldData* m_worldData;
+
+	CONSTRAINTIDTYPE GenConstraintID(IDTYPE id1, IDTYPE id2);
 };
 
 #endif   // CONSTRAINT_COLLECTION_H

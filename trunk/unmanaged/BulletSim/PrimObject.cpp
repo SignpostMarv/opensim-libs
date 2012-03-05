@@ -121,7 +121,7 @@ void PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 	// BSLog("PrimObject::SetObjectProperties: id=%u, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
 	//					m_id, isStatic, isSolid, genCollisions, mass);
 	SetObjectDynamic(!isStatic, mass);		// this handles the static part
-	SetObjectCollidable(isSolid);
+	SetCollidable(isSolid);
 	if (genCollisions)
 	{
 		// for the moment, everything generates collisions
@@ -134,7 +134,7 @@ bool PrimObject::SetDynamic(const bool isPhysical, const float mass)
 	return false;
 }
 
-bool PrimObject::SetScaleMass(const float scale, const float mass);
+bool PrimObject::SetScaleMass(const float scale, const float mass)
 {
 	return false;
 }
@@ -192,13 +192,13 @@ void PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 	return;
 }
 
-void PrimObject::SetObjectCollidable(bool collidable)
+void PrimObject::SetCollidable(bool collidable)
 {
 	// Toggle the CF_NO_CONTACT_RESPONSE on or off for the object to enable/disable phantom behavior
 	if (collidable)
-		m_body->setCollisionFlags(body->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
+		m_body->setCollisionFlags(m_body->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
 	else
-		m_body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+		m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
 	m_body->activate(false);
 	return;
@@ -269,7 +269,7 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 	// from objects, you have to remove them from the world first, then make the 
 	// change, and re-add them to the world." It's my understanding that some of
 	// the following changes, including mass, constitute "important data"
-	m_worldData.dynamicsWorld->removeRigidBody(m_body);
+	m_worldData->dynamicsWorld->removeRigidBody(m_body);
 
 	// Clear all forces for this object
 	m_body->setLinearVelocity(ZERO_VECTOR);
@@ -280,13 +280,13 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 	AdjustScaleForCollisionMargin(shape, scale);
 
 	// apply the mass and dynamicness
-	SetObjectDynamic(m_body, isDynamic, mass);
+	SetObjectDynamic(isDynamic, mass);
 
 	// Add the rigid body back to the simulation
-	m_worldData.dynamicsWorld->addRigidBody(m_body);
+	m_worldData->dynamicsWorld->addRigidBody(m_body);
 
 	// Calculate a new AABB for this object
-	m_worldData.dynamicsWorld->updateSingleAabb(m_body);
+	m_worldData->dynamicsWorld->updateSingleAabb(m_body);
 
 	m_body->activate(false);
 	return true;
@@ -294,7 +294,7 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 
 bool PrimObject::SetObjectCollidable(bool collidable)
 {
-	SetObjectCollidable(m_body, collidable);
+	SetCollidable(collidable);
 	return true;
 }
 
@@ -302,10 +302,113 @@ bool PrimObject::SetObjectCollidable(bool collidable)
 // neg=fall quickly, 0=1g, 1=0g, pos=float up
 bool PrimObject::SetObjectBuoyancy(float buoy)
 {
-	float grav = m_worldData.params->gravity * (1.0f - buoy);
+	float grav = m_worldData->params->gravity * (1.0f - buoy);
 	m_body->setGravity(btVector3(0, 0, grav));
 
 	m_body->activate(false);
 
 	return true;
+}
+
+// Bullet has a 'collisionMargin' that makes the mesh a little bigger. This routine
+// reduces the scale of the underlying mesh to make the mesh plus margin the
+// same size as the original mesh.
+// TODO: figure out of this works correctly. For the moment set gCollisionMargin to zero.
+//    Bullet tries to use scale only on the shape and does not include the margin in the scale
+//    calculation. This is true in most cases but there seem to be some shapes that get
+//    this wrong. 
+void PrimObject::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3& scale)
+{
+	btVector3 aabbMin;
+	btVector3 aabbMax;
+	btTransform transform;
+	transform.setIdentity();
+	
+	// we use the constant margin because SPHERE getMargin does not return the real margin
+	// btScalar margin = shape->getMargin();
+	btScalar margin = m_worldData->params->collisionMargin;
+	// the margin adjustment only has to happen to our compound shape. Internal shapes don't need it.
+	// if (shape->isCompound() && margin > 0.01)
+	// looks like internal shapes need it after all
+	if (margin > 0.01)
+	{
+		shape->getAabb(transform, aabbMin, aabbMax);
+		// the AABB contains the margin already
+		btScalar xExtent = aabbMax.x() - aabbMin.x();
+		btScalar xAdjustment = (xExtent - margin - margin) / xExtent;
+		btScalar yExtent = aabbMax.y() - aabbMin.y();
+		btScalar yAdjustment = (yExtent - margin - margin) / yExtent;
+		btScalar zExtent = aabbMax.z() - aabbMin.z();
+		btScalar zAdjustment = (zExtent - margin - margin) / zExtent;
+		// BSLog("Adjust: m=%f, xE=%f, xA=%f, yE=%f, yA=%f, zE=%f, zA=%f, sX=%f, sY=%f, sZ=%f", margin,
+		// 	xExtent, xAdjustment, yExtent, yAdjustment, zExtent, zAdjustment,
+		// 	scale.x(), scale.y(), scale.z());
+		shape->setLocalScaling(btVector3(scale.x()*xAdjustment, scale.y()*yAdjustment, scale.z()*zAdjustment));
+	}
+	else
+	{
+		// margin is small enough we won't fiddle with the adjustment
+		shape->setLocalScaling(btVector3(scale.x(), scale.y(), scale.z()));
+	}
+	return;
+}
+
+void PrimObject::UpdateParameter(const char* parm, const float val)
+{
+	btScalar btVal = btScalar(val);
+
+	if (strcmp(parm, "lineardamping") == 0)
+	{
+		m_body->setDamping(btVal, m_worldData->params->angularDamping);
+		return;
+	}
+	if (strcmp(parm, "angulardamping") == 0)
+	{
+		m_body->setDamping(m_worldData->params->linearDamping, btVal);
+		return;
+	}
+	if (strcmp(parm, "deactivationtime") == 0)
+	{
+		m_body->setDeactivationTime(btVal);
+		return;
+	}
+	if (strcmp(parm, "linearsleepingthreshold") == 0)
+	{
+		m_body->setSleepingThresholds(btVal, m_worldData->params->angularSleepingThreshold);
+	}
+	if (strcmp(parm, "angularsleepingthreshold") == 0)
+	{
+		m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, btVal);
+	}
+	if (strcmp(parm, "ccdmotionthreshold") == 0)
+	{
+		m_body->setCcdMotionThreshold(btVal);
+	}
+	if (strcmp(parm, "ccdsweptsphereradius") == 0)
+	{
+		m_body->setCcdSweptSphereRadius(btVal);
+	}
+	return;
+}
+
+void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
+{
+	// Tweak continuous collision detection parameters
+	if (m_worldData->params->ccdMotionThreshold > 0.0f)
+	{
+		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
+		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
+	}
+	m_body->setDamping(m_worldData->params->linearDamping, m_worldData->params->angularDamping);
+	m_body->setDeactivationTime(m_worldData->params->deactivationTime);
+	m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, m_worldData->params->angularSleepingThreshold);
+	m_body->setContactProcessingThreshold(m_worldData->params->contactProcessingThreshold);
+
+	m_body->setFriction(frict);
+	m_body->setRestitution(resti);
+	m_body->setLinearVelocity(velo);
+	// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
+	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));
+	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
+	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }

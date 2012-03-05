@@ -57,39 +57,12 @@ public:
 	virtual bool SetObjectForce(btVector3& force) { return false; };
 	virtual bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic) { return false; };
 	virtual bool SetObjectCollidable(bool collidable) { return false; };
+	virtual bool SetObjectBuoyancy(float buoy) { return false; };
 
 	virtual void UpdateParameter(const char* parm, const float val) { };
-
-// Adjust how gravity effects the object
-// neg=fall quickly, 0=1g, 1=0g, pos=float up
-bool BulletSim::SetObjectBuoyancy(IDTYPE id, float buoy)
-{
-	float grav = m_worldData.params->gravity * (1.0f - buoy);
-
-	CharactersMapType::iterator it = m_characters.find(id);
-	if (it != m_characters.end())
-	{
-		btRigidBody* body = it->second;
-
-		body->setGravity(btVector3(0, 0, grav));
-
-		body->activate(true);
-		return true;
-	}
-	// Look for a rigid body
-	BodiesMapType::iterator bit = m_bodies.find(id);
-	if (bit != m_bodies.end())
-	{
-		btRigidBody* body = bit->second;
-
-		body->setGravity(btVector3(0, 0, grav));
-
-		body->activate(false);
-		return true;
-	}
-	return false;
-}
-
+	virtual void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo) { };
+	
+	virtual btRigidBody* GetBody() { return m_body; };
 
 protected:
 	IDTYPE m_id;			// the ID used to identify this object

@@ -24,6 +24,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
+
+#ifndef ARCH_STUFF_H
+#define ARCH_STUFF_H
 
 // define types that are always 32bits (don't change on 64 bit systems)
 #ifdef _MSC_VER
@@ -42,3 +46,5 @@ typedef unsigned int		uint32_t;
 #else
 #define CONVLOCALID(xx) (unsigned int)(xx)
 #endif
+
+#endif    // ARCH_STUFF_H

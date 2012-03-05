@@ -367,6 +367,10 @@
 				RelativePath=".\PrimObject.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\TerrainObject.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -407,6 +411,10 @@
 			</File>
 			<File
 				RelativePath=".\PrimObject.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TerrainObject.h"
 				>
 			</File>
 			<File

@@ -26,23 +26,45 @@
  */
 #include "GroundPlaneObject.h"
 
-GroundPlaneObject::GroundPlaneObject(void)
+GroundPlaneObject::GroundPlaneObject(WorldData* world)
 {
+	m_worldData = world;
+
 	// Initialize the ground plane at height 0 (Z-up)
 	m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
-	m_planeShape->setMargin(m_params->collisionMargin);
+	m_planeShape->setMargin(m_worldData->params->collisionMargin);
 
 	m_planeShape->setUserPointer((void*)ID_GROUND_PLANE);
 
 	btDefaultMotionState* motionState = new btDefaultMotionState();
 	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, m_planeShape);
-	btRigidBody* body = new btRigidBody(cInfo);
+	m_body = new btRigidBody(cInfo);
 
-	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+	m_body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
 	
-	m_worldData.dynamicsWorld->addRigidBody(body);
+	m_worldData->dynamicsWorld->addRigidBody(m_body);
 }
 
 GroundPlaneObject::~GroundPlaneObject(void)
 {
+	if (m_body)
+	{
+		// Remove the object from the world
+		m_worldData->dynamicsWorld->removeCollisionObject(m_body);
+
+		// If we added a motionState to the object, delete that
+		btMotionState* motionState = m_body->getMotionState();
+		if (motionState)
+			delete motionState;
+		
+		// Delete the rest of the memory allocated to this object
+		btCollisionShape* shape = m_body->getCollisionShape();
+		if (shape) 
+			delete shape;
+
+		// finally make the object itself go away
+		delete m_body;
+
+		m_body = NULL;
+	}
 }

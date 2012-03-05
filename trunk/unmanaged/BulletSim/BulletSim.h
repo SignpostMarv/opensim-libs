@@ -32,23 +32,17 @@
 #include "ArchStuff.h"
 #include "APIData.h"
 #include "IPhysObject.h"
+#include "TerrainObject.h"
 #include "ObjectCollection.h"
 #include "ConstraintCollection.h"
 #include "WorldData.h"
 
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
-#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
-#include "BulletCollision/Gimpact/btGImpactShape.h"
-#include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 #include "LinearMath/btAlignedObjectArray.h"
 #include "LinearMath/btMotionState.h"
 #include "btBulletDynamicsCommon.h"
 
 #include <map>
-
-#define ID_TERRAIN 0	// OpenSimulator identifies collisions with terrain by localID of zero
-#define ID_GROUND_PLANE 1
-#define ID_INVALID_HIT 0xFFFFFFFF
 
 // #define TOLERANCE 0.00001
 // these values match the ones in SceneObjectPart.SendScheduledUpdates()
@@ -67,37 +61,6 @@ static bool IsPhantom(const btCollisionObject* obj)
 	// TODO: figure out of this assumption for phantom sensing is still true
 	return obj->getCollisionShape()->getShapeType() != CAPSULE_SHAPE_PROXYTYPE &&
 		(obj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
-};
-
-
-// Block of parameters passed from the managed code.
-// The memory layout MUST MATCH the layout in the managed code.
-// Rely on the fact that 'float' is always 32 bits in both C# and C++
-struct ParamBlock
-{
-    float defaultFriction;
-    float defaultDensity;
-	float defaultRestitution;
-    float collisionMargin;
-    float gravity;
-
-    float linearDamping;
-    float angularDamping;
-    float deactivationTime;
-    float linearSleepingThreshold;
-    float angularSleepingThreshold;
-    float ccdMotionThreshold;
-    float ccdSweptSphereRadius;
-    float contactProcessingThreshold;
-
-    float terrainFriction;
-    float terrainHitFraction;
-    float terrainRestitution;
-    float avatarFriction;
-    float avatarDensity;
-    float avatarRestitution;
-    float avatarCapsuleRadius;
-    float avatarCapsuleHeight;
 };
 
 // ============================================================================================
@@ -273,13 +236,6 @@ protected:
 // The main physics simulation class.
 class BulletSim
 {
-	// Pointer to block of parameters passed from the managed code on initialization
-	ParamBlock* m_params;
-
-	// Collision shapes
-	btStaticPlaneShape* m_planeShape;
-	btHeightfieldTerrainShape* m_heightfieldShape;
-
 	// Mesh data and scene objects
 	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
 	MeshesMapType m_meshes;
@@ -299,12 +255,14 @@ class BulletSim
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
 
 	// Terrain and world metadata
-	float* m_heightmapData;
+	TerrainObject* m_terrainObject;
 	btVector3 m_minPosition;
 	btVector3 m_maxPosition;
 
+	// Information about the world that is shared with all the objects
 	WorldData m_worldData;
 
+	// Where we process the tick's updates for passing back to managed code
 	int m_maxUpdatesPerFrame;
 	EntityProperties* m_updatesThisFrameArray;
 

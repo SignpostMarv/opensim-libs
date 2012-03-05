@@ -26,6 +26,9 @@
  */
 #pragma once
 
+#ifndef OBJECT_COLLECTION_H
+#define OBJECT_COLLECTION_H
+
 #include "ArchStuff.h"
 #include "IPhysObject.h"
 
@@ -62,3 +65,5 @@ private:
 	typedef std::map<IDTYPE, IPhysObject*> ObjectMapType;
 	ObjectMapType m_objects;
 };
+
+#endif     // OBJECT_COLLECTION_H
