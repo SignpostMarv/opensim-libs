@@ -29,6 +29,7 @@
 GroundPlaneObject::GroundPlaneObject(WorldData* world)
 {
 	m_worldData = world;
+	m_id = ID_GROUND_PLANE;
 
 	// Initialize the ground plane at height 0 (Z-up)
 	m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);

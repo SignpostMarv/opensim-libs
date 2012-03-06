@@ -31,12 +31,12 @@
 AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 
 	m_worldData = world;
+	m_id = data->ID;
 
 	btCollisionShape* shape = NULL;
 
 	// Unpack ShapeData
 	IDTYPE id = data->ID;
-	m_id = id;
 	btVector3 position = data->Position.GetBtVector3();
 	btQuaternion rotation = data->Rotation.GetBtQuaternion();
 	btVector3 scale = data->Scale.GetBtVector3();

@@ -34,91 +34,79 @@ ConstraintCollection::ConstraintCollection(WorldData* world)
 
 ConstraintCollection::~ConstraintCollection(void)
 {
+	// clean out our collection
+	Clear();
 }
 
 void ConstraintCollection::Clear(void)
 {
-}
-
-bool ConstraintCollection::AddConstraint(IDTYPE id1, IDTYPE id2, btTypedConstraint* constraint)
-{
-    m_worldData->dynamicsWorld->addConstraint(constraint, true);
-	return false;
-}
-
-bool ConstraintCollection::RemoveConstraints(IDTYPE id1)
-{
-	/*
-	bool removedSomething = false;
-	bool doAgain = true;
-	while (doAgain)
+	for (ConstraintMapType::iterator it = m_constraints.begin(); it != m_constraints.end(); it++)
 	{
-		doAgain = false;	// start out thinking one time through is enough
-		ConstraintMapType::iterator it = m_constraints.begin();
-		while (it != m_constraints.end())
-		{
-			unsigned long long constraintID = it->first;
-			// if this constraint contains the passed localID, delete the constraint
-			if ((((IDTYPE)(constraintID & 0xffffffff)) == id1)
-				|| (((IDTYPE)(constraintID >> 32) & 0xffffffff) == id1))
-			{
-				btGeneric6DofConstraint* constraint = it->second;
-		 		m_worldData.dynamicsWorld->removeConstraint(constraint);
-				m_constraints.erase(it);
-				delete constraint;
-				removedSomething = true;
-				doAgain = true;	// if we deleted, we scan the list again for another match
-				break;
+		Constraint* constraint = it->second;
+		delete constraint;
+	}
+	m_constraints.clear();
+}
 
-			}
-			it++;
+bool ConstraintCollection::AddConstraint(Constraint* constraint)
+{
+	// add the constraint to our collection
+	CONSTRAINTIDTYPE constID = GenConstraintID(constraint->GetID1(), constraint->GetID2());
+	m_constraints[constID] = constraint;
+	return true;
+}
+
+bool ConstraintCollection::RemoveAndDestroyConstraints(IDTYPE id1)
+{
+	bool removedSomething = false;
+	for (ConstraintMapType::iterator it = m_constraints.begin(); it != m_constraints.end(); it++)
+	{
+		Constraint* constraint = it->second;
+		if (id1 == constraint->GetID1() || id1 == constraint->GetID2())
+		{
+			Constraint* constraint = it->second;
+			m_constraints.erase(it);
+			delete constraint;
+			removedSomething = true;
+		}
+	}
+	return removedSomething;	// 'true' if we actually deleted a constraint
+}
+
+bool ConstraintCollection::RemoveAndDestroyConstraint(IDTYPE id1, IDTYPE id2)
+{
+	CONSTRAINTIDTYPE constID = GenConstraintID(id1, id2);
+	bool removedSomething = false;
+	for (ConstraintMapType::iterator it = m_constraints.begin(); it != m_constraints.end(); it++)
+	{
+		CONSTRAINTIDTYPE checkID = it->first;
+		if (constID == checkID)
+		{
+			Constraint* constraint = it->second;
+			m_constraints.erase(it);
+			delete constraint;
+			removedSomething = true;
+			break;	// there should only be one constraint for any pair of IDs
 		}
 	}
 	return removedSomething;	// return 'true' if we actually deleted a constraint
-	*/
-	return false;
 }
 
-bool ConstraintCollection::RemoveConstraint(IDTYPE id1, IDTYPE id2)
-{
-	/*
-	unsigned long long constraintID = GenConstraintID(id1, id2);
-	ConstraintMapType::iterator it = m_constraints.find(constraintID);
-	if (it != m_constraints.end())
-	{
-		btGeneric6DofConstraint* constraint = m_constraints[constraintID];
- 		m_worldData.dynamicsWorld->removeConstraint(constraint);
-		m_constraints.erase(it);
-		delete constraint;
-		return true;
-	}
-	return false;
-	*/
-	return false;
-}
-
-// one or more objects changed shape/mass. Recompute the constraint transforms.
+// One or more objects changed shape/mass. Recompute the constraint transforms.
+// Find all the constraints with this object included and recalcuate it
 bool ConstraintCollection::RecalculateAllConstraints(IDTYPE id1)
 {
-	/*
 	bool recalcuatedSomething = false;
-	ConstraintMapType::iterator it = m_constraints.begin();
-	while (it != m_constraints.end())
+	for (ConstraintMapType::iterator it = m_constraints.begin(); it != m_constraints.end(); it++)
 	{
-		unsigned long long constraintID = it->first;
-		// if this constraint contains the passed localID, recalcuate its transforms
-		if ((((IDTYPE)(constraintID & 0xffffffff)) == id1)
-			|| (((IDTYPE)(constraintID >> 32) & 0xffffffff) == id1))
+		Constraint* constraint = it->second;
+		if (id1 == constraint->GetID1() || id1 == constraint->GetID2())
 		{
-			btGeneric6DofConstraint* constraint = it->second;
-			constraint->calculateTransforms();
+			it->second->GetBtConstraint()->calculateTransforms();
 			recalcuatedSomething = true;
 		}
-		it++;
 	}
 	return recalcuatedSomething;	// return 'true' if we actually recalcuated a constraint
-	*/
-	return false;
 }
 
 // There can be only one constraint between objects. Always use the lowest id as the first part

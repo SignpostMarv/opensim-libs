@@ -348,6 +348,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Constraint.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ConstraintCollection.cpp"
 				>
 			</File>
@@ -391,6 +395,10 @@
 			</File>
 			<File
 				RelativePath=".\BulletSim.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Constraint.h"
 				>
 			</File>
 			<File

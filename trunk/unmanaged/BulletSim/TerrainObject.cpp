@@ -32,6 +32,8 @@
 TerrainObject::TerrainObject(WorldData* world)
 {
 	m_worldData = world;
+	m_id = ID_TERRAIN;
+
 	UpdateTerrain();
 }
 

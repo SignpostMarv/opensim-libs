@@ -46,21 +46,21 @@ void ObjectCollection::Clear()
 	}
 
 	m_objects.clear();
-	return;
 }
 
 bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
 {
-	return false;
+	m_objects[id] = obj;
+	return true;
 }
 
-bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** obj)
+bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** objp)
 {
 	bool ret = false;
 	ObjectMapType::iterator it = m_objects.find(id);
 	if (it != m_objects.end())
     {
-		IPhysObject* obj = it->second;
+		*objp = it->second;
 		ret = true;
 	}
 	return ret;

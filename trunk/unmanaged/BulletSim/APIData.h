@@ -237,6 +237,13 @@ struct ParamBlock
     float avatarRestitution;
     float avatarCapsuleRadius;
     float avatarCapsuleHeight;
+
+	float shouldForceUpdateAllAabbs;
+	float shouldRandomizeSolverOrder;
+	float shouldSplitSimulationIslands;
+	float shouldEnableFrictionCaching;
+	float numberOfSolverIterations;
+		
 };
 
 

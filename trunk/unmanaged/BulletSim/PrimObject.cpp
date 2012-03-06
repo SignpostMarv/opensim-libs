@@ -32,12 +32,13 @@
 PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 
 	m_worldData = world;
+	m_id = data->ID;
 	
+	// TODO: correct collision shape creation
 	btCollisionShape* shape = NULL;
 
 	// Unpack ShapeData
 	IDTYPE id = data->ID;
-	m_id = id;
 	btVector3 position = data->Position.GetBtVector3();
 	btQuaternion rotation = data->Rotation.GetBtQuaternion();
 	btVector3 scale = data->Scale.GetBtVector3();
@@ -287,6 +288,11 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 
 	// Calculate a new AABB for this object
 	m_worldData->dynamicsWorld->updateSingleAabb(m_body);
+
+	if (m_worldData->constraints)
+	{
+		m_worldData->constraints->RecalculateAllConstraints(m_id);
+	}
 
 	m_body->activate(false);
 	return true;

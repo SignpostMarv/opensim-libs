@@ -27,6 +27,7 @@
 #include "BulletSim.h"
 #include "GroundPlaneObject.h"
 #include "TerrainObject.h"
+#include "Constraint.h"
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
@@ -119,8 +120,6 @@ void BulletSim::exitPhysics()
 {
 	if (!m_worldData.dynamicsWorld)
 		return;
-
-	// Clean up in the reverse order of creation/initialization
 
 	if (m_worldData.objects)
 	{
@@ -529,8 +528,24 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 							  btVector3& frame2, btQuaternion& frame2rot,
 	btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular)
 {
-	m_worldData.constraints->RemoveConstraint(id1, id2);		// remove any existing constraint
+	m_worldData.constraints->RemoveAndDestroyConstraint(id1, id2);		// remove any existing constraint
 
+	btTransform frame1t, frame2t;
+	frame1t.setIdentity();
+	frame1t.setOrigin(frame1);
+	frame1t.setRotation(frame1rot);
+	frame2t.setIdentity();
+	frame2t.setOrigin(frame2);
+	frame2t.setRotation(frame2rot);
+	Constraint* constraint = new Constraint(&m_worldData, id1, id2, frame1t, frame2t);
+	constraint->SetLinear(lowLinear, hiLinear);
+	constraint->SetAngular(lowAngular, hiAngular);
+	constraint->UseFrameOffset(false);
+	constraint->TranslationalLimitMotor(true, 5.0f, 0.1f);
+
+	m_worldData.constraints->AddConstraint(constraint);
+
+	/*
 	IPhysObject* obj1;
 	IPhysObject* obj2;
 	if (m_worldData.objects->TryGetObject(id1, &obj1))
@@ -561,6 +576,7 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 			m_worldData.constraints->AddConstraint(id1, id2, constraint);
 		}
 	}
+	*/
 	return;
 }
 
@@ -568,18 +584,12 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 // associated with it.
 bool BulletSim::RemoveConstraintByID(IDTYPE id1)
 {
-	return m_worldData.constraints->RemoveConstraints(id1);
-}
-
-// When properties of the object change, the base transforms in the constraint should be recomputed
-bool BulletSim::RecalculateAllConstraintsByID(IDTYPE id1)
-{
-	return m_worldData.constraints->RecalculateAllConstraints(id1);
+	return m_worldData.constraints->RemoveAndDestroyConstraints(id1);
 }
 
 bool BulletSim::RemoveConstraint(IDTYPE id1, IDTYPE id2)
 {
-	return m_worldData.constraints->RemoveConstraint(id1, id2);
+	return m_worldData.constraints->RemoveAndDestroyConstraint(id1, id2);
 }
 
 btVector3 BulletSim::GetObjectPosition(IDTYPE id)
@@ -714,7 +724,7 @@ bool BulletSim::HasObject(IDTYPE id)
 bool BulletSim::DestroyObject(IDTYPE id)
 {
 	// Remove any constraints associated with this object
-	m_worldData.constraints->RemoveConstraints(id);
+	m_worldData.constraints->RemoveAndDestroyConstraints(id);
 
 	return m_worldData.objects->RemoveAndDestroyObject(id);
 }

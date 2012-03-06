@@ -329,7 +329,6 @@ protected:
 	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
 
 	unsigned long long GenConstraintID(IDTYPE id1, IDTYPE id2);
-	bool RecalculateAllConstraintsByID(IDTYPE id1);
 
 	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
 

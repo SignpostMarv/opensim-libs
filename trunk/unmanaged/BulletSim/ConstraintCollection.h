@@ -31,7 +31,11 @@
 
 #include "ArchStuff.h"
 #include "WorldData.h"
+#include "Constraint.h"
+
 #include "btBulletDynamicsCommon.h"
+
+#include <map>
 
 #define CONSTRAINTIDTYPE unsigned long long
 
@@ -43,18 +47,21 @@ public:
 
 	void Clear(void);
 
-	bool AddConstraint(IDTYPE, IDTYPE, btTypedConstraint*);
+	bool AddConstraint(Constraint*);
 
 	// Remove all constraints that reference this ID
-	bool RemoveConstraints(IDTYPE);
+	bool RemoveAndDestroyConstraints(IDTYPE);
 
 	// Remove the constraint between these two objects
-	bool RemoveConstraint(IDTYPE, IDTYPE);
+	bool RemoveAndDestroyConstraint(IDTYPE, IDTYPE);
 
 	// An object has changed shape/mass. Recompute the constraint transforms.
 	bool RecalculateAllConstraints(IDTYPE);
 
 private:
+	typedef std::map<CONSTRAINTIDTYPE, Constraint*> ConstraintMapType;
+	ConstraintMapType m_constraints;
+
 	WorldData* m_worldData;
 
 	CONSTRAINTIDTYPE GenConstraintID(IDTYPE id1, IDTYPE id2);
