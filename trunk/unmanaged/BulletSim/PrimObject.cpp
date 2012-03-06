@@ -26,7 +26,6 @@
  */
 
 #include "PrimObject.h"
-#include "btBulletDynamicsCommon.h"
 #include "BulletSim.h"
 
 PrimObject::PrimObject(WorldData* world, ShapeData* data) {
@@ -69,7 +68,7 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	btRigidBody* body = new btRigidBody(cInfo);
 	motionState->RigidBody = body;
 
-	this->SetPhysicalProperties(friction, restitution, velocity);
+	UpdatePhysicalParameters(friction, restitution, velocity);
 
 	// Set the dynamic and collision flags (for static and phantom objects)
 	this->SetProperties(isStatic, isCollidable, false, mass);
@@ -128,6 +127,28 @@ void PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 		// for the moment, everything generates collisions
 		// TODO: Add a flag to CollisionFlags that is checked in StepSimulation on whether to pass up or not
 	}
+}
+
+void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
+{
+	// Tweak continuous collision detection parameters
+	if (m_worldData->params->ccdMotionThreshold > 0.0f)
+	{
+		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
+		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
+	}
+	m_body->setDamping(m_worldData->params->linearDamping, m_worldData->params->angularDamping);
+	m_body->setDeactivationTime(m_worldData->params->deactivationTime);
+	m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, m_worldData->params->angularSleepingThreshold);
+	m_body->setContactProcessingThreshold(m_worldData->params->contactProcessingThreshold);
+
+	m_body->setFriction(frict);
+	m_body->setRestitution(resti);
+	m_body->setLinearVelocity(velo);
+	// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
+	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));
+	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
+	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }
 
 bool PrimObject::SetDynamic(const bool isPhysical, const float mass)
@@ -203,10 +224,6 @@ void PrimObject::SetCollidable(bool collidable)
 
 	m_body->activate(false);
 	return;
-}
-
-bool PrimObject::SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) {
-	return false;
 }
 
 btVector3 PrimObject::GetObjectPosition()
@@ -316,6 +333,100 @@ bool PrimObject::SetObjectBuoyancy(float buoy)
 	return true;
 }
 
+// Create and return the collision shape specified by the ShapeData.
+btCollisionShape* PrimObject::CreateShape(ShapeData* data)
+{
+	ShapeData::PhysicsShapeType type = data->Type;
+	Vector3 scale = data->Scale;
+	btVector3 scaleBt = scale.GetBtVector3();
+	WorldData::MeshesMapType::const_iterator mt;
+	WorldData::HullsMapType::const_iterator ht;
+
+	btCollisionShape* shape = NULL;
+
+	switch (type)
+	{
+		case ShapeData::SHAPE_AVATAR:
+			// should not happen for a prim
+			break;
+		case ShapeData::SHAPE_BOX:
+			// btBoxShape subtracts the collision margin from the half extents, so no 
+			// fiddling with scale necessary
+			// boxes are defined by their half extents
+			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
+			shape->setMargin(m_worldData->params->collisionMargin);
+			AdjustScaleForCollisionMargin(shape, scaleBt);
+			break;
+		case ShapeData::SHAPE_CONE:	// TODO:
+			shape = new btConeShapeZ(0.5, 1.0);
+			shape->setMargin(m_worldData->params->collisionMargin);
+			break;
+		case ShapeData::SHAPE_CYLINDER:	// TODO:
+			shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
+			shape->setMargin(m_worldData->params->collisionMargin);
+			break;
+		case ShapeData::SHAPE_MESH:
+			mt = m_worldData->Meshes.find(data->MeshKey);
+			if (mt != m_worldData->Meshes.end())
+			{
+				// BSLog("CreateShape: SHAPE_MESH. localID=%d", data->ID);
+				btBvhTriangleMeshShape* origionalMeshShape = mt->second;
+				// we have to copy the mesh shape because we don't keep use counters
+				shape = DuplicateMeshShape(origionalMeshShape);
+				shape->setMargin(m_worldData->params->collisionMargin);
+				AdjustScaleForCollisionMargin(shape, scaleBt);
+			}
+			break;
+		case ShapeData::SHAPE_HULL:
+			ht = m_worldData->Hulls.find(data->HullKey);
+			if (ht != m_worldData->Hulls.end())
+			{
+				// The compound shape stored in m_hulls is really just a storage container for
+				// the the individual convex hulls and their offsets. Here we copy each child
+				// convex hull and its offset to the new compound shape which will actually be
+				// inserted into the physics simulation
+				// BSLog("CreateShape: SHAPE_HULL. localID=%d", data->ID);
+				btCompoundShape* originalCompoundShape = ht->second;
+				shape = DuplicateCompoundShape(originalCompoundShape);
+				shape->setMargin(m_worldData->params->collisionMargin);
+				AdjustScaleForCollisionMargin(shape, scaleBt);
+			}
+			break;
+		case ShapeData::SHAPE_SPHERE:
+			shape = new btSphereShape(0.5);		// this is really a unit sphere
+			shape->setMargin(m_worldData->params->collisionMargin);
+			AdjustScaleForCollisionMargin(shape, scaleBt);
+			break;
+	}
+
+	return shape;
+}
+
+// create a new compound shape that contains the hulls of the passed compound shape
+btCompoundShape* PrimObject::DuplicateCompoundShape(btCompoundShape* originalCompoundShape)
+{
+	btCompoundShape* newCompoundShape = new btCompoundShape(false);
+
+	int childCount = originalCompoundShape->getNumChildShapes();
+	btCompoundShapeChild* children = originalCompoundShape->getChildList();
+
+	for (int i = 0; i < childCount; i++)
+	{
+		btCollisionShape* childShape = children[i].m_childShape;
+		btTransform childTransform = children[i].m_transform;
+
+		newCompoundShape->addChildShape(childTransform, childShape);
+	}
+
+	return newCompoundShape;
+}
+
+btCollisionShape* PrimObject::DuplicateMeshShape(btBvhTriangleMeshShape* mShape)
+{
+	btBvhTriangleMeshShape* newTMS = new btBvhTriangleMeshShape(mShape->getMeshInterface(), true, true);
+	return newTMS;
+}
+
 // Bullet has a 'collisionMargin' that makes the mesh a little bigger. This routine
 // reduces the scale of the underlying mesh to make the mesh plus margin the
 // same size as the original mesh.
@@ -395,26 +506,4 @@ void PrimObject::UpdateParameter(const char* parm, const float val)
 		m_body->setCcdSweptSphereRadius(btVal);
 	}
 	return;
-}
-
-void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
-{
-	// Tweak continuous collision detection parameters
-	if (m_worldData->params->ccdMotionThreshold > 0.0f)
-	{
-		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
-		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
-	}
-	m_body->setDamping(m_worldData->params->linearDamping, m_worldData->params->angularDamping);
-	m_body->setDeactivationTime(m_worldData->params->deactivationTime);
-	m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, m_worldData->params->angularSleepingThreshold);
-	m_body->setContactProcessingThreshold(m_worldData->params->contactProcessingThreshold);
-
-	m_body->setFriction(frict);
-	m_body->setRestitution(resti);
-	m_body->setLinearVelocity(velo);
-	// per http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=3382
-	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));
-	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
-	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }

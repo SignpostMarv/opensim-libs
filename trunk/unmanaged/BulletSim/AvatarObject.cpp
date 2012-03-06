@@ -33,10 +33,7 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	m_worldData = world;
 	m_id = data->ID;
 
-	btCollisionShape* shape = NULL;
-
 	// Unpack ShapeData
-	IDTYPE id = data->ID;
 	btVector3 position = data->Position.GetBtVector3();
 	btQuaternion rotation = data->Rotation.GetBtQuaternion();
 	btVector3 scale = data->Scale.GetBtVector3();
@@ -48,8 +45,13 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	bool isStatic = (data->Static == 1);
 	bool isCollidable = (data->Collidable == 1);
 
+	// Create the default capsule for the avatar
+	btCollisionShape* shape = new btCapsuleShapeZ(m_worldData->params->avatarCapsuleRadius,
+							m_worldData->params->avatarCapsuleHeight);
+	shape->setMargin(m_worldData->params->collisionMargin);
+
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
-	shape->setUserPointer((void*)id);
+	shape->setUserPointer((void*)m_id);
 	
 	// Create a starting transform
 	btTransform startTransform;
@@ -66,14 +68,14 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 		shape->calculateLocalInertia(mass, localInertia);
 
 	// Create the motion state and rigid body
-	SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &(m_worldData->updatesThisFrame));
+	SimMotionState* motionState = new SimMotionState(m_id, startTransform, &(m_worldData->updatesThisFrame));
 	btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
 	btRigidBody* character = new btRigidBody(cInfo);
 	motionState->RigidBody = character;
 
 	character->setCollisionFlags(character->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 
-	this->SetPhysicalProperties(friction, restitution, velocity);
+	UpdatePhysicalParameters(friction, restitution, velocity);
 
 	m_body = character;
 	m_worldData->dynamicsWorld->addRigidBody(character);
@@ -116,11 +118,30 @@ AvatarObject::~AvatarObject(void) {
 }
 
 bool AvatarObject::SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {
-	return false;
+	// This is a NOP for an avatar
+	return true;
 }
 
-bool AvatarObject::SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) {
-	return false;
+void AvatarObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
+{
+	// Tweak continuous collision detection parameters
+	// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
+	if (m_worldData->params->ccdMotionThreshold > 0.0f)
+	{
+		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
+		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
+	}
+
+	m_body->setFriction(frict);
+	m_body->setRestitution(resti);
+	m_body->setActivationState(DISABLE_DEACTIVATION);
+	m_body->setContactProcessingThreshold(0.0);
+
+	m_body->setAngularFactor(btVector3(0, 0, 0));	// makes the capsule not fall over
+	m_body->setLinearVelocity(velo);
+	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));	// turns off unexpected interpolation
+	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
+	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }
 
 btVector3 AvatarObject::GetObjectPosition()
@@ -245,25 +266,4 @@ void AvatarObject::UpdateParameter(const char* parm, const float val)
 		// TODO: rebuild the capsule (remember to take scale into account)
 	}
 	return;
-}
-void AvatarObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
-{
-	// Tweak continuous collision detection parameters
-	// Only perform continuious collision detection (CCD) if movement last frame was more than threshold
-	if (m_worldData->params->ccdMotionThreshold > 0.0f)
-	{
-		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
-		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
-	}
-
-	m_body->setFriction(frict);
-	m_body->setRestitution(resti);
-	m_body->setActivationState(DISABLE_DEACTIVATION);
-	m_body->setContactProcessingThreshold(0.0);
-
-	m_body->setAngularFactor(btVector3(0, 0, 0));	// makes the capsule not fall over
-	m_body->setLinearVelocity(velo);
-	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));	// turns off unexpected interpolation
-	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
-	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }

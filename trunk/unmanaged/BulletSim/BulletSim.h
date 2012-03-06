@@ -236,18 +236,6 @@ protected:
 // The main physics simulation class.
 class BulletSim
 {
-	// Mesh data and scene objects
-	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
-	MeshesMapType m_meshes;
-	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
-	HullsMapType m_hulls;
-	// typedef std::map<IDTYPE, btRigidBody*> BodiesMapType;
-	// BodiesMapType m_bodies;
-	// typedef std::map<IDTYPE, btRigidBody*> CharactersMapType;
-	// CharactersMapType m_characters;
-	// typedef std::map<unsigned long long, btGeneric6DofConstraint*> ConstraintMapType;
-	// ConstraintMapType m_constraints;
-
 	// Bullet world objects
 	btBroadphaseInterface* m_broadphase;
 	btCollisionDispatcher* m_dispatcher;
@@ -256,8 +244,6 @@ class BulletSim
 
 	// Terrain and world metadata
 	TerrainObject* m_terrainObject;
-	btVector3 m_minPosition;
-	btVector3 m_maxPosition;
 
 	// Information about the world that is shared with all the objects
 	WorldData m_worldData;
@@ -319,23 +305,6 @@ public:
 protected:
 	void CreateGroundPlane();
 	void CreateTerrain();
-	void SetTerrainPhysicalParameters(btRigidBody* body);
-
-	btCollisionShape* CreateShape(ShapeData* data);
-
-	void SetAvatarPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
-	void SetObjectPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
-	void SetObjectCollidable(btRigidBody* body, bool collidable);
-	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
-
-	unsigned long long GenConstraintID(IDTYPE id1, IDTYPE id2);
-
-	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
-
-	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
-	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
-
-	SweepHit GenericConvexSweepTest(btCollisionObject* collisionObject, btVector3& fromPos, btVector3& targetPos);
 };
 
 #endif //BULLET_SIM_H

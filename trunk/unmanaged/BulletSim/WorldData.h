@@ -53,6 +53,8 @@ struct WorldData
 
 	// the terrain is based on a heightmap
 	HeightMapData* heightMap;
+	btVector3 MinPosition;
+	btVector3 MaxPosition;
 
 	// Used to expose updates from Bullet to the BulletSim API
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
@@ -68,6 +70,12 @@ struct WorldData
 
 	// Constraints created in this world
 	ConstraintCollection* constraints;
+
+	// Mesh and Hull data
+	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
+	MeshesMapType Meshes;
+	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
+	HullsMapType Hulls;
 };
 
 #endif // WORLD_DATA_H

@@ -41,8 +41,8 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	m_worldData.constraints = NULL;
 	m_terrainObject = NULL;
 
-	m_minPosition = btVector3(0, 0, 0);
-	m_maxPosition = btVector3(maxX, maxY, maxZ);
+	m_worldData.MinPosition = btVector3(0, 0, 0);
+	m_worldData.MaxPosition = btVector3(maxX, maxY, maxZ);
 	// start the terrain as flat at height 25
 	m_worldData.heightMap = new HeightMapData(maxX, maxY, 25.0);
 }
@@ -121,13 +121,6 @@ void BulletSim::exitPhysics()
 	if (!m_worldData.dynamicsWorld)
 		return;
 
-	if (m_worldData.objects)
-	{
-		m_worldData.objects->Clear();
-		delete m_worldData.objects;
-		m_worldData.objects = NULL;
-	}
-
 	if (m_worldData.constraints)
 	{
 		m_worldData.constraints->Clear();
@@ -135,22 +128,28 @@ void BulletSim::exitPhysics()
 		m_worldData.constraints = NULL;
 	}
 
+	if (m_worldData.objects)
+	{
+		m_worldData.objects->Clear();
+		delete m_worldData.objects;
+		m_worldData.objects = NULL;
+	}
+
 	// Delete collision meshes
-	for (HullsMapType::const_iterator it = m_hulls.begin(); it != m_hulls.end(); ++it)
+	for (WorldData::HullsMapType::const_iterator it = m_worldData.Hulls.begin(); it != m_worldData.Hulls.end(); ++it)
     {
 		btCollisionShape* collisionShape = it->second;
 		delete collisionShape;
 	}
-
-	m_hulls.clear();
+	m_worldData.Hulls.clear();
 
 	// Delete collision meshes
-	for (MeshesMapType::const_iterator it = m_meshes.begin(); it != m_meshes.end(); ++it)
+	for (WorldData::MeshesMapType::const_iterator it = m_worldData.Meshes.begin(); it != m_worldData.Meshes.end(); ++it)
     {
 		btCollisionShape* collisionShape = it->second;
 		delete collisionShape;
 	}
-	m_meshes.clear();
+	m_worldData.Meshes.clear();
 
 	// The ground plane and terrain are deleted when the object list is cleared
 	m_terrainObject = NULL;
@@ -266,7 +265,7 @@ void BulletSim::SetHeightmap(float* heightmap)
 {
 	if (m_worldData.heightMap)
 	{
-		m_worldData.heightMap->UpdateHeightMap(heightmap, m_maxPosition.getX(), m_maxPosition.getY());
+		m_worldData.heightMap->UpdateHeightMap(heightmap, m_worldData.MaxPosition.getX(), m_worldData.MaxPosition.getY());
 		if (m_terrainObject)
 		{
 			m_terrainObject->UpdateTerrain();
@@ -303,8 +302,8 @@ void BulletSim::CreateTerrain()
 bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hulls)
 {
 	// BSLog("CreateHull: hullCount=%d", hullCount);
-	HullsMapType::iterator it = m_hulls.find(meshKey);
-	if (it == m_hulls.end())
+	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
+	if (it == m_worldData.Hulls.end())
 	{
 		// Create a compound shape that will wrap the set of convex hulls
 		btCompoundShape* compoundShape = new btCompoundShape(false);
@@ -333,7 +332,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 		}
 
 		// Track this mesh
-		m_hulls[meshKey] = compoundShape;
+		m_worldData.Hulls[meshKey] = compoundShape;
 		return true;
 	}
 	return false;
@@ -343,12 +342,12 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 bool BulletSim::DestroyHull(unsigned long long meshKey)
 {
 	// BSLog("DeleteHull:");
-	HullsMapType::iterator it = m_hulls.find(meshKey);
-	if (it != m_hulls.end())
+	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
+	if (it != m_worldData.Hulls.end())
 	{
-		btCompoundShape* compoundShape = m_hulls[meshKey];
+		btCompoundShape* compoundShape = m_worldData.Hulls[meshKey];
 		delete compoundShape;
-		m_hulls.erase(it);
+		m_worldData.Hulls.erase(it);
 		return true;
 	}
 	return false;
@@ -358,8 +357,8 @@ bool BulletSim::DestroyHull(unsigned long long meshKey)
 bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// BSLog("CreateMesh: nIndices=%d, nVertices=%d, key=%ld", indicesCount, verticesCount, meshKey);
-	MeshesMapType::iterator it = m_meshes.find(meshKey);
-	if (it == m_meshes.end())
+	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
+	if (it == m_worldData.Meshes.end())
 	{
 		// We must copy the indices and vertices since the passed memory is released when this call returns.
 		btIndexedMesh indexedMesh;
@@ -382,7 +381,7 @@ bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* in
 
 		btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
 		
-		m_meshes[meshKey] = meshShape;
+		m_worldData.Meshes[meshKey] = meshShape;
 	}
 	return false;
 }
@@ -391,10 +390,10 @@ bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* in
 bool BulletSim::DestroyMesh(unsigned long long meshKey)
 {
 	// BSLog("DeleteMesh:");
-	MeshesMapType::iterator it = m_meshes.find(meshKey);
-	if (it != m_meshes.end())
+	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
+	if (it != m_worldData.Meshes.end())
 	{
-		btBvhTriangleMeshShape* tms = m_meshes[meshKey];
+		btBvhTriangleMeshShape* tms = m_worldData.Meshes[meshKey];
 		/* This causes memory corruption.
 		 * TODO: figure out when to properly release the memory allocated in CreateMesh.
 		btIndexedMesh* smi = (btIndexedMesh*)tms->getMeshInterface();
@@ -402,105 +401,10 @@ bool BulletSim::DestroyMesh(unsigned long long meshKey)
 		delete smi->m_vertexBase;
 		*/
 		delete tms;
-		m_meshes.erase(it);
+		m_worldData.Meshes.erase(it);
 		return true;
 	}
 	return false;
-}
-
-// Create and return the collision shape specified by the ShapeData.
-btCollisionShape* BulletSim::CreateShape(ShapeData* data)
-{
-	ShapeData::PhysicsShapeType type = data->Type;
-	Vector3 scale = data->Scale;
-	btVector3 scaleBt = scale.GetBtVector3();
-	MeshesMapType::const_iterator mt;
-	HullsMapType::const_iterator ht;
-
-	btCollisionShape* shape = NULL;
-
-	switch (type)
-	{
-		case ShapeData::SHAPE_AVATAR:
-			shape = new btCapsuleShapeZ(m_worldData.params->avatarCapsuleRadius, m_worldData.params->avatarCapsuleHeight);
-			shape->setMargin(m_worldData.params->collisionMargin);
-			break;
-		case ShapeData::SHAPE_BOX:
-			// btBoxShape subtracts the collision margin from the half extents, so no 
-			// fiddling with scale necessary
-			// boxes are defined by their half extents
-			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
-			shape->setMargin(m_worldData.params->collisionMargin);
-			AdjustScaleForCollisionMargin(shape, scaleBt);
-			break;
-		case ShapeData::SHAPE_CONE:	// TODO:
-			shape = new btConeShapeZ(0.5, 1.0);
-			shape->setMargin(m_worldData.params->collisionMargin);
-			break;
-		case ShapeData::SHAPE_CYLINDER:	// TODO:
-			shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
-			shape->setMargin(m_worldData.params->collisionMargin);
-			break;
-		case ShapeData::SHAPE_MESH:
-			mt = m_meshes.find(data->MeshKey);
-			if (mt != m_meshes.end())
-			{
-				// BSLog("CreateShape: SHAPE_MESH. localID=%d", data->ID);
-				btBvhTriangleMeshShape* origionalMeshShape = mt->second;
-				// we have to copy the mesh shape because we don't keep use counters
-				shape = DuplicateMeshShape(origionalMeshShape);
-				shape->setMargin(m_worldData.params->collisionMargin);
-				AdjustScaleForCollisionMargin(shape, scaleBt);
-			}
-			break;
-		case ShapeData::SHAPE_HULL:
-			ht = m_hulls.find(data->HullKey);
-			if (ht != m_hulls.end())
-			{
-				// The compound shape stored in m_hulls is really just a storage container for
-				// the the individual convex hulls and their offsets. Here we copy each child
-				// convex hull and its offset to the new compound shape which will actually be
-				// inserted into the physics simulation
-				// BSLog("CreateShape: SHAPE_HULL. localID=%d", data->ID);
-				btCompoundShape* originalCompoundShape = ht->second;
-				shape = DuplicateCompoundShape(originalCompoundShape);
-				shape->setMargin(m_worldData.params->collisionMargin);
-				AdjustScaleForCollisionMargin(shape, scaleBt);
-			}
-			break;
-		case ShapeData::SHAPE_SPHERE:
-			shape = new btSphereShape(0.5);		// this is really a unit sphere
-			shape->setMargin(m_worldData.params->collisionMargin);
-			AdjustScaleForCollisionMargin(shape, scaleBt);
-			break;
-	}
-
-	return shape;
-}
-
-// create a new compound shape that contains the hulls of the passed compound shape
-btCompoundShape* BulletSim::DuplicateCompoundShape(btCompoundShape* originalCompoundShape)
-{
-	btCompoundShape* newCompoundShape = new btCompoundShape(false);
-
-	int childCount = originalCompoundShape->getNumChildShapes();
-	btCompoundShapeChild* children = originalCompoundShape->getChildList();
-
-	for (int i = 0; i < childCount; i++)
-	{
-		btCollisionShape* childShape = children[i].m_childShape;
-		btTransform childTransform = children[i].m_transform;
-
-		newCompoundShape->addChildShape(childTransform, childShape);
-	}
-
-	return newCompoundShape;
-}
-
-btCollisionShape* BulletSim::DuplicateMeshShape(btBvhTriangleMeshShape* mShape)
-{
-	btBvhTriangleMeshShape* newTMS = new btBvhTriangleMeshShape(mShape->getMeshInterface(), true, true);
-	return newTMS;
 }
 
 

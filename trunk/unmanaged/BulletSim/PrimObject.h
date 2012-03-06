@@ -29,6 +29,8 @@
 #include "APIData.h"
 #include "WorldData.h"
 
+#include "btBulletDynamicsCommon.h"
+
 class PrimObject :
 	public IPhysObject
 {
@@ -37,7 +39,6 @@ public:
 	~PrimObject(void);
 
 	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
-	bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity);
 
 	btVector3 GetObjectPosition(void);
 
@@ -55,6 +56,10 @@ public:
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
 
 private:
+	btCollisionShape* CreateShape(ShapeData* data);
+	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
+	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
+
 	void SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass);
 	void SetObjectDynamic(bool isDynamic, float mass);
 	void SetCollidable(bool collidable);

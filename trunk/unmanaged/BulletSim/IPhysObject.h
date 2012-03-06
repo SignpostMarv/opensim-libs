@@ -45,7 +45,6 @@ public:
 	// These functions have a default null implementation so all sub-classes don't need
 	//   to define the method if it is not used by that object type.
 	virtual bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) { return false; };
-	virtual bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity) { return false; };
 
 	virtual btVector3 GetObjectPosition(void) { return btVector3(0.0, 0.0, 0.0); };
 

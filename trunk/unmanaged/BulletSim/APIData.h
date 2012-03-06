@@ -238,6 +238,8 @@ struct ParamBlock
     float avatarCapsuleRadius;
     float avatarCapsuleHeight;
 
+	float maxPersistantManifoldPoolSize;
+	float shouldDisableContactPoolDynamicAllocation;
 	float shouldForceUpdateAllAabbs;
 	float shouldRandomizeSolverOrder;
 	float shouldSplitSimulationIslands;

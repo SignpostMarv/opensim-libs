@@ -41,7 +41,6 @@ public:
 	~AvatarObject(void);
 
 	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
-	bool SetPhysicalProperties(const btScalar friction, const btScalar restitution, const btVector3& velocity);
 
 	btVector3 GetObjectPosition(void);
 
