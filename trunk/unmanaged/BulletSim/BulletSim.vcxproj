@@ -176,10 +176,29 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="API.cpp" />
+    <ClCompile Include="AvatarObject.cpp" />
     <ClCompile Include="BulletSim.cpp" />
+    <ClCompile Include="Constraint.cpp" />
+    <ClCompile Include="ConstraintCollection.cpp" />
+    <ClCompile Include="GroundPlaneObject.cpp" />
+    <ClCompile Include="IPhysObject.cpp" />
+    <ClCompile Include="ObjectCollection.cpp" />
+    <ClCompile Include="PrimObject.cpp" />
+    <ClCompile Include="TerrainObject.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="APIData.h" />
+    <ClInclude Include="ArchStuff.h" />
+    <ClInclude Include="AvatarObject.h" />
     <ClInclude Include="BulletSim.h" />
+    <ClInclude Include="Constraint.h" />
+    <ClInclude Include="ConstraintCollection.h" />
+    <ClInclude Include="GroundPlaneObject.h" />
+    <ClInclude Include="IPhysObject.h" />
+    <ClInclude Include="ObjectCollection.h" />
+    <ClInclude Include="PrimObject.h" />
+    <ClInclude Include="TerrainObject.h" />
+    <ClInclude Include="WorldData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

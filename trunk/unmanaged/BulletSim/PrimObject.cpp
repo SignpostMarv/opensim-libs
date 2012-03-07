@@ -151,17 +151,12 @@ void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const 
 	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }
 
-bool PrimObject::SetDynamic(const bool isPhysical, const float mass)
-{
-	return false;
-}
-
 bool PrimObject::SetScaleMass(const float scale, const float mass)
 {
 	return false;
 }
 
-void PrimObject::SetObjectDynamic(bool isDynamic, float mass)
+bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 {
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
 
@@ -211,7 +206,7 @@ void PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 	}
 	// don't force activation so we don't undo the "ISLAND_SLEEPING" for static objects
 	m_body->activate(false);
-	return;
+	return true;
 }
 
 void PrimObject::SetCollidable(bool collidable)

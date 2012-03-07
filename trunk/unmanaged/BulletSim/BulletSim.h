@@ -274,7 +274,7 @@ public:
 	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
 	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
 	bool CreateObject(ShapeData* shapeData);
-	void CreateLinkset(int objectCount, ShapeData* shapeDatas);
+	void CreateLinkset(int objectCount, ShapeData* shapeDatas) { /* deprecated function */ }
 	void AddConstraint(IDTYPE id1, IDTYPE id2, 
 				btVector3& frame1, btQuaternion& frame1rot, 
 				btVector3& frame2, btQuaternion& frame2rot,

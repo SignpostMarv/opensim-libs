@@ -48,7 +48,6 @@ public:
 
 	virtual btVector3 GetObjectPosition(void) { return btVector3(0.0, 0.0, 0.0); };
 
-	virtual bool SetDynamic(const bool isPhysical, const float mass) { return false; };
 	virtual bool SetScaleMass(const float scale, const float mass) { return false; };
 	virtual bool SetObjectTranslation(btVector3& position, btQuaternion& rotation) { return false; };
 	virtual bool SetObjectVelocity(btVector3& velocity) { return false; };
@@ -56,12 +55,13 @@ public:
 	virtual bool SetObjectForce(btVector3& force) { return false; };
 	virtual bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic) { return false; };
 	virtual bool SetObjectCollidable(bool collidable) { return false; };
+	virtual bool SetObjectDynamic(bool isDynamic, float mass) { return false; };
 	virtual bool SetObjectBuoyancy(float buoy) { return false; };
 
 	virtual void UpdateParameter(const char* parm, const float val) { };
 	virtual void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo) { };
 	
-	virtual btRigidBody* GetBody() { return m_body; };
+	btRigidBody* GetBody() { return m_body; };
 
 protected:
 	IDTYPE m_id;			// the ID used to identify this object

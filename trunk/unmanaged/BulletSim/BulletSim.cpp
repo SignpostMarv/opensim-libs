@@ -592,6 +592,20 @@ bool BulletSim::SetObjectCollidable(IDTYPE id, bool collidable)
 	return ret;
 }
 
+bool BulletSim::SetObjectDynamic(IDTYPE id, bool isDynamic, float mass)
+{
+	bool ret = false;
+
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
+	{
+		obj->SetObjectDynamic(isDynamic, mass);
+		ret = true;
+	}
+
+	return ret;
+}
+
 // Adjust how gravity effects the object
 // neg=fall quickly, 0=1g, 1=0g, pos=float up
 bool BulletSim::SetObjectBuoyancy(IDTYPE id, float buoy)

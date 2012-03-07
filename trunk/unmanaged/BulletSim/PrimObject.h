@@ -42,7 +42,6 @@ public:
 
 	btVector3 GetObjectPosition(void);
 
-	bool SetDynamic(const bool isPhysical, const float mass);
 	bool SetScaleMass(const float scale, const float mass);
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
 	bool SetObjectVelocity(btVector3& velocity);
@@ -51,6 +50,7 @@ public:
 	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
 	bool SetObjectCollidable(bool collidable);
 	bool SetObjectBuoyancy(float buoy);
+	bool SetObjectDynamic(bool isDynamic, float mass);
 
 	void UpdateParameter(const char* parm, const float val);
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
@@ -61,7 +61,6 @@ private:
 	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
 
 	void SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass);
-	void SetObjectDynamic(bool isDynamic, float mass);
 	void SetCollidable(bool collidable);
 
 	void AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3& scale);
