@@ -427,6 +427,10 @@ bool BulletSim::CreateObject(ShapeData* data)
 	return ret;
 }
 
+// Explanation of cfm (constraint force mixing) and erp(error reduction parameter) at:
+//       http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=6792
+// Information on stabilty in constraint solver (see last comment from Erwin) at:
+//       http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7686
 void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2, 
 							  btVector3& frame1, btQuaternion& frame1rot,
 							  btVector3& frame2, btQuaternion& frame2rot,
