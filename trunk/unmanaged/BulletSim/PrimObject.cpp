@@ -34,7 +34,7 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	m_id = data->ID;
 	
 	// TODO: correct collision shape creation
-	btCollisionShape* shape = NULL;
+	btCollisionShape* shape = CreateShape(data);
 
 	// Unpack ShapeData
 	IDTYPE id = data->ID;
@@ -67,13 +67,13 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
 	btRigidBody* body = new btRigidBody(cInfo);
 	motionState->RigidBody = body;
+	m_body = body;
 
 	UpdatePhysicalParameters(friction, restitution, velocity);
 
 	// Set the dynamic and collision flags (for static and phantom objects)
-	this->SetProperties(isStatic, isCollidable, false, mass);
+	SetProperties(isStatic, isCollidable, false, mass);
 
-	m_body = body;
 	world->dynamicsWorld->addRigidBody(body);
 }
 
