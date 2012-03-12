@@ -68,8 +68,8 @@ void TerrainObject::UpdateTerrain()
 
 	// Initialize the terrain that spans from 0,0,0 to m_maxPosition
 	// TODO: Use the maxHeight from m_maxPosition.getZ()
-	int heightStickWidth = m_worldData->heightMap->MaxX;
-	int heightStickLength = m_worldData->heightMap->MaxY;
+	int heightStickWidth = (int)m_worldData->heightMap->MaxX;
+	int heightStickLength = (int)m_worldData->heightMap->MaxY;
 
 	float minHeight = 99999;
 	float maxHeight = 0;
@@ -133,3 +133,4 @@ void TerrainObject::UpdatePhysicalParameters(float friction, float restitution, 
 	// body->setActivationState(DISABLE_DEACTIVATION);
 	m_body->activate(true);
 }
+

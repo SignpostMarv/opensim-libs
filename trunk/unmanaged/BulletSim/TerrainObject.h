@@ -57,17 +57,21 @@ public:
 		delete HeightMap;
 	}
 
-	void UpdateHeightMap(float* heightMap, float maxX, float maxY)
+	bool UpdateHeightMap(float* heightMap, float maxX, float maxY)
 	{
-		if (HeightMap)
-			delete HeightMap;
+		bool ret = false;
+		// Cannot reallocate memory if the size changes since a pointer
+		//   to the heightmap data has been given to Bullet.
+		if (MaxX == maxX && MaxY == maxY)
+		{
+			int imaxX = (int)maxX;
+			int imaxY = (int)maxY;
 
-		int imaxX = (int)maxX;
-		int imaxY = (int)maxY;
-		HeightMap = new float[imaxX * imaxY];
-
-		// copy the passed data into our new heightmap
-		memcpy(HeightMap, heightMap, imaxY * imaxX * sizeof(float));
+			// copy the passed data into our new heightmap
+			memcpy(HeightMap, heightMap, imaxY * imaxX * sizeof(float));
+			ret = true;
+		}
+		return ret;
 	}
 
 	float* HeightMap;

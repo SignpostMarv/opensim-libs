@@ -30,6 +30,7 @@
 
 AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 
+	// BSLog("AvatarObject::AvatarObject: Creating an avatar");
 	m_worldData = world;
 	m_id = data->ID;
 
@@ -47,7 +48,7 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 
 	// Create the default capsule for the avatar
 	btCollisionShape* shape = new btCapsuleShapeZ(m_worldData->params->avatarCapsuleRadius,
-							m_worldData->params->avatarCapsuleHeight);
+												m_worldData->params->avatarCapsuleHeight);
 	shape->setMargin(m_worldData->params->collisionMargin);
 
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
@@ -59,10 +60,10 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	startTransform.setOrigin(position);
 	startTransform.setRotation(rotation);
 
-	// Building an avatar
 	// Avatars are created as rigid objects so they collide and have gravity
 
 	// Inertia calculation for physical objects (non-zero mass)
+	// TODO: compute avatar mass based on the size of the capsule (change with scaling)
 	btVector3 localInertia(0, 0, 0);
 	if (mass != 0.0f)
 		shape->calculateLocalInertia(mass, localInertia);
@@ -70,15 +71,14 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	// Create the motion state and rigid body
 	SimMotionState* motionState = new SimMotionState(m_id, startTransform, &(m_worldData->updatesThisFrame));
 	btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
-	btRigidBody* character = new btRigidBody(cInfo);
-	motionState->RigidBody = character;
+	m_body = new btRigidBody(cInfo);
+	motionState->RigidBody = m_body;
 
-	character->setCollisionFlags(character->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
+	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 
 	UpdatePhysicalParameters(friction, restitution, velocity);
 
-	m_body = character;
-	m_worldData->dynamicsWorld->addRigidBody(character);
+	m_worldData->dynamicsWorld->addRigidBody(m_body);
 
 	/*
 	// NOTE: Old code kept for reference
