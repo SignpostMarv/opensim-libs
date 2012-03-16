@@ -783,6 +783,7 @@ const btVector3 BulletSim::RecoverFromPenetration(IDTYPE id)
 void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 {
 	btScalar btVal = btScalar(val);
+	btVector3 btZeroVector3 = btVector3(0, 0, 0);
 
 	// changes to the environment
 	if (strcmp(parm, "gravity") == 0)
@@ -800,7 +801,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 			m_terrainObject->UpdatePhysicalParameters(
 							m_worldData.params->terrainFriction,
 							m_worldData.params->terrainRestitution,
-							btVector3(0, 0, 0));
+							btZeroVector3);
 		}
 		return;
 	}
@@ -817,7 +818,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		obj->UpdatePhysicalParameters(
 				m_worldData.params->avatarFriction, 
 				m_worldData.params->avatarRestitution,
-				btVector3(0, 0, 0));
+				btZeroVector3);
 		return;
 	}
 
@@ -827,7 +828,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		obj->UpdatePhysicalParameters(
 				m_worldData.params->defaultFriction, 
 				m_worldData.params->defaultRestitution,
-				btVector3(0, 0, 0));
+				btZeroVector3);
 		return;
 	}
 
