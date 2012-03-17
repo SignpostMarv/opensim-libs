@@ -812,7 +812,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		return;
 	}
 
-	// something changed in the avatar so reset all the terrain parameters to values from m_worldData.params
+	// the friction or restitution changed in the default parameters. Reset same.
 	if (strcmp(parm, "avatar") == 0)
 	{
 		obj->UpdatePhysicalParameters(
@@ -822,7 +822,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		return;
 	}
 
-	// something changed in an object so reset all the terrain parameters to values from m_worldData.params
+	// the friction or restitution changed in the default parameters. Reset same.
 	if (strcmp(parm, "object") == 0)
 	{
 		obj->UpdatePhysicalParameters(

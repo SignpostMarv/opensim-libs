@@ -469,14 +469,24 @@ void PrimObject::UpdateParameter(const char* parm, const float val)
 {
 	btScalar btVal = btScalar(val);
 
+	if (strcmp(parm, "friction") == 0)
+	{
+		m_body->setFriction(btVal);
+		return;
+	}
+	if (strcmp(parm, "restitution") == 0)
+	{
+		m_body->setRestitution(btVal);
+		return;
+	}
 	if (strcmp(parm, "lineardamping") == 0)
 	{
-		m_body->setDamping(btVal, m_worldData->params->angularDamping);
+		m_body->setDamping(btVal, m_worldData->params->linearDamping);
 		return;
 	}
 	if (strcmp(parm, "angulardamping") == 0)
 	{
-		m_body->setDamping(m_worldData->params->linearDamping, btVal);
+		m_body->setDamping(m_worldData->params->angularDamping, btVal);
 		return;
 	}
 	if (strcmp(parm, "deactivationtime") == 0)
