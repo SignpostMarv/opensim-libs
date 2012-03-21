@@ -44,7 +44,6 @@ public:
 
 	btVector3 GetObjectPosition(void);
 
-	// bool SetScaleMass(const float scale, const float mass);
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
 	bool SetObjectVelocity(btVector3& velocity);
 	bool SetObjectAngularVelocity(btVector3& angularVelocity);

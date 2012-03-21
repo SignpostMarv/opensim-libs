@@ -117,6 +117,7 @@ void TerrainObject::UpdateTerrain()
 	m_body = new btRigidBody(cInfo);
 
 	m_body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 	UpdatePhysicalParameters( m_worldData->params->terrainFriction,
 				m_worldData->params->terrainRestitution,
 				btVector3(0, 0, 0));

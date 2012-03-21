@@ -453,38 +453,6 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 
 	m_worldData.constraints->AddConstraint(constraint);
 
-	/*
-	IPhysObject* obj1;
-	IPhysObject* obj2;
-	if (m_worldData.objects->TryGetObject(id1, &obj1))
-	{
-		if (m_worldData.objects->TryGetObject(id2, &obj2))
-		{
-            // BSLog("AddConstraint: found body1=%d, body2=%d", id1, id2);
-			btRigidBody* body1 = obj1->GetBody();
-			btRigidBody* body2 = obj2->GetBody();
-
-			btTransform frame1t, frame2t;
-			frame1t.setIdentity();
-			frame1t.setOrigin(frame1);
-			frame1t.setRotation(frame1rot);
-			frame2t.setIdentity();
-			frame2t.setOrigin(frame2);
-			frame2t.setRotation(frame2rot);
-			btGeneric6DofConstraint* constraint = new btGeneric6DofConstraint(*body1, *body2, frame1t, frame2t, true);
-			constraint->setLinearLowerLimit(lowLinear);
-			constraint->setLinearUpperLimit(hiLinear);
-			constraint->setAngularLowerLimit(lowAngular);
-			constraint->setAngularUpperLimit(hiAngular);
-			constraint->setUseFrameOffset(false);
-			constraint->getTranslationalLimitMotor()->m_enableMotor[0] = true;
-			constraint->getTranslationalLimitMotor()->m_targetVelocity[0] = 5.0f;
-			constraint->getTranslationalLimitMotor()->m_maxMotorForce[0] = 0.1f;
-
-			m_worldData.constraints->AddConstraint(id1, id2, constraint);
-		}
-	}
-	*/
 	return;
 }
 

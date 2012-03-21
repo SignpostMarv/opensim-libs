@@ -75,6 +75,10 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	SetProperties(isStatic, isCollidable, false, mass);
 
 	world->dynamicsWorld->addRigidBody(body);
+
+	// btVector3 Dvel = m_body->getLinearVelocity();
+	// btVector3 Dgrav = m_body->getGravity();
+	// BSLog("New prim: vel=<%f,%f,%f>, grav=<%f,%f,%f>", Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 }
 
 PrimObject::~PrimObject(void) {
@@ -151,11 +155,6 @@ void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const 
 	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
 }
 
-bool PrimObject::SetScaleMass(const float scale, const float mass)
-{
-	return false;
-}
-
 bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 {
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
@@ -176,7 +175,6 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 
 		// Set the new mass
 		m_body->setMassProps(mass, localInertia);
-		// BSLog("SetObjectDynamic: dynamic. ID=%d, Mass = %f", CONVLOCALID(m_body->getCollisionShape()->getUserPointer()), mass);
 		m_body->updateInertiaTensor();
 
 		// NOTE: Workaround for issue http://code.google.com/p/bullet/issues/detail?id=364
@@ -185,6 +183,11 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 
 		// if there are any constraints on this object, recalcuate transforms for new mass
 		m_worldData->constraints->RecalculateAllConstraints(m_id);
+
+		// BSLog("SetObjectDynamic: dynamic. ID=%d, Mass = %f", CONVLOCALID(m_body->getCollisionShape()->getUserPointer()), mass);
+		// btVector3 Dvel = m_body->getLinearVelocity();
+		// btVector3 Dgrav = m_body->getGravity();
+		// BSLog("     vel=<%f,%f,%f>, grav=<%f,%f,%f>", Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}
 	else
 	{

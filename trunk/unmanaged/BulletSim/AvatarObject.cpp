@@ -74,7 +74,11 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	m_body = new btRigidBody(cInfo);
 	motionState->RigidBody = m_body;
 
+	// Characters can have special collision operations.
 	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
+	// The following makes it so the avatar doesn't respond to things collided with.
+	// Mostly so walking doesn't slow down because of friction with the terrain.
+	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
 	UpdatePhysicalParameters(friction, restitution, velocity);
 
@@ -212,12 +216,12 @@ void AvatarObject::UpdateParameter(const char* parm, const float val)
 {
 	btScalar btVal = btScalar(val);
 
-	if (strcmp(parm, "friction") == 0)
+	if (strcmp(parm, "friction") == 0 || strcmp(parm, "avatarfriction") == 0)
 	{
 		m_body->setFriction(btVal);
 		return;
 	}
-	if (strcmp(parm, "restitution") == 0)
+	if (strcmp(parm, "restitution") == 0 || strcmp(parm, "avatarrestitution") == 0)
 	{
 		m_body->setRestitution(btVal);
 		return;

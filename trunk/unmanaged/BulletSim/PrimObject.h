@@ -42,15 +42,14 @@ public:
 
 	btVector3 GetObjectPosition(void);
 
-	bool SetScaleMass(const float scale, const float mass);
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
 	bool SetObjectVelocity(btVector3& velocity);
 	bool SetObjectAngularVelocity(btVector3& angularVelocity);
 	bool SetObjectForce(btVector3& force);
 	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
 	bool SetObjectCollidable(bool collidable);
-	bool SetObjectBuoyancy(float buoy);
 	bool SetObjectDynamic(bool isDynamic, float mass);
+	bool SetObjectBuoyancy(float buoy);
 
 	void UpdateParameter(const char* parm, const float val);
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);

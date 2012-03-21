@@ -192,7 +192,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.80\src&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.79\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -212,7 +212,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib $(NOINHERIT)"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.80\lib&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.79\lib&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>

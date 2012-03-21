@@ -48,7 +48,6 @@ public:
 
 	virtual btVector3 GetObjectPosition(void) { return btVector3(0.0, 0.0, 0.0); };
 
-	virtual bool SetScaleMass(const float scale, const float mass) { return false; };
 	virtual bool SetObjectTranslation(btVector3& position, btQuaternion& rotation) { return false; };
 	virtual bool SetObjectVelocity(btVector3& velocity) { return false; };
 	virtual bool SetObjectAngularVelocity(btVector3& angularVelocity) { return false; };
