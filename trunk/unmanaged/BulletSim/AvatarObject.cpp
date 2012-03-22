@@ -77,8 +77,6 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	// Characters can have special collision operations.
 	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 	// The following makes it so the avatar doesn't respond to things collided with.
-	// Mostly so walking doesn't slow down because of friction with the terrain.
-	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
 	UpdatePhysicalParameters(friction, restitution, velocity);
 

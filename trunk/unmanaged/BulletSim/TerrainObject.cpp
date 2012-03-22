@@ -29,10 +29,10 @@
 #include "btBulletDynamicsCommon.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 
-TerrainObject::TerrainObject(WorldData* world)
+TerrainObject::TerrainObject(WorldData* world, IDTYPE theID)
 {
 	m_worldData = world;
-	m_id = ID_TERRAIN;
+	m_id = theID;
 
 	UpdateTerrain();
 }
@@ -100,7 +100,7 @@ void TerrainObject::UpdateTerrain()
 	m_heightfieldShape->setUseDiamondSubdivision(true);
 
 	// Add the localID to the object so we know about collisions
-	m_heightfieldShape->setUserPointer((void*)ID_TERRAIN);
+	m_heightfieldShape->setUserPointer((void*)m_id);
 
 	// Set the heightfield origin
 	btTransform heightfieldTr;
@@ -117,7 +117,6 @@ void TerrainObject::UpdateTerrain()
 	m_body = new btRigidBody(cInfo);
 
 	m_body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 	UpdatePhysicalParameters( m_worldData->params->terrainFriction,
 				m_worldData->params->terrainRestitution,
 				btVector3(0, 0, 0));

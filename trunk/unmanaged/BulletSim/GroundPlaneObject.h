@@ -40,7 +40,7 @@ class GroundPlaneObject :
 	public IPhysObject
 {
 public:
-	GroundPlaneObject(WorldData*);
+	GroundPlaneObject(WorldData*, IDTYPE);
 	~GroundPlaneObject(void);
 
 private:

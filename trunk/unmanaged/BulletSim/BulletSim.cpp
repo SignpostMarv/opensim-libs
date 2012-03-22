@@ -65,9 +65,10 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	m_worldData.constraints = new ConstraintCollection(&m_worldData);
 
 	// create the functional parts of the physics simulation
-	btDefaultCollisionConstructionInfo cci;
+	// btDefaultCollisionConstructionInfo cci;
 	// cci.m_defaultMaxPersistentManifoldPoolSize = 32768;
-	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
+	// m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
+	m_collisionConfiguration = new btDefaultCollisionConfiguration();
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 	// m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
 	
@@ -277,7 +278,7 @@ void BulletSim::SetHeightmap(float* heightmap)
 void BulletSim::CreateGroundPlane()
 {
 	m_worldData.objects->RemoveAndDestroyObject(ID_GROUND_PLANE);
-	IPhysObject* groundPlane = new GroundPlaneObject(&m_worldData);
+	IPhysObject* groundPlane = new GroundPlaneObject(&m_worldData, ID_GROUND_PLANE);
 	m_worldData.objects->AddObject(ID_GROUND_PLANE, groundPlane);
 }
 
@@ -289,7 +290,7 @@ void BulletSim::CreateTerrain()
 	m_terrainObject = NULL;
 
 	// Create the new terrain based on the heightmap in m_worldData
-	m_terrainObject = new TerrainObject(&m_worldData);
+	m_terrainObject = new TerrainObject(&m_worldData, ID_TERRAIN);
 	m_worldData.objects->AddObject(ID_TERRAIN, m_terrainObject);
 }
 

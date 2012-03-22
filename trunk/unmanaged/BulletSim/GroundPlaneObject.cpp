@@ -26,16 +26,16 @@
  */
 #include "GroundPlaneObject.h"
 
-GroundPlaneObject::GroundPlaneObject(WorldData* world)
+GroundPlaneObject::GroundPlaneObject(WorldData* world, IDTYPE theID)
 {
 	m_worldData = world;
-	m_id = ID_GROUND_PLANE;
+	m_id = theID;
 
 	// Initialize the ground plane at height 0 (Z-up)
 	m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
 	m_planeShape->setMargin(m_worldData->params->collisionMargin);
 
-	m_planeShape->setUserPointer((void*)ID_GROUND_PLANE);
+	m_planeShape->setUserPointer((void*)m_id);
 
 	btDefaultMotionState* motionState = new btDefaultMotionState();
 	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, m_planeShape);

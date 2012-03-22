@@ -84,7 +84,7 @@ class TerrainObject :
 	public IPhysObject
 {
 public:
-	TerrainObject(WorldData*);
+	TerrainObject(WorldData*, IDTYPE);
 	~TerrainObject(void);
 
 	void UpdateTerrain(void);
