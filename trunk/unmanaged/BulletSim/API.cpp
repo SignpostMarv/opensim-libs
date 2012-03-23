@@ -85,9 +85,9 @@ EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, ParamBlock* par
  * @param parm the name of the parameter to change (must be passed in as lower case)
  * @param value the value to change the parameter to
  */
-EXTERN_C DLL_EXPORT void UpdateParameter(unsigned int worldID, unsigned int localID, const char* parm, float value)
+EXTERN_C DLL_EXPORT bool UpdateParameter(unsigned int worldID, unsigned int localID, const char* parm, float value)
 {
-	m_simulations[worldID]->UpdateParameter(localID, parm, value);
+	return m_simulations[worldID]->UpdateParameter(localID, parm, value);
 }
 
 /**

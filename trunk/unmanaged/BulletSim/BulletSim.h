@@ -299,7 +299,7 @@ public:
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
 	const btVector3 RecoverFromPenetration(IDTYPE id);
 
-	void UpdateParameter(IDTYPE localID, const char* parm, float value);
+	bool UpdateParameter(IDTYPE localID, const char* parm, float value);
 	void DumpPhysicsStats();
 
 protected:

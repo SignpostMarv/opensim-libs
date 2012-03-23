@@ -57,7 +57,7 @@ public:
 	virtual bool SetObjectDynamic(bool isDynamic, float mass) { return false; };
 	virtual bool SetObjectBuoyancy(float buoy) { return false; };
 
-	virtual void UpdateParameter(const char* parm, const float val) { };
+	virtual bool UpdateParameter(const char* parm, const float val) { return false; };
 	virtual void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo) { };
 	
 	btRigidBody* GetBody() { return m_body; };

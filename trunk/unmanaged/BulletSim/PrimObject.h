@@ -50,7 +50,7 @@ public:
 	bool SetObjectDynamic(bool isDynamic, float mass);
 	bool SetObjectBuoyancy(float buoy);
 
-	void UpdateParameter(const char* parm, const float val);
+	bool UpdateParameter(const char* parm, const float val);
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
 
 private:

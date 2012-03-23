@@ -41,15 +41,24 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	btVector3 velocity = data->Velocity.GetBtVector3();
 	btScalar maxScale = scale.m_floats[scale.maxAxis()];
 	btScalar mass = btScalar(data->Mass);
+
 	btScalar friction = btScalar(data->Friction);
 	btScalar restitution = btScalar(data->Restitution);
+	// force friction and bouncyness to zero. 
+	// Movement will be managed by this module.
+	// btScalar friction = btScalar(0);
+	// btScalar restitution = btScalar(0);
+
 	bool isStatic = (data->Static == 1);
 	bool isCollidable = (data->Collidable == 1);
+	// bool isStatic = false;
+	// bool isCollidable = true;
 
 	// Create the default capsule for the avatar
 	btCollisionShape* shape = new btCapsuleShapeZ(m_worldData->params->avatarCapsuleRadius,
 												m_worldData->params->avatarCapsuleHeight);
 	shape->setMargin(m_worldData->params->collisionMargin);
+	// TODO: adjust capsule size for the height of the avatar
 
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
 	shape->setUserPointer((void*)m_id);
@@ -65,8 +74,7 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	// Inertia calculation for physical objects (non-zero mass)
 	// TODO: compute avatar mass based on the size of the capsule (change with scaling)
 	btVector3 localInertia(0, 0, 0);
-	if (mass != 0.0f)
-		shape->calculateLocalInertia(mass, localInertia);
+	shape->calculateLocalInertia(mass, localInertia);
 
 	// Create the motion state and rigid body
 	SimMotionState* motionState = new SimMotionState(m_id, startTransform, &(m_worldData->updatesThisFrame));
@@ -210,64 +218,71 @@ bool AvatarObject::SetObjectBuoyancy(float buoy)
 	return true;
 }
 
-void AvatarObject::UpdateParameter(const char* parm, const float val)
+bool AvatarObject::UpdateParameter(const char* parm, const float val)
 {
 	btScalar btVal = btScalar(val);
 
 	if (strcmp(parm, "friction") == 0 || strcmp(parm, "avatarfriction") == 0)
 	{
 		m_body->setFriction(btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "restitution") == 0 || strcmp(parm, "avatarrestitution") == 0)
 	{
 		m_body->setRestitution(btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "lineardamping") == 0)
 	{
 		m_body->setDamping(btVal, m_worldData->params->linearDamping);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "angulardamping") == 0)
 	{
 		m_body->setDamping(m_worldData->params->angularDamping, btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "deactivationtime") == 0)
 	{
 		m_body->setDeactivationTime(btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "linearsleepingthreshold") == 0)
 	{
 		m_body->setSleepingThresholds(btVal, m_worldData->params->angularSleepingThreshold);
+		return true;
 	}
 	if (strcmp(parm, "angularsleepingthreshold") == 0)
 	{
 		m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, btVal);
+		return true;
 	}
 	if (strcmp(parm, "ccdmotionthreshold") == 0)
 	{
 		m_body->setCcdMotionThreshold(btVal);
+		return true;
 	}
 	if (strcmp(parm, "ccdsweptsphereradius") == 0)
 	{
 		m_body->setCcdSweptSphereRadius(btVal);
+		return true;
 	}
 	if (strcmp(parm, "avatarmass") == 0)
 	{
 		m_body->setMassProps(btVal, btVector3(0, 0, 0));
+		return true;
 	}
 	if (strcmp(parm, "avatarcapsuleradius") == 0)
 	{
 		// can't change this without rebuilding the collision shape
 		// TODO: rebuild the capsule (remember to take scale into account)
+		return false;
 	}
 	if (strcmp(parm, "avatarcapsuleheight") == 0)
 	{
 		// can't change this without rebuilding the collision shape
 		// TODO: rebuild the capsule (remember to take scale into account)
+		return false;
 	}
-	return;
+	return false;
 }

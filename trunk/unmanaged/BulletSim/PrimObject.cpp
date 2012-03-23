@@ -510,50 +510,54 @@ void PrimObject::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector
 	return;
 }
 
-void PrimObject::UpdateParameter(const char* parm, const float val)
+bool PrimObject::UpdateParameter(const char* parm, const float val)
 {
 	btScalar btVal = btScalar(val);
 
 	if (strcmp(parm, "friction") == 0)
 	{
 		m_body->setFriction(btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "restitution") == 0)
 	{
 		m_body->setRestitution(btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "lineardamping") == 0)
 	{
 		m_body->setDamping(btVal, m_worldData->params->linearDamping);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "angulardamping") == 0)
 	{
 		m_body->setDamping(m_worldData->params->angularDamping, btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "deactivationtime") == 0)
 	{
 		m_body->setDeactivationTime(btVal);
-		return;
+		return true;
 	}
 	if (strcmp(parm, "linearsleepingthreshold") == 0)
 	{
 		m_body->setSleepingThresholds(btVal, m_worldData->params->angularSleepingThreshold);
+		return true;
 	}
 	if (strcmp(parm, "angularsleepingthreshold") == 0)
 	{
 		m_body->setSleepingThresholds(m_worldData->params->linearSleepingThreshold, btVal);
+		return true;
 	}
 	if (strcmp(parm, "ccdmotionthreshold") == 0)
 	{
 		m_body->setCcdMotionThreshold(btVal);
+		return true;
 	}
 	if (strcmp(parm, "ccdsweptsphereradius") == 0)
 	{
 		m_body->setCcdSweptSphereRadius(btVal);
+		return true;
 	}
-	return;
+	return false;
 }

@@ -758,7 +758,7 @@ const btVector3 BulletSim::RecoverFromPenetration(IDTYPE id)
 	return btVector3(0.0, 0.0, 0.0);
 }
 
-void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
+bool BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 {
 	btScalar btVal = btScalar(val);
 	btVector3 btZeroVector3 = btVector3(0, 0, 0);
@@ -767,7 +767,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 	if (strcmp(parm, "gravity") == 0)
 	{
 		m_worldData.dynamicsWorld->setGravity(btVector3(0.f, 0.f, val));
-		return;
+		return true;
 	}
 
 	// something changed in the terrain so reset all the terrain parameters to values from m_worldData.params
@@ -781,13 +781,13 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 							m_worldData.params->terrainRestitution,
 							btZeroVector3);
 		}
-		return;
+		return true;
 	}
 
 	IPhysObject* obj;
 	if (!m_worldData.objects->TryGetObject(localID, &obj))
 	{
-		return;
+		return false;
 	}
 
 	// the friction or restitution changed in the default parameters. Reset same.
@@ -797,7 +797,7 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 				m_worldData.params->avatarFriction, 
 				m_worldData.params->avatarRestitution,
 				btZeroVector3);
-		return;
+		return true;
 	}
 
 	// the friction or restitution changed in the default parameters. Reset same.
@@ -807,12 +807,11 @@ void BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 				m_worldData.params->defaultFriction, 
 				m_worldData.params->defaultRestitution,
 				btZeroVector3);
-		return;
+		return true;
 	}
 
 	// changes to an object
-	obj->UpdateParameter(parm, val);
-	return;
+	return obj->UpdateParameter(parm, val);
 }
 
 // #include "LinearMath/btQuickprof.h"
