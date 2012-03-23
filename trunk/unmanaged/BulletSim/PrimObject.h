@@ -38,8 +38,6 @@ public:
 	PrimObject(WorldData*, ShapeData*);
 	~PrimObject(void);
 
-	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
-
 	btVector3 GetObjectPosition(void);
 
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
@@ -47,6 +45,7 @@ public:
 	bool SetObjectAngularVelocity(btVector3& angularVelocity);
 	bool SetObjectForce(btVector3& force);
 	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
+	bool SetObjectProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
 	bool SetObjectCollidable(bool collidable);
 	bool SetObjectDynamic(bool isDynamic, float mass);
 	bool SetObjectBuoyancy(float buoy);
@@ -59,7 +58,9 @@ private:
 	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
 	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
 
-	void SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass);
+	bool SetObjectDynamic(bool isDynamic, float mass, bool removeIt);
+	bool SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass, bool removeIt);
+	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo, bool removeIt);
 	void SetCollidable(bool collidable);
 
 	void AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3& scale);

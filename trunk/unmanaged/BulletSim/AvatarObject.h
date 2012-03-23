@@ -40,8 +40,6 @@ public:
 	AvatarObject(WorldData*, ShapeData*);
 	~AvatarObject(void);
 
-	bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
-
 	btVector3 GetObjectPosition(void);
 
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
@@ -49,6 +47,7 @@ public:
 	bool SetObjectAngularVelocity(btVector3& angularVelocity);
 	bool SetObjectForce(btVector3& force);
 	bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic);
+	bool SetObjectProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass);
 	bool SetObjectCollidable(bool collidable);
 	// bool SetObjectDynamic(bool isDynamic, float mass) { return false; };
 	bool SetObjectBuoyancy(float buoy);

@@ -69,19 +69,21 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	motionState->RigidBody = body;
 	m_body = body;
 
-	UpdatePhysicalParameters(friction, restitution, velocity);
+	UpdatePhysicalParameters(friction, restitution, velocity, false);
 
 	// Set the dynamic and collision flags (for static and phantom objects)
-	SetProperties(isStatic, isCollidable, false, mass);
+	SetObjectProperties(isStatic, isCollidable, false, mass, false);
 
 	world->dynamicsWorld->addRigidBody(body);
 
 	// btVector3 Dvel = m_body->getLinearVelocity();
 	// btVector3 Dgrav = m_body->getGravity();
-	// BSLog("New prim: vel=<%f,%f,%f>, grav=<%f,%f,%f>", Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
+	// BSLog("PrimObject::constructor: id=%d, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
+	// 	m_id, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 }
 
 PrimObject::~PrimObject(void) {
+	// BSLog("PrimObject::destructor: id=%d", m_id);
 	if (m_body)
 	{
 		// Remove the object from the world
@@ -104,38 +106,50 @@ PrimObject::~PrimObject(void) {
 	}
 }
 
-bool PrimObject::SetProperties(const bool isStatic, const bool isSolid, const bool genCollisions, const float mass) {
-	// NOTE: From the author of Bullet: "If you want to change important data 
-	// from objects, you have to remove them from the world first, then make the 
-	// change, and re-add them to the world." It's my understanding that some of
-	// the following changes, including mass, constitute "important data"
-	m_worldData->dynamicsWorld->removeRigidBody(m_body);
-	SetObjectProperties(isStatic, isSolid, genCollisions, mass);
-	m_worldData->dynamicsWorld->addRigidBody(m_body);
-
-	// Why is this commented out?
-	// m_worldData.dynamicsWorld->updateSingleAabb(body);
-	m_body->activate(false);
-	return false;
+bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass)
+{
+	return SetObjectProperties(isStatic, isSolid, genCollisions, mass, true);
 }
 
 // TODO: generalize these parameters so we can model the non-physical/phantom/collidable objects of OpenSimulator
-void PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass)
+bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass, bool removeIt)
 {
-	// BSLog("PrimObject::SetObjectProperties: id=%u, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
-	//					m_id, isStatic, isSolid, genCollisions, mass);
-	SetObjectDynamic(!isStatic, mass);		// this handles the static part
+	// BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
+	// 				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
+	if (removeIt)
+	{
+		// NOTE: From the author of Bullet: "If you want to change important data 
+		// from objects, you have to remove them from the world first, then make the 
+		// change, and re-add them to the world." It's my understanding that some of
+		// the following changes, including mass, constitute "important data"
+		m_worldData->dynamicsWorld->removeRigidBody(m_body);
+	}
+	SetObjectDynamic(!isStatic, mass, false);		// this handles the static part
 	SetCollidable(isSolid);
 	if (genCollisions)
 	{
 		// for the moment, everything generates collisions
 		// TODO: Add a flag to CollisionFlags that is checked in StepSimulation on whether to pass up or not
 	}
+	if (removeIt)
+	{
+		m_worldData->dynamicsWorld->addRigidBody(m_body);
+	}
+	return true;
 }
 
 void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
 {
+	UpdatePhysicalParameters(frict, resti, velo, true);
+}
+
+void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo, bool removeIt)
+{
 	// Tweak continuous collision detection parameters
+	if (removeIt)
+	{
+		m_worldData->dynamicsWorld->removeRigidBody(m_body);
+	}
 	if (m_worldData->params->ccdMotionThreshold > 0.0f)
 	{
 		m_body->setCcdMotionThreshold(btScalar(m_worldData->params->ccdMotionThreshold));
@@ -153,13 +167,29 @@ void PrimObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const 
 	m_body->setInterpolationLinearVelocity(btVector3(0, 0, 0));
 	m_body->setInterpolationAngularVelocity(btVector3(0, 0, 0));
 	m_body->setInterpolationWorldTransform(m_body->getWorldTransform());
+	if (removeIt)
+	{
+		m_worldData->dynamicsWorld->addRigidBody(m_body);
+	}
 }
 
 bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 {
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
+	return SetObjectDynamic(isDynamic, mass, true);
+}
 
-	// BSLog("PrimObject::SetObjectDynamic: isDynamic=%d, mass=%f", isDynamic, mass);
+// The 'removeIt' flag is true if the body should be removed and reinserted
+//    since insertion causes a bunch of stuff to be initialized.
+bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
+{
+	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
+	btVector3 localInertia(0, 0, 0);
+
+	// BSLog("PrimObject::SetObjectDynamic: id=%d, rem=%s, isDynamic=%d, mass=%f", m_id, removeIt?"true":"false", isDynamic, mass);
+	if (removeIt)
+	{
+		m_worldData->dynamicsWorld->removeRigidBody(m_body);
+	}
 	if (isDynamic)
 	{
 		m_body->setCollisionFlags(m_body->getCollisionFlags() & ~btCollisionObject::CF_STATIC_OBJECT);
@@ -170,7 +200,6 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 		// Change for if Bullet has been modified to call MotionState when body goes inactive
 
 		// Recalculate local inertia based on the new mass
-		btVector3 localInertia(0, 0, 0);
 		m_body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
 
 		// Set the new mass
@@ -184,10 +213,10 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 		// if there are any constraints on this object, recalcuate transforms for new mass
 		m_worldData->constraints->RecalculateAllConstraints(m_id);
 
-		// BSLog("SetObjectDynamic: dynamic. ID=%d, Mass = %f", CONVLOCALID(m_body->getCollisionShape()->getUserPointer()), mass);
-		// btVector3 Dvel = m_body->getLinearVelocity();
-		// btVector3 Dgrav = m_body->getGravity();
-		// BSLog("     vel=<%f,%f,%f>, grav=<%f,%f,%f>", Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
+		btVector3 Dvel = m_body->getLinearVelocity();
+		btVector3 Dgrav = m_body->getGravity();
+		// BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%d, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
+		// 		m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}
 	else
 	{
@@ -202,10 +231,15 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass)
 		m_body->clearForces();
 
 		// Set the new mass (the caller should be passing zero)
-		m_body->setMassProps(mass, ZERO_VECTOR);
-		// BSLog("SetObjectDynamic: not dynamic. ID=%d, Mass = %f", CONVLOCALID(m_body->getCollisionShape()->getUserPointer()), mass);
+		// mass MUST be zero for Bullet to handle it as a static object
+		m_body->setMassProps(0.0, ZERO_VECTOR);
+		// BSLog("PrimObject::SetObjectDynamic: not dynamic. ID=%d, Mass = %f", m_id, mass);
 		m_body->updateInertiaTensor();
 		m_body->setGravity(m_body->getGravity());
+	}
+	if (removeIt)
+	{
+		m_worldData->dynamicsWorld->addRigidBody(m_body);
 	}
 	// don't force activation so we don't undo the "ISLAND_SLEEPING" for static objects
 	m_body->activate(false);
@@ -233,6 +267,8 @@ btVector3 PrimObject::GetObjectPosition()
 bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
 {
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
+	// BSLog("PrimObject::SetObjectTranslation: id=%d, pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>",
+	// 	m_id, position.x(), position.y(), position.z(), rotation.x(), rotation.y(), rotation.z(), rotation.w());
 
 	// Build a transform containing the new position and rotation
 	btTransform transform;
@@ -255,6 +291,7 @@ bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotatio
 
 bool PrimObject::SetObjectVelocity(btVector3& velocity)
 {
+	// BSLog("PrimObject::SetObjectVelocity: id=%d, vel=<%f,%f,%f>", m_id, velocity.x(), velocity.y(), velocity.z());
 	m_body->setLinearVelocity(velocity);
 	m_body->activate(false);
 	return true;
@@ -262,6 +299,7 @@ bool PrimObject::SetObjectVelocity(btVector3& velocity)
 
 bool PrimObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 {
+	// BSLog("PrimObject::SetAngularVelocity: id=%d, vel=<%f,%f,%f>", m_id, angularVelocity.x(), angularVelocity.y(), angularVelocity.z());
 	m_body->setAngularVelocity(angularVelocity);
 	m_body->activate(true);
 	return true;
@@ -269,6 +307,7 @@ bool PrimObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 
 bool PrimObject::SetObjectForce(btVector3& force)
 {
+	// BSLog("PrimObject::SetObjectForce: id=%d, vel=<%f,%f,%f>", m_id, force.x(), force.y(), force.z());
 	m_body->applyCentralForce(force);
 	m_body->activate(false);
 	return true;
@@ -276,7 +315,7 @@ bool PrimObject::SetObjectForce(btVector3& force)
 
 bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic)
 {
-	// BSLog("SetObjectScaleMass: mass=%f", mass);
+	// BSLog("PrimObject::SetObjectScaleMass: id=%d, scale=<%f,%f,%f>, mass=%f, isDyn=%s", m_id, scale.x(), scale.y(), scale.z(), mass, isDynamic?"true":"false");
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
 
 	btCollisionShape* shape = m_body->getCollisionShape();
@@ -296,7 +335,7 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 	AdjustScaleForCollisionMargin(shape, scale);
 
 	// apply the mass and dynamicness
-	SetObjectDynamic(isDynamic, mass);
+	SetObjectDynamic(isDynamic, mass, false);
 
 	// Add the rigid body back to the simulation
 	m_worldData->dynamicsWorld->addRigidBody(m_body);
@@ -315,6 +354,7 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 
 bool PrimObject::SetObjectCollidable(bool collidable)
 {
+	// BSLog("PrimObject::SetObjectCollidable: id=%d, collidable=%s", m_id, collidable?"true":"false");
 	SetCollidable(collidable);
 	return true;
 }
@@ -324,6 +364,8 @@ bool PrimObject::SetObjectCollidable(bool collidable)
 bool PrimObject::SetObjectBuoyancy(float buoy)
 {
 	float grav = m_worldData->params->gravity * (1.0f - buoy);
+	// BSLog("PrimObject::SetObjectBuoyancy: id=%d, buoy=%f, grav=%s", m_id, buoy, grav);
+
 	m_body->setGravity(btVector3(0, 0, grav));
 
 	m_body->activate(false);

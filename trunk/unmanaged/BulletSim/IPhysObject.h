@@ -37,14 +37,13 @@ class IPhysObject
 {
 public:
 	IPhysObject(void);
-	~IPhysObject(void);
+	virtual ~IPhysObject(void);
 
 	// Passed a parameter block, create a new instance of the proper object
 	static IPhysObject* PhysObjectFactory(WorldData*, ShapeData*);
 
 	// These functions have a default null implementation so all sub-classes don't need
 	//   to define the method if it is not used by that object type.
-	virtual bool SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) { return false; };
 
 	virtual btVector3 GetObjectPosition(void) { return btVector3(0.0, 0.0, 0.0); };
 
@@ -53,6 +52,7 @@ public:
 	virtual bool SetObjectAngularVelocity(btVector3& angularVelocity) { return false; };
 	virtual bool SetObjectForce(btVector3& force) { return false; };
 	virtual bool SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic) { return false; };
+	virtual bool SetObjectProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) { return false; };
 	virtual bool SetObjectCollidable(bool collidable) { return false; };
 	virtual bool SetObjectDynamic(bool isDynamic, float mass) { return false; };
 	virtual bool SetObjectBuoyancy(float buoy) { return false; };

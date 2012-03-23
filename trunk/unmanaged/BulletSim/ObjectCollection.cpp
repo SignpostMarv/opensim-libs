@@ -78,7 +78,7 @@ IPhysObject* ObjectCollection::RemoveObject(IDTYPE id)
 	ObjectMapType::iterator it = m_objects.find(id);
 	if (it != m_objects.end())
     {
-		IPhysObject* obj = it->second;
+		obj = it->second;
 		m_objects.erase(it);
 	}
 	return obj;
@@ -88,7 +88,7 @@ bool ObjectCollection::RemoveAndDestroyObject(IDTYPE id)
 {
 	bool ret = false;
 	IPhysObject* obj = RemoveObject(id);
-	if (obj)
+	if (obj != NULL)
 	{
 		delete obj;
 		ret = true;

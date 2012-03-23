@@ -302,7 +302,7 @@ void BulletSim::CreateTerrain()
 // Create a hull based on convex hull information
 bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hulls)
 {
-	// BSLog("CreateHull: hullCount=%d", hullCount);
+	// BSLog("CreateHull: key=%ld, hullCount=%d", meshKey, hullCount);
 	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
 	if (it == m_worldData.Hulls.end())
 	{
@@ -342,6 +342,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 // Delete a hull
 bool BulletSim::DestroyHull(unsigned long long meshKey)
 {
+	// BSLog("BulletSim::DestroyHull: key=%ld", meshKey);
 	// BSLog("DeleteHull:");
 	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
 	if (it != m_worldData.Hulls.end())
@@ -357,7 +358,7 @@ bool BulletSim::DestroyHull(unsigned long long meshKey)
 // Create a mesh structure to be used for static objects
 bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
 {
-	// BSLog("CreateMesh: nIndices=%d, nVertices=%d, key=%ld", indicesCount, verticesCount, meshKey);
+	// BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
 	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
 	if (it == m_worldData.Meshes.end())
 	{
@@ -390,7 +391,8 @@ bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* in
 // Delete a mesh
 bool BulletSim::DestroyMesh(unsigned long long meshKey)
 {
-	// BSLog("DeleteMesh:");
+	// BSLog("BulletSim::DeleteMesh: key=%ld", meshKey);
+	bool ret = false;
 	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
 	if (it != m_worldData.Meshes.end())
 	{
@@ -403,15 +405,17 @@ bool BulletSim::DestroyMesh(unsigned long long meshKey)
 		*/
 		delete tms;
 		m_worldData.Meshes.erase(it);
-		return true;
+		ret = true;
 	}
-	return false;
+	return ret;
 }
 
 
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
 {
+	// BSLog("BulletSim::CreateObject: id=%d", data->ID);
+
 	bool ret = false;
 
 	// If the object already exists, destroy it
@@ -601,7 +605,7 @@ bool BulletSim::SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool
 	IPhysObject* obj;
 	if (m_worldData.objects->TryGetObject(id, &obj))
 	{
-		obj->SetProperties(isStatic, isSolid, genCollisions, mass);
+		obj->SetObjectProperties(isStatic, isSolid, genCollisions, mass);
 		ret = true;
 	}
 	return ret;
@@ -614,6 +618,7 @@ bool BulletSim::HasObject(IDTYPE id)
 
 bool BulletSim::DestroyObject(IDTYPE id)
 {
+	// BSLog("BulletSim::DestroyObject: id=%d", id);
 	// Remove any constraints associated with this object
 	m_worldData.constraints->RemoveAndDestroyConstraints(id);
 

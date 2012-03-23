@@ -119,7 +119,7 @@ AvatarObject::~AvatarObject(void) {
 	}
 }
 
-bool AvatarObject::SetProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {
+bool AvatarObject::SetObjectProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {
 	// This is a NOP for an avatar
 	return true;
 }
