@@ -33,6 +33,7 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	// BSLog("AvatarObject::AvatarObject: Creating an avatar");
 	m_worldData = world;
 	m_id = data->ID;
+	m_currentFriction = 0.0;
 
 	// Unpack ShapeData
 	btVector3 position = data->Position.GetBtVector3();
@@ -42,17 +43,17 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	btScalar maxScale = scale.m_floats[scale.maxAxis()];
 	btScalar mass = btScalar(data->Mass);
 
-	btScalar friction = btScalar(data->Friction);
-	btScalar restitution = btScalar(data->Restitution);
+	// btScalar friction = btScalar(data->Friction);
+	// btScalar restitution = btScalar(data->Restitution);
 	// force friction and bouncyness to zero. 
 	// Movement will be managed by this module.
-	// btScalar friction = btScalar(0);
-	// btScalar restitution = btScalar(0);
+	btScalar friction = btScalar(m_currentFriction);
+	btScalar restitution = btScalar(0);
 
-	bool isStatic = (data->Static == 1);
-	bool isCollidable = (data->Collidable == 1);
-	// bool isStatic = false;
-	// bool isCollidable = true;
+	// bool isStatic = (data->Static == 1);
+	// bool isCollidable = (data->Collidable == 1);
+	bool isStatic = false;
+	bool isCollidable = true;
 
 	// Create the default capsule for the avatar
 	btCollisionShape* shape = new btCapsuleShapeZ(m_worldData->params->avatarCapsuleRadius,
@@ -132,6 +133,7 @@ bool AvatarObject::SetObjectProperties(const bool isStatic, const bool isCollida
 	return true;
 }
 
+// Note that this does not really set the friction for the avatar
 void AvatarObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, const btVector3& velo)
 {
 	// Tweak continuous collision detection parameters
@@ -142,7 +144,7 @@ void AvatarObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, cons
 		m_body->setCcdSweptSphereRadius(btScalar(m_worldData->params->ccdSweptSphereRadius));
 	}
 
-	m_body->setFriction(frict);
+	m_body->setFriction(m_currentFriction);
 	m_body->setRestitution(resti);
 	m_body->setActivationState(DISABLE_DEACTIVATION);
 	m_body->setContactProcessingThreshold(m_worldData->params->avatarContactProcessingThreshold);
@@ -175,6 +177,16 @@ bool AvatarObject::SetObjectTranslation(btVector3& position, btQuaternion& rotat
 
 bool AvatarObject::SetObjectVelocity(btVector3& velocity)
 {
+	// Manipulate the friction depending on whether the avatar is moving or not.
+	// OpenSim moves the avatar by setting a velocity. If the avatar is
+	// thus moving, it shouldn't be slowed down by whatever it's walking on.
+	m_currentFriction = 0.0;
+	if (velocity.length() == 0.0)
+	{
+		m_currentFriction = 999.0;
+	}
+	m_body->setFriction(btScalar(m_currentFriction));
+
 	m_body->setLinearVelocity(velocity);
 	m_body->activate(true);
 	return true;

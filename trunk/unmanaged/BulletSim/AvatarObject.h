@@ -56,6 +56,8 @@ public:
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
 
 private:
+	// Friction is changed depending on whether the avatar is standing or moving.
+	float m_currentFriction;
 };
 
 #endif // AVATAROBJECT_H
