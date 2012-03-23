@@ -65,12 +65,13 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	m_worldData.constraints = new ConstraintCollection(&m_worldData);
 
 	// create the functional parts of the physics simulation
-	// btDefaultCollisionConstructionInfo cci;
-	// cci.m_defaultMaxPersistentManifoldPoolSize = 32768;
-	// m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
-	m_collisionConfiguration = new btDefaultCollisionConfiguration();
+	btDefaultCollisionConstructionInfo cci;
+	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
+		cci.m_defaultMaxPersistentManifoldPoolSize = 32768;
+	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
-	// m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
+	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
+		m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
 	
 	m_broadphase = new btDbvtBroadphase();
 
@@ -83,16 +84,17 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 	m_worldData.dynamicsWorld = dynamicsWorld;
 	
-	// disable the continuious recalculation of the static AABBs
+	// disable or enable the continuious recalculation of the static AABBs
 	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
-	// Note that movement or changes to a static object will not update the AABB. Do it explicitly.
-	dynamicsWorld->setForceUpdateAllAabbs(false);
+	// Note that if disabled, movement or changes to a static object will not update the AABB. Must do it explicitly.
+	dynamicsWorld->setForceUpdateAllAabbs(m_worldData.params->shouldForceUpdateAllAabbs != ParamFalse);
 	
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
-	dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+	if (m_worldData.params->shouldRandomizeSolverOrder != ParamFalse)
+		dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
 
 	// setting to false means the islands are not reordered and split up for individual processing
-	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(false);
+	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
 
 	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
 	// Actually a NOOP unless Bullet is compiled with USE_SEPDISTANCE_UTIL2 set.
@@ -100,8 +102,10 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = btScalar(0.01);
 
 	// Performance speedup: from BenchmarkDemo.cpp, ln 381
-	// m_worldData.dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
-	// m_worldData.dynamicsWorld->getSolverInfo().m_numIterations = 5; //few solver iterations 
+	if (m_worldData.params->shouldEnableFrictionCaching != ParamFalse)
+		m_worldData.dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
+	if (m_worldData.params->numberOfSolverIterations > 0)
+		m_worldData.dynamicsWorld->getSolverInfo().m_numIterations = (int)m_worldData.params->numberOfSolverIterations;
 
 	// Earth-like gravity
 	dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_worldData.params->gravity));

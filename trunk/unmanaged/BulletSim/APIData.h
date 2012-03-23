@@ -212,6 +212,8 @@ struct EntityProperties
 // Block of parameters passed from the managed code.
 // The memory layout MUST MATCH the layout in the managed code.
 // Rely on the fact that 'float' is always 32 bits in both C# and C++
+#define ParamTrue (1.0)
+#define ParamFalse (0.0)
 struct ParamBlock
 {
     float defaultFriction;
@@ -237,6 +239,7 @@ struct ParamBlock
     float avatarRestitution;
     float avatarCapsuleRadius;
     float avatarCapsuleHeight;
+	float avatarContactProcessingThreshold;
 
 	float maxPersistantManifoldPoolSize;
 	float shouldDisableContactPoolDynamicAllocation;
@@ -245,7 +248,6 @@ struct ParamBlock
 	float shouldSplitSimulationIslands;
 	float shouldEnableFrictionCaching;
 	float numberOfSolverIterations;
-		
 };
 
 
