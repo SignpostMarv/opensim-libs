@@ -145,7 +145,7 @@ void AvatarObject::UpdatePhysicalParameters(btScalar frict, btScalar resti, cons
 	m_body->setFriction(frict);
 	m_body->setRestitution(resti);
 	m_body->setActivationState(DISABLE_DEACTIVATION);
-	m_body->setContactProcessingThreshold(0.1);
+	m_body->setContactProcessingThreshold(m_worldData->params->avatarContactProcessingThreshold);
 
 	m_body->setAngularFactor(btVector3(0, 0, 0));	// makes the capsule not fall over
 	m_body->setLinearVelocity(velo);
