@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib BulletWorldImporter.lib ConvexDecomposition.lib $(NOINHERIT)"
+				AdditionalDependencies="BulletCollision_debug.lib BulletDynamics_debug.lib LinearMath_debug.lib ConvexDecomposition_debug.lib $(NOINHERIT)"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;.\bullet-2.80\lib&quot;"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="BulletCollision_x64.lib BulletDynamics_x64.lib LinearMath_x64.lib ConvexDecomposition_x64.lib $(NOINHERIT)"
+				AdditionalDependencies="BulletCollision_x64_debug.lib BulletDynamics_x64_debug.lib LinearMath_x64_debug.lib ConvexDecomposition_x64_debug.lib $(NOINHERIT)"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;.\bullet-2.80\lib&quot;"
 				GenerateDebugInformation="true"
