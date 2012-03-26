@@ -91,6 +91,8 @@ public:
 
 	void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo);
 
+	const char* GetType() { return "Terrain"; }
+
 private:
 	btRigidBody* m_body;		// the physical body that is the terrain
 };

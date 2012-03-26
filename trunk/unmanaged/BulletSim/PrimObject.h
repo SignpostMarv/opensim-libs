@@ -53,6 +53,8 @@ public:
 	bool UpdateParameter(const char* parm, const float val);
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
 
+	const char* GetType() { return "Prim"; }
+
 private:
 	btCollisionShape* CreateShape(ShapeData* data);
 	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);

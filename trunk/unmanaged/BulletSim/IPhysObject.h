@@ -61,6 +61,7 @@ public:
 	virtual void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo) { };
 	
 	btRigidBody* GetBody() { return m_body; };
+	const char* GetType() { return "Unknown"; }
 
 protected:
 	IDTYPE m_id;			// the ID used to identify this object

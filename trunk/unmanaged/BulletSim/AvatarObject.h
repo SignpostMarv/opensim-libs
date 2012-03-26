@@ -55,6 +55,8 @@ public:
 	bool UpdateParameter(const char* parm, const float val);
 	void UpdatePhysicalParameters(float friction, float restitution, const btVector3& velo);
 
+	const char* GetType() { return "Avatar"; }
+
 private:
 	// Friction is changed depending on whether the avatar is standing or moving.
 	float m_currentFriction;
