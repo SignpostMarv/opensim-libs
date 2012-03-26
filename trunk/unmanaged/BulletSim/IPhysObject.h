@@ -59,9 +59,11 @@ public:
 
 	virtual bool UpdateParameter(const char* parm, const float val) { return false; };
 	virtual void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo) { };
+
+	virtual const char* GetType() { return "Unknown"; }
 	
+	// no need to over-ride this one since it's returning a varialble we hold for our children
 	btRigidBody* GetBody() { return m_body; };
-	const char* GetType() { return "Unknown"; }
 
 protected:
 	IDTYPE m_id;			// the ID used to identify this object
