@@ -36,6 +36,7 @@ ObjectCollection::~ObjectCollection(void)
 	Clear();
 }
 
+// Remove all objects from the list and delete the objects so memory is freed.
 void ObjectCollection::Clear()
 {
 	// Delete all the objects in the object list

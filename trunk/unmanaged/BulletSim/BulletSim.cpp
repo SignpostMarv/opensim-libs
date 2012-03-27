@@ -66,10 +66,11 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 	// create the functional parts of the physics simulation
 	btDefaultCollisionConstructionInfo cci;
-	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
-		cci.m_defaultMaxPersistentManifoldPoolSize = (int)m_worldData.params->maxPersistantManifoldPoolSize;
 	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+	// if you are setting a pool size, you should disable dynamic allocation
+	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
+		cci.m_defaultMaxPersistentManifoldPoolSize = (int)m_worldData.params->maxPersistantManifoldPoolSize;
 	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
 		m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
 	
