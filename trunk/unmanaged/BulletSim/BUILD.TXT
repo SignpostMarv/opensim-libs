@@ -46,6 +46,8 @@ For Linux (tested on Ubuntu)
     (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation),
     create the directory "bullet-build" and cd into that directory.
     Do "cmake ../path/to/bullet/dir -G 'Unix Makefiles'"
+        (for 64bit systems, you must also add the cmake flag 
+        -DCMAKE_CXX_FLAGS="-fPIC" )
     then "make -j4"
     then "sudo make install"
     This builds bullet static libraries and installs them into /usr/local/lib.
