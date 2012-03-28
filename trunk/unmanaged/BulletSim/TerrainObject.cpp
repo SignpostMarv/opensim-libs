@@ -63,6 +63,8 @@ TerrainObject::~TerrainObject(void)
 
 void TerrainObject::UpdateTerrain()
 {
+	btVector3 zeroVector = btVector3(0, 0, 0);
+
 	if (m_worldData == NULL || m_worldData->heightMap == NULL)
 		return;
 
@@ -100,7 +102,7 @@ void TerrainObject::UpdateTerrain()
 	m_heightfieldShape->setUseDiamondSubdivision(true);
 
 	// Add the localID to the object so we know about collisions
-	m_heightfieldShape->setUserPointer((void*)m_id);
+	m_heightfieldShape->setUserPointer(PACKLOCALID(m_id));
 
 	// Set the heightfield origin
 	btTransform heightfieldTr;
@@ -119,7 +121,7 @@ void TerrainObject::UpdateTerrain()
 	m_body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
 	UpdatePhysicalParameters( m_worldData->params->terrainFriction,
 				m_worldData->params->terrainRestitution,
-				btVector3(0, 0, 0));
+				zeroVector);
 
 	m_worldData->dynamicsWorld->addRigidBody(m_body);
 	m_worldData->dynamicsWorld->updateSingleAabb(m_body);

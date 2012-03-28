@@ -50,7 +50,7 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	bool isCollidable = (data->Collidable == 1);
 
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
-	shape->setUserPointer((void*)id);
+	shape->setUserPointer(PACKLOCALID(id));
 	
 	// Create a starting transform
 	btTransform startTransform;

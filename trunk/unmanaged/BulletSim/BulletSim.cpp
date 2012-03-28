@@ -51,6 +51,11 @@ void BulletSim::initPhysics(ParamBlock* parms,
 							int maxCollisions, CollisionDesc* collisionArray, 
 							int maxUpdates, EntityProperties* updateArray)
 {
+	// Tell the world we're initializing and output size of types so we can
+	//    debug mis-alignments when changing architecture.
+	BSLog("InitPhysics: sizeof(int)=%d, sizeof(long)=%d, sizeof(long long)=%d, sizeof(float)=%d",
+		sizeof(int), sizeof(long), sizeof(long long), sizeof(float));
+
 	// remember the pointers to pinned memory for returning collisions and property updates
 	m_maxCollisionsPerFrame = maxCollisions;
 	m_collidersThisFrameArray = collisionArray;

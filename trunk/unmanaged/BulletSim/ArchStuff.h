@@ -31,20 +31,21 @@
 
 // define types that are always 32bits (don't change on 64 bit systems)
 #ifdef _MSC_VER
-typedef signed __int32		int32_t;
-typedef unsigned __int32	uint32_t;
+	typedef signed __int32		int32_t;
+	typedef unsigned __int32	uint32_t;
 #else
-typedef signed int			int32_t;
-typedef unsigned int		uint32_t;
+	#include <inttypes.h>
 #endif
 
 #define IDTYPE uint32_t
 
 #ifdef __x86_64__
-// 64bit systems don't allow you to cast directly from a void* to an unsigned int
-#define CONVLOCALID(xx) (unsigned int)((unsigned long)(xx))
+	// 64bit systems don't allow you to cast directly from a void* to an unsigned int
+	#define PACKLOCALID(xx) ((void*)((uint64_t)(xx)))
+	#define CONVLOCALID(xx) ((IDTYPE)((uint64_t)(xx)))
 #else
-#define CONVLOCALID(xx) (unsigned int)(xx)
+	#define PACKLOCALID(xx) ((void*)(xx))
+	#define CONVLOCALID(xx) ((IDTYPE)(xx))
 #endif
 
 #endif    // ARCH_STUFF_H

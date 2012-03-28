@@ -62,7 +62,7 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	// TODO: adjust capsule size for the height of the avatar
 
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
-	shape->setUserPointer((void*)m_id);
+	shape->setUserPointer(PACKLOCALID(m_id));
 	
 	// Create a starting transform
 	btTransform startTransform;
