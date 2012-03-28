@@ -3,7 +3,8 @@
 IDIR = /usr/local/include/bullet
 LDIR = /usr/local/lib
 
-BULLETLIBS = -L$(LDIR) -lBulletDynamics -lBulletCollision -lLinearMath -lc 
+# the Bullet libraries are linked statically so we don't have to also distribute the shared binaries
+BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/libLinearMath.a
  
 #CC = gcc
 CC = g++
@@ -26,7 +27,7 @@ BIN = $(patsubst %.cpp, %.o, $(SRC))
 all: libBulletSim.so
 
 libBulletSim.so : $(BIN)
-	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS)
+	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS) -lc
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?
