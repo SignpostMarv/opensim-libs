@@ -114,6 +114,9 @@ void TerrainObject::UpdateTerrain()
 
 	btVector3 theOrigin = heightfieldTr.getOrigin();
 
+	// Use the default motion state since we are not interested in the
+	//   terrain reporting its collisions. Other objects will report their
+	//   collisions with the terrain.
 	btDefaultMotionState* motionState = new btDefaultMotionState(heightfieldTr);
 	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, m_heightfieldShape);
 	m_body = new btRigidBody(cInfo);

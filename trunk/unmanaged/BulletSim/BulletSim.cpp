@@ -31,7 +31,7 @@
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
-#include <set>
+#include <hash_set>
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
@@ -217,7 +217,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		*updatedEntities = m_updatesThisFrameArray;
 
 		// Put all of the colliders this frame into m_collidersThisFrameArray
-		std::set<unsigned long long> collidersThisFrame;
+		std::hash_set<unsigned long long> collidersThisFrame;
 		int collisions = 0;
 		int numManifolds = m_worldData.dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
@@ -365,7 +365,13 @@ bool BulletSim::DestroyHull(unsigned long long meshKey)
 	return false;
 }
 
-// Create a mesh structure to be used for static objects
+// Quote from http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7997
+//       Yes, btBvhTriangleMeshShape can be used for static/kinematic objects only. 
+//       You can use btGImpactMeshShapes (or btCompoundShapes plus HACD) for concave 
+//       dynamic rigidbodies, or you can just throw away the indices and create a 
+//       btConvexHullShape with the vertices of your mesh, but this would result in your 
+//       shape becoming convex.
+//       Create a mesh structure to be used for static objects
 bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
@@ -821,9 +827,10 @@ bool BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 }
 
 // #include "LinearMath/btQuickprof.h"
+// Call Bullet to dump its performance stats
+// Bullet must be patched to make this work. See BulletDetailLogging.patch
 void BulletSim::DumpPhysicsStats()
 {
-	// call Bullet to dump its performance stats
 	// CProfileManager::dumpAll();
 	return;
 }

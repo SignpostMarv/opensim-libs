@@ -62,8 +62,9 @@ public:
 
 	virtual const char* GetType() { return "Unknown"; }
 	
-	// no need to over-ride this one since it's returning a varialble we hold for our children
+	// no need to over-ride these since they return a varialble we hold for our children
 	btRigidBody* GetBody() { return m_body; };
+	IDTYPE GetID() { return m_id; }
 
 protected:
 	IDTYPE m_id;			// the ID used to identify this object
