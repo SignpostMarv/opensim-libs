@@ -236,6 +236,7 @@ protected:
 // The main physics simulation class.
 class BulletSim
 {
+private:
 	// Bullet world objects
 	btBroadphaseInterface* m_broadphase;
 	btCollisionDispatcher* m_dispatcher;
@@ -255,6 +256,10 @@ class BulletSim
 	// Used to expose colliders from Bullet to the BulletSim API
 	int m_maxCollisionsPerFrame;
 	CollisionDesc* m_collidersThisFrameArray;
+
+	// Special avatar debugging stuff
+	IPhysObject* m_lastAvatarObject;
+	IDTYPE m_lastAvatarID;
 
 public:
 
@@ -298,6 +303,9 @@ public:
 	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
 	const btVector3 RecoverFromPenetration(IDTYPE id);
+
+	WorldData* getWorldData() { return &m_worldData; }
+	btDynamicsWorld* getDynamicsWorld() { return m_worldData.dynamicsWorld; };
 
 	bool UpdateParameter(IDTYPE localID, const char* parm, float value);
 	void DumpPhysicsStats();
