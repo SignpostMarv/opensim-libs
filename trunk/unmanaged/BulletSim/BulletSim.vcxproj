@@ -178,6 +178,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="API.cpp" />
+    <ClCompile Include="API2.cpp" />
     <ClCompile Include="AvatarObject.cpp" />
     <ClCompile Include="BulletSim.cpp" />
     <ClCompile Include="Constraint.cpp" />

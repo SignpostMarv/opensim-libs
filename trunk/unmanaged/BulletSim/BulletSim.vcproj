@@ -340,6 +340,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\API2.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\AvatarObject.cpp"
 				>
 			</File>
