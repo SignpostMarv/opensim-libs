@@ -64,7 +64,6 @@ bool ConstraintCollection::RemoveAndDestroyConstraints(IDTYPE id1)
 		Constraint* constraint = it->second;
 		if (id1 == constraint->GetID1() || id1 == constraint->GetID2())
 		{
-			Constraint* constraint = it->second;
 			m_constraints.erase(it);
 			delete constraint;
 			removedSomething = true;

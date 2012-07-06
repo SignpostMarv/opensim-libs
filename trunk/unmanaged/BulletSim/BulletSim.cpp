@@ -31,7 +31,7 @@
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
-#include <hash_set>
+#include <set>
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
@@ -269,7 +269,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		*updatedEntities = m_updatesThisFrameArray;
 
 		// Put all of the colliders this frame into m_collidersThisFrameArray
-		std::hash_set<unsigned long long> collidersThisFrame;
+		std::set<unsigned long long> collidersThisFrame;
 		int collisions = 0;
 		int numManifolds = m_worldData.dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
