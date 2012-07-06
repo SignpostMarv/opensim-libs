@@ -5,4 +5,4 @@ OpenSim checks out with most of these libs precompiled in the /bin folder.  In t
 Another reason to use this code is to update, patch, debug, and potentially add features to the native code.  Note that anything other than minor build patches would constitute a fork from the project in question; such a decision should be made in communion with the community (unless you're doing this for yourself and never plan to contribute it back, in which case blah! to you)
 
 -danx0r, 10/19/07
-
+   
