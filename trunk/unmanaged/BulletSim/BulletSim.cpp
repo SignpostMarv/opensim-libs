@@ -306,10 +306,13 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			if (collidersThisFrame.find(collisionID) == collidersThisFrame.end())
 			{
 				collidersThisFrame.insert(collisionID);
-				m_collidersThisFrameArray[collisions].aID = idA;
-				m_collidersThisFrameArray[collisions].bID = idB;
-				m_collidersThisFrameArray[collisions].point = contactPoint;
-				m_collidersThisFrameArray[collisions].normal = contactNormal;
+
+				CollisionDesc cDesc;
+				cDesc.aID = idA;
+				cDesc.bID = idB;
+				cDesc.point = contactPoint;
+				cDesc.normal = contactNormal;
+				m_collidersThisFrameArray[collisions] = cDesc;
 				collisions++;
 			}
 
@@ -500,7 +503,7 @@ bool BulletSim::CreateObject(ShapeData* data)
 		{
 			m_lastAvatarID = newObject->GetID();
 			m_lastAvatarObject = newObject;
-			BSLog("CreateObject: lastAvatarID = %d", m_lastAvatarID);
+			BSLog("CreateObject: lastAvatarID = %u", m_lastAvatarID);
 		}
 		*/
 		// END DEBUG FOR AVATAR MOVEMENT
@@ -520,6 +523,8 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 							  btVector3& frame2, btQuaternion& frame2rot,
 	btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular)
 {
+	BSLog("BulletSim::AddConstraint: adding id1=%u, id2=%u", id1, id2);
+
 	m_worldData.constraints->RemoveAndDestroyConstraint(id1, id2);		// remove any existing constraint
 
 	btTransform frame1t, frame2t;
@@ -532,8 +537,8 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 	Constraint* constraint = new Constraint(&m_worldData, id1, id2, frame1t, frame2t);
 	constraint->SetLinear(lowLinear, hiLinear);
 	constraint->SetAngular(lowAngular, hiAngular);
-	constraint->UseFrameOffset(false);
-	constraint->TranslationalLimitMotor(true, 5.0f, 0.1f);
+	// constraint->UseFrameOffset(false);
+	// constraint->TranslationalLimitMotor(true, 5.0f, 0.1f);
 
 	m_worldData.constraints->AddConstraint(constraint);
 
@@ -544,11 +549,13 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 // associated with it.
 bool BulletSim::RemoveConstraintByID(IDTYPE id1)
 {
+	BSLog("BulletSim::RemoveConstraintByID: id1=%u", id1);
 	return m_worldData.constraints->RemoveAndDestroyConstraints(id1);
 }
 
 bool BulletSim::RemoveConstraint(IDTYPE id1, IDTYPE id2)
 {
+	BSLog("BulletSim::RemoveConstraint: id1=%u, id2=%u", id1, id2);
 	return m_worldData.constraints->RemoveAndDestroyConstraint(id1, id2);
 }
 

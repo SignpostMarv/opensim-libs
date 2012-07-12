@@ -69,7 +69,8 @@ static bool IsPhantom(const btCollisionObject* obj)
 // This callback is only initialized if the simulator is running in DEBUG mode.
 typedef void DebugLogCallback(const char*);
 extern DebugLogCallback* debugLogCallback;
-extern void BSLog(const char*, ...);
+
+#include "BSLogger.h"
 
 // ============================================================================================
 // Motion state for rigid bodies in the scene. Updates the map of changed 

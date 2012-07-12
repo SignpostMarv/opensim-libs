@@ -26,14 +26,17 @@
  */
 
 #include "ConstraintCollection.h"
+#include "BSLogger.h"
 
 ConstraintCollection::ConstraintCollection(WorldData* world)
 {
 	m_worldData = world;
+	BSLog("ConstraintCollection::Constructor: ");
 }
 
 ConstraintCollection::~ConstraintCollection(void)
 {
+	BSLog("ConstraintCollection::Destructor: ");
 	// clean out our collection
 	Clear();
 }
@@ -51,6 +54,7 @@ void ConstraintCollection::Clear(void)
 bool ConstraintCollection::AddConstraint(Constraint* constraint)
 {
 	// add the constraint to our collection
+	BSLog("ConstraintCollection::AddConstraint: between id1=%u, id2=%u", constraint->GetID1(), constraint->GetID2());
 	CONSTRAINTIDTYPE constID = GenConstraintID(constraint->GetID1(), constraint->GetID2());
 	m_constraints[constID] = constraint;
 	return true;
@@ -58,6 +62,7 @@ bool ConstraintCollection::AddConstraint(Constraint* constraint)
 
 bool ConstraintCollection::RemoveAndDestroyConstraints(IDTYPE id1)
 {
+	BSLog("ConstraintCollection::RemoveAndDestroyConstraints: id1=%u", id1);
 	bool removedSomething = false;
 	for (ConstraintMapType::iterator it = m_constraints.begin(); it != m_constraints.end(); it++)
 	{
@@ -74,19 +79,16 @@ bool ConstraintCollection::RemoveAndDestroyConstraints(IDTYPE id1)
 
 bool ConstraintCollection::RemoveAndDestroyConstraint(IDTYPE id1, IDTYPE id2)
 {
-	CONSTRAINTIDTYPE constID = GenConstraintID(id1, id2);
+	BSLog("ConstraintCollection::RemoveAndDestroyConstraint: between id1=%u, id2=%u", id1, id2);
 	bool removedSomething = false;
-	for (ConstraintMapType::iterator it = m_constraints.begin(); it != m_constraints.end(); it++)
+	CONSTRAINTIDTYPE constID = GenConstraintID(id1, id2);
+	ConstraintMapType::iterator it = m_constraints.find(constID);
+	if (it != m_constraints.end())
 	{
-		CONSTRAINTIDTYPE checkID = it->first;
-		if (constID == checkID)
-		{
-			Constraint* constraint = it->second;
-			m_constraints.erase(it);
-			delete constraint;
-			removedSomething = true;
-			break;	// there should only be one constraint for any pair of IDs
-		}
+		Constraint* constraint = it->second;
+		m_constraints.erase(it);
+		delete constraint;
+		removedSomething = true;
 	}
 	return removedSomething;	// return 'true' if we actually deleted a constraint
 }
@@ -101,7 +103,7 @@ bool ConstraintCollection::RecalculateAllConstraints(IDTYPE id1)
 		Constraint* constraint = it->second;
 		if (id1 == constraint->GetID1() || id1 == constraint->GetID2())
 		{
-			it->second->GetBtConstraint()->calculateTransforms();
+			constraint->GetBtConstraint()->calculateTransforms();
 			recalcuatedSomething = true;
 		}
 	}

@@ -89,6 +89,7 @@
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <RunCodeAnalysis Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</RunCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -154,6 +155,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Link>
       <AdditionalDependencies>BulletCollision_x64.lib;BulletDynamics_x64.lib;LinearMath_x64.lib</AdditionalDependencies>
@@ -193,6 +195,7 @@
     <ClInclude Include="APIData.h" />
     <ClInclude Include="ArchStuff.h" />
     <ClInclude Include="AvatarObject.h" />
+    <ClInclude Include="BSLogger.h" />
     <ClInclude Include="BulletSim.h" />
     <ClInclude Include="Constraint.h" />
     <ClInclude Include="ConstraintCollection.h" />
