@@ -119,7 +119,11 @@ public:
 			|| !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
 			|| !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
 			// If the velocity has been zeroed, we must report that (probably deactivation)
-			|| (m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
+			|| ((m_properties.Velocity != m_lastProperties.Velocity
+					|| m_properties.AngularVelocity != m_lastProperties.AngularVelocity)
+					&& (m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
+				)
+
 			// Check for exact changing in these because we don't want to miss deactivation
 			// !(m_properties.Velocity == m_lastProperties.Velocity) ||
 			// !(m_properties.AngularVelocity == m_lastProperties.AngularVelocity)

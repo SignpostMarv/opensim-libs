@@ -78,6 +78,15 @@ struct Vector3
 		Z = v.getZ();
 	}
 
+	bool operator!= (const Vector3& o)
+	{
+		return (
+			   X != o.X
+			|| Y != o.Y
+			|| Z != o.Z
+		);
+	}
+
 	bool operator==(const Vector3& b)
 	{
 		return (X == b.X && Y == b.Y && Z == b.Z);
