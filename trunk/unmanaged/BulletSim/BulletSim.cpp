@@ -199,6 +199,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	if (m_worldData.dynamicsWorld)
 	{
 		// The simulation calls the SimMotionState to put object updates into updatesThisFrame.
+		// BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
 		// Put all of the updates this frame into m_updatesThisFrameArray
@@ -567,6 +568,18 @@ btVector3 BulletSim::GetObjectPosition(IDTYPE id)
 	if (m_worldData.objects->TryGetObject(id, &obj))
 	{
 		ret = obj->GetObjectPosition();
+	}
+	return ret;
+}
+
+btQuaternion BulletSim::GetObjectOrientation(IDTYPE id)
+{
+	btQuaternion ret = btQuaternion::getIdentity();
+
+	IPhysObject* obj;
+	if (m_worldData.objects->TryGetObject(id, &obj))
+	{
+		ret = obj->GetObjectOrientation();
 	}
 	return ret;
 }

@@ -39,6 +39,7 @@ public:
 	~PrimObject(void);
 
 	btVector3 GetObjectPosition(void);
+	btQuaternion GetObjectOrientation(void);
 
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
 	bool SetObjectVelocity(btVector3& velocity);

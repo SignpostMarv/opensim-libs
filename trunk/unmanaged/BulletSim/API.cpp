@@ -56,6 +56,27 @@ EXTERN_C DLL_EXPORT char* GetVersion()
 	return &BulletSimVersionString[0];
 }
 
+// Return a pointer to the BulletSim instance that has this worldID
+// This is here because of the reference to m_simulations
+EXTERN_C DLL_EXPORT BulletSim* GetSimHandle2(unsigned int worldID)
+{
+	return m_simulations[worldID];
+}
+
+// Return a pointer to the Bullet object itself
+// This is here because of the reference to m_simulations
+EXTERN_C DLL_EXPORT btCollisionObject* GetBodyHandleWorldID2(unsigned int worldID, unsigned int localID)
+{
+	return m_simulations[worldID]->getWorldData()->objects->GetObject(localID)->GetBody();
+}
+
+// Return a pointer to the Bullet object itself
+// This is here because of the reference to m_simulations
+EXTERN_C DLL_EXPORT btCollisionObject* GetBodyHandle2(BulletSim* sim, unsigned int localID)
+{
+	return sim->getWorldData()->objects->GetObject(localID)->GetBody();
+}
+
 /**
  * Initializes the physical simulation.
  * @param maxPosition Top north-east corner of the simulation, with Z being up. The bottom south-west corner is 0,0,0.
@@ -249,8 +270,7 @@ EXTERN_C DLL_EXPORT bool RemoveConstraint(unsigned int worldID, unsigned int id1
 }
 
 /**
- * Get the position of a character or rigid body. This should only be used for debugging, since 
- * physics updates are returned when calling PhysicsStep.
+ * Get the position of a character or rigid body.
  * @param worldID ID of the world to access.
  * @param id Object ID.
  * @return Position of the object if found, otherwise Vector3.Zero
@@ -259,6 +279,18 @@ EXTERN_C DLL_EXPORT Vector3 GetObjectPosition(unsigned int worldID, unsigned int
 {
 	btVector3 v = m_simulations[worldID]->GetObjectPosition(id);
 	return Vector3(v.getX(), v.getY(), v.getZ());
+}
+
+/**
+ * Get the orientation of a character or rigid body.
+ * @param worldID ID of the world to access.
+ * @param id Object ID.
+ * @return Position of the object if found, otherwise Vector3.Zero
+ */
+EXTERN_C DLL_EXPORT Quaternion GetObjectOrientation(unsigned int worldID, unsigned int id)
+{
+	btQuaternion v = m_simulations[worldID]->GetObjectOrientation(id);
+	return Quaternion(v.getX(), v.getY(), v.getZ(), v.getW());
 }
 
 /**

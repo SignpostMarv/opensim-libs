@@ -60,7 +60,10 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 
 	// Building a rigid body
 	btVector3 localInertia(0, 0, 0);
-	shape->calculateLocalInertia(mass, localInertia);
+	if (mass != btScalar(0.0))
+	{
+		shape->calculateLocalInertia(mass, localInertia);
+	}
 
 	// Create the motion state and rigid body
 	SimMotionState* motionState = new SimMotionState(data->ID, startTransform, &(m_worldData->updatesThisFrame));
@@ -78,12 +81,12 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 
 	btVector3 Dvel = m_body->getLinearVelocity();
 	btVector3 Dgrav = m_body->getGravity();
-	BSLog("PrimObject::constructor: id=%u, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
-			m_id, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
+	// BSLog("PrimObject::constructor: id=%u, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
+	// 		m_id, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 }
 
 PrimObject::~PrimObject(void) {
-	BSLog("PrimObject::destructor: id=%u", m_id);
+	// BSLog("PrimObject::destructor: id=%u", m_id);
 	if (m_body)
 	{
 		// Remove the object from the world
@@ -114,8 +117,8 @@ bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 // TODO: generalize these parameters so we can model the non-physical/phantom/collidable objects of OpenSimulator
 bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass, bool removeIt)
 {
-	BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
-					m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
+	// BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
+	// 				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
 	if (removeIt)
 	{
 		// NOTE: From the author of Bullet: "If you want to change important data 
@@ -185,7 +188,7 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
 	btVector3 localInertia(0, 0, 0);
 
-	BSLog("PrimObject::SetObjectDynamic: id=%u, rem=%s, isDynamic=%d, mass=%f", m_id, removeIt?"true":"false", isDynamic, mass);
+	// BSLog("PrimObject::SetObjectDynamic: id=%u, rem=%s, isDynamic=%d, mass=%f", m_id, removeIt?"true":"false", isDynamic, mass);
 	if (removeIt)
 	{
 		m_worldData->dynamicsWorld->removeRigidBody(m_body);
@@ -206,17 +209,13 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		m_body->setMassProps(mass, localInertia);
 		m_body->updateInertiaTensor();
 
-		// NOTE: Workaround for issue http://code.google.com/p/bullet/issues/detail?id=364
-		// when setting mass
-		m_body->setGravity(m_body->getGravity());
-
 		// if there are any constraints on this object, recalcuate transforms for new mass
 		m_worldData->constraints->RecalculateAllConstraints(m_id);
 
 		btVector3 Dvel = m_body->getLinearVelocity();
 		btVector3 Dgrav = m_body->getGravity();
-		BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
-				m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
+		// BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
+		// 		m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}
 	else
 	{
@@ -233,9 +232,9 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		// Set the new mass (the caller should be passing zero)
 		// mass MUST be zero for Bullet to handle it as a static object
 		m_body->setMassProps(0.0, ZERO_VECTOR);
-		// BSLog("PrimObject::SetObjectDynamic: not dynamic. ID=%u, Mass = %f", m_id, mass);
 		m_body->updateInertiaTensor();
-		m_body->setGravity(m_body->getGravity());
+
+		// BSLog("PrimObject::SetObjectDynamic: static. ID=%u", m_id);
 	}
 	if (removeIt)
 	{
@@ -264,6 +263,12 @@ btVector3 PrimObject::GetObjectPosition()
 	return xform.getOrigin();
 }
 
+btQuaternion PrimObject::GetObjectOrientation()
+{
+	btTransform xform = m_body->getWorldTransform();
+	return xform.getRotation();
+}
+
 bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
 {
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
@@ -283,6 +288,7 @@ bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotatio
 
 	// Set the new transform for the rigid body and the motion state
 	m_body->setWorldTransform(transform);
+	// Force an update of the position/rotation on the next tick
 	m_body->getMotionState()->setWorldTransform(transform);
 
 	m_body->activate(false);
@@ -299,7 +305,7 @@ bool PrimObject::SetObjectVelocity(btVector3& velocity)
 
 bool PrimObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 {
-	// BSLog("PrimObject::SetAngularVelocity: id=%u, vel=<%f,%f,%f>", m_id, angularVelocity.x(), angularVelocity.y(), angularVelocity.z());
+	// BSLog("PrimObject::SetAngularVelocity: id=%u, avel=<%f,%f,%f>", m_id, angularVelocity.x(), angularVelocity.y(), angularVelocity.z());
 	m_body->setAngularVelocity(angularVelocity);
 	m_body->activate(true);
 	return true;

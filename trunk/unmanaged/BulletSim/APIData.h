@@ -92,6 +92,22 @@ struct Quaternion
 	float Z;
 	float W;
 
+	Quaternion()
+	{
+		X = 0.0;
+		Y = 0.0;
+		Z = 0.0;
+		W = 1.0;
+	}
+
+	Quaternion(float xx, float yy, float zz, float ww)
+	{
+		X = xx;
+		Y = yy;
+		Z = zz;
+		W = ww;
+	}
+
 	bool AlmostEqual(const Quaternion& q, float nEpsilon)
 	{
 		return

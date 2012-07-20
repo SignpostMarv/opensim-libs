@@ -114,16 +114,15 @@ public:
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
 		// Is this transform any different from the previous one?
-		if (!m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE) ||
-			!m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE) ||
-			// AlmostEqual doesn't catch very small changes when deactivating
-			// !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE) ||
-			// !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE))
-			// Maybe just push when the properties are being forced to deactivation
-			// || (m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
+		if (!m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
+			|| !m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE)
+			|| !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
+			|| !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
+			// If the velocity has been zeroed, we must report that (probably deactivation)
+			|| (m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
 			// Check for exact changing in these because we don't want to miss deactivation
-			!(m_properties.Velocity == m_lastProperties.Velocity) ||
-			!(m_properties.AngularVelocity == m_lastProperties.AngularVelocity)
+			// !(m_properties.Velocity == m_lastProperties.Velocity) ||
+			// !(m_properties.AngularVelocity == m_lastProperties.AngularVelocity)
 			)
 		{
 			// If so, update the previous transform and add this update to the list of 
@@ -288,6 +287,7 @@ public:
 	bool RemoveConstraintByID(IDTYPE id1);
 	bool RemoveConstraint(IDTYPE id1, IDTYPE id2);
 	btVector3 GetObjectPosition(IDTYPE id);
+	btQuaternion GetObjectOrientation(IDTYPE id);
 	bool SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation);
 	bool SetObjectVelocity(IDTYPE id, btVector3& velocity);
 	bool SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity);

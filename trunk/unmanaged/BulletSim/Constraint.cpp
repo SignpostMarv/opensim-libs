@@ -50,14 +50,14 @@ Constraint::Constraint(WorldData* world, IDTYPE id1, IDTYPE id2, btTransform& fr
 
 			m_worldData->dynamicsWorld->addConstraint(m_constraint, false);
 			m_constraint->calculateTransforms();
-			BSLog("Constraint::Constructor: id1=%u, id2=%u", obj1->GetID(), obj2->GetID());
+			// BSLog("Constraint::Constructor: id1=%u, id2=%u", obj1->GetID(), obj2->GetID());
 		}
 	}
 }
 
 Constraint::~Constraint(void)
 {
-	BSLog("Constraint::Destructor: m_constraint=%x, id1=%u, id2=%u", m_constraint, m_id1, m_id2);
+	// BSLog("Constraint::Destructor: m_constraint=%x, id1=%u, id2=%u", m_constraint, m_id1, m_id2);
 	if (m_constraint)
 	{
 		m_worldData->dynamicsWorld->removeConstraint(m_constraint);

@@ -47,6 +47,10 @@ public:
 	// Return 'true' if successfully added.
 	bool AddObject(IDTYPE id, IPhysObject* obj);
 
+	// Fetch the object
+	// Return null if the object isn't there
+	IPhysObject* GetObject(IDTYPE id);
+
 	// Fetch the object.
 	// Return true of the object was found.
 	bool TryGetObject(IDTYPE id, IPhysObject** obj);

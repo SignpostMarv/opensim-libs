@@ -55,6 +55,13 @@ bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
 	return true;
 }
 
+IPhysObject* ObjectCollection::GetObject(IDTYPE id)
+{
+	IPhysObject* ret = NULL;
+	TryGetObject(id, &ret);
+	return ret;
+}
+
 bool ObjectCollection::TryGetObject(IDTYPE id, IPhysObject** objp)
 {
 	bool ret = false;

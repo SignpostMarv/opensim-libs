@@ -46,6 +46,7 @@ public:
 	//   to define the method if it is not used by that object type.
 
 	virtual btVector3 GetObjectPosition(void) { return btVector3(0.0, 0.0, 0.0); };
+	virtual btQuaternion GetObjectOrientation(void) { return btQuaternion::getIdentity(); };
 
 	virtual bool SetObjectTranslation(btVector3& position, btQuaternion& rotation) { return false; };
 	virtual bool SetObjectVelocity(btVector3& velocity) { return false; };
