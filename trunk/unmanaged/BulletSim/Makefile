@@ -10,7 +10,7 @@ BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/li
 CC = g++
 CFLAGS = -I$(IDIR) -fPIC -g
 
-BASEFILES = API.cpp BulletSim.cpp
+BASEFILES = API.cpp API2.cpp BulletSim.cpp
 
 OBJECTFILES = IPhysObject.cpp AvatarObject.cpp PrimObject.cpp GroundPlaneObject.cpp TerrainObject.cpp
 
@@ -34,9 +34,11 @@ libBulletSim.so : $(BIN)
 
 BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h Constraint.h
 
-BulletSim.h: ArchStuff.h APIData.h IPhysObject.h TerrainObject.h ObjectCollection.h ConstraintCollection.h WorldData.h
+BulletSim.h: ArchStuff.h APIData.h BSLogger.h IPhysObject.h TerrainObject.h ObjectCollection.h ConstraintCollection.h WorldData.h
 
 API.cpp : BulletSim.h
+
+API2.cpp : BulletSim.h
 
 IPhysObject.cpp: IPhysObject.h AvatarObject.h PrimObject.h
 
@@ -58,11 +60,11 @@ TerrainObject.cpp: TerrainObject.h
 
 TerrainObject.h: IPhysObject.h APIData.h WorldData.h
 
-Constraint.cpp: Constraint.h IPhysObject.h ObjectCollection.h
+Constraint.cpp: Constraint.h IPhysObject.h ObjectCollection.h BSLogger.h
 
 Constraint.h:  WorldData.h ArchStuff.h
 
-ConstraintCollection.cpp: ConstraintCollection.h 
+ConstraintCollection.cpp: ConstraintCollection.h BSLogger.h
 
 ConstraintCollection.h: ArchStuff.h WorldData.h Constraint.h
 

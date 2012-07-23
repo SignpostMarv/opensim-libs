@@ -36,6 +36,7 @@
 #include "ObjectCollection.h"
 #include "ConstraintCollection.h"
 #include "WorldData.h"
+#include "BSLogger.h"
 
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "LinearMath/btAlignedObjectArray.h"
@@ -69,8 +70,6 @@ static bool IsPhantom(const btCollisionObject* obj)
 // This callback is only initialized if the simulator is running in DEBUG mode.
 typedef void DebugLogCallback(const char*);
 extern DebugLogCallback* debugLogCallback;
-
-#include "BSLogger.h"
 
 // ============================================================================================
 // Motion state for rigid bodies in the scene. Updates the map of changed 
