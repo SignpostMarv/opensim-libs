@@ -538,8 +538,8 @@ void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2,
 	Constraint* constraint = new Constraint(&m_worldData, id1, id2, frame1t, frame2t);
 	constraint->SetLinear(lowLinear, hiLinear);
 	constraint->SetAngular(lowAngular, hiAngular);
-	// constraint->UseFrameOffset(false);
-	// constraint->TranslationalLimitMotor(true, 5.0f, 0.1f);
+	constraint->UseFrameOffset(false);
+	constraint->TranslationalLimitMotor(true, 5.0f, 0.1f);
 
 	m_worldData.constraints->AddConstraint(constraint);
 
