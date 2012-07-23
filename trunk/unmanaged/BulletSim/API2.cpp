@@ -319,18 +319,12 @@ EXTERN_C DLL_EXPORT bool SetLinearVelocity2(btCollisionObject* obj, Vector3 val)
 	return true;
 }
 
-EXTERN_C DLL_EXPORT bool SetInterpolation2(btCollisionObject* obj, Vector3 lin, Vector3 ang, Vector3 pos, Quaternion rot)
+EXTERN_C DLL_EXPORT bool SetInterpolation2(btCollisionObject* obj, Vector3 lin, Vector3 ang)
 	// (sets both linear and angular interpolation velocity)
 {
-	btTransform transf;
-	transf.setIdentity();
-	transf.setOrigin(pos.GetBtVector3());
-	transf.setRotation(rot.GetBtQuaternion());
-
 	obj->setInterpolationLinearVelocity(lin.GetBtVector3());
 	obj->setInterpolationAngularVelocity(ang.GetBtVector3());
-	obj->setInterpolationWorldTransform(transf);
-
+	obj->setInterpolationWorldTransform(obj->getWorldTransform());
 	return true;
 }
 
