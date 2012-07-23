@@ -319,12 +319,15 @@ EXTERN_C DLL_EXPORT bool SetLinearVelocity2(btCollisionObject* obj, Vector3 val)
 	return true;
 }
 
+// (sets both linear and angular interpolation velocity)
 EXTERN_C DLL_EXPORT bool SetInterpolation2(btCollisionObject* obj, Vector3 lin, Vector3 ang)
-	// (sets both linear and angular interpolation velocity)
 {
-	obj->setInterpolationLinearVelocity(lin.GetBtVector3());
-	obj->setInterpolationAngularVelocity(ang.GetBtVector3());
-	obj->setInterpolationWorldTransform(obj->getWorldTransform());
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setInterpolationLinearVelocity(lin.GetBtVector3());
+	rb->setInterpolationAngularVelocity(ang.GetBtVector3());
+	rb->setInterpolationWorldTransform(rb->getWorldTransform());
 	return true;
 }
 
