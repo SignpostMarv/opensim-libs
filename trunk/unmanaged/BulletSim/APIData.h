@@ -273,6 +273,11 @@ struct ParamBlock
 	float shouldSplitSimulationIslands;
 	float shouldEnableFrictionCaching;
 	float numberOfSolverIterations;
+
+    float linkConstraintUseFrameOffset;
+    float linkConstraintEnableTransMotor;
+    float linkConstraintTransMotorMaxVel;
+    float linkConstraintTransMotorMaxForce;
 };
 
 
