@@ -46,8 +46,8 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	btScalar mass = btScalar(data->Mass);
 	btScalar friction = btScalar(data->Friction);
 	btScalar restitution = btScalar(data->Restitution);
-	bool isStatic = (data->Static == 1);
-	bool isCollidable = (data->Collidable == 1);
+	bool isStatic = (data->Static == 1.0);
+	bool isCollidable = (data->Collidable == 1.0);
 
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
 	shape->setUserPointer(PACKLOCALID(id));

@@ -511,9 +511,9 @@ bool BulletSim::CreateObject(ShapeData* data)
 	IPhysObject* newObject = IPhysObject::PhysObjectFactory(&m_worldData, data);
 	if (newObject != NULL)
 	{
-		// DEBUG FOR AVATAR MOVEMENT
 		/*
 		BSLog("CreateObject: created object of type= '%s'", newObject->GetType());
+		// DEBUG FOR AVATAR MOVEMENT
 		if (strcmp(newObject->GetType(), "Avatar") == 0)
 		{
 			m_lastAvatarID = newObject->GetID();

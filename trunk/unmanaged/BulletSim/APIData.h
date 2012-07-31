@@ -156,7 +156,7 @@ struct ShapeData
 		SHAPE_HULL		= 7
 	};
 
-	// note that bool's are passed as int's since bool size changes by language
+	// note that bool's are passed as floats's since bool size changes by language
 	IDTYPE ID;
 	PhysicsShapeType Type;
 	Vector3 Position;
@@ -169,8 +169,8 @@ struct ShapeData
 	unsigned long long MeshKey;
 	float Friction;
 	float Restitution;
-	int32_t Collidable;	// things can collide with this object
-	int32_t Static;	// object is non-moving. Otherwise gravity, etc
+	float Collidable;	// things can collide with this object
+	float Static;	// object is non-moving. Otherwise gravity, etc
 };
 
 // API-exposed structure for reporting a collision

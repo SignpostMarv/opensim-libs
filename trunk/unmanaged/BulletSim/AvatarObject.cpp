@@ -50,8 +50,8 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	btScalar friction = btScalar(m_currentFriction);
 	btScalar restitution = btScalar(0);
 
-	// bool isStatic = (data->Static == 1);
-	// bool isCollidable = (data->Collidable == 1);
+	// bool isStatic = (data->Static == 1.0);
+	// bool isCollidable = (data->Collidable == 1.0);
 	bool isStatic = false;
 	bool isCollidable = true;
 
