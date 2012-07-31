@@ -34,7 +34,6 @@
 #include "IPhysObject.h"
 #include "TerrainObject.h"
 #include "ObjectCollection.h"
-#include "ConstraintCollection.h"
 #include "WorldData.h"
 #include "BSLogger.h"
 
@@ -272,16 +271,16 @@ public:
 	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
 		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
 	void SetHeightmap(float* heightmap);
+
 	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
+	bool DestroyHull(unsigned long long meshKey);
 	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
+	bool DestroyMesh(unsigned long long id);
+
 	bool CreateObject(ShapeData* shapeData);
-	void CreateLinkset(int objectCount, ShapeData* shapeDatas) { /* deprecated function */ }
-	void AddConstraint(IDTYPE id1, IDTYPE id2, 
-				btVector3& frame1, btQuaternion& frame1rot, 
-				btVector3& frame2, btQuaternion& frame2rot,
-				btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular);
-	bool RemoveConstraintByID(IDTYPE id1);
-	bool RemoveConstraint(IDTYPE id1, IDTYPE id2);
+	bool DestroyObject(IDTYPE id);
+	bool HasObject(IDTYPE id);
+
 	btVector3 GetObjectPosition(IDTYPE id);
 	btQuaternion GetObjectOrientation(IDTYPE id);
 	bool SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation);
@@ -293,10 +292,7 @@ public:
 	bool SetObjectDynamic(IDTYPE id, bool isDynamic, float mass);
 	bool SetObjectBuoyancy(IDTYPE id, float buoyancy);
 	bool SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass);
-	bool HasObject(IDTYPE id);
-	bool DestroyObject(IDTYPE id);
-	bool DestroyHull(unsigned long long meshKey);
-	bool DestroyMesh(unsigned long long id);
+
 	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
 	const btVector3 RecoverFromPenetration(IDTYPE id);

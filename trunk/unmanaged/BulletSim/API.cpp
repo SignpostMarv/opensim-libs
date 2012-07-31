@@ -210,66 +210,6 @@ EXTERN_C DLL_EXPORT bool CreateObject(unsigned int worldID, ShapeData shapeData)
 }
 
 /**
- * Creates a hierarchy of rigid bodies in the simulation.
- * @param worldID ID of the world to modify.
- * @param shapeDatas Array of objects to create, with the first object being the root or parent node.
- */
-EXTERN_C DLL_EXPORT void CreateLinkset(unsigned int worldID, int objectCount, ShapeData* shapeDatas)
-{
-	m_simulations[worldID]->CreateLinkset(objectCount, shapeDatas);
-}
-
-/**
- * Add a generic 6 degree of freedom constraint between two previously created objects
- * @param worldID ID of the world to modify.
- * @param id1 first object to constrain
- * @param id2 other object to constrain
- * @param lowLinear low bounds of linear constraint
- * @param hiLinear hi bounds of linear constraint
- * @param lowAngular low bounds of angular constraint
- * @param hiAngular hi bounds of angular constraint
- */
-EXTERN_C DLL_EXPORT void AddConstraint(unsigned int worldID, unsigned int id1, unsigned int id2, 
-	Vector3 frame1loc, Quaternion frame1rot,
-	Vector3 frame2loc, Quaternion frame2rot,
-	Vector3 lowLinear, Vector3 hiLinear, Vector3 lowAngular, Vector3 hiAngular)
-{
-	btVector3 frm1 = frame1loc.GetBtVector3();
-	btQuaternion rot1 = frame1rot.GetBtQuaternion();
-	btVector3 frm2 = frame2loc.GetBtVector3();
-	btQuaternion rot2 = frame2rot.GetBtQuaternion();
-	btVector3 lowLin = lowLinear.GetBtVector3();
-	btVector3 hiLin = hiLinear.GetBtVector3();
-	btVector3 lowAng = lowAngular.GetBtVector3();
-	btVector3 hiAng = hiAngular.GetBtVector3();
-	m_simulations[worldID]->AddConstraint(id1, id2, frm1, rot1, frm2, rot2, lowLin, hiLin, lowAng, hiAng);
-}
-/**
- * Remove a generic 6 degree of freedom constraint associated with this object.
- * Safe to call of constraint does not exist
- * @param worldID ID of the world to modify.
- * @param id1 object to deconstrain
- * @return 'true' if actually removed a constraint. 'false' if no constraint between objects
- */
-EXTERN_C DLL_EXPORT bool RemoveConstraintByID(unsigned int worldID, unsigned int id1)
-{
-	return m_simulations[worldID]->RemoveConstraintByID(id1);
-}
-
-/**
- * Remove a generic 6 degree of freedom constraint between two previously created objects.
- * Safe to call of constraint does not exist
- * @param worldID ID of the world to modify.
- * @param id1 first object to deconstrain
- * @param id2 other object to deconstrain
- * @return 'true' if actually removed a constraint. 'false' if no constraint between objects
- */
-EXTERN_C DLL_EXPORT bool RemoveConstraint(unsigned int worldID, unsigned int id1, unsigned int id2)
-{
-	return m_simulations[worldID]->RemoveConstraint(id1, id2);
-}
-
-/**
  * Get the position of a character or rigid body.
  * @param worldID ID of the world to access.
  * @param id Object ID.

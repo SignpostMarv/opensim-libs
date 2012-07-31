@@ -32,20 +32,21 @@
 
 #include "ArchStuff.h"
 #include "APIData.h"
-// #include "ObjectCollection.h"
-// #include "ConstraintCollection.h"
 #include "btBulletDynamicsCommon.h"
 
 #include <map>
 
 // Forward references
+class BulletSim;
 class ObjectCollection;
-class ConstraintCollection;
 class HeightMapData;
+class IPhysObject;
 
 // Structure to hold the world data that is common to all the objects in the world
 struct WorldData
 {
+	BulletSim* sim;
+
 	ParamBlock* params;
 	
 	// pointer to the containing world control structure
@@ -60,6 +61,10 @@ struct WorldData
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
 	UpdatesThisFrameMapType updatesThisFrame;
 
+	// Objects can register themselves to be called back each step
+	typedef std::map<IDTYPE, IPhysObject*> FrameObjectCallbacksMapType;
+	FrameObjectCallbacksMapType FrameObjectCallbacks;
+
 	// Objects in this world
 	// We create a class instance (using IPhysObjectFactory()) for each of the
 	// object types kept in the world. This separates the code for handling
@@ -67,9 +72,6 @@ struct WorldData
 	// Once collection object is created to hold the objects. This also
 	// has the list manipulation functions.
 	ObjectCollection* objects;
-
-	// Constraints created in this world
-	ConstraintCollection* constraints;
 
 	// Mesh and Hull data
 	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;

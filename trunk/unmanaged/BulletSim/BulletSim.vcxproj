@@ -183,8 +183,6 @@
     <ClCompile Include="API2.cpp" />
     <ClCompile Include="AvatarObject.cpp" />
     <ClCompile Include="BulletSim.cpp" />
-    <ClCompile Include="Constraint.cpp" />
-    <ClCompile Include="ConstraintCollection.cpp" />
     <ClCompile Include="GroundPlaneObject.cpp" />
     <ClCompile Include="IPhysObject.cpp" />
     <ClCompile Include="ObjectCollection.cpp" />
@@ -197,8 +195,6 @@
     <ClInclude Include="AvatarObject.h" />
     <ClInclude Include="BSLogger.h" />
     <ClInclude Include="BulletSim.h" />
-    <ClInclude Include="Constraint.h" />
-    <ClInclude Include="ConstraintCollection.h" />
     <ClInclude Include="GroundPlaneObject.h" />
     <ClInclude Include="IPhysObject.h" />
     <ClInclude Include="ObjectCollection.h" />

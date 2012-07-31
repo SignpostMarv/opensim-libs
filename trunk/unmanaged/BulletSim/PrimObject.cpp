@@ -209,9 +209,6 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		m_body->setMassProps(mass, localInertia);
 		m_body->updateInertiaTensor();
 
-		// if there are any constraints on this object, recalcuate transforms for new mass
-		m_worldData->constraints->RecalculateAllConstraints(m_id);
-
 		btVector3 Dvel = m_body->getLinearVelocity();
 		btVector3 Dgrav = m_body->getGravity();
 		// BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
@@ -348,11 +345,6 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 
 	// Calculate a new AABB for this object
 	m_worldData->dynamicsWorld->updateSingleAabb(m_body);
-
-	if (m_worldData->constraints)
-	{
-		m_worldData->constraints->RecalculateAllConstraints(m_id);
-	}
 
 	m_body->activate(false);
 	return true;

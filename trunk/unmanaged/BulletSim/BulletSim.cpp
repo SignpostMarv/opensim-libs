@@ -27,7 +27,6 @@
 #include "BulletSim.h"
 #include "GroundPlaneObject.h"
 #include "TerrainObject.h"
-#include "Constraint.h"
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
@@ -38,8 +37,9 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	// Make sure structures that will be created in initPhysics are marked as not created
 	m_worldData.dynamicsWorld = NULL;
 	m_worldData.objects = NULL;
-	m_worldData.constraints = NULL;
 	m_terrainObject = NULL;
+
+	m_worldData.sim = this;
 
 	m_worldData.MinPosition = btVector3(0, 0, 0);
 	m_worldData.MaxPosition = btVector3(maxX, maxY, maxZ);
@@ -66,8 +66,6 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	m_worldData.params = parms;
 	// the collection of all the objects that are passed to the physics engine
 	m_worldData.objects = new ObjectCollection();
-	// the collection of the constraints that are used to create linkset
-	m_worldData.constraints = new ConstraintCollection(&m_worldData);
 
 	// create the functional parts of the physics simulation
 	btDefaultCollisionConstructionInfo cci;
@@ -134,13 +132,6 @@ void BulletSim::exitPhysics()
 {
 	if (m_worldData.dynamicsWorld == NULL)
 		return;
-
-	if (m_worldData.constraints)
-	{
-		m_worldData.constraints->Clear();
-		delete m_worldData.constraints;
-		m_worldData.constraints = NULL;
-	}
 
 	if (m_worldData.objects)
 	{
@@ -529,51 +520,6 @@ bool BulletSim::CreateObject(ShapeData* data)
 	return ret;
 }
 
-// Explanation of cfm (constraint force mixing) and erp(error reduction parameter) at:
-//       http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=6792
-// Information on stabilty in constraint solver (see last comment from Erwin) at:
-//       http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7686
-void BulletSim::AddConstraint(IDTYPE id1, IDTYPE id2, 
-							  btVector3& frame1, btQuaternion& frame1rot,
-							  btVector3& frame2, btQuaternion& frame2rot,
-	btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular)
-{
-	BSLog("BulletSim::AddConstraint: adding id1=%u, id2=%u", id1, id2);
-
-	m_worldData.constraints->RemoveAndDestroyConstraint(id1, id2);		// remove any existing constraint
-
-	btTransform frame1t, frame2t;
-	frame1t.setIdentity();
-	frame1t.setOrigin(frame1);
-	frame1t.setRotation(frame1rot);
-	frame2t.setIdentity();
-	frame2t.setOrigin(frame2);
-	frame2t.setRotation(frame2rot);
-	Constraint* constraint = new Constraint(&m_worldData, id1, id2, frame1t, frame2t);
-	constraint->SetLinear(lowLinear, hiLinear);
-	constraint->SetAngular(lowAngular, hiAngular);
-	constraint->UseFrameOffset(false);
-	constraint->TranslationalLimitMotor(true, 5.0f, 0.1f);
-
-	m_worldData.constraints->AddConstraint(constraint);
-
-	return;
-}
-
-// When we are deleting and object, we need to make sure there are no constraints
-// associated with it.
-bool BulletSim::RemoveConstraintByID(IDTYPE id1)
-{
-	BSLog("BulletSim::RemoveConstraintByID: id1=%u", id1);
-	return m_worldData.constraints->RemoveAndDestroyConstraints(id1);
-}
-
-bool BulletSim::RemoveConstraint(IDTYPE id1, IDTYPE id2)
-{
-	BSLog("BulletSim::RemoveConstraint: id1=%u, id2=%u", id1, id2);
-	return m_worldData.constraints->RemoveAndDestroyConstraint(id1, id2);
-}
-
 btVector3 BulletSim::GetObjectPosition(IDTYPE id)
 {
 	btVector3 ret = btVector3(0.0, 0.0, 0.0);
@@ -732,9 +678,6 @@ bool BulletSim::HasObject(IDTYPE id)
 bool BulletSim::DestroyObject(IDTYPE id)
 {
 	// BSLog("BulletSim::DestroyObject: id=%d", id);
-	// Remove any constraints associated with this object
-	m_worldData.constraints->RemoveAndDestroyConstraints(id);
-
 	return m_worldData.objects->RemoveAndDestroyObject(id);
 }
 
