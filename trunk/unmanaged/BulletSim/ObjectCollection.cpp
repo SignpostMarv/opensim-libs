@@ -55,6 +55,8 @@ bool ObjectCollection::AddObject(IDTYPE id, IPhysObject* obj)
 	return true;
 }
 
+// Get an object based on ID.
+// Return 'null' if the object cannot be found.
 IPhysObject* ObjectCollection::GetObject(IDTYPE id)
 {
 	IPhysObject* ret = NULL;

@@ -132,7 +132,7 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 void BulletSim::exitPhysics()
 {
-	if (!m_worldData.dynamicsWorld)
+	if (m_worldData.dynamicsWorld == NULL)
 		return;
 
 	if (m_worldData.constraints)
@@ -168,25 +168,39 @@ void BulletSim::exitPhysics()
 	// The ground plane and terrain are deleted when the object list is cleared
 	m_terrainObject = NULL;
 
+	if (m_worldData.dynamicsWorld != NULL)
+	{
+		delete m_worldData.dynamicsWorld;
+		m_worldData.dynamicsWorld = NULL;
+	}
+
 	// Delete solver
-	delete m_solver;
-	m_solver = NULL;
+	if (m_solver != NULL)
+	{
+		delete m_solver;
+		m_solver = NULL;
+	}
 
 	// Delete broadphase
-	delete m_broadphase;
-	m_broadphase = NULL;
+	if (m_broadphase != NULL)
+	{
+		delete m_broadphase;
+		m_broadphase = NULL;
+	}
 
 	// Delete dispatcher
-	delete m_dispatcher;
-	m_dispatcher = NULL;
+	if (m_dispatcher != NULL)
+	{
+		delete m_dispatcher;
+		m_dispatcher = NULL;
+	}
 
 	// Delete collision config
-	delete m_collisionConfiguration;
-	m_collisionConfiguration = NULL;
-
-	// Finally, end the world
-	delete m_worldData.dynamicsWorld;
-	m_worldData.dynamicsWorld = NULL;
+	if (m_collisionConfiguration != NULL)
+	{
+		delete m_collisionConfiguration;
+		m_collisionConfiguration = NULL;
+	}
 }
 
 // Step the simulation forward by one full step and potentially some number of substeps
@@ -486,7 +500,7 @@ bool BulletSim::DestroyMesh(unsigned long long meshKey)
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
 {
-	// BSLog("BulletSim::CreateObject: id=%d", data->ID);
+	BSLog("BulletSim::CreateObject: id=%d", data->ID);
 
 	bool ret = false;
 

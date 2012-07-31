@@ -146,13 +146,14 @@ struct ShapeData
 {
 	enum PhysicsShapeType
 	{
-		SHAPE_AVATAR = 0,
-		SHAPE_BOX = 1,
-		SHAPE_CONE = 2,
-		SHAPE_CYLINDER = 3,
-		SHAPE_SPHERE = 4,
-		SHAPE_MESH = 5,
-		SHAPE_HULL = 6
+		SHAPE_UNKNOWN	= 0,
+		SHAPE_AVATAR	= 1,
+		SHAPE_BOX		= 2,
+		SHAPE_CONE		= 3,
+		SHAPE_CYLINDER	= 4,
+		SHAPE_SPHERE	= 5,
+		SHAPE_MESH		= 6,
+		SHAPE_HULL		= 7
 	};
 
 	// note that bool's are passed as int's since bool size changes by language
@@ -234,6 +235,11 @@ struct EntityProperties
 	}
 };
 
+// added values for collision CFM and ERP setting so we can set all axis at once
+#define COLLISION_AXIS_LINEAR_ALL (20)
+#define COLLISION_AXIS_ANGULAR_ALL (21)
+#define COLLISION_AXIS_ALL (22)
+
 // Block of parameters passed from the managed code.
 // The memory layout MUST MATCH the layout in the managed code.
 // Rely on the fact that 'float' is always 32 bits in both C# and C++
@@ -278,6 +284,8 @@ struct ParamBlock
     float linkConstraintEnableTransMotor;
     float linkConstraintTransMotorMaxVel;
     float linkConstraintTransMotorMaxForce;
+    float linkConstraintERP;
+    float linkConstraintCFM;
 };
 
 

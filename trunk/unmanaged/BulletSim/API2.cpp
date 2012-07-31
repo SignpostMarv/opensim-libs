@@ -162,7 +162,8 @@ EXTERN_C DLL_EXPORT IPhysObject* CreateObject2(BulletSim* sim, ShapeData shapeDa
  */
 EXTERN_C DLL_EXPORT BTCONSTRAINTTYPE* CreateConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 frame1loc, Quaternion frame1rot,
-				Vector3 frame2loc, Quaternion frame2rot)
+				Vector3 frame2loc, Quaternion frame2rot,
+				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
 {
 	btTransform frame1t, frame2t;
 	frame1t.setIdentity();
@@ -178,15 +179,18 @@ EXTERN_C DLL_EXPORT BTCONSTRAINTTYPE* CreateConstraint2(BulletSim* sim, btCollis
 	BTCONSTRAINTTYPE* constrain = NULL;
 	if (rb1 != NULL && rb2 != NULL)
 	{
-		constrain = new BTCONSTRAINTTYPE(*rb1, *rb2, frame1t, frame2t, true);
+		constrain = new BTCONSTRAINTTYPE(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
 
 		constrain->calculateTransforms();
-		sim->getDynamicsWorld()->addConstraint(constrain, false);
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
 	}
 
 	BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
 						CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
 						CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
+	BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
+						frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
+						frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
 	return constrain;
 }
 
@@ -231,6 +235,27 @@ EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(BTCONSTRAINTTYPE* constrain,
 EXTERN_C DLL_EXPORT bool CalculateTransforms2(BTCONSTRAINTTYPE* constrain)
 {
 	constrain->calculateTransforms();
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetConstraintParam2(BTCONSTRAINTTYPE* constrain, int paramIndex, float value, int axis)
+{
+	if (axis == COLLISION_AXIS_LINEAR_ALL || axis == COLLISION_AXIS_ALL)
+	{
+		constrain->setParam(paramIndex, btScalar(value), 0);
+		constrain->setParam(paramIndex, btScalar(value), 1);
+		constrain->setParam(paramIndex, btScalar(value), 2);
+	}
+	if (axis == COLLISION_AXIS_ANGULAR_ALL || axis == COLLISION_AXIS_ALL)
+	{
+		constrain->setParam(paramIndex, btScalar(value), 3);
+		constrain->setParam(paramIndex, btScalar(value), 4);
+		constrain->setParam(paramIndex, btScalar(value), 5);
+	}
+	if (axis < COLLISION_AXIS_LINEAR_ALL)
+	{
+		constrain->setParam(paramIndex, btScalar(value), axis);
+	}
 	return true;
 }
 

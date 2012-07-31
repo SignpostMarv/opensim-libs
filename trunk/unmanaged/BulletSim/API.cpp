@@ -128,9 +128,9 @@ EXTERN_C DLL_EXPORT void SetHeightmap(unsigned int worldID, float* heightmap)
 EXTERN_C DLL_EXPORT void Shutdown(unsigned int worldID)
 {
 	BulletSim* sim = m_simulations[worldID];
+	m_simulations.erase(worldID);
 	sim->exitPhysics();
 	delete sim;
-	m_simulations.erase(worldID);
 }
 
 /**
