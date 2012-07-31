@@ -99,7 +99,6 @@ public:
     virtual void setWorldTransform(const btTransform& worldTrans)
 	{
 		m_xform = worldTrans;
-		Vector3 ZeroVect;
 
 		// Put the new transform into m_properties
 		m_properties.Position = m_xform.getOrigin();
@@ -113,19 +112,13 @@ public:
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
 		// Is this transform any different from the previous one?
-		if (!m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
+		if (   !m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
 			|| !m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE)
-			|| !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
-			|| !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
-			// If the velocity has been zeroed, we must report that (probably deactivation)
-			|| ((m_properties.Velocity != m_lastProperties.Velocity
-					|| m_properties.AngularVelocity != m_lastProperties.AngularVelocity)
-					&& (m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
-				)
-
 			// Check for exact changing in these because we don't want to miss deactivation
-			// !(m_properties.Velocity == m_lastProperties.Velocity) ||
-			// !(m_properties.AngularVelocity == m_lastProperties.AngularVelocity)
+			|| m_properties.Velocity != m_lastProperties.Velocity
+			|| m_properties.AngularVelocity != m_lastProperties.AngularVelocity
+			// || !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
+			// || !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
 			)
 		{
 			// If so, update the previous transform and add this update to the list of 
