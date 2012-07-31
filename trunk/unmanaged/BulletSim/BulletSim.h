@@ -77,6 +77,7 @@ class SimMotionState : public btMotionState
 {
 public:
 	btRigidBody* RigidBody;
+	Vector3 ZeroVect;
 
     SimMotionState(IDTYPE id, const btTransform& startTransform, std::map<IDTYPE, EntityProperties*>* updatesThisFrame)
 		: m_properties(id, startTransform), m_lastProperties(id, startTransform)
@@ -102,22 +103,25 @@ public:
 		// Put the new transform into m_properties
 		m_properties.Position = m_xform.getOrigin();
 		m_properties.Rotation = m_xform.getRotation();
-		// A problem is that, in stock Bullet, we don't get an event when an object is slept.
+		// A problem in stock Bullet is that we don't get an event when an object is deactivated.
 		// This means that the last non-zero values for linear and angular velocity
 		// are left in the viewer who does dead reconning and the objects look like
 		// they float off.
-		// BulletSim ships with a patch to Bullet that creates such an event.
+		// BulletSim ships with a patch to Bullet which creates such an event.
 		m_properties.Velocity = RigidBody->getLinearVelocity();
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
 		// Is this transform any different from the previous one?
 		if (   !m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
 			|| !m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE)
-			// Check for exact changing in these because we don't want to miss deactivation
-			|| m_properties.Velocity != m_lastProperties.Velocity
-			|| m_properties.AngularVelocity != m_lastProperties.AngularVelocity
-			// || !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
-			// || !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
+			// If the Velocity and AngularVelocity are zero, most likely the object has
+			//    been deactivated. If they both are zero and they have become zero recently,
+			//    make sure a property update is sent so the zeros make it to the viewer.
+			|| ((m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
+				&& (m_properties.Velocity != m_lastProperties.Velocity || m_properties.AngularVelocity != m_lastProperties.AngularVelocity))
+			//	If Velocity and AngularVelocity are non-zero but more than almost different, send an update.
+			|| !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
+			|| !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
 			)
 		{
 			// If so, update the previous transform and add this update to the list of 
