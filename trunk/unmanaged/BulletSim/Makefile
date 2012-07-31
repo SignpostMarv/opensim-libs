@@ -14,9 +14,7 @@ BASEFILES = API.cpp API2.cpp BulletSim.cpp
 
 OBJECTFILES = IPhysObject.cpp AvatarObject.cpp PrimObject.cpp GroundPlaneObject.cpp TerrainObject.cpp
 
-THINGFILES = Constraint.cpp
-
-COLLECTIONFILES = ConstraintCollection.cpp ObjectCollection.cpp
+COLLECTIONFILES = ObjectCollection.cpp
 
 SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILE) $(COLLECTIONFILES)
 # SRC = $(wildcard *.cpp)
@@ -32,9 +30,9 @@ libBulletSim.so : $(BIN)
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?
 
-BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h Constraint.h
+BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h
 
-BulletSim.h: ArchStuff.h APIData.h BSLogger.h IPhysObject.h TerrainObject.h ObjectCollection.h ConstraintCollection.h WorldData.h
+BulletSim.h: ArchStuff.h APIData.h BSLogger.h IPhysObject.h TerrainObject.h ObjectCollection.h WorldData.h
 
 API.cpp : BulletSim.h
 
@@ -59,14 +57,6 @@ GroundPlaneObject.h: IPhysObject.h APIData.h WorldData.h
 TerrainObject.cpp: TerrainObject.h
 
 TerrainObject.h: IPhysObject.h APIData.h WorldData.h
-
-Constraint.cpp: Constraint.h IPhysObject.h ObjectCollection.h BSLogger.h
-
-Constraint.h:  WorldData.h ArchStuff.h
-
-ConstraintCollection.cpp: ConstraintCollection.h BSLogger.h
-
-ConstraintCollection.h: ArchStuff.h WorldData.h Constraint.h
 
 ObjectCollection.cpp: ObjectCollection.h
 
