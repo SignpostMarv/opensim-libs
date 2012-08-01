@@ -207,6 +207,17 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		// BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
+		// Objects can register to be called after each step.
+		// This allows objects to do per-step modification of returned values.
+		if (m_worldData.stepObjectCallbacks.size() > 0)
+		{
+			for (WorldData::StepObjectCallbacksMapType::const_iterator it = m_worldData.stepObjectCallbacks.begin(); 
+										it != m_worldData.stepObjectCallbacks.end(); ++it)
+			{
+				(it->second)->StepCallback(it->first, &m_worldData);
+			}
+		}
+
 		// Put all of the updates this frame into m_updatesThisFrameArray
 		int updates = 0;
 		if (m_worldData.updatesThisFrame.size() > 0)
@@ -330,6 +341,19 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	}
 
 	return numSimSteps;
+}
+
+bool BulletSim::RegisterStepCallback(IDTYPE id, IPhysObject* target)
+{
+	UnregisterStepCallback(id);
+	m_worldData.stepObjectCallbacks[id] = target;
+	return true;
+}
+
+bool BulletSim::UnregisterStepCallback(IDTYPE id)
+{
+	size_type cnt = m_worldData.stepObjectCallbacks.erase(id);
+	return (cnt > 0);
 }
 
 // Copy the passed heightmap into the memory block used by Bullet

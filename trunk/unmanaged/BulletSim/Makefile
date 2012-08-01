@@ -14,9 +14,11 @@ BASEFILES = API.cpp API2.cpp BulletSim.cpp
 
 OBJECTFILES = IPhysObject.cpp AvatarObject.cpp PrimObject.cpp GroundPlaneObject.cpp TerrainObject.cpp
 
+THINGFILES = 
+
 COLLECTIONFILES = ObjectCollection.cpp
 
-SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILE) $(COLLECTIONFILES)
+SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES)
 # SRC = $(wildcard *.cpp)
 
 BIN = $(patsubst %.cpp, %.o, $(SRC))

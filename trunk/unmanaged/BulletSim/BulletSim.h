@@ -276,6 +276,9 @@ public:
 		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
 	void SetHeightmap(float* heightmap);
 
+	bool RegisterStepCallback(IDTYPE id, IPhysObject* target);
+	bool UnregisterStepCallback(IDTYPE id);
+
 	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
 	bool DestroyHull(unsigned long long meshKey);
 	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);

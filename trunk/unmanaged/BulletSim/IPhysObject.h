@@ -42,6 +42,9 @@ public:
 	// Passed a parameter block, create a new instance of the proper object
 	static IPhysObject* PhysObjectFactory(WorldData*, ShapeData*);
 
+	// Objects can register to be called each step. This is the method called.
+	virtual bool StepCallback(IDTYPE id, WorldData* worldData) { return false; };
+
 	// These functions have a default null implementation so all sub-classes don't need
 	//   to define the method if it is not used by that object type.
 

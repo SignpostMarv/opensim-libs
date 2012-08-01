@@ -40,6 +40,8 @@ public:
 	AvatarObject(WorldData*, ShapeData*);
 	~AvatarObject(void);
 
+	bool StepCallback(IDTYPE id, WorldData* worldData);
+
 	btVector3 GetObjectPosition(void);
 
 	bool SetObjectTranslation(btVector3& position, btQuaternion& rotation);
@@ -60,6 +62,7 @@ public:
 private:
 	// Friction is changed depending on whether the avatar is standing or moving.
 	float m_currentFriction;
+	btVector3 m_appliedVelocity;
 };
 
 #endif // AVATAROBJECT_H

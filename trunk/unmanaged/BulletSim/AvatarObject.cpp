@@ -34,6 +34,7 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	m_worldData = world;
 	m_id = data->ID;
 	m_currentFriction = 0.0;
+	m_appliedVelocity = btVector3(0.0, 0.0, 0.0);
 
 	// Unpack ShapeData
 	btVector3 position = data->Position.GetBtVector3();
@@ -91,6 +92,9 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 
 	m_worldData->dynamicsWorld->addRigidBody(m_body);
 
+	// avatars need callbacks to change velocity, etc
+	m_worldData->sim->RegisterStepCallback(m_id, this);
+
 	/*
 	// NOTE: Old code kept for reference
 	// Building a kinematic character controller
@@ -109,6 +113,9 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 AvatarObject::~AvatarObject(void) {
 	if (m_body)
 	{
+		// Make sure we're not registered for a callback. Non-fatal if no registered.
+		m_worldData->sim->UnregisterStepCallback(GetID());
+
 		btCollisionShape* shape = m_body->getCollisionShape();
 
 		// Remove the object from the world
@@ -126,6 +133,21 @@ AvatarObject::~AvatarObject(void) {
 
 		m_body = NULL;
 	}
+}
+
+bool AvatarObject::StepCallback(IDTYPE id, WorldData* worldData) {
+	if (m_body)
+	{
+		// If a velocity was applied externally, keep that velocity and don't let Bullet
+		//    reduce the velocity.
+		// This corrects for avatar movement which is not affected by going up or down
+		//    hills, etc.
+		btVector3 currentVel = m_body->getLinearVelocity();
+		currentVel.setX(m_appliedVelocity.getX());
+		currentVel.setY(m_appliedVelocity.getY());
+		m_body->setLinearVelocity(currentVel);
+	}
+	return true;
 }
 
 bool AvatarObject::SetObjectProperties(const bool isStatic, const bool isCollidable, const bool genCollisions, const float mass) {
@@ -193,6 +215,10 @@ bool AvatarObject::SetObjectVelocity(btVector3& velocity)
 		m_currentFriction = 999.0;
 	}
 	m_body->setFriction(btScalar(m_currentFriction));
+
+	// Remember the applied velocity so we can counteract any velocity reduction
+	//   as the avatar moves.
+	m_appliedVelocity = velocity;
 
 	m_body->setLinearVelocity(velocity);
 	m_body->activate(true);

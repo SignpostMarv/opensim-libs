@@ -62,8 +62,8 @@ struct WorldData
 	UpdatesThisFrameMapType updatesThisFrame;
 
 	// Objects can register themselves to be called back each step
-	typedef std::map<IDTYPE, IPhysObject*> FrameObjectCallbacksMapType;
-	FrameObjectCallbacksMapType FrameObjectCallbacks;
+	typedef std::map<IDTYPE, IPhysObject*> StepObjectCallbacksMapType;
+	StepObjectCallbacksMapType stepObjectCallbacks;
 
 	// Objects in this world
 	// We create a class instance (using IPhysObjectFactory()) for each of the
