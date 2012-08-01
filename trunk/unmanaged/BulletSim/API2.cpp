@@ -319,6 +319,18 @@ EXTERN_C DLL_EXPORT bool SetObjectForce2(btCollisionObject* obj, Vector3 force)
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb == NULL) return false;
 
+	// Oddly, Bullet doesn't have a way to directly set the force so this
+	//    subtracts the total force (making force zero) and then adds our new force.
+	rb->applyCentralForce(force.GetBtVector3() - rb->getTotalForce());
+	return true;
+}
+
+// Adding a force is different than adding an impulse
+EXTERN_C DLL_EXPORT bool AddObjectForce2(btCollisionObject* obj, Vector3 force)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
 	rb->applyCentralForce(force.GetBtVector3());
 	return true;
 }
