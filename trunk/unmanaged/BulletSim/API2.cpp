@@ -185,19 +185,19 @@ EXTERN_C DLL_EXPORT BTCONSTRAINTTYPE* CreateConstraint2(BulletSim* sim, btCollis
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
 	}
 
-	BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
-						CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
-						CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
-	BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
-						frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
-						frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
+	// BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
+	// 					CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
+	// 					CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
+	// BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
+	// 					frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
+	// 					frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
 	return constrain;
 }
 
 EXTERN_C DLL_EXPORT bool SetLinearLimits2(BTCONSTRAINTTYPE* constrain, Vector3 low, Vector3 high)
 {
-	BSLog("SetLinearLimits2: loc=%x, low=<%f,%f,%f>, high=<%f,%f,%f>", constrain,
-								low.X, low.Y, low.Z, high.X, high.Y, high.Z );
+	// BSLog("SetLinearLimits2: loc=%x, low=<%f,%f,%f>, high=<%f,%f,%f>", constrain,
+	// 							low.X, low.Y, low.Z, high.X, high.Y, high.Z );
 	constrain->setLinearLowerLimit(low.GetBtVector3());
 	constrain->setLinearUpperLimit(high.GetBtVector3());
 	return true;
@@ -205,8 +205,8 @@ EXTERN_C DLL_EXPORT bool SetLinearLimits2(BTCONSTRAINTTYPE* constrain, Vector3 l
 
 EXTERN_C DLL_EXPORT bool SetAngularLimits2(BTCONSTRAINTTYPE* constrain, Vector3 low, Vector3 high)
 {
-	BSLog("SetAngularLimits2: loc=%x, low=<%f,%f,%f>, high=<%f,%f,%f>", constrain,
-								low.X, low.Y, low.Z, high.X, high.Y, high.Z );
+	// BSLog("SetAngularLimits2: loc=%x, low=<%f,%f,%f>, high=<%f,%f,%f>", constrain,
+	// 							low.X, low.Y, low.Z, high.X, high.Y, high.Z );
 	constrain->setAngularLowerLimit(low.GetBtVector3());
 	constrain->setAngularUpperLimit(high.GetBtVector3());
 	return true;
@@ -214,7 +214,7 @@ EXTERN_C DLL_EXPORT bool SetAngularLimits2(BTCONSTRAINTTYPE* constrain, Vector3 
 
 EXTERN_C DLL_EXPORT bool UseFrameOffset2(BTCONSTRAINTTYPE* constrain, float enable)
 {
-	BSLog("UseFrameOffset2: loc=%x, enable=%f", constrain, enable);
+	// BSLog("UseFrameOffset2: loc=%x, enable=%f", constrain, enable);
 	bool onOff = (enable == ParamTrue);
 	constrain->setUseFrameOffset(onOff);
 	return true;
@@ -223,7 +223,7 @@ EXTERN_C DLL_EXPORT bool UseFrameOffset2(BTCONSTRAINTTYPE* constrain, float enab
 EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(BTCONSTRAINTTYPE* constrain, 
 				float enable, float targetVelocity, float maxMotorForce)
 {
-	BSLog("TranslationalLimitMotor2: loc=%x, enable=%f, targetVel=%f, maxMotorForce=%f", constrain, enable, targetVelocity, maxMotorForce);
+	// BSLog("TranslationalLimitMotor2: loc=%x, enable=%f, targetVel=%f, maxMotorForce=%f", constrain, enable, targetVelocity, maxMotorForce);
 	bool onOff = (enable == ParamTrue);
 	constrain->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
 	constrain->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
@@ -261,7 +261,7 @@ EXTERN_C DLL_EXPORT bool SetConstraintParam2(BTCONSTRAINTTYPE* constrain, int pa
 
 EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, BTCONSTRAINTTYPE* constrain)
 {
-	BSLog("DestroyConstraint2: loc=%x", constrain);
+	// BSLog("DestroyConstraint2: loc=%x", constrain);
 	sim->getDynamicsWorld()->removeConstraint(constrain);
 	delete constrain;
 	return true;

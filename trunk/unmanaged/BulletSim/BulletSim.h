@@ -256,10 +256,6 @@ private:
 	int m_maxCollisionsPerFrame;
 	CollisionDesc* m_collidersThisFrameArray;
 
-	// Special avatar debugging stuff
-	IPhysObject* m_lastAvatarObject;
-	IDTYPE m_lastAvatarID;
-
 public:
 
 	BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ);

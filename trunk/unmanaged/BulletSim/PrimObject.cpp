@@ -470,8 +470,8 @@ btCollisionShape* PrimObject::DuplicateMeshShape(btBvhTriangleMeshShape* mShape)
 // same size as the original mesh.
 // TODO: figure out of this works correctly. For the moment set gCollisionMargin to zero.
 //    Bullet tries to use scale only on the shape and does not include the margin in the scale
-//    calculation. This is true in most cases but there seem to be some shapes that get
-//    this wrong. 
+//    calculation. This is true in most cases but there are some shapes that do a
+//    different computation.
 void PrimObject::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector3& scale)
 {
 	btVector3 aabbMin;

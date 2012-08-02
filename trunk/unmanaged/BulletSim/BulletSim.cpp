@@ -117,11 +117,9 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// Information on creating a custom collision computation routine and a pointer to the computation
 	// of friction and restitution at:
 	// http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=7922
+
 	// foreach body that you want the callback, enable it with:
 	// body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-
-	// Debugging variables
-	m_lastAvatarObject = NULL;
 
 	// Start with a ground plane and a flat terrain
 	CreateGroundPlane();
@@ -226,55 +224,6 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 										it != m_worldData.updatesThisFrame.end(); ++it)
 			{
 				m_updatesThisFrameArray[updates] = *(it->second);
-				// DEBUG AVATAR -- removable
-				/*
-				if (it->second->ID == m_lastAvatarID)
-				{
-					if (m_lastAvatarObject != NULL)
-					{
-						btRigidBody* body = m_lastAvatarObject->GetBody();
-						BSLog("AvatarUpdate: pos=<%f,%f,%f>, ori=<%f,%f,%f,%f>, Lvel=<%f,%f,%f>, Avel=<%f,%f,%f>",
-							body->getCenterOfMassPosition().getX(),
-							body->getCenterOfMassPosition().getY(),
-							body->getCenterOfMassPosition().getZ(),
-							body->getOrientation().getW(),
-							body->getOrientation().getX(),
-							body->getOrientation().getY(),
-							body->getOrientation().getZ(),
-							body->getLinearVelocity().getX(),
-							body->getLinearVelocity().getY(),
-							body->getLinearVelocity().getZ(),
-							body->getAngularVelocity().getX(),
-							body->getAngularVelocity().getY(),
-							body->getAngularVelocity().getZ() );
-						BSLog("    dltaLvel=<%f,%f,%f>, dltaAvel=<%f,%f,%f>, itrpLvel=<%f,%f,%f>, itrpAvel=<%f,%f,%f>",
-							// body->getAngularDamping(),
-							body->getDeltaLinearVelocity().getX(),
-							body->getDeltaLinearVelocity().getY(),
-							body->getDeltaLinearVelocity().getZ(),
-							body->getDeltaAngularVelocity().getX(),
-							body->getDeltaAngularVelocity().getY(),
-							body->getDeltaAngularVelocity().getZ(),
-							body->getInterpolationLinearVelocity().getX(),
-							body->getInterpolationLinearVelocity().getY(),
-							body->getInterpolationLinearVelocity().getZ(),
-							body->getInterpolationAngularVelocity().getX(),
-							body->getInterpolationAngularVelocity().getY(),
-							body->getInterpolationAngularVelocity().getZ() );
-						BSLog("    totForce=<%f,%f,%f>, totTor=<%f,%f,%f>, turnVel=<%f,%f,%f>",
-							body->getTotalForce().getX(),
-							body->getTotalForce().getY(),
-							body->getTotalForce().getZ(),
-							body->getTotalTorque().getX(),
-							body->getTotalTorque().getY(),
-							body->getTotalTorque().getZ(),
-							body->getTurnVelocity().getX(),
-							body->getTurnVelocity().getY(),
-							body->getTurnVelocity().getZ() );
-					}
-				}
-				*/
-				// END DEBUG AVATAR
 				updates++;
 				if (updates >= m_maxUpdatesPerFrame) break;
 			}
@@ -515,7 +464,7 @@ bool BulletSim::DestroyMesh(unsigned long long meshKey)
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
 {
-	BSLog("BulletSim::CreateObject: id=%d", data->ID);
+	// BSLog("BulletSim::CreateObject: id=%d", data->ID);
 
 	bool ret = false;
 
@@ -526,17 +475,7 @@ bool BulletSim::CreateObject(ShapeData* data)
 	IPhysObject* newObject = IPhysObject::PhysObjectFactory(&m_worldData, data);
 	if (newObject != NULL)
 	{
-		/*
-		BSLog("CreateObject: created object of type= '%s'", newObject->GetType());
-		// DEBUG FOR AVATAR MOVEMENT
-		if (strcmp(newObject->GetType(), "Avatar") == 0)
-		{
-			m_lastAvatarID = newObject->GetID();
-			m_lastAvatarObject = newObject;
-			BSLog("CreateObject: lastAvatarID = %u", m_lastAvatarID);
-		}
-		*/
-		// END DEBUG FOR AVATAR MOVEMENT
+		// BSLog("CreateObject: created object of type= '%s'", newObject->GetType());
 		m_worldData.objects->AddObject(data->ID, newObject);
 		ret = true;
 	}

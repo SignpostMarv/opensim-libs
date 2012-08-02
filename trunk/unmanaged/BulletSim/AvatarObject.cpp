@@ -146,6 +146,50 @@ bool AvatarObject::StepCallback(IDTYPE id, WorldData* worldData) {
 		currentVel.setX(m_appliedVelocity.getX());
 		currentVel.setY(m_appliedVelocity.getY());
 		m_body->setLinearVelocity(currentVel);
+
+		// DEBUG AVATAR -- removable
+		/*
+		btRigidBody* body = GetBody();
+		BSLog("AvatarUpdate: pos=<%f,%f,%f>, ori=<%f,%f,%f,%f>, Lvel=<%f,%f,%f>, Avel=<%f,%f,%f>",
+			body->getCenterOfMassPosition().getX(),
+			body->getCenterOfMassPosition().getY(),
+			body->getCenterOfMassPosition().getZ(),
+			body->getOrientation().getW(),
+			body->getOrientation().getX(),
+			body->getOrientation().getY(),
+			body->getOrientation().getZ(),
+			body->getLinearVelocity().getX(),
+			body->getLinearVelocity().getY(),
+			body->getLinearVelocity().getZ(),
+			body->getAngularVelocity().getX(),
+			body->getAngularVelocity().getY(),
+			body->getAngularVelocity().getZ() );
+		BSLog("    dltaLvel=<%f,%f,%f>, dltaAvel=<%f,%f,%f>, itrpLvel=<%f,%f,%f>, itrpAvel=<%f,%f,%f>",
+			// body->getAngularDamping(),
+			body->getDeltaLinearVelocity().getX(),
+			body->getDeltaLinearVelocity().getY(),
+			body->getDeltaLinearVelocity().getZ(),
+			body->getDeltaAngularVelocity().getX(),
+			body->getDeltaAngularVelocity().getY(),
+			body->getDeltaAngularVelocity().getZ(),
+			body->getInterpolationLinearVelocity().getX(),
+			body->getInterpolationLinearVelocity().getY(),
+			body->getInterpolationLinearVelocity().getZ(),
+			body->getInterpolationAngularVelocity().getX(),
+			body->getInterpolationAngularVelocity().getY(),
+			body->getInterpolationAngularVelocity().getZ() );
+		BSLog("    totForce=<%f,%f,%f>, totTor=<%f,%f,%f>, turnVel=<%f,%f,%f>",
+			body->getTotalForce().getX(),
+			body->getTotalForce().getY(),
+			body->getTotalForce().getZ(),
+			body->getTotalTorque().getX(),
+			body->getTotalTorque().getY(),
+			body->getTotalTorque().getZ(),
+			body->getTurnVelocity().getX(),
+			body->getTurnVelocity().getY(),
+			body->getTurnVelocity().getZ() );
+		*/
+		// END DEBUG AVATAR
 	}
 	return true;
 }
