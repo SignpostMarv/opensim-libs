@@ -182,6 +182,13 @@ struct CollisionDesc
 	Vector3 normal;
 };
 
+// BulletSim extends the definition of the collision flags
+//   so we can control when collisions are desired.
+#define BS_SUBSCRIBE_COLLISION_EVENTS    (0x0400)
+#define BS_VOLUME_DETECT_OBJECT          (0x0800)
+#define BS_PHANTOM_OBJECT                (0x1000)
+#define BS_PHYSICAL_OBJECT               (0x2000)
+
 // API-exposed structure to input a convex hull
 struct ConvexHull
 {

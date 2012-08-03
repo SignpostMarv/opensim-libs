@@ -18,7 +18,11 @@ THINGFILES =
 
 COLLECTIONFILES = ObjectCollection.cpp
 
-SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES)
+# Refer to the file memcpy.cpp for an explanation of this kludge needed for building on Ubuntu
+KLUDGEFILES = memcpy.cpp
+KLUDGEFLAGS = -Wl,--wrap=memcpy
+
+SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES) $(KLUDGEFILES)
 # SRC = $(wildcard *.cpp)
 
 BIN = $(patsubst %.cpp, %.o, $(SRC))
@@ -27,7 +31,7 @@ BIN = $(patsubst %.cpp, %.o, $(SRC))
 all: libBulletSim.so
 
 libBulletSim.so : $(BIN)
-	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS) -lc
+	$(CC) $(KLUDGEFLAGS) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?
@@ -63,6 +67,8 @@ TerrainObject.h: IPhysObject.h APIData.h WorldData.h
 ObjectCollection.cpp: ObjectCollection.h
 
 ObjectCollection.h: IPhysObject.h ArchStuff.h
+
+memcpy.cpp:
 
 clean:
 	rm -f *.o *.so
