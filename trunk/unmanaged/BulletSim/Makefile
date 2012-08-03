@@ -19,8 +19,10 @@ THINGFILES =
 COLLECTIONFILES = ObjectCollection.cpp
 
 # Refer to the file memcpy.cpp for an explanation of this kludge needed for building on Ubuntu
-KLUDGEFILES = memcpy.cpp
-KLUDGEFLAGS = -Wl,--wrap=memcpy
+KLUDGEFILES =
+KLUDGEFLAGS =
+# KLUDGEFILES = memcpy.cpp
+# KLUDGEFLAGS = -Wl,--wrap=memcpy
 
 SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES) $(KLUDGEFILES)
 # SRC = $(wildcard *.cpp)
@@ -68,7 +70,7 @@ ObjectCollection.cpp: ObjectCollection.h
 
 ObjectCollection.h: IPhysObject.h ArchStuff.h
 
-memcpy.cpp:
+# memcpy.cpp:
 
 clean:
 	rm -f *.o *.so
