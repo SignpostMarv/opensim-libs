@@ -200,6 +200,7 @@
     <ClInclude Include="ObjectCollection.h" />
     <ClInclude Include="PrimObject.h" />
     <ClInclude Include="TerrainObject.h" />
+    <ClInclude Include="Util.h" />
     <ClInclude Include="WorldData.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

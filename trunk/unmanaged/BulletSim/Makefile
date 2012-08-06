@@ -18,13 +18,7 @@ THINGFILES =
 
 COLLECTIONFILES = ObjectCollection.cpp
 
-# Refer to the file memcpy.cpp for an explanation of this kludge needed for building on Ubuntu
-KLUDGEFILES =
-KLUDGEFLAGS =
-# KLUDGEFILES = memcpy.cpp
-# KLUDGEFLAGS = -Wl,--wrap=memcpy
-
-SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES) $(KLUDGEFILES)
+SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES)
 # SRC = $(wildcard *.cpp)
 
 BIN = $(patsubst %.cpp, %.o, $(SRC))
@@ -33,12 +27,12 @@ BIN = $(patsubst %.cpp, %.o, $(SRC))
 all: libBulletSim.so
 
 libBulletSim.so : $(BIN)
-	$(CC) $(KLUDGEFLAGS) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS)
+	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?
 
-BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h
+BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h Util.h
 
 BulletSim.h: ArchStuff.h APIData.h BSLogger.h IPhysObject.h TerrainObject.h ObjectCollection.h WorldData.h
 
@@ -64,13 +58,11 @@ GroundPlaneObject.h: IPhysObject.h APIData.h WorldData.h
 
 TerrainObject.cpp: TerrainObject.h
 
-TerrainObject.h: IPhysObject.h APIData.h WorldData.h
+TerrainObject.h: IPhysObject.h APIData.h WorldData.h Util.h
 
 ObjectCollection.cpp: ObjectCollection.h
 
 ObjectCollection.h: IPhysObject.h ArchStuff.h
-
-# memcpy.cpp:
 
 clean:
 	rm -f *.o *.so

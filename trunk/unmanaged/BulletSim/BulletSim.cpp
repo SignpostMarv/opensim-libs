@@ -27,6 +27,7 @@
 #include "BulletSim.h"
 #include "GroundPlaneObject.h"
 #include "TerrainObject.h"
+#include "Util.h"
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
@@ -420,9 +421,10 @@ bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* in
 		// We must copy the indices and vertices since the passed memory is released when this call returns.
 		btIndexedMesh indexedMesh;
 		int* copiedIndices = new int[indicesCount];
-		memcpy(copiedIndices, indices, indicesCount * sizeof(int));
-		float* copiedVertices = new float[verticesCount * 3];
-		memcpy(copiedVertices, vertices, verticesCount * 3 * sizeof(float));
+		bsMemcpy(copiedIndices, indices, indicesCount * sizeof(int));
+		int numVertices = verticesCount * 3;
+		float* copiedVertices = new float[numVertices];
+		bsMemcpy(copiedVertices, vertices, numVertices * sizeof(float));
 
 		indexedMesh.m_indexType = PHY_INTEGER;
 		indexedMesh.m_triangleIndexBase = (const unsigned char*)copiedIndices;

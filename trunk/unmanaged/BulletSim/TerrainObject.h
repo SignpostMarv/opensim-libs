@@ -32,6 +32,7 @@
 #include "APIData.h"
 #include "IPhysObject.h"
 #include "WorldData.h"
+#include "Util.h"
 
 // A class used by TerrainObject to hold the height map
 class HeightMapData
@@ -68,7 +69,7 @@ public:
 			int imaxY = (int)maxY;
 
 			// copy the passed data into our new heightmap
-			memcpy(HeightMap, heightMap, imaxY * imaxX * sizeof(float));
+			bsMemcpy(HeightMap, heightMap, imaxY * imaxX * sizeof(float));
 			ret = true;
 		}
 		return ret;
