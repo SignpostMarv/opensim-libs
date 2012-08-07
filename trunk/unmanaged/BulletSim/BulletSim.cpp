@@ -72,9 +72,11 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	btDefaultCollisionConstructionInfo cci;
 	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+
 	// if you are setting a pool size, you should disable dynamic allocation
 	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
 		cci.m_defaultMaxPersistentManifoldPoolSize = (int)m_worldData.params->maxPersistantManifoldPoolSize;
+	if (m_worldData.params->maxCollisionAlgorithmPoolSize > 0)
 	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
 		m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
 	
@@ -353,6 +355,8 @@ void BulletSim::CreateTerrain()
 bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hulls)
 {
 	// BSLog("CreateHull: key=%ld, hullCount=%d", meshKey, hullCount);
+	bool ret = false;
+
 	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
 	if (it == m_worldData.Hulls.end())
 	{
@@ -384,9 +388,9 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 
 		// Track this mesh
 		m_worldData.Hulls[meshKey] = compoundShape;
-		return true;
+		ret = true;
 	}
-	return false;
+	return ret;
 }
 
 // Delete a hull
@@ -415,6 +419,8 @@ bool BulletSim::DestroyHull(unsigned long long meshKey)
 bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
+	bool ret = false;
+
 	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
 	if (it == m_worldData.Meshes.end())
 	{
@@ -441,8 +447,9 @@ bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* in
 		btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
 		
 		m_worldData.Meshes[meshKey] = meshShape;
+		ret = true;
 	}
-	return false;
+	return ret;
 }
 
 // Delete a mesh

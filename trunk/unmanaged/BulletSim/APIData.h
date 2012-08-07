@@ -280,6 +280,7 @@ struct ParamBlock
 	float avatarContactProcessingThreshold;
 
 	float maxPersistantManifoldPoolSize;
+	float maxCollisionAlgorithmPoolSize;
 	float shouldDisableContactPoolDynamicAllocation;
 	float shouldForceUpdateAllAabbs;
 	float shouldRandomizeSolverOrder;
