@@ -41,7 +41,6 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	btQuaternion rotation = data->Rotation.GetBtQuaternion();
 	btVector3 scale = data->Scale.GetBtVector3();
 	btVector3 velocity = data->Velocity.GetBtVector3();
-	btScalar maxScale = scale.m_floats[scale.maxAxis()];
 	btScalar mass = btScalar(data->Mass);
 
 	// btScalar friction = btScalar(data->Friction);
@@ -57,11 +56,11 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	bool isCollidable = true;
 
 	// Create the default capsule for the avatar
-	btCollisionShape* shape = new btCapsuleShapeZ(m_worldData->params->avatarCapsuleRadius,
-												m_worldData->params->avatarCapsuleHeight);
+	// We create a unit capsule around the Z axis. The dimensions of the capsule
+	//   are controlled by the scale.
+	btCollisionShape* shape = new btCapsuleShapeZ(1.0, 1.0);
 	shape->setMargin(m_worldData->params->collisionMargin);
-	// TODO: adjust capsule size for the height of the avatar
-
+	
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
 	shape->setUserPointer(PACKLOCALID(m_id));
 	
@@ -86,7 +85,8 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 
 	// Characters can have special collision operations.
 	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
-	// The following makes it so the avatar doesn't respond to things collided with.
+
+	SetObjectScaleMass(scale, mass, true);
 
 	UpdatePhysicalParameters(friction, restitution, velocity);
 
@@ -147,49 +147,19 @@ bool AvatarObject::StepCallback(IDTYPE id, WorldData* worldData) {
 		currentVel.setY(m_appliedVelocity.getY());
 		m_body->setLinearVelocity(currentVel);
 
-		// DEBUG AVATAR -- removable
-		/*
-		btRigidBody* body = GetBody();
-		BSLog("AvatarUpdate: pos=<%f,%f,%f>, ori=<%f,%f,%f,%f>, Lvel=<%f,%f,%f>, Avel=<%f,%f,%f>",
-			body->getCenterOfMassPosition().getX(),
-			body->getCenterOfMassPosition().getY(),
-			body->getCenterOfMassPosition().getZ(),
-			body->getOrientation().getW(),
-			body->getOrientation().getX(),
-			body->getOrientation().getY(),
-			body->getOrientation().getZ(),
-			body->getLinearVelocity().getX(),
-			body->getLinearVelocity().getY(),
-			body->getLinearVelocity().getZ(),
-			body->getAngularVelocity().getX(),
-			body->getAngularVelocity().getY(),
-			body->getAngularVelocity().getZ() );
-		BSLog("    dltaLvel=<%f,%f,%f>, dltaAvel=<%f,%f,%f>, itrpLvel=<%f,%f,%f>, itrpAvel=<%f,%f,%f>",
-			// body->getAngularDamping(),
-			body->getDeltaLinearVelocity().getX(),
-			body->getDeltaLinearVelocity().getY(),
-			body->getDeltaLinearVelocity().getZ(),
-			body->getDeltaAngularVelocity().getX(),
-			body->getDeltaAngularVelocity().getY(),
-			body->getDeltaAngularVelocity().getZ(),
-			body->getInterpolationLinearVelocity().getX(),
-			body->getInterpolationLinearVelocity().getY(),
-			body->getInterpolationLinearVelocity().getZ(),
-			body->getInterpolationAngularVelocity().getX(),
-			body->getInterpolationAngularVelocity().getY(),
-			body->getInterpolationAngularVelocity().getZ() );
-		BSLog("    totForce=<%f,%f,%f>, totTor=<%f,%f,%f>, turnVel=<%f,%f,%f>",
-			body->getTotalForce().getX(),
-			body->getTotalForce().getY(),
-			body->getTotalForce().getZ(),
-			body->getTotalTorque().getX(),
-			body->getTotalTorque().getY(),
-			body->getTotalTorque().getZ(),
-			body->getTurnVelocity().getX(),
-			body->getTurnVelocity().getY(),
-			body->getTurnVelocity().getZ() );
-		*/
-		// END DEBUG AVATAR
+		// check the avatar's position for sanity
+		// TODO: check for out of bounds
+
+		// Check that the avatar is above the terrain
+		btVector3 avatarPos = m_body->getWorldTransform().getOrigin();
+		float terrainHeight = worldData->Terrain->GetHeightAtXYZ(avatarPos);
+		if (avatarPos.getZ() < terrainHeight)
+		{
+			avatarPos.setZ(terrainHeight + 2.0);
+			btTransform newTrans = m_body->getWorldTransform();
+			newTrans.setOrigin(avatarPos);
+			m_body->setWorldTransform(newTrans);
+		}
 	}
 	return true;
 }
@@ -287,8 +257,13 @@ bool AvatarObject::SetObjectForce(btVector3& force)
 
 bool AvatarObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic)
 {
-	// BSLog("AvatarObject::SetObjectScaleMass: mass=%f", mass);
+	// BSLog("AvatarObject::SetObjectScaleMass: scale=<%f,%f,%f>, mass=%f", scale.getX(), scale.getY(), scale.getZ(), mass);
+	btVector3 localInertia(0.0, 0.0, 0.0);
+
 	btCollisionShape* shape = m_body->getCollisionShape();
+	shape->calculateLocalInertia(mass, localInertia);
+	m_body->setMassProps(mass, localInertia);
+
 	shape->setLocalScaling(scale);
 
 	return true;

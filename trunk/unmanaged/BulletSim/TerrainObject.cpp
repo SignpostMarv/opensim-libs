@@ -139,3 +139,8 @@ void TerrainObject::UpdatePhysicalParameters(float friction, float restitution, 
 	m_body->activate(true);
 }
 
+float TerrainObject::GetHeightAtXYZ(btVector3& pos)
+{
+	return 25.0;
+}
+

@@ -41,6 +41,8 @@ class BulletSim;
 class ObjectCollection;
 class HeightMapData;
 class IPhysObject;
+class TerrainObject;
+class GroundPlaneObject;
 
 // Structure to hold the world data that is common to all the objects in the world
 struct WorldData
@@ -56,6 +58,8 @@ struct WorldData
 	HeightMapData* heightMap;
 	btVector3 MinPosition;
 	btVector3 MaxPosition;
+	TerrainObject* Terrain;
+	GroundPlaneObject* GroundPlane;
 
 	// Used to expose updates from Bullet to the BulletSim API
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;

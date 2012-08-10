@@ -98,6 +98,11 @@ public:
 
     virtual void setWorldTransform(const btTransform& worldTrans)
 	{
+	    setWorldTransform(worldTrans, false);
+	}
+
+    virtual void setWorldTransform(const btTransform& worldTrans, bool force)
+	{
 		m_xform = worldTrans;
 
 		// Put the new transform into m_properties
@@ -112,7 +117,8 @@ public:
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
 		// Is this transform any different from the previous one?
-		if (   !m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
+		if (force
+			|| !m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
 			|| !m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE)
 			// If the Velocity and AngularVelocity are zero, most likely the object has
 			//    been deactivated. If they both are zero and they have become zero recently,
@@ -241,9 +247,6 @@ private:
 	btCollisionDispatcher* m_dispatcher;
 	btConstraintSolver*	m_solver;
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
-
-	// Terrain and world metadata
-	TerrainObject* m_terrainObject;
 
 	// Information about the world that is shared with all the objects
 	WorldData m_worldData;

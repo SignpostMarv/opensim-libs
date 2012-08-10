@@ -43,9 +43,6 @@
     #define EXTERN_C extern
 #endif
 
-// There are several different types of constraints. This is the one we're using.
-#define BTCONSTRAINTTYPE btGeneric6DofConstraint
-
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
 
 /**
@@ -126,6 +123,28 @@ EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubS
 	return sim->PhysicsStep(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
 }
 
+// Cause a position update to happen next physics step.
+// This works by placing an entry for this object in the SimMotionState's
+//    update event array. This will be sent to the simulator after the
+//    physics step has added other updates.
+EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
+{
+	bool ret = false;
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb != NULL)
+	{
+		SimMotionState* sms = (SimMotionState*)rb->getMotionState();
+		if (sms != NULL)
+		{
+			btTransform wt;
+			sms->getWorldTransform(wt);
+			sms->setWorldTransform(wt, true);
+			ret = true;
+		}
+	}
+	return ret;
+}
+
 /*
 EXTERN_C DLL_EXPORT btCollisionShape* CreateMesh2(BulletSim* sim, 
 									int indicesCount, int* indices, int verticesCount, float* vertices )
@@ -160,7 +179,7 @@ EXTERN_C DLL_EXPORT IPhysObject* CreateObject2(BulletSim* sim, ShapeData shapeDa
  * @param lowAngular low bounds of angular constraint
  * @param hiAngular hi bounds of angular constraint
  */
-EXTERN_C DLL_EXPORT BTCONSTRAINTTYPE* CreateConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
+EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 frame1loc, Quaternion frame1rot,
 				Vector3 frame2loc, Quaternion frame2rot,
 				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
@@ -176,10 +195,10 @@ EXTERN_C DLL_EXPORT BTCONSTRAINTTYPE* CreateConstraint2(BulletSim* sim, btCollis
 	btRigidBody* rb1 = btRigidBody::upcast(obj1);
 	btRigidBody* rb2 = btRigidBody::upcast(obj2);
 
-	BTCONSTRAINTTYPE* constrain = NULL;
+	btGeneric6DofConstraint* constrain = NULL;
 	if (rb1 != NULL && rb2 != NULL)
 	{
-		constrain = new BTCONSTRAINTTYPE(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
+		constrain = new btGeneric6DofConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
 
 		constrain->calculateTransforms();
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
@@ -194,51 +213,111 @@ EXTERN_C DLL_EXPORT BTCONSTRAINTTYPE* CreateConstraint2(BulletSim* sim, btCollis
 	return constrain;
 }
 
-EXTERN_C DLL_EXPORT bool SetLinearLimits2(BTCONSTRAINTTYPE* constrain, Vector3 low, Vector3 high)
+EXTERN_C DLL_EXPORT bool SetLinearLimits2(btTypedConstraint* constrain, Vector3 low, Vector3 high)
 {
 	// BSLog("SetLinearLimits2: loc=%x, low=<%f,%f,%f>, high=<%f,%f,%f>", constrain,
 	// 							low.X, low.Y, low.Z, high.X, high.Y, high.Z );
-	constrain->setLinearLowerLimit(low.GetBtVector3());
-	constrain->setLinearUpperLimit(high.GetBtVector3());
-	return true;
+	bool ret = false;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		cc->setLinearLowerLimit(low.GetBtVector3());
+		cc->setLinearUpperLimit(high.GetBtVector3());
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
+	return ret;
 }
 
-EXTERN_C DLL_EXPORT bool SetAngularLimits2(BTCONSTRAINTTYPE* constrain, Vector3 low, Vector3 high)
+EXTERN_C DLL_EXPORT bool SetAngularLimits2(btTypedConstraint* constrain, Vector3 low, Vector3 high)
 {
 	// BSLog("SetAngularLimits2: loc=%x, low=<%f,%f,%f>, high=<%f,%f,%f>", constrain,
 	// 							low.X, low.Y, low.Z, high.X, high.Y, high.Z );
-	constrain->setAngularLowerLimit(low.GetBtVector3());
-	constrain->setAngularUpperLimit(high.GetBtVector3());
-	return true;
+	bool ret = false;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		cc->setAngularLowerLimit(low.GetBtVector3());
+		cc->setAngularUpperLimit(high.GetBtVector3());
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
+	return ret;
 }
 
-EXTERN_C DLL_EXPORT bool UseFrameOffset2(BTCONSTRAINTTYPE* constrain, float enable)
+EXTERN_C DLL_EXPORT bool UseFrameOffset2(btTypedConstraint* constrain, float enable)
 {
 	// BSLog("UseFrameOffset2: loc=%x, enable=%f", constrain, enable);
+	bool ret = false;
 	bool onOff = (enable == ParamTrue);
-	constrain->setUseFrameOffset(onOff);
-	return true;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		cc->setUseFrameOffset(onOff);
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
+	return ret;
 }
 
-EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(BTCONSTRAINTTYPE* constrain, 
+EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(btTypedConstraint* constrain, 
 				float enable, float targetVelocity, float maxMotorForce)
 {
 	// BSLog("TranslationalLimitMotor2: loc=%x, enable=%f, targetVel=%f, maxMotorForce=%f", constrain, enable, targetVelocity, maxMotorForce);
+	bool ret = false;
 	bool onOff = (enable == ParamTrue);
-	constrain->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
-	constrain->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
-	constrain->getTranslationalLimitMotor()->m_maxMotorForce[0] = maxMotorForce;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		cc->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
+		cc->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
+		cc->getTranslationalLimitMotor()->m_maxMotorForce[0] = maxMotorForce;
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
 
-	return true;
+	return ret;
 }
 
-EXTERN_C DLL_EXPORT bool CalculateTransforms2(BTCONSTRAINTTYPE* constrain)
+EXTERN_C DLL_EXPORT bool CalculateTransforms2(btTypedConstraint* constrain)
 {
-	constrain->calculateTransforms();
-	return true;
+	bool ret = false;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		cc->calculateTransforms();
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
+	return ret;
 }
 
-EXTERN_C DLL_EXPORT bool SetConstraintParam2(BTCONSTRAINTTYPE* constrain, int paramIndex, float value, int axis)
+EXTERN_C DLL_EXPORT bool SetConstraintParam2(btTypedConstraint* constrain, int paramIndex, float value, int axis)
 {
 	if (axis == COLLISION_AXIS_LINEAR_ALL || axis == COLLISION_AXIS_ALL)
 	{
@@ -259,11 +338,31 @@ EXTERN_C DLL_EXPORT bool SetConstraintParam2(BTCONSTRAINTTYPE* constrain, int pa
 	return true;
 }
 
-EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, BTCONSTRAINTTYPE* constrain)
+EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* constrain)
 {
 	// BSLog("DestroyConstraint2: loc=%x", constrain);
 	sim->getDynamicsWorld()->removeConstraint(constrain);
 	delete constrain;
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL)
+		sim->getDynamicsWorld()->addCollisionObject(obj);
+	else
+		sim->getDynamicsWorld()->addRigidBody(rb);
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObject* obj)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL)
+		sim->getWorldData()->dynamicsWorld->removeCollisionObject(obj);
+	else
+		sim->getDynamicsWorld()->removeRigidBody(rb);
 	return true;
 }
 
@@ -411,6 +510,11 @@ EXTERN_C DLL_EXPORT bool SetInterpolation2(btCollisionObject* obj, Vector3 lin, 
 	return true;
 }
 
+EXTERN_C DLL_EXPORT int GetCollisionFlags2(btCollisionObject* obj)
+{
+	return obj->getCollisionFlags();
+}
+
 EXTERN_C DLL_EXPORT bool SetCollisionFlags2(btCollisionObject* obj, uint32_t flags)
 {
 	obj->setCollisionFlags(flags);
@@ -474,18 +578,6 @@ EXTERN_C DLL_EXPORT bool SetMargin2(btCollisionObject* obj, float val)
 EXTERN_C DLL_EXPORT bool UpdateSingleAabb2(BulletSim* world, btCollisionObject* obj)
 {
 	world->getDynamicsWorld()->updateSingleAabb(obj);
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* world, btCollisionObject* obj)
-{
-	world->getDynamicsWorld()->addCollisionObject(obj);
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* world, btCollisionObject* obj)
-{
-	world->getDynamicsWorld()->removeCollisionObject(obj);
 	return true;
 }
 

@@ -75,6 +75,21 @@ public:
 		return ret;
 	}
 
+	float GetHeightAtXYZ(btVector3& pos)
+	{
+		return GetHeightAtXY(pos.getX(), pos.getY());
+	}
+
+	float GetHeightAtXY(float xx, float yy)
+	{
+		float ret = 0.0;
+		if (xx >=0 && xx < MaxX && yy >= 0 && yy < MaxY)
+		{
+			ret = HeightMap[((int)xx) * ((int)MaxX) + ((int)yy)];
+		}
+		return ret;
+	}
+
 	float* HeightMap;
 	float MaxX;
 	float MaxY;
@@ -91,6 +106,8 @@ public:
 	void UpdateTerrain(void);
 
 	void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo);
+
+	float GetHeightAtXYZ(btVector3& pos);
 
 	const char* GetType() { return "Terrain"; }
 

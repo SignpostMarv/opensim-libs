@@ -38,7 +38,7 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	// Make sure structures that will be created in initPhysics are marked as not created
 	m_worldData.dynamicsWorld = NULL;
 	m_worldData.objects = NULL;
-	m_terrainObject = NULL;
+	m_worldData.Terrain = NULL;
 
 	m_worldData.sim = this;
 
@@ -136,10 +136,14 @@ void BulletSim::exitPhysics()
 
 	if (m_worldData.objects)
 	{
-		m_worldData.objects->Clear();
-		delete m_worldData.objects;
+		m_worldData.objects->Clear();	// remove and delete all objects
+		delete m_worldData.objects;		// get rid of the object collection itself
 		m_worldData.objects = NULL;
 	}
+
+	// The terrain and ground plane objects are deleted when the object list is cleared
+	m_worldData.Terrain = NULL;
+	m_worldData.GroundPlane = NULL;
 
 	// Delete collision meshes
 	for (WorldData::HullsMapType::const_iterator it = m_worldData.Hulls.begin(); it != m_worldData.Hulls.end(); ++it)
@@ -157,9 +161,7 @@ void BulletSim::exitPhysics()
 	}
 	m_worldData.Meshes.clear();
 
-	// The ground plane and terrain are deleted when the object list is cleared
-	m_terrainObject = NULL;
-
+	// Must delete the dynamics world before deleting it's solver, broadphase, ...
 	if (m_worldData.dynamicsWorld != NULL)
 	{
 		delete m_worldData.dynamicsWorld;
@@ -319,9 +321,9 @@ void BulletSim::SetHeightmap(float* heightmap)
 	if (m_worldData.heightMap)
 	{
 		m_worldData.heightMap->UpdateHeightMap(heightmap, m_worldData.MaxPosition.getX(), m_worldData.MaxPosition.getY());
-		if (m_terrainObject)
+		if (m_worldData.Terrain)
 		{
-			m_terrainObject->UpdateTerrain();
+			m_worldData.Terrain->UpdateTerrain();
 		}
 	}
 }
@@ -339,11 +341,11 @@ void BulletSim::CreateTerrain()
 {
 	// get rid of any old terrains lying around
 	m_worldData.objects->RemoveAndDestroyObject(ID_TERRAIN);
-	m_terrainObject = NULL;
+	m_worldData.Terrain = NULL;
 
 	// Create the new terrain based on the heightmap in m_worldData
-	m_terrainObject = new TerrainObject(&m_worldData, ID_TERRAIN);
-	m_worldData.objects->AddObject(ID_TERRAIN, m_terrainObject);
+	m_worldData.Terrain = new TerrainObject(&m_worldData, ID_TERRAIN);
+	m_worldData.objects->AddObject(ID_TERRAIN, m_worldData.Terrain);
 }
 
 // If using Bullet' convex hull code, refer to following link for parameter setting
@@ -803,9 +805,9 @@ bool BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 	if (strcmp(parm, "terrain") == 0)
 	{
 		// some terrain physical parameter changed. Reset the terrain.
-		if (m_terrainObject)
+		if (m_worldData.Terrain)
 		{
-			m_terrainObject->UpdatePhysicalParameters(
+			m_worldData.Terrain->UpdatePhysicalParameters(
 							m_worldData.params->terrainFriction,
 							m_worldData.params->terrainRestitution,
 							btZeroVector3);

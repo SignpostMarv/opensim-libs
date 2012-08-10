@@ -127,13 +127,22 @@ bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 		// the following changes, including mass, constitute "important data"
 		m_worldData->dynamicsWorld->removeRigidBody(m_body);
 	}
+
 	SetObjectDynamic(!isStatic, mass, false);		// this handles the static part
+
+	// whether physical objects interact with us
 	SetCollidable(isSolid);
+
+	// whether we send collision events up
 	if (genCollisions)
 	{
-		// for the moment, everything generates collisions
-		// TODO: Add a flag to CollisionFlags that is checked in StepSimulation on whether to pass up or not
+		m_body->setCollisionFlags(m_body->getCollisionFlags() | BS_SUBSCRIBE_COLLISION_EVENTS);
 	}
+	else
+	{
+		m_body->setCollisionFlags(m_body->getCollisionFlags() & ~BS_SUBSCRIBE_COLLISION_EVENTS);
+	}
+
 	if (removeIt)
 	{
 		m_worldData->dynamicsWorld->addRigidBody(m_body);
