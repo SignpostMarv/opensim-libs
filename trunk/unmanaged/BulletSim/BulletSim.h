@@ -278,10 +278,11 @@ public:
 	bool RegisterStepCallback(IDTYPE id, IPhysObject* target);
 	bool UnregisterStepCallback(IDTYPE id);
 
-	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
-	bool DestroyHull(unsigned long long meshKey);
-	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
-	bool DestroyMesh(unsigned long long id);
+	bool CreateHull(MESHKEYTYPE hullKey, int hullCount, float* hulls);
+	bool DestroyHull(MESHKEYTYPE hullKey);
+	bool CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
+	bool DestroyMesh(MESHKEYTYPE id);
+	bool CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey);
 
 	bool CreateObject(ShapeData* shapeData);
 	bool DestroyObject(IDTYPE id);

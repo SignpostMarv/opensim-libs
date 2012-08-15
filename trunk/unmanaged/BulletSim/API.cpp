@@ -159,7 +159,7 @@ EXTERN_C DLL_EXPORT int PhysicsStep(unsigned int worldID, float timeStep, int ma
  * @param hulls Convex hull array.
  * @return True if the object was created, false if an object with meshKey already existed.
  */
-EXTERN_C DLL_EXPORT bool CreateHull(unsigned int worldID, unsigned long long meshKey, int hullCount, float* hulls)
+EXTERN_C DLL_EXPORT bool CreateHull(unsigned int worldID, MESHKEYTYPE meshKey, int hullCount, float* hulls)
 {
 	return m_simulations[worldID]->CreateHull(meshKey, hullCount, hulls);
 }
@@ -172,7 +172,7 @@ EXTERN_C DLL_EXPORT bool CreateHull(unsigned int worldID, unsigned long long mes
  * @param hulls Convex hull array.
  * @return True if the object was created, false if an object with meshKey already existed.
  */
-EXTERN_C DLL_EXPORT bool CreateMesh(unsigned int worldID, unsigned long long meshKey, 
+EXTERN_C DLL_EXPORT bool CreateMesh(unsigned int worldID, MESHKEYTYPE meshKey, 
 									int indicesCount, int* indices, int verticesCount, float* vertices )
 {
 	return m_simulations[worldID]->CreateMesh(meshKey, indicesCount, indices, verticesCount, vertices);
@@ -183,7 +183,7 @@ EXTERN_C DLL_EXPORT bool CreateMesh(unsigned int worldID, unsigned long long mes
  * @param meshKey Unique identifier for this object.
  * @return True if the object was deleted, false if we didn't have the hull
  */
-EXTERN_C DLL_EXPORT bool DestroyHull(unsigned int worldID, unsigned long long hullKey)
+EXTERN_C DLL_EXPORT bool DestroyHull(unsigned int worldID, MESHKEYTYPE hullKey)
 {
 	return m_simulations[worldID]->DestroyHull(hullKey);
 }
@@ -193,9 +193,19 @@ EXTERN_C DLL_EXPORT bool DestroyHull(unsigned int worldID, unsigned long long hu
  * @param meshKey Unique identifier for this object.
  * @return True if the object was deleted, false if we didn't have the mesh
  */
-EXTERN_C DLL_EXPORT bool DestroyMesh(unsigned int worldID, unsigned long long meshKey)
+EXTERN_C DLL_EXPORT bool DestroyMesh(unsigned int worldID, MESHKEYTYPE meshKey)
 {
 	return m_simulations[worldID]->DestroyMesh(meshKey);
+}
+
+/**
+ * Create a hull from a mesh using Bullet's HACD code.
+ * @param meshKey Unique identifier for this object.
+ * @return True if the object was deleted, false if we didn't have the mesh
+ */
+EXTERN_C DLL_EXPORT bool CreateHullFromMesh(unsigned int worldID, MESHKEYTYPE meshKey, MESHKEYTYPE hullKey)
+{
+	return m_simulations[worldID]->CreateHullFromMesh(hullKey, meshKey);
 }
 
 /**

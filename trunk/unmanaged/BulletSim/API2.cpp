@@ -171,13 +171,15 @@ EXTERN_C DLL_EXPORT IPhysObject* CreateObject2(BulletSim* sim, ShapeData shapeDa
 
 /**
  * Add a generic 6 degree of freedom constraint between two previously created objects
- * @param worldID ID of the world to modify.
+ * @param sim pointer to BulletSim instance this creation is to be in
  * @param id1 first object to constrain
  * @param id2 other object to constrain
  * @param lowLinear low bounds of linear constraint
  * @param hiLinear hi bounds of linear constraint
  * @param lowAngular low bounds of angular constraint
  * @param hiAngular hi bounds of angular constraint
+ * @param 'true' if to use FrameA as reference for the constraint action
+ * @param 'true' if disable collsions between the constrained objects
  */
 EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 frame1loc, Quaternion frame1rot,
@@ -211,6 +213,105 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btC
 	// 					frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
 	// 					frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
 	return constrain;
+}
+
+// Create a 6Dof constraint between two objects and around the given world point.
+EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
+				Vector3 joinPoint,
+				Vector3 frame2loc, Quaternion frame2rot,
+				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
+{
+	btGeneric6DofConstraint* constrain = NULL;
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		// following example at http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=5851
+		btTransform joinPointt, frame1t, frame2t;
+		joinPointt.setIdentity();
+		joinPointt.setOrigin(joinPoint.GetBtVector3());
+		frame1t = rb1->getWorldTransform().inverse() * joinPointt;
+		frame2t = rb2->getWorldTransform().inverse() * joinPointt;
+
+		constrain = new btGeneric6DofConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		// BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
+		// 					CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
+		// 					CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
+		// BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
+		// 					frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
+		// 					frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
+	}
+
+	return constrain;
+}
+
+EXTERN_C DLL_EXPORT btTypedConstraint* CreateHingeConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
+						Vector3 pivotInA, Vector3 pivotInB,
+						Vector3 axisInA, Vector3 axisInB,
+						bool useReferenceFrameA,
+						bool disableCollisionsBetweenLinkedBodies
+						)
+{
+	btHingeConstraint* constrain = NULL;
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		constrain = new btHingeConstraint(*rb1, *rb2, 
+									pivotInA.GetBtVector3(), pivotInB.GetBtVector3(), 
+									axisInA.GetBtVector3(), axisInB.GetBtVector3(), 
+									useReferenceFrameA);
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+	}
+
+	return constrain;
+}
+
+EXTERN_C DLL_EXPORT bool SetFrames2(btTypedConstraint* constrain, 
+			Vector3 frameA, Quaternion frameArot, Vector3 frameB, Quaternion frameBrot)
+{
+	bool ret = false;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		btTransform transA;
+		transA.setIdentity();
+		transA.setOrigin(frameA.GetBtVector3());
+		transA.setRotation(frameArot.GetBtQuaternion());
+		btTransform transB;
+		transB.setIdentity();
+		transB.setOrigin(frameB.GetBtVector3());
+		transB.setRotation(frameBrot.GetBtQuaternion());
+		cc->setFrames(transA, transB);
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT void SetConstraintEnable2(btTypedConstraint* constrain, float trueFalse)
+{
+	constrain->setEnabled(trueFalse == ParamTrue ? true : false);
+	return;
+}
+
+EXTERN_C DLL_EXPORT void SetConstraintNumSolverIterations2(btTypedConstraint* constrain, float iterations)
+{
+	constrain->setOverrideNumSolverIterations((int)iterations);
+	return;
 }
 
 EXTERN_C DLL_EXPORT bool SetLinearLimits2(btTypedConstraint* constrain, Vector3 low, Vector3 high)
@@ -262,6 +363,13 @@ EXTERN_C DLL_EXPORT bool UseFrameOffset2(btTypedConstraint* constrain, float ena
 	bool onOff = (enable == ParamTrue);
 	switch (constrain->getConstraintType())
 	{
+	case HINGE_CONSTRAINT_TYPE:
+	{
+		btHingeConstraint* hc = (btHingeConstraint*)constrain;
+		hc->setUseFrameOffset(onOff);
+		ret = true;
+		break;
+	}
 	case D6_CONSTRAINT_TYPE:
 	{
 		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
@@ -289,6 +397,26 @@ EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(btTypedConstraint* constrain,
 		cc->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
 		cc->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
 		cc->getTranslationalLimitMotor()->m_maxMotorForce[0] = maxMotorForce;
+		ret = true;
+		break;
+	}
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constrain, float thresh)
+{
+	// BSLog("SetBreakingImpulseThreshold: loc=%x, threshold=%f", constrain, thresh);
+	bool ret = false;
+	switch (constrain->getConstraintType())
+	{
+	case D6_CONSTRAINT_TYPE:
+	{
+		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+		cc->setBreakingImpulseThreshold(btScalar(thresh));
 		ret = true;
 		break;
 	}
@@ -346,6 +474,7 @@ EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* c
 	return true;
 }
 
+// Remember to restore any constraints
 EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
@@ -356,6 +485,7 @@ EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* ob
 	return true;
 }
 
+// Remember to remove any constraints
 EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObject* obj)
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
@@ -565,6 +695,22 @@ EXTERN_C DLL_EXPORT bool ClearForces2(btCollisionObject* obj)
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb == NULL) return false;
 
+	rb->clearForces();
+	return true;
+}
+
+// Zero out all forces and bring the object to a dead stop
+EXTERN_C DLL_EXPORT bool ClearAllForces2(btCollisionObject* obj)
+{
+	Vector3 zeroVector = Vector3();
+
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	SetLinearVelocity2(rb, zeroVector);
+	SetAngularVelocity2(rb, zeroVector);
+	SetObjectForce2(rb, zeroVector);
+	SetInterpolation2(rb, zeroVector, zeroVector);
 	rb->clearForces();
 	return true;
 }

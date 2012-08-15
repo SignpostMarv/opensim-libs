@@ -48,4 +48,9 @@
 	#define CONVLOCALID(xx) ((IDTYPE)(xx))
 #endif
 
+// key used for identifying meshes and hulls
+#define MESHKEYTYPE unsigned long long
+// key used to identify collisions based on the IDs of the colliding objects
+#define COLLIDERKEYTYPE unsigned long long
+
 #endif    // ARCH_STUFF_H

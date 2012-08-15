@@ -210,6 +210,34 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		// BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
+		/*
+		// BEGIN constraint debug==============================================================
+		// Log the state of all the constraints.
+		int numConstraints = m_worldData.dynamicsWorld->getNumConstraints();
+		for (int kk = 0; kk < numConstraints; kk++)
+		{
+			btTypedConstraint* constrain = m_worldData.dynamicsWorld->getConstraint(kk);
+			if (constrain->getConstraintType() == D6_CONSTRAINT_TYPE)
+			{
+				btGeneric6DofConstraint* constrain6 = (btGeneric6DofConstraint*)constrain;
+				BSLog("constrain[%d]: A=%u, B=%u, enable=%s, limited=%s%s%s%s%s%s, impulse=%f",
+					kk,
+					CONVLOCALID(constrain6->getRigidBodyA().getCollisionShape()->getUserPointer()),
+					CONVLOCALID(constrain6->getRigidBodyB().getCollisionShape()->getUserPointer()),
+					(constrain6->isEnabled()) ? "true" : "false",
+					(constrain6->isLimited(0)) ? "t" : "f",
+					(constrain6->isLimited(1)) ? "t" : "f",
+					(constrain6->isLimited(2)) ? "t" : "f",
+					(constrain6->isLimited(3)) ? "t" : "f",
+					(constrain6->isLimited(4)) ? "t" : "f",
+					(constrain6->isLimited(5)) ? "t" : "f",
+					constrain6->getAppliedImpulse()
+				);
+			}
+		}
+		// END constraint debug================================================================
+		*/
+
 		// Objects can register to be called after each step.
 		// This allows objects to do per-step modification of returned values.
 		if (m_worldData.stepObjectCallbacks.size() > 0)
@@ -230,7 +258,8 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			{
 				m_updatesThisFrameArray[updates] = *(it->second);
 				updates++;
-				if (updates >= m_maxUpdatesPerFrame) break;
+				if (updates >= m_maxUpdatesPerFrame) 
+					break;
 			}
 			m_worldData.updatesThisFrame.clear();
 		}
@@ -240,14 +269,15 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		*updatedEntities = m_updatesThisFrameArray;
 
 		// Put all of the colliders this frame into m_collidersThisFrameArray
-		std::set<unsigned long long> collidersThisFrame;
+		std::set<COLLIDERKEYTYPE> collidersThisFrame;
 		int collisions = 0;
 		int numManifolds = m_worldData.dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
 		{
 			btPersistentManifold* contactManifold = m_worldData.dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(j);
 			int numContacts = contactManifold->getNumContacts();
-			if (numContacts == 0) continue;
+			if (numContacts == 0)
+				continue;
 
 			btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
 			btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
@@ -276,7 +306,10 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			}
 
 			// Create a unique ID for this collision from the two colliding object IDs
-			unsigned long long collisionID = ((unsigned long long)idA << 32) | idB;
+			// We check for duplicate collisions between the two objects because
+			//    there may be multiple hulls involved and thus multiple collisions.
+			// TODO: decide if this is really a problem -- can this checking be removed?
+			COLLIDERKEYTYPE collisionID = ((COLLIDERKEYTYPE)idA << 32) | idB;
 
 			// If this collision has not been seen yet, record it
 			if (collidersThisFrame.find(collisionID) == collidersThisFrame.end())
@@ -292,7 +325,8 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 				collisions++;
 			}
 
-			if (collisions >= m_maxCollisionsPerFrame) break;
+			if (collisions >= m_maxCollisionsPerFrame) 
+				break;
 		}
 
 		*collidersCount = collisions;
@@ -302,6 +336,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	return numSimSteps;
 }
 
+// Register to be called just after the simulation step of Bullet.
 bool BulletSim::RegisterStepCallback(IDTYPE id, IPhysObject* target)
 {
 	UnregisterStepCallback(id);
@@ -309,6 +344,9 @@ bool BulletSim::RegisterStepCallback(IDTYPE id, IPhysObject* target)
 	return true;
 }
 
+// Remove a registration for step callback.
+// Safe to call if not registered.
+// Returns 'true' if something was actually unregistered.
 bool BulletSim::UnregisterStepCallback(IDTYPE id)
 {
 	size_type cnt = m_worldData.stepObjectCallbacks.erase(id);
@@ -353,8 +391,8 @@ void BulletSim::CreateTerrain()
 // Another useful reference for ConvexDecomp
 // http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
 
-// Create a hull based on convex hull information
-bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hulls)
+// Create a hull based on passed convex hull information
+bool BulletSim::CreateHull(MESHKEYTYPE meshKey, int hullCount, float* hulls)
 {
 	// BSLog("CreateHull: key=%ld, hullCount=%d", meshKey, hullCount);
 	bool ret = false;
@@ -396,7 +434,7 @@ bool BulletSim::CreateHull(unsigned long long meshKey, int hullCount, float* hul
 }
 
 // Delete a hull
-bool BulletSim::DestroyHull(unsigned long long meshKey)
+bool BulletSim::DestroyHull(MESHKEYTYPE meshKey)
 {
 	// BSLog("BulletSim::DestroyHull: key=%ld", meshKey);
 	// BSLog("DeleteHull:");
@@ -418,7 +456,7 @@ bool BulletSim::DestroyHull(unsigned long long meshKey)
 //       btConvexHullShape with the vertices of your mesh, but this would result in your 
 //       shape becoming convex.
 //       Create a mesh structure to be used for static objects
-bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
+bool BulletSim::CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
 	bool ret = false;
@@ -455,7 +493,7 @@ bool BulletSim::CreateMesh(unsigned long long meshKey, int indicesCount, int* in
 }
 
 // Delete a mesh
-bool BulletSim::DestroyMesh(unsigned long long meshKey)
+bool BulletSim::DestroyMesh(MESHKEYTYPE meshKey)
 {
 	// BSLog("BulletSim::DeleteMesh: key=%ld", meshKey);
 	bool ret = false;
@@ -476,6 +514,15 @@ bool BulletSim::DestroyMesh(unsigned long long meshKey)
 	return ret;
 }
 
+// From a previously created mesh shape, create a convex hull using the Bullet
+//   HACD hull creation code. The created hull will go into the hull collection
+//   so remember to delete it later.
+// Returns 'true' if the hull was successfully created.
+bool BulletSim::CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey)
+{
+	// TODO: well, you know, like, write the code.
+	return false;
+}
 
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)

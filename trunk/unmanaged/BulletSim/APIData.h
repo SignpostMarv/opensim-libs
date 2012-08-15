@@ -165,8 +165,8 @@ struct ShapeData
 	Vector3 Scale;
 	float Mass;
 	float Buoyancy;		// gravity effect on the object
-	unsigned long long HullKey;
-	unsigned long long MeshKey;
+	MESHKEYTYPE HullKey;
+	MESHKEYTYPE MeshKey;
 	float Friction;
 	float Restitution;
 	float Collidable;	// things can collide with this object

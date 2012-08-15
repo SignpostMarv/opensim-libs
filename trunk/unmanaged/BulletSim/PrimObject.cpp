@@ -28,6 +28,8 @@
 #include "PrimObject.h"
 #include "BulletSim.h"
 
+extern "C" bool ClearAllForces2(btCollisionObject* obj);
+
 PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 
 	m_worldData = world;
@@ -200,6 +202,10 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 	// BSLog("PrimObject::SetObjectDynamic: id=%u, rem=%s, isDynamic=%d, mass=%f", m_id, removeIt?"true":"false", isDynamic, mass);
 	if (removeIt)
 	{
+		// NOTE: From the author of Bullet: "If you want to change important data 
+		// from objects, you have to remove them from the world first, then make the 
+		// change, and re-add them to the world." It's my understanding that some of
+		// the following changes, including mass, constitute "important data"
 		m_worldData->dynamicsWorld->removeRigidBody(m_body);
 	}
 	if (isDynamic)
@@ -218,8 +224,10 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		m_body->setMassProps(mass, localInertia);
 		m_body->updateInertiaTensor();
 
-		btVector3 Dvel = m_body->getLinearVelocity();
-		btVector3 Dgrav = m_body->getGravity();
+		m_body->activate(true);
+
+		// btVector3 Dvel = m_body->getLinearVelocity();
+		// btVector3 Dgrav = m_body->getGravity();
 		// BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
 		// 		m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}
@@ -231,9 +239,7 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		m_body->forceActivationState(ISLAND_SLEEPING);
 
 		// Clear all forces for this object
-		m_body->setLinearVelocity(ZERO_VECTOR);
-		m_body->setAngularVelocity(ZERO_VECTOR);
-		m_body->clearForces();
+		ClearAllForces2(m_body);
 
 		// Set the new mass (the caller should be passing zero)
 		// mass MUST be zero for Bullet to handle it as a static object
@@ -246,8 +252,6 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 	{
 		m_worldData->dynamicsWorld->addRigidBody(m_body);
 	}
-	// don't force activation so we don't undo the "ISLAND_SLEEPING" for static objects
-	m_body->activate(false);
 	return true;
 }
 
@@ -277,7 +281,6 @@ btQuaternion PrimObject::GetObjectOrientation()
 
 bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
 {
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
 	// BSLog("PrimObject::SetObjectTranslation: id=%u, pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>",
 	// 	m_id, position.x(), position.y(), position.z(), rotation.x(), rotation.y(), rotation.z(), rotation.w());
 
@@ -288,9 +291,7 @@ bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotatio
 	transform.setRotation(rotation);
 
 	// Clear all forces for this object
-	m_body->setLinearVelocity(ZERO_VECTOR);
-	m_body->setAngularVelocity(ZERO_VECTOR);
-	m_body->clearForces();
+	ClearAllForces2(m_body);
 
 	// Set the new transform for the rigid body and the motion state
 	m_body->setWorldTransform(transform);
@@ -328,34 +329,21 @@ bool PrimObject::SetObjectForce(btVector3& force)
 bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic)
 {
 	// BSLog("PrimObject::SetObjectScaleMass: id=%u, scale=<%f,%f,%f>, mass=%f, isDyn=%s", m_id, scale.x(), scale.y(), scale.z(), mass, isDynamic?"true":"false");
-	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
-
-	btCollisionShape* shape = m_body->getCollisionShape();
-
-	// NOTE: From the author of Bullet: "If you want to change important data 
-	// from objects, you have to remove them from the world first, then make the 
-	// change, and re-add them to the world." It's my understanding that some of
-	// the following changes, including mass, constitute "important data"
-	m_worldData->dynamicsWorld->removeRigidBody(m_body);
 
 	// Clear all forces for this object
-	m_body->setLinearVelocity(ZERO_VECTOR);
-	m_body->setAngularVelocity(ZERO_VECTOR);
-	m_body->clearForces();
+	ClearAllForces2(m_body);
 
 	// Set the new scale
+	btCollisionShape* shape = m_body->getCollisionShape();
 	AdjustScaleForCollisionMargin(shape, scale);
 
 	// apply the mass and dynamicness
-	SetObjectDynamic(isDynamic, mass, false);
-
-	// Add the rigid body back to the simulation
-	m_worldData->dynamicsWorld->addRigidBody(m_body);
+	SetObjectDynamic(isDynamic, mass, true);
 
 	// Calculate a new AABB for this object
 	m_worldData->dynamicsWorld->updateSingleAabb(m_body);
 
-	m_body->activate(false);
+	// m_body->activate(false); // SetObjectDynamic did the correct activation
 	return true;
 }
 
