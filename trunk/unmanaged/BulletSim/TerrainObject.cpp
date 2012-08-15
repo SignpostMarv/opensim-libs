@@ -34,6 +34,23 @@ TerrainObject::TerrainObject(WorldData* world, IDTYPE theID)
 	m_worldData = world;
 	m_id = theID;
 
+	// start the terrain as flat at height 25
+	m_heightMap = new HeightMapData(world->MaxPosition.getX(), world->MaxPosition.getY(), 25.0);
+
+	UpdateTerrain();
+}
+
+TerrainObject::TerrainObject(WorldData* world, IDTYPE theID, float* newMap)
+{
+	m_worldData = world;
+	m_id = theID;
+
+	if (m_heightMap == NULL)
+	{
+		m_heightMap = new HeightMapData(world->MaxPosition.getX(), world->MaxPosition.getY(), 25.0);
+	}
+	m_heightMap->UpdateHeightMap(newMap, m_heightMap->MaxX, m_heightMap->MaxY);
+
 	UpdateTerrain();
 }
 
@@ -58,6 +75,12 @@ TerrainObject::~TerrainObject(void)
 		delete m_body;
 
 		m_body = NULL;
+
+	}
+	if (m_heightMap)
+	{
+		delete m_heightMap;
+		m_heightMap = NULL;
 	}
 }
 
@@ -65,13 +88,13 @@ void TerrainObject::UpdateTerrain()
 {
 	btVector3 zeroVector = btVector3(0, 0, 0);
 
-	if (m_worldData == NULL || m_worldData->heightMap == NULL)
+	if (m_heightMap == NULL)
 		return;
 
 	// Initialize the terrain that spans from 0,0,0 to m_maxPosition
 	// TODO: Use the maxHeight from m_maxPosition.getZ()
-	int heightStickWidth = (int)m_worldData->heightMap->MaxX;
-	int heightStickLength = (int)m_worldData->heightMap->MaxY;
+	int heightStickWidth = (int)m_heightMap->MaxX;
+	int heightStickLength = (int)m_heightMap->MaxY;
 
 	float minHeight = 99999;
 	float maxHeight = 0;
@@ -80,7 +103,7 @@ void TerrainObject::UpdateTerrain()
 	{
 		for (int xx = 0; xx<heightStickLength; xx++)
 		{
-			float here = m_worldData->heightMap->HeightMap[yy * heightStickWidth + xx];
+			float here = m_heightMap->HeightMap[yy * heightStickWidth + xx];
 			if (here < minHeight) minHeight = here;
 			if (here > maxHeight) maxHeight = here;
 		}
@@ -94,7 +117,7 @@ void TerrainObject::UpdateTerrain()
 	const btScalar scaleFactor(1.0);
 	btHeightfieldTerrainShape* m_heightfieldShape = new btHeightfieldTerrainShape(
 			heightStickWidth, heightStickLength, 
-			m_worldData->heightMap->HeightMap, scaleFactor, 
+			m_heightMap->HeightMap, scaleFactor, 
 			(btScalar)minHeight, (btScalar)maxHeight, upAxis, PHY_FLOAT, false);
 	// there is no room between the terrain and an object
 	m_heightfieldShape->setMargin(0.0f);
@@ -141,6 +164,6 @@ void TerrainObject::UpdatePhysicalParameters(float friction, float restitution, 
 
 float TerrainObject::GetHeightAtXYZ(btVector3& pos)
 {
-	return 25.0;
+	return m_heightMap->GetHeightAtXYZ(pos);
 }
 

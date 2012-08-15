@@ -72,6 +72,7 @@ public:
 			bsMemcpy(HeightMap, heightMap, imaxY * imaxX * sizeof(float));
 			ret = true;
 		}
+
 		return ret;
 	}
 
@@ -83,7 +84,7 @@ public:
 	float GetHeightAtXY(float xx, float yy)
 	{
 		float ret = 0.0;
-		if (xx >=0 && xx < MaxX && yy >= 0 && yy < MaxY)
+		if (xx >= 0 && xx < MaxX && yy >= 0 && yy < MaxY)
 		{
 			ret = HeightMap[((int)xx) * ((int)MaxX) + ((int)yy)];
 		}
@@ -101,6 +102,7 @@ class TerrainObject :
 {
 public:
 	TerrainObject(WorldData*, IDTYPE);
+	TerrainObject(WorldData*, IDTYPE, float* newMap);
 	~TerrainObject(void);
 
 	void UpdateTerrain(void);
@@ -112,6 +114,7 @@ public:
 	const char* GetType() { return "Terrain"; }
 
 private:
+	HeightMapData* m_heightMap;
 	btRigidBody* m_body;		// the physical body that is the terrain
 };
 

@@ -44,8 +44,6 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 
 	m_worldData.MinPosition = btVector3(0, 0, 0);
 	m_worldData.MaxPosition = btVector3(maxX, maxY, maxZ);
-	// start the terrain as flat at height 25
-	m_worldData.heightMap = new HeightMapData(maxX, maxY, 25.0);
 }
 
 void BulletSim::initPhysics(ParamBlock* parms, 
@@ -356,14 +354,16 @@ bool BulletSim::UnregisterStepCallback(IDTYPE id)
 // Copy the passed heightmap into the memory block used by Bullet
 void BulletSim::SetHeightmap(float* heightmap)
 {
-	if (m_worldData.heightMap)
+	if (m_worldData.Terrain)
 	{
-		m_worldData.heightMap->UpdateHeightMap(heightmap, m_worldData.MaxPosition.getX(), m_worldData.MaxPosition.getY());
-		if (m_worldData.Terrain)
-		{
-			m_worldData.Terrain->UpdateTerrain();
-		}
+		// destroying the object will destroy the old instance of TerrainObject
+		m_worldData.objects->RemoveAndDestroyObject(ID_TERRAIN);
+		m_worldData.Terrain = NULL;
 	}
+
+	// Create the new terrain based on the heightmap in m_worldData
+	m_worldData.Terrain = new TerrainObject(&m_worldData, ID_TERRAIN, heightmap);
+	m_worldData.objects->AddObject(ID_TERRAIN, m_worldData.Terrain);
 }
 
 // Create a collision plane at height zero to stop things falling to oblivion

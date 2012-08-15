@@ -55,11 +55,12 @@ struct WorldData
 	btDynamicsWorld* dynamicsWorld;
 
 	// the terrain is based on a heightmap
-	HeightMapData* heightMap;
-	btVector3 MinPosition;
-	btVector3 MaxPosition;
 	TerrainObject* Terrain;
 	GroundPlaneObject* GroundPlane;
+
+	// The minimum and maximum points in the defined physical space
+	btVector3 MinPosition;
+	btVector3 MaxPosition;
 
 	// Used to expose updates from Bullet to the BulletSim API
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
