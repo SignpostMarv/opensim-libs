@@ -356,14 +356,8 @@ void BulletSim::SetHeightmap(float* heightmap)
 {
 	if (m_worldData.Terrain)
 	{
-		// destroying the object will destroy the old instance of TerrainObject
-		m_worldData.objects->RemoveAndDestroyObject(ID_TERRAIN);
-		m_worldData.Terrain = NULL;
+		m_worldData.Terrain->UpdateHeightMap(heightmap);
 	}
-
-	// Create the new terrain based on the heightmap in m_worldData
-	m_worldData.Terrain = new TerrainObject(&m_worldData, ID_TERRAIN, heightmap);
-	m_worldData.objects->AddObject(ID_TERRAIN, m_worldData.Terrain);
 }
 
 // Create a collision plane at height zero to stop things falling to oblivion

@@ -56,6 +56,7 @@ public:
 	}
 	~HeightMapData(void) {
 		delete HeightMap;
+		HeightMap = NULL;
 	}
 
 	bool UpdateHeightMap(float* heightMap, float maxX, float maxY)
@@ -105,7 +106,8 @@ public:
 	TerrainObject(WorldData*, IDTYPE, float* newMap);
 	~TerrainObject(void);
 
-	void UpdateTerrain(void);
+	void CreateTerrainBody(void);
+	void UpdateHeightMap(float* newMap);
 
 	void UpdatePhysicalParameters(float friction, float restitution, btVector3& velo);
 
