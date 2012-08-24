@@ -284,6 +284,10 @@ public:
 	bool DestroyMesh(MESHKEYTYPE id);
 	bool CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey);
 
+	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices );
+	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
+	btCollisionShape* BuildHullShape2(btCollisionShape* mesh);
+
 	bool CreateObject(ShapeData* shapeData);
 	bool DestroyObject(IDTYPE id);
 	bool HasObject(IDTYPE id);

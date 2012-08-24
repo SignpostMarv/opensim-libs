@@ -508,6 +508,73 @@ bool BulletSim::DestroyMesh(MESHKEYTYPE meshKey)
 	return ret;
 }
 
+btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices )
+{
+	// We must copy the indices and vertices since the passed memory is released when this call returns.
+	btIndexedMesh indexedMesh;
+	int* copiedIndices = new int[indicesCount];
+	bsMemcpy(copiedIndices, indices, indicesCount * sizeof(int));
+	int numVertices = verticesCount * 3;
+	float* copiedVertices = new float[numVertices];
+	bsMemcpy(copiedVertices, vertices, numVertices * sizeof(float));
+
+	indexedMesh.m_indexType = PHY_INTEGER;
+	indexedMesh.m_triangleIndexBase = (const unsigned char*)copiedIndices;
+	indexedMesh.m_triangleIndexStride = sizeof(int) * 3;
+	indexedMesh.m_numTriangles = indicesCount / 3;
+	indexedMesh.m_vertexType = PHY_FLOAT;
+	indexedMesh.m_numVertices = verticesCount;
+	indexedMesh.m_vertexBase = (const unsigned char*)copiedVertices;
+	indexedMesh.m_vertexStride = sizeof(float) * 3;
+
+	btTriangleIndexVertexArray* vertexArray = new btTriangleIndexVertexArray();
+	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
+
+	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+
+	return meshShape;
+}
+
+btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
+{
+	// Create a compound shape that will wrap the set of convex hulls
+	btCompoundShape* compoundShape = new btCompoundShape(false);
+
+	btTransform childTrans;
+	childTrans.setIdentity();
+	compoundShape->setMargin(m_worldData.params->collisionMargin);
+	
+	// Loop through all of the convex hulls and add them to our compound shape
+	int ii = 1;
+	for (int i = 0; i < hullCount; i++)
+	{
+		int vertexCount = (int)hulls[ii];
+
+		// Offset this child hull by its calculated centroid
+		btVector3 centroid = btVector3((btScalar)hulls[ii+1], (btScalar)hulls[ii+2], (btScalar)hulls[ii+3]);
+		childTrans.setOrigin(centroid);
+
+		// Create the child hull and add it to our compound shape
+		btScalar* hullVertices = (btScalar*)&hulls[ii+4];
+		btConvexHullShape* convexShape = new btConvexHullShape(hullVertices, vertexCount, sizeof(Vector3));
+		convexShape->setMargin(m_worldData.params->collisionMargin);
+		compoundShape->addChildShape(childTrans, convexShape);
+
+		ii += (vertexCount * 3 + 4);
+	}
+
+	return compoundShape;
+}
+
+// From a previously created mesh shape, create a convex hull using the Bullet
+//   HACD hull creation code. The created hull will go into the hull collection
+//   so remember to delete it later.
+// Returns the created collision shape or NULL if couldn't create
+btCollisionShape* BulletSim::BuildHullShape2(btCollisionShape* mesh)
+{
+	return NULL;
+}
+
 // From a previously created mesh shape, create a convex hull using the Bullet
 //   HACD hull creation code. The created hull will go into the hull collection
 //   so remember to delete it later.

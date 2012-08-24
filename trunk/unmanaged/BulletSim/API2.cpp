@@ -28,6 +28,8 @@
 #include "BulletSim.h"
 #include <stdarg.h>
 
+#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+
 #include <map>
 
 #ifdef WIN32
@@ -86,16 +88,6 @@ EXTERN_C DLL_EXPORT bool UpdateParameter2(BulletSim* sim, unsigned int localID, 
 }
 
 /**
- * Update the simulator terrain.
- * @param worldID ID of the world to modify.
- * @param heightmap Array of terrain heights the width and depth (X and Y of maxPosition) of the simulator.
- */
-EXTERN_C DLL_EXPORT void SetHeightmap2(BulletSim* sim, float* heightmap)
-{
-	sim->SetHeightmap(heightmap);
-}
-
-/**
  * Shuts down the physical simulation.
  * @param worldID ID of the world to shut down.
  */
@@ -145,30 +137,143 @@ EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 	return ret;
 }
 
-/*
-EXTERN_C DLL_EXPORT btCollisionShape* CreateMesh2(BulletSim* sim, 
-									int indicesCount, int* indices, int verticesCount, float* vertices )
+EXTERN_C DLL_EXPORT btCollisionShape* CreateMeshShape2(BulletSim* sim, 
+						int indicesCount, int* indices, int verticesCount, float* vertices )
 {
-	return sim->CreateMesh2(indicesCount, indices, verticesCount, vertices);
+	return sim->CreateMeshShape2(indicesCount, indices, verticesCount, vertices);
 }
 
-EXTERN_C DLL_EXPORT bool BuildHull2(BulletSim* sim, btCollisionShape* mesh) {
-	return mesh->BuildHull(sim);
+EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim, 
+						int hullCount, float* hulls )
+{
+	return sim->CreateHullShape2(hullCount, hulls);
 }
 
-EXTERN_C DLL_EXPORT bool ReleaseHull2(BulletSim* sim, btCollisionShape* mesh) {
-	return mesh->ReleaseHull(sim);
+EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShape2(BulletSim* sim, btCollisionShape* mesh) {
+	return sim->BuildHullShape2(mesh);
 }
-EXTERN_C DLL_EXPORT bool DestroyMesh2(BulletSim* sim, btCollisionShape* mesh)
-{
-	return sim->DestroyMesh2(mesh);
-}
-EXTERN_C DLL_EXPORT IPhysObject* CreateObject2(BulletSim* sim, ShapeData shapeData)
-{
-	return sim->CreateObject2(&shapeData);
-}
-*/
 
+EXTERN_C DLL_EXPORT btCollisionShape* CreateNativeShape2(BulletSim* sim,
+						float shapeType, float collisionMargin, Vector3 scale)
+{
+	btCollisionShape* shape = NULL;
+	switch ((int)shapeType)
+	{
+		case ShapeData::SHAPE_BOX:
+			// btBoxShape subtracts the collision margin from the half extents, so no 
+			// fiddling with scale necessary
+			// boxes are defined by their half extents
+			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
+			break;
+		// case ShapeData::SHAPE_CONE:	// TODO:
+		// 	shape = new btConeShapeZ(0.5, 1.0);
+		// 	break;
+		// case ShapeData::SHAPE_CYLINDER:	// TODO:
+		// 	shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
+		// 	break;
+		case ShapeData::SHAPE_SPHERE:
+			shape = new btSphereShape(0.5);		// this is really a unit sphere
+			break;
+	}
+	if (shape != NULL)
+	{
+		shape->setMargin(btScalar(collisionMargin));
+		shape->setLocalScaling(scale.GetBtVector3());
+	}
+
+	return shape;
+}
+
+EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape* shape)
+{
+	delete shape;
+	return true;
+}
+
+// =====================================================================
+EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
+	IDTYPE id,
+	Vector3 minCoords,
+	Vector3 maxCoords,
+	float collisionMargin,
+	float* heightMap )
+{
+	btScalar minHeight = btScalar(minCoords.Z);
+	btScalar maxHeight = btScalar(maxCoords.Z);
+	if (minHeight == maxHeight)
+		minHeight = maxHeight - 1.0;
+
+	int width = (int)(maxCoords.X - minCoords.X);
+	int length = (int)(maxCoords.Y - minCoords.Y);
+
+	float* localHeightMap = new float[width * length];
+	bsMemcpy(localHeightMap, heightMap, width * length * sizeof(float));
+
+	const int upAxis = 2;
+	const btScalar scaleFactor(1.0);
+	btHeightfieldTerrainShape* heightfieldShape = new btHeightfieldTerrainShape(
+			width, length, 
+			localHeightMap, scaleFactor, 
+			minHeight, maxHeight, upAxis, PHY_FLOAT, false);
+	// there is no room between the terrain and an object
+	heightfieldShape->setMargin(btScalar(collisionMargin));
+	// m_heightfieldShape->setMargin(gCollisionMargin);
+	heightfieldShape->setUseDiamondSubdivision(true);
+
+	// Add the localID to the object so we know about collisions
+	heightfieldShape->setUserPointer(PACKLOCALID(id));
+
+	// Compute and set the heightfield origin
+	btTransform heightfieldTr;
+	heightfieldTr.setIdentity();
+	heightfieldTr.setOrigin(btVector3(
+			((float)width) * 0.5f + minCoords.X,
+			((float)length) * 0.5f + minCoords.Y,
+			minHeight + (maxHeight - minHeight) * 0.5f));
+
+	// Use the default motion state since we are not interested in the
+	//   terrain reporting its collisions. Other objects will report their
+	//   collisions with the terrain.
+	btDefaultMotionState* motionState = new btDefaultMotionState(heightfieldTr);
+	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, heightfieldShape);
+	btRigidBody* body = new btRigidBody(cInfo);
+
+	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+
+	return body;
+}
+
+EXTERN_C DLL_EXPORT btCollisionObject* CreateGroundPlaneBody2(
+	IDTYPE id,
+	Vector3 center,
+	float collisionMargin)
+{
+	// Initialize the ground plane at height 0 (Z-up)
+	btStaticPlaneShape* m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
+	m_planeShape->setMargin(collisionMargin);
+
+	m_planeShape->setUserPointer(PACKLOCALID(id));
+
+	btDefaultMotionState* motionState = new btDefaultMotionState();
+	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, m_planeShape);
+	btRigidBody* body = new btRigidBody(cInfo);
+
+	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+
+	return body;
+}
+
+/**
+ * Update the simulator terrain.
+ * @param worldID ID of the world to modify.
+ * @param heightmap Array of terrain heights the width and depth (X and Y of maxPosition) of the simulator.
+ */
+EXTERN_C DLL_EXPORT void SetHeightmap2(BulletSim* sim, float* heightmap)
+{
+	sim->SetHeightmap(heightmap);
+}
+
+// =====================================================================
 /**
  * Add a generic 6 degree of freedom constraint between two previously created objects
  * @param sim pointer to BulletSim instance this creation is to be in
@@ -474,6 +579,7 @@ EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* c
 	return true;
 }
 
+// =====================================================================
 // Remember to restore any constraints
 EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
 {
@@ -496,6 +602,7 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 	return true;
 }
 
+// =====================================================================
 EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
 {
 	btTransform xform = obj->getWorldTransform();
@@ -738,6 +845,7 @@ EXTERN_C DLL_EXPORT bool DestroyObject2(BulletSim* world, unsigned int id)
 	return world->DestroyObject(id);
 }
 
+// =====================================================================
 /**
  * Perform a sweep test by moving a convex shape through space and testing for collisions. 
  * Starting and ending rotations are not currently supported since this was designed for
@@ -783,6 +891,7 @@ EXTERN_C DLL_EXPORT Vector3 RecoverFromPenetration2(BulletSim* world, unsigned i
 	return Vector3(v.getX(), v.getY(), v.getZ());
 }
 
+// =====================================================================
 /**
  * Causes the detailed physics performance statistics to be logged.
  */
