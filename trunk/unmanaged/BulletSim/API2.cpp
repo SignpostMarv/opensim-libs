@@ -47,6 +47,17 @@
 
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
 
+// A structure for keeping track of terrain heightmaps
+struct HeightMapThing {
+	int width;
+	int length;
+	btScalar minHeight;
+	btScalar maxHeight;
+	btVector3 minCoords;
+	btVector3 maxCoords;
+	float* heightMap;
+};
+
 /**
  * Returns a string that identifies the version of the BulletSim.dll
  * @return static string of version information
@@ -193,28 +204,16 @@ EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape*
 // =====================================================================
 EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
 	IDTYPE id,
-	Vector3 minCoords,
-	Vector3 maxCoords,
-	float collisionMargin,
-	float* heightMap )
+	HeightMapThing* mapInfo,
+	float collisionMargin
+	)
 {
-	btScalar minHeight = btScalar(minCoords.Z);
-	btScalar maxHeight = btScalar(maxCoords.Z);
-	if (minHeight == maxHeight)
-		minHeight = maxHeight - 1.0;
-
-	int width = (int)(maxCoords.X - minCoords.X);
-	int length = (int)(maxCoords.Y - minCoords.Y);
-
-	float* localHeightMap = new float[width * length];
-	bsMemcpy(localHeightMap, heightMap, width * length * sizeof(float));
-
 	const int upAxis = 2;
 	const btScalar scaleFactor(1.0);
 	btHeightfieldTerrainShape* heightfieldShape = new btHeightfieldTerrainShape(
-			width, length, 
-			localHeightMap, scaleFactor, 
-			minHeight, maxHeight, upAxis, PHY_FLOAT, false);
+			mapInfo->width, mapInfo->length, 
+			mapInfo->heightMap, scaleFactor, 
+			mapInfo->minHeight, mapInfo->maxHeight, upAxis, PHY_FLOAT, false);
 	// there is no room between the terrain and an object
 	heightfieldShape->setMargin(btScalar(collisionMargin));
 	// m_heightfieldShape->setMargin(gCollisionMargin);
@@ -227,9 +226,9 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
 	btTransform heightfieldTr;
 	heightfieldTr.setIdentity();
 	heightfieldTr.setOrigin(btVector3(
-			((float)width) * 0.5f + minCoords.X,
-			((float)length) * 0.5f + minCoords.Y,
-			minHeight + (maxHeight - minHeight) * 0.5f));
+			((float)mapInfo->width) * 0.5f + mapInfo->minCoords.getX(),
+			((float)length) * 0.5f + mapInfo->minCoords.getY(),
+			mapInfo->minHeight + (mapInfo->maxHeight - mapInfo->minHeight) * 0.5f));
 
 	// Use the default motion state since we are not interested in the
 	//   terrain reporting its collisions. Other objects will report their
@@ -245,11 +244,12 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
 
 EXTERN_C DLL_EXPORT btCollisionObject* CreateGroundPlaneBody2(
 	IDTYPE id,
-	Vector3 center,
+	float height,	// usually 1
 	float collisionMargin)
 {
-	// Initialize the ground plane at height 0 (Z-up)
-	btStaticPlaneShape* m_planeShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
+	// Initialize the ground plane
+	btVector3 groundPlaneNormal = btVector3(0, 0, 1);	// Z up
+	btStaticPlaneShape* m_planeShape = new btStaticPlaneShape(groundPlaneNormal, (int)height);
 	m_planeShape->setMargin(collisionMargin);
 
 	m_planeShape->setUserPointer(PACKLOCALID(id));
@@ -263,14 +263,51 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGroundPlaneBody2(
 	return body;
 }
 
-/**
- * Update the simulator terrain.
- * @param worldID ID of the world to modify.
- * @param heightmap Array of terrain heights the width and depth (X and Y of maxPosition) of the simulator.
- */
-EXTERN_C DLL_EXPORT void SetHeightmap2(BulletSim* sim, float* heightmap)
+// Bullet requires us to manage the heightmap array so these methods create
+//    and release the memory for the heightmap.
+EXTERN_C DLL_EXPORT HeightMapThing* CreateHeightmapArray(Vector3 minCoords, Vector3 maxCoords, float initialValue)
 {
-	sim->SetHeightmap(heightmap);
+	HeightMapThing* mapInfo;
+
+	mapInfo = new HeightMapThing();
+
+	mapInfo->minCoords = minCoords.GetBtVector3();
+	mapInfo->maxCoords = maxCoords.GetBtVector3();
+
+	mapInfo->width = (int)(maxCoords.X - minCoords.X);
+	mapInfo->length = (int)(maxCoords.Y - minCoords.Y);
+
+	mapInfo->minHeight = btScalar(minCoords.Z);
+	mapInfo->maxHeight = btScalar(maxCoords.Z);
+	if (mapInfo->minHeight == mapInfo->maxHeight)
+		mapInfo->minHeight = mapInfo->maxHeight - 1.0;
+
+	int numEntries = mapInfo->width * mapInfo->length;
+
+	float* heightMap = new float[numEntries];
+	mapInfo->heightMap = heightMap;
+
+	for (int xx = 0; xx < numEntries; xx++)
+		heightMap[xx] = initialValue;
+
+	return mapInfo;
+}
+
+EXTERN_C DLL_EXPORT bool ReleaseHeightMapThing(HeightMapThing* mapInfo)
+{
+	delete mapInfo->heightMap;
+	delete mapInfo;
+	return true;
+}
+
+// Given a previously allocated heightmap array and a new array of values, copy
+//    the new values into the array being used by Bullet.
+EXTERN_C DLL_EXPORT void UpdateHeightmap2(BulletSim* sim, HeightMapThing* mapInfo, float* newHeightMap)
+{
+	int size = sizeof(mapInfo->heightMap) / sizeof(float);
+	for (int xx = 0; xx < size; xx++)
+		mapInfo->heightMap[xx] = newHeightMap[xx];
+	return;
 }
 
 // =====================================================================
