@@ -99,6 +99,11 @@ EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, ParamBlock* par
 	return worldID;
 }
 
+EXTERN_C DLL_EXPORT void CreateInitialGroundPlaneAndTerrain(unsigned int worldID)
+{
+	m_simulations[worldID]->CreateInitialGroundPlaneAndTerrain();
+}
+
 /**
  * Update the internal value of a parameter. Some parameters require changing world state.
  * @param worldID ID of the world to change the paramter in

@@ -227,7 +227,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
 	heightfieldTr.setIdentity();
 	heightfieldTr.setOrigin(btVector3(
 			((float)mapInfo->width) * 0.5f + mapInfo->minCoords.getX(),
-			((float)length) * 0.5f + mapInfo->minCoords.getY(),
+			((float)mapInfo->length) * 0.5f + mapInfo->minCoords.getY(),
 			mapInfo->minHeight + (mapInfo->maxHeight - mapInfo->minHeight) * 0.5f));
 
 	// Use the default motion state since we are not interested in the
@@ -265,7 +265,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGroundPlaneBody2(
 
 // Bullet requires us to manage the heightmap array so these methods create
 //    and release the memory for the heightmap.
-EXTERN_C DLL_EXPORT HeightMapThing* CreateHeightmapArray(Vector3 minCoords, Vector3 maxCoords, float initialValue)
+EXTERN_C DLL_EXPORT HeightMapThing* CreateHeightmap2(Vector3 minCoords, Vector3 maxCoords, float initialValue)
 {
 	HeightMapThing* mapInfo;
 
@@ -293,7 +293,7 @@ EXTERN_C DLL_EXPORT HeightMapThing* CreateHeightmapArray(Vector3 minCoords, Vect
 	return mapInfo;
 }
 
-EXTERN_C DLL_EXPORT bool ReleaseHeightMapThing(HeightMapThing* mapInfo)
+EXTERN_C DLL_EXPORT bool ReleaseHeightMapThing2(HeightMapThing* mapInfo)
 {
 	delete mapInfo->heightMap;
 	delete mapInfo;
@@ -302,7 +302,7 @@ EXTERN_C DLL_EXPORT bool ReleaseHeightMapThing(HeightMapThing* mapInfo)
 
 // Given a previously allocated heightmap array and a new array of values, copy
 //    the new values into the array being used by Bullet.
-EXTERN_C DLL_EXPORT void UpdateHeightmap2(BulletSim* sim, HeightMapThing* mapInfo, float* newHeightMap)
+EXTERN_C DLL_EXPORT void UpdateHeightMap2(BulletSim* sim, HeightMapThing* mapInfo, float* newHeightMap)
 {
 	int size = sizeof(mapInfo->heightMap) / sizeof(float);
 	for (int xx = 0; xx < size; xx++)
@@ -877,9 +877,10 @@ EXTERN_C DLL_EXPORT bool UpdateSingleAabb2(BulletSim* world, btCollisionObject* 
  * @param id Object ID.
  * @return True on success, false if the object was not found.
  */
-EXTERN_C DLL_EXPORT bool DestroyObject2(BulletSim* world, unsigned int id)
+EXTERN_C DLL_EXPORT bool DestroyObject2(BulletSim* world, btCollisionObject* obj)
 {
-	return world->DestroyObject(id);
+	delete obj;
+	return true;
 }
 
 // =====================================================================

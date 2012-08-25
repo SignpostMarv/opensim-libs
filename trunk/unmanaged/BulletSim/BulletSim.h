@@ -269,6 +269,7 @@ public:
 	}
 
 	void initPhysics(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
+	void CreateInitialGroundPlaneAndTerrain();
 	void exitPhysics();
 
 	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 

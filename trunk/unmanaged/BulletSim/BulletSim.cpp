@@ -122,7 +122,10 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// foreach body that you want the callback, enable it with:
 	// body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 
-	// Start with a ground plane and a flat terrain
+}
+
+void BulletSim::CreateInitialGroundPlaneAndTerrain()
+{
 	CreateGroundPlane();
 	CreateTerrain();
 }
