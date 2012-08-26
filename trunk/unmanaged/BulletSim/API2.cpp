@@ -48,9 +48,9 @@
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
 
 // A structure for keeping track of terrain heightmaps
-struct HeightMapThing {
-	int width;
-	int length;
+struct HeightMapInfo {
+	int sizeX;
+	int sizeY;
 	btScalar minHeight;
 	btScalar maxHeight;
 	btVector3 minCoords;
@@ -204,19 +204,18 @@ EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape*
 // =====================================================================
 EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
 	IDTYPE id,
-	HeightMapThing* mapInfo,
+	HeightMapInfo* mapInfo,
 	float collisionMargin
 	)
 {
 	const int upAxis = 2;
 	const btScalar scaleFactor(1.0);
 	btHeightfieldTerrainShape* heightfieldShape = new btHeightfieldTerrainShape(
-			mapInfo->width, mapInfo->length, 
+			mapInfo->sizeX, mapInfo->sizeY, 
 			mapInfo->heightMap, scaleFactor, 
 			mapInfo->minHeight, mapInfo->maxHeight, upAxis, PHY_FLOAT, false);
-	// there is no room between the terrain and an object
+
 	heightfieldShape->setMargin(btScalar(collisionMargin));
-	// m_heightfieldShape->setMargin(gCollisionMargin);
 	heightfieldShape->setUseDiamondSubdivision(true);
 
 	// Add the localID to the object so we know about collisions
@@ -226,8 +225,8 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateTerrainBody2(
 	btTransform heightfieldTr;
 	heightfieldTr.setIdentity();
 	heightfieldTr.setOrigin(btVector3(
-			((float)mapInfo->width) * 0.5f + mapInfo->minCoords.getX(),
-			((float)mapInfo->length) * 0.5f + mapInfo->minCoords.getY(),
+			mapInfo->minCoords.getX() + ((float)mapInfo->sizeX) * 0.5f,
+			mapInfo->minCoords.getY() + ((float)mapInfo->sizeY) * 0.5f,
 			mapInfo->minHeight + (mapInfo->maxHeight - mapInfo->minHeight) * 0.5f));
 
 	// Use the default motion state since we are not interested in the
@@ -265,35 +264,31 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGroundPlaneBody2(
 
 // Bullet requires us to manage the heightmap array so these methods create
 //    and release the memory for the heightmap.
-EXTERN_C DLL_EXPORT HeightMapThing* CreateHeightmap2(Vector3 minCoords, Vector3 maxCoords, float initialValue)
+EXTERN_C DLL_EXPORT HeightMapInfo* CreateHeightmap2(Vector3 minCoords, Vector3 maxCoords, float* heightMap)
 {
-	HeightMapThing* mapInfo;
-
-	mapInfo = new HeightMapThing();
+	HeightMapInfo* mapInfo = new HeightMapInfo();
 
 	mapInfo->minCoords = minCoords.GetBtVector3();
 	mapInfo->maxCoords = maxCoords.GetBtVector3();
 
-	mapInfo->width = (int)(maxCoords.X - minCoords.X);
-	mapInfo->length = (int)(maxCoords.Y - minCoords.Y);
+	mapInfo->sizeX = (int)(maxCoords.X - minCoords.X);
+	mapInfo->sizeY = (int)(maxCoords.Y - minCoords.Y);
 
 	mapInfo->minHeight = btScalar(minCoords.Z);
 	mapInfo->maxHeight = btScalar(maxCoords.Z);
 	if (mapInfo->minHeight == mapInfo->maxHeight)
-		mapInfo->minHeight = mapInfo->maxHeight - 1.0;
+		mapInfo->minHeight -= 0.2;
 
-	int numEntries = mapInfo->width * mapInfo->length;
+	int numEntries = mapInfo->sizeX * mapInfo->sizeY;
 
-	float* heightMap = new float[numEntries];
-	mapInfo->heightMap = heightMap;
-
-	for (int xx = 0; xx < numEntries; xx++)
-		heightMap[xx] = initialValue;
+	float* localHeightMap = new float[numEntries];
+	bsMemcpy(localHeightMap, heightMap, numEntries* sizeof(float));
+	mapInfo->heightMap = localHeightMap;
 
 	return mapInfo;
 }
 
-EXTERN_C DLL_EXPORT bool ReleaseHeightMapThing2(HeightMapThing* mapInfo)
+EXTERN_C DLL_EXPORT bool ReleaseHeightmapInfo2(HeightMapInfo* mapInfo)
 {
 	delete mapInfo->heightMap;
 	delete mapInfo;
@@ -302,12 +297,15 @@ EXTERN_C DLL_EXPORT bool ReleaseHeightMapThing2(HeightMapThing* mapInfo)
 
 // Given a previously allocated heightmap array and a new array of values, copy
 //    the new values into the array being used by Bullet.
-EXTERN_C DLL_EXPORT void UpdateHeightMap2(BulletSim* sim, HeightMapThing* mapInfo, float* newHeightMap)
+EXTERN_C DLL_EXPORT bool UpdateHeightMap2(BulletSim* sim, HeightMapInfo* mapInfo, float* newHeightmap)
 {
-	int size = sizeof(mapInfo->heightMap) / sizeof(float);
-	for (int xx = 0; xx < size; xx++)
-		mapInfo->heightMap[xx] = newHeightMap[xx];
-	return;
+	bool ret = false;
+	if (sizeof(mapInfo->heightMap) == sizeof(newHeightmap))
+	{
+		bsMemcpy(mapInfo->heightMap, newHeightmap, mapInfo->sizeX * mapInfo->sizeY * sizeof(float));
+		ret = true;
+	}
+	return ret;
 }
 
 // =====================================================================
@@ -617,7 +615,7 @@ EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* c
 }
 
 // =====================================================================
-// Remember to restore any constraints
+// TODO: Remember to restore any constraints
 EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
@@ -640,6 +638,11 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 }
 
 // =====================================================================
+EXTERN_C DLL_EXPORT void Activate2(btCollisionObject* obj, bool forceActivation)
+{
+	obj->activate(forceActivation);
+}
+
 EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
 {
 	btTransform xform = obj->getWorldTransform();
@@ -754,6 +757,12 @@ EXTERN_C DLL_EXPORT bool SetContactProcessingThreshold2(btCollisionObject* obj, 
 EXTERN_C DLL_EXPORT bool SetFriction2(btCollisionObject* obj, float val)
 {
 	obj->setFriction(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetHitFraction2(btCollisionObject* obj, float val)
+{
+	obj->setHitFraction(btScalar(val));
 	return true;
 }
 

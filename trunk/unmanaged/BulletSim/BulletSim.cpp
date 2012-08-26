@@ -243,8 +243,8 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		// This allows objects to do per-step modification of returned values.
 		if (m_worldData.stepObjectCallbacks.size() > 0)
 		{
-			for (WorldData::StepObjectCallbacksMapType::const_iterator it = m_worldData.stepObjectCallbacks.begin(); 
-										it != m_worldData.stepObjectCallbacks.end(); ++it)
+			WorldData::StepObjectCallbacksMapType::const_iterator it;
+			for (it = m_worldData.stepObjectCallbacks.begin(); it != m_worldData.stepObjectCallbacks.end(); ++it)
 			{
 				(it->second)->StepCallback(it->first, &m_worldData);
 			}

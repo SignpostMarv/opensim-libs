@@ -135,6 +135,8 @@ AvatarObject::~AvatarObject(void) {
 	}
 }
 
+// Called each simulation step.
+// Resets velocity so friction and decay does not affect avatar movement.
 bool AvatarObject::StepCallback(IDTYPE id, WorldData* worldData) {
 	if (m_body)
 	{
@@ -151,14 +153,17 @@ bool AvatarObject::StepCallback(IDTYPE id, WorldData* worldData) {
 		// TODO: check for out of bounds
 
 		// Check that the avatar is above the terrain
-		btVector3 avatarPos = m_body->getWorldTransform().getOrigin();
-		float terrainHeight = worldData->Terrain->GetHeightAtXYZ(avatarPos);
-		if (avatarPos.getZ() < terrainHeight)
+		if (worldData->Terrain)
 		{
-			avatarPos.setZ(terrainHeight + 2.0);
-			btTransform newTrans = m_body->getWorldTransform();
-			newTrans.setOrigin(avatarPos);
-			m_body->setWorldTransform(newTrans);
+			btVector3 avatarPos = m_body->getWorldTransform().getOrigin();
+			float terrainHeight = worldData->Terrain->GetHeightAtXYZ(avatarPos);
+			if (avatarPos.getZ() < terrainHeight)
+			{
+				avatarPos.setZ(terrainHeight + 2.0);
+				btTransform newTrans = m_body->getWorldTransform();
+				newTrans.setOrigin(avatarPos);
+				m_body->setWorldTransform(newTrans);
+			}
 		}
 	}
 	return true;
