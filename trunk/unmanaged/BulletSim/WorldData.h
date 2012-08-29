@@ -34,6 +34,7 @@
 #include "APIData.h"
 #include "btBulletDynamicsCommon.h"
 
+#include <stdarg.h>
 #include <map>
 
 // Forward references
@@ -43,6 +44,9 @@ class HeightMapData;
 class IPhysObject;
 class TerrainObject;
 class GroundPlaneObject;
+
+// template for debugging call
+typedef void DebugLogCallback(const char*);
 
 // Structure to hold the world data that is common to all the objects in the world
 struct WorldData
@@ -83,6 +87,26 @@ struct WorldData
 	MeshesMapType Meshes;
 	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
 	HullsMapType Hulls;
+
+	// DEBUGGGING
+	// ============================================================================================
+	// Callback to managed code for logging
+	// This is a callback into the managed code that writes a text message to the log.
+	// This callback is only initialized if the simulator is running in DEBUG mode.
+	DebugLogCallback* debugLogCallback;
+
+	// Call back into the managed world to output a log message with formatting
+	void BSLog(const char* msg, ...) {
+		char buff[2048];
+		if (debugLogCallback != NULL) {
+			va_list args;
+			va_start(args, msg);
+			vsprintf(buff, msg, args);
+			va_end(args);
+			(*debugLogCallback)(buff);
+		}
+	}
+
 };
 
 #endif // WORLD_DATA_H

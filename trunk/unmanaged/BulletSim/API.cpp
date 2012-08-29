@@ -26,7 +26,6 @@
  */
 
 #include "BulletSim.h"
-#include <stdarg.h>
 
 #include <map>
 
@@ -53,7 +52,7 @@ static std::map<unsigned int, BulletSim*> m_simulations;
  */
 EXTERN_C DLL_EXPORT char* GetVersion()
 {
-	return &BulletSimVersionString[0];
+	return BulletSimVersionString;
 }
 
 // Return a pointer to the BulletSim instance that has this worldID
@@ -88,9 +87,11 @@ EXTERN_C DLL_EXPORT btCollisionObject* GetBodyHandle2(BulletSim* sim, unsigned i
  */
 EXTERN_C DLL_EXPORT unsigned int Initialize(Vector3 maxPosition, ParamBlock* parms,
 											int maxCollisions, CollisionDesc* collisionArray,
-											int maxUpdates, EntityProperties* updateArray)
+											int maxUpdates, EntityProperties* updateArray,
+											DebugLogCallback* debugLog)
 {
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
+	sim->getWorldData()->debugLogCallback = debugLog;
 	sim->initPhysics(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
 
 	unsigned int worldID = (unsigned int)m_simulations.size();
@@ -439,23 +440,13 @@ EXTERN_C DLL_EXPORT Vector3 RecoverFromPenetration(unsigned int worldID, unsigne
  */
 EXTERN_C DLL_EXPORT void DumpPhysicsStatistics(unsigned int worldID)
 {
-	if (debugLogCallback == NULL) return;
-	m_simulations[worldID]->DumpPhysicsStats();
+
+	BulletSim* sim = m_simulations[worldID];
+	if (sim->getWorldData()->debugLogCallback == NULL) return;
+	sim->DumpPhysicsStats();
 	return;
 }
 
-DebugLogCallback* debugLogCallback;
-EXTERN_C DLL_EXPORT void SetDebugLogCallback(DebugLogCallback* dlc) {
-	debugLogCallback = dlc;
-}
-// Call back into the managed world to output a log message with formatting
-void BSLog(const char* msg, ...) {
-	char buff[2048];
-	if (debugLogCallback != NULL) {
-		va_list args;
-		va_start(args, msg);
-		vsprintf(buff, msg, args);
-		va_end(args);
-		(*debugLogCallback)(buff);
-	}
-}
+// EXTERN_C DLL_EXPORT void SetDebugLogCallback(DebugLogCallback* dlc) {
+// 	debugLogCallback = dlc;
+// }

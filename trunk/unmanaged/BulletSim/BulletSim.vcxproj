@@ -193,7 +193,6 @@
     <ClInclude Include="APIData.h" />
     <ClInclude Include="ArchStuff.h" />
     <ClInclude Include="AvatarObject.h" />
-    <ClInclude Include="BSLogger.h" />
     <ClInclude Include="BulletSim.h" />
     <ClInclude Include="GroundPlaneObject.h" />
     <ClInclude Include="IPhysObject.h" />

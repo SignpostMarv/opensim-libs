@@ -28,6 +28,7 @@
 #include "PrimObject.h"
 #include "BulletSim.h"
 
+// References to the API2 routines
 extern "C" bool ClearAllForces2(btCollisionObject* obj);
 
 PrimObject::PrimObject(WorldData* world, ShapeData* data) {
@@ -83,12 +84,12 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 
 	btVector3 Dvel = m_body->getLinearVelocity();
 	btVector3 Dgrav = m_body->getGravity();
-	// BSLog("PrimObject::constructor: id=%u, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
+	// m_worldData->BSLog("PrimObject::constructor: id=%u, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
 	// 		m_id, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 }
 
 PrimObject::~PrimObject(void) {
-	// BSLog("PrimObject::destructor: id=%u", m_id);
+	// m_worldData->BSLog("PrimObject::destructor: id=%u", m_id);
 	if (m_body)
 	{
 		// Remove the object from the world
@@ -119,7 +120,7 @@ bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 // TODO: generalize these parameters so we can model the non-physical/phantom/collidable objects of OpenSimulator
 bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass, bool removeIt)
 {
-	// BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
+	// m_worldData->BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
 	// 				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
 	if (removeIt)
 	{
@@ -199,7 +200,7 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 	const btVector3 ZERO_VECTOR(0.0, 0.0, 0.0);
 	btVector3 localInertia(0, 0, 0);
 
-	// BSLog("PrimObject::SetObjectDynamic: id=%u, rem=%s, isDynamic=%d, mass=%f", m_id, removeIt?"true":"false", isDynamic, mass);
+	// m_worldData->BSLog("PrimObject::SetObjectDynamic: id=%u, rem=%s, isDynamic=%d, mass=%f", m_id, removeIt?"true":"false", isDynamic, mass);
 	if (removeIt)
 	{
 		// NOTE: From the author of Bullet: "If you want to change important data 
@@ -228,7 +229,7 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 
 		// btVector3 Dvel = m_body->getLinearVelocity();
 		// btVector3 Dgrav = m_body->getGravity();
-		// BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
+		// m_worldData->BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
 		// 		m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}
 	else
@@ -246,7 +247,7 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		m_body->setMassProps(0.0, ZERO_VECTOR);
 		m_body->updateInertiaTensor();
 
-		// BSLog("PrimObject::SetObjectDynamic: static. ID=%u", m_id);
+		// m_worldData->BSLog("PrimObject::SetObjectDynamic: static. ID=%u", m_id);
 	}
 	if (removeIt)
 	{
@@ -281,7 +282,7 @@ btQuaternion PrimObject::GetObjectOrientation()
 
 bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
 {
-	// BSLog("PrimObject::SetObjectTranslation: id=%u, pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>",
+	// m_worldData->BSLog("PrimObject::SetObjectTranslation: id=%u, pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>",
 	// 	m_id, position.x(), position.y(), position.z(), rotation.x(), rotation.y(), rotation.z(), rotation.w());
 
 	// Build a transform containing the new position and rotation
@@ -304,7 +305,7 @@ bool PrimObject::SetObjectTranslation(btVector3& position, btQuaternion& rotatio
 
 bool PrimObject::SetObjectVelocity(btVector3& velocity)
 {
-	// BSLog("PrimObject::SetObjectVelocity: id=%u, vel=<%f,%f,%f>", m_id, velocity.x(), velocity.y(), velocity.z());
+	// m_worldData->BSLog("PrimObject::SetObjectVelocity: id=%u, vel=<%f,%f,%f>", m_id, velocity.x(), velocity.y(), velocity.z());
 	m_body->setLinearVelocity(velocity);
 	m_body->activate(false);
 	return true;
@@ -312,7 +313,7 @@ bool PrimObject::SetObjectVelocity(btVector3& velocity)
 
 bool PrimObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 {
-	// BSLog("PrimObject::SetAngularVelocity: id=%u, avel=<%f,%f,%f>", m_id, angularVelocity.x(), angularVelocity.y(), angularVelocity.z());
+	// m_worldData->BSLog("PrimObject::SetAngularVelocity: id=%u, avel=<%f,%f,%f>", m_id, angularVelocity.x(), angularVelocity.y(), angularVelocity.z());
 	m_body->setAngularVelocity(angularVelocity);
 	m_body->activate(true);
 	return true;
@@ -320,7 +321,7 @@ bool PrimObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 
 bool PrimObject::SetObjectForce(btVector3& force)
 {
-	// BSLog("PrimObject::SetObjectForce: id=%u, vel=<%f,%f,%f>", m_id, force.x(), force.y(), force.z());
+	// m_worldData->BSLog("PrimObject::SetObjectForce: id=%u, vel=<%f,%f,%f>", m_id, force.x(), force.y(), force.z());
 	m_body->applyCentralForce(force);
 	m_body->activate(false);
 	return true;
@@ -328,7 +329,7 @@ bool PrimObject::SetObjectForce(btVector3& force)
 
 bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic)
 {
-	// BSLog("PrimObject::SetObjectScaleMass: id=%u, scale=<%f,%f,%f>, mass=%f, isDyn=%s", m_id, scale.x(), scale.y(), scale.z(), mass, isDynamic?"true":"false");
+	// m_worldData->BSLog("PrimObject::SetObjectScaleMass: id=%u, scale=<%f,%f,%f>, mass=%f, isDyn=%s", m_id, scale.x(), scale.y(), scale.z(), mass, isDynamic?"true":"false");
 
 	// Clear all forces for this object
 	ClearAllForces2(m_body);
@@ -349,7 +350,7 @@ bool PrimObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic
 
 bool PrimObject::SetObjectCollidable(bool collidable)
 {
-	// BSLog("PrimObject::SetObjectCollidable: id=%u, collidable=%s", m_id, collidable?"true":"false");
+	// m_worldData->BSLog("PrimObject::SetObjectCollidable: id=%u, collidable=%s", m_id, collidable?"true":"false");
 	SetCollidable(collidable);
 	return true;
 }
@@ -359,7 +360,7 @@ bool PrimObject::SetObjectCollidable(bool collidable)
 bool PrimObject::SetObjectBuoyancy(float buoy)
 {
 	float grav = m_worldData->params->gravity * (1.0f - buoy);
-	// BSLog("PrimObject::SetObjectBuoyancy: id=%u, buoy=%f, grav=%s", m_id, buoy, grav);
+	// m_worldData->BSLog("PrimObject::SetObjectBuoyancy: id=%u, buoy=%f, grav=%s", m_id, buoy, grav);
 
 	m_body->setGravity(btVector3(0, 0, grav));
 
@@ -404,7 +405,7 @@ btCollisionShape* PrimObject::CreateShape(ShapeData* data)
 			mt = m_worldData->Meshes.find(data->MeshKey);
 			if (mt != m_worldData->Meshes.end())
 			{
-				// BSLog("CreateShape: SHAPE_MESH. localID=%u", data->ID);
+				// m_worldData->BSLog("CreateShape: SHAPE_MESH. localID=%u", data->ID);
 				btBvhTriangleMeshShape* origionalMeshShape = mt->second;
 				// we have to copy the mesh shape because we don't keep use counters
 				shape = DuplicateMeshShape(origionalMeshShape);
@@ -420,7 +421,7 @@ btCollisionShape* PrimObject::CreateShape(ShapeData* data)
 				// the the individual convex hulls and their offsets. Here we copy each child
 				// convex hull and its offset to the new compound shape which will actually be
 				// inserted into the physics simulation
-				// BSLog("CreateShape: SHAPE_HULL. localID=%u", data->ID);
+				// m_worldData->BSLog("CreateShape: SHAPE_HULL. localID=%u", data->ID);
 				btCompoundShape* originalCompoundShape = ht->second;
 				shape = DuplicateCompoundShape(originalCompoundShape);
 				shape->setMargin(m_worldData->params->collisionMargin);
@@ -492,7 +493,7 @@ void PrimObject::AdjustScaleForCollisionMargin(btCollisionShape* shape, btVector
 		btScalar yAdjustment = (yExtent - margin - margin) / yExtent;
 		btScalar zExtent = aabbMax.z() - aabbMin.z();
 		btScalar zAdjustment = (zExtent - margin - margin) / zExtent;
-		// BSLog("Adjust: m=%f, xE=%f, xA=%f, yE=%f, yA=%f, zE=%f, zA=%f, sX=%f, sY=%f, sZ=%f", margin,
+		// m_worldData->BSLog("Adjust: m=%f, xE=%f, xA=%f, yE=%f, yA=%f, zE=%f, zA=%f, sX=%f, sY=%f, sZ=%f", margin,
 		// 	xExtent, xAdjustment, yExtent, yAdjustment, zExtent, zAdjustment,
 		// 	scale.x(), scale.y(), scale.z());
 		shape->setLocalScaling(btVector3(scale.x()*xAdjustment, scale.y()*yAdjustment, scale.z()*zAdjustment));

@@ -30,7 +30,7 @@
 
 AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 
-	// BSLog("AvatarObject::AvatarObject: Creating an avatar");
+	// world->BSLog("AvatarObject::AvatarObject: Creating an avatar");
 	m_worldData = world;
 	m_id = data->ID;
 	m_currentFriction = 0.0;
@@ -201,16 +201,15 @@ btVector3 AvatarObject::GetObjectPosition()
 {
 	btTransform xform = m_body->getWorldTransform();
 	btVector3 pos = xform.getOrigin();
-	// BSLog("AvatarObject::GetObjectPosition: pos=<%f,%f,%f>", pos.getX(), pos.getY(), pos.getZ() );
+	// m_worldData->BSLog("AvatarObject::GetObjectPosition: pos=<%f,%f,%f>", pos.getX(), pos.getY(), pos.getZ() );
 	return pos;
 }
 
 bool AvatarObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
 {
-	/* BSLog("AvatarObject::SetObjectTranslation: pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>", 
+	// m_worldData->BSLog("AvatarObject::SetObjectTranslation: pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>", 
 			position.getX(), position.getY(), position.getZ(), 
 			rotation.getW(), rotation.getX(), rotation.getY(), rotation.getZ() );
-			*/
 	// Build a transform containing the new position and rotation
 	btTransform transform;
 	transform.setIdentity();
@@ -219,12 +218,14 @@ bool AvatarObject::SetObjectTranslation(btVector3& position, btQuaternion& rotat
 
 	// Set the new transform for this character controller
 	m_body->setWorldTransform(transform);
+	if (m_body->getMotionState())
+		m_body->getMotionState()->setWorldTransform(transform);
 	return true;
 }
 
 bool AvatarObject::SetObjectVelocity(btVector3& velocity)
 {
-	// BSLog("AvatarObject::SetObjectVelocity: vel=<%f,%f,%f>", velocity.getX(), velocity.getY(), velocity.getZ() );
+	// m_worldData->BSLog("AvatarObject::SetObjectVelocity: vel=<%f,%f,%f>", velocity.getX(), velocity.getY(), velocity.getZ() );
 	// Manipulate the friction depending on whether the avatar is moving or not.
 	// OpenSim moves the avatar by setting a velocity. If the avatar is
 	// thus moving, it shouldn't be slowed down by whatever it's walking on.
@@ -247,7 +248,7 @@ bool AvatarObject::SetObjectVelocity(btVector3& velocity)
 bool AvatarObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 {
 	// Don't do anything for an avatar
-	/* BSLog("AvatarObject::SetObjectAngularVelocity: vel=<%f,%f,%f>", 
+	/* m_worldData->BSLog("AvatarObject::SetObjectAngularVelocity: vel=<%f,%f,%f>", 
 			angularVelocity.getX(), angularVelocity.getY(), angularVelocity.getZ() );
 			*/
 	return true;
@@ -255,14 +256,14 @@ bool AvatarObject::SetObjectAngularVelocity(btVector3& angularVelocity)
 
 bool AvatarObject::SetObjectForce(btVector3& force)
 {
-	// BSLog("AvatarObject::SetObjectForce: force=<%f,%f,%f>", force.getX(), force.getY(), force.getZ() );
+	// m_worldData->BSLog("AvatarObject::SetObjectForce: force=<%f,%f,%f>", force.getX(), force.getY(), force.getZ() );
 	// Don't do anything for an avatar
 	return true;
 }
 
 bool AvatarObject::SetObjectScaleMass(btVector3& scale, float mass, bool isDynamic)
 {
-	// BSLog("AvatarObject::SetObjectScaleMass: scale=<%f,%f,%f>, mass=%f", scale.getX(), scale.getY(), scale.getZ(), mass);
+	// m_worldData->BSLog("AvatarObject::SetObjectScaleMass: scale=<%f,%f,%f>, mass=%f", scale.getX(), scale.getY(), scale.getZ(), mass);
 	btVector3 localInertia(0.0, 0.0, 0.0);
 
 	btCollisionShape* shape = m_body->getCollisionShape();
@@ -285,7 +286,7 @@ bool AvatarObject::SetObjectCollidable(bool collidable)
 bool AvatarObject::SetObjectBuoyancy(float buoy)
 {
 	float grav = m_worldData->params->gravity * (1.0f - buoy);
-	// BSLog("AvatarObject::SetObjectBuoyancy: buoy=%f, grav=%f", buoy, grav);
+	// m_worldData->BSLog("AvatarObject::SetObjectBuoyancy: buoy=%f, grav=%f", buoy, grav);
 	m_body->setGravity(btVector3(0, 0, grav));
 	m_body->activate(true);
 

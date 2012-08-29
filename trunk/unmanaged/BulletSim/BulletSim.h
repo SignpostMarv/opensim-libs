@@ -35,7 +35,6 @@
 #include "TerrainObject.h"
 #include "ObjectCollection.h"
 #include "WorldData.h"
-#include "BSLogger.h"
 
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "LinearMath/btAlignedObjectArray.h"
@@ -63,12 +62,6 @@ static bool IsPhantom(const btCollisionObject* obj)
 		(obj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
 };
 
-// ============================================================================================
-// Callback to managed code for logging
-// This is a callback into the managed code that writes a text message to the log.
-// This callback is only initialized if the simulator is running in DEBUG mode.
-typedef void DebugLogCallback(const char*);
-extern DebugLogCallback* debugLogCallback;
 
 // ============================================================================================
 // Motion state for rigid bodies in the scene. Updates the map of changed 

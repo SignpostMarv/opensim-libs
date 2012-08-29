@@ -34,8 +34,8 @@ TerrainObject::TerrainObject(WorldData* world, IDTYPE theID)
 	m_worldData = world;
 	m_id = theID;
 
-	// start the terrain as flat at height 25
-	m_heightMap = new HeightMapData(world->MaxPosition.getX(), world->MaxPosition.getY(), 25.0);
+	// start the terrain as flat
+	m_heightMap = new HeightMapData(world->MaxPosition.getX(), world->MaxPosition.getY(), 24.1);
 
 	CreateTerrainBody();
 }
@@ -47,7 +47,7 @@ TerrainObject::TerrainObject(WorldData* world, IDTYPE theID, float* newMap)
 
 	if (m_heightMap == NULL)
 	{
-		m_heightMap = new HeightMapData(world->MaxPosition.getX(), world->MaxPosition.getY(), 25.0);
+		m_heightMap = new HeightMapData(world->MaxPosition.getX(), world->MaxPosition.getY(), 24.2);
 	}
 	m_heightMap->UpdateHeightMap(newMap, m_heightMap->MaxX, m_heightMap->MaxY);
 

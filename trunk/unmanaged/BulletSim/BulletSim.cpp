@@ -52,7 +52,7 @@ void BulletSim::initPhysics(ParamBlock* parms,
 {
 	// Tell the world we're initializing and output size of types so we can
 	//    debug mis-alignments when changing architecture.
-	// BSLog("InitPhysics: sizeof(int)=%d, sizeof(long)=%d, sizeof(long long)=%d, sizeof(float)=%d",
+	// m_worldData.BSLog("InitPhysics: sizeof(int)=%d, sizeof(long)=%d, sizeof(long long)=%d, sizeof(float)=%d",
 	// 	sizeof(int), sizeof(long), sizeof(long long), sizeof(float));
 
 	// remember the pointers to pinned memory for returning collisions and property updates
@@ -208,7 +208,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	if (m_worldData.dynamicsWorld)
 	{
 		// The simulation calls the SimMotionState to put object updates into updatesThisFrame.
-		// BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
+		// m_worldData.BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
 		/*
@@ -221,7 +221,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			if (constrain->getConstraintType() == D6_CONSTRAINT_TYPE)
 			{
 				btGeneric6DofConstraint* constrain6 = (btGeneric6DofConstraint*)constrain;
-				BSLog("constrain[%d]: A=%u, B=%u, enable=%s, limited=%s%s%s%s%s%s, impulse=%f",
+				m_worldData.BSLog("constrain[%d]: A=%u, B=%u, enable=%s, limited=%s%s%s%s%s%s, impulse=%f",
 					kk,
 					CONVLOCALID(constrain6->getRigidBodyA().getCollisionShape()->getUserPointer()),
 					CONVLOCALID(constrain6->getRigidBodyB().getCollisionShape()->getUserPointer()),
@@ -391,7 +391,7 @@ void BulletSim::CreateTerrain()
 // Create a hull based on passed convex hull information
 bool BulletSim::CreateHull(MESHKEYTYPE meshKey, int hullCount, float* hulls)
 {
-	// BSLog("CreateHull: key=%ld, hullCount=%d", meshKey, hullCount);
+	// m_worldData.BSLog("CreateHull: key=%ld, hullCount=%d", meshKey, hullCount);
 	bool ret = false;
 
 	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
@@ -433,8 +433,8 @@ bool BulletSim::CreateHull(MESHKEYTYPE meshKey, int hullCount, float* hulls)
 // Delete a hull
 bool BulletSim::DestroyHull(MESHKEYTYPE meshKey)
 {
-	// BSLog("BulletSim::DestroyHull: key=%ld", meshKey);
-	// BSLog("DeleteHull:");
+	// m_worldData.BSLog("BulletSim::DestroyHull: key=%ld", meshKey);
+	// m_worldData.BSLog("DeleteHull:");
 	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
 	if (it != m_worldData.Hulls.end())
 	{
@@ -455,7 +455,7 @@ bool BulletSim::DestroyHull(MESHKEYTYPE meshKey)
 //       Create a mesh structure to be used for static objects
 bool BulletSim::CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
 {
-	// BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
+	// m_worldData.BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
 	bool ret = false;
 
 	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
@@ -492,7 +492,7 @@ bool BulletSim::CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, 
 // Delete a mesh
 bool BulletSim::DestroyMesh(MESHKEYTYPE meshKey)
 {
-	// BSLog("BulletSim::DeleteMesh: key=%ld", meshKey);
+	// m_worldData.BSLog("BulletSim::DeleteMesh: key=%ld", meshKey);
 	bool ret = false;
 	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
 	if (it != m_worldData.Meshes.end())
@@ -591,7 +591,7 @@ bool BulletSim::CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey)
 // Using the shape data, create the RigidObject and put it in the world
 bool BulletSim::CreateObject(ShapeData* data)
 {
-	// BSLog("BulletSim::CreateObject: id=%d", data->ID);
+	// m_worldData.BSLog("BulletSim::CreateObject: id=%d", data->ID);
 
 	bool ret = false;
 
@@ -602,7 +602,7 @@ bool BulletSim::CreateObject(ShapeData* data)
 	IPhysObject* newObject = IPhysObject::PhysObjectFactory(&m_worldData, data);
 	if (newObject != NULL)
 	{
-		// BSLog("CreateObject: created object of type= '%s'", newObject->GetType());
+		// m_worldData.BSLog("CreateObject: created object of type= '%s'", newObject->GetType());
 		m_worldData.objects->AddObject(data->ID, newObject);
 		ret = true;
 	}
@@ -767,7 +767,7 @@ bool BulletSim::HasObject(IDTYPE id)
 
 bool BulletSim::DestroyObject(IDTYPE id)
 {
-	// BSLog("BulletSim::DestroyObject: id=%d", id);
+	// m_worldData.BSLog("BulletSim::DestroyObject: id=%d", id);
 	return m_worldData.objects->RemoveAndDestroyObject(id);
 }
 
