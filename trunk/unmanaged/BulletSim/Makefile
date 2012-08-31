@@ -34,7 +34,7 @@ libBulletSim.so : $(BIN)
 
 BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h Util.h
 
-BulletSim.h: ArchStuff.h APIData.h BSLogger.h IPhysObject.h TerrainObject.h ObjectCollection.h WorldData.h
+BulletSim.h: ArchStuff.h APIData.h IPhysObject.h TerrainObject.h ObjectCollection.h WorldData.h
 
 API.cpp : BulletSim.h
 
