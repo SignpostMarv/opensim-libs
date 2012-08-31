@@ -208,8 +208,8 @@ btVector3 AvatarObject::GetObjectPosition()
 bool AvatarObject::SetObjectTranslation(btVector3& position, btQuaternion& rotation)
 {
 	// m_worldData->BSLog("AvatarObject::SetObjectTranslation: pos=<%f,%f,%f>, rot=<%f,%f,%f,%f>", 
-			position.getX(), position.getY(), position.getZ(), 
-			rotation.getW(), rotation.getX(), rotation.getY(), rotation.getZ() );
+	// 		position.getX(), position.getY(), position.getZ(), 
+	// 		rotation.getW(), rotation.getX(), rotation.getY(), rotation.getZ() );
 	// Build a transform containing the new position and rotation
 	btTransform transform;
 	transform.setIdentity();

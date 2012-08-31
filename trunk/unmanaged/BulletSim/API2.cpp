@@ -154,6 +154,206 @@ EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 }
 
 // =====================================================================
+EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
+{
+	btTransform xform = obj->getWorldTransform();
+	btVector3 p = xform.getOrigin();
+	return Vector3(p.getX(), p.getY(), p.getZ());
+}
+
+EXTERN_C DLL_EXPORT Quaternion GetOrientation2(btCollisionObject* obj)
+{
+	btTransform xform = obj->getWorldTransform();
+	btQuaternion p = xform.getRotation();
+	return Quaternion(p.getX(), p.getY(), p.getZ(), p.getW());
+}
+
+EXTERN_C DLL_EXPORT bool SetTranslation2(btCollisionObject* obj, Vector3 position, Quaternion rotation)
+{
+	btVector3 pos = position.GetBtVector3();
+	btQuaternion rot = rotation.GetBtQuaternion();
+	// Build a transform containing the new position and rotation
+	btTransform transform;
+	transform.setIdentity();
+	transform.setOrigin(pos);
+	transform.setRotation(rot);
+
+	// Set the new transform for the rigid body and the motion state
+	obj->setWorldTransform(transform);
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetVelocity2(btCollisionObject* obj, Vector3 velocity)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setLinearVelocity(velocity.GetBtVector3());
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetAngularVelocity2(btCollisionObject* obj, Vector3 angularVelocity)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setAngularVelocity(angularVelocity.GetBtVector3());
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetObjectForce2(btCollisionObject* obj, Vector3 force)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	// Oddly, Bullet doesn't have a way to directly set the force so this
+	//    subtracts the total force (making force zero) and then adds our new force.
+	rb->applyCentralForce(force.GetBtVector3() - rb->getTotalForce());
+	return true;
+}
+
+// Adding a force is different than adding an impulse
+EXTERN_C DLL_EXPORT bool AddObjectForce2(btCollisionObject* obj, Vector3 force)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->applyCentralForce(force.GetBtVector3());
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetCcdMotionThreshold2(btCollisionObject* obj, float val)
+{
+	obj->setCcdMotionThreshold(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetCcdSweepSphereRadius2(btCollisionObject* obj, float val)
+{
+	obj->setCcdSweptSphereRadius(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetDamping2(btCollisionObject* obj, float lin_damping, float ang_damping)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setDamping(btScalar(lin_damping), btScalar(ang_damping));
+	return true;
+
+}
+
+EXTERN_C DLL_EXPORT bool SetDeactivationTime2(btCollisionObject* obj, float val)
+{
+	obj->setDeactivationTime(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetSleepingThresholds2(btCollisionObject* obj, float lin_threshold, float ang_threshold)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setSleepingThresholds(btScalar(lin_threshold), btScalar(ang_threshold));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetContactProcessingThreshold2(btCollisionObject* obj, float val)
+{
+	obj->setContactProcessingThreshold(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetFriction2(btCollisionObject* obj, float val)
+{
+	obj->setFriction(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetHitFraction2(btCollisionObject* obj, float val)
+{
+	obj->setHitFraction(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetRestitution2(btCollisionObject* obj, float val)
+{
+	obj->setRestitution(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetLinearVelocity2(btCollisionObject* obj, Vector3 val)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setLinearVelocity(val.GetBtVector3());
+	return true;
+}
+
+// (sets both linear and angular interpolation velocity)
+EXTERN_C DLL_EXPORT bool SetInterpolation2(btCollisionObject* obj, Vector3 lin, Vector3 ang)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setInterpolationLinearVelocity(lin.GetBtVector3());
+	rb->setInterpolationAngularVelocity(ang.GetBtVector3());
+	rb->setInterpolationWorldTransform(rb->getWorldTransform());
+	return true;
+}
+
+EXTERN_C DLL_EXPORT int GetCollisionFlags2(btCollisionObject* obj)
+{
+	return obj->getCollisionFlags();
+}
+
+EXTERN_C DLL_EXPORT bool SetCollisionFlags2(btCollisionObject* obj, uint32_t flags)
+{
+	obj->setCollisionFlags(flags);
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool AddToCollisionFlags2(btCollisionObject* obj, uint32_t flags)
+{
+	obj->setCollisionFlags(obj->getCollisionFlags() | flags);
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool RemoveFromCollisionFlags2(btCollisionObject* obj, uint32_t flags)
+{
+	obj->setCollisionFlags(obj->getCollisionFlags() & ~flags);
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetMassProps2(btCollisionObject* obj, float mass, Vector3 inertia)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setMassProps(btScalar(mass), inertia.GetBtVector3());
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool UpdateInertiaTensor2(btCollisionObject* obj)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->updateInertiaTensor();
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetGravity2(btCollisionObject* obj, Vector3 val)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->setGravity(val.GetBtVector3());
+	return true;
+}
+// =====================================================================
 // TODO: Remember to restore any constraints
 EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
 {
@@ -170,7 +370,7 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb == NULL)
-		sim->getWorldData()->dynamicsWorld->removeCollisionObject(obj);
+		sim->getDynamicsWorld()->removeCollisionObject(obj);
 	else
 		sim->getDynamicsWorld()->removeRigidBody(rb);
 	return true;
@@ -179,6 +379,73 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 EXTERN_C DLL_EXPORT void Activate2(btCollisionObject* obj, bool forceActivation)
 {
 	obj->activate(forceActivation);
+}
+
+EXTERN_C DLL_EXPORT bool ClearForces2(btCollisionObject* obj)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	rb->clearForces();
+	return true;
+}
+
+// Zero out all forces and bring the object to a dead stop
+EXTERN_C DLL_EXPORT bool ClearAllForces2(btCollisionObject* obj)
+{
+	Vector3 zeroVector = Vector3();
+
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb == NULL) return false;
+
+	SetLinearVelocity2(rb, zeroVector);
+	SetAngularVelocity2(rb, zeroVector);
+	SetObjectForce2(rb, zeroVector);
+	SetInterpolation2(rb, zeroVector, zeroVector);
+	rb->clearForces();
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool SetMargin2(btCollisionObject* obj, float val)
+{
+	obj->getCollisionShape()->setMargin(btScalar(val));
+	return true;
+}
+
+EXTERN_C DLL_EXPORT bool UpdateSingleAabb2(BulletSim* world, btCollisionObject* obj)
+{
+	world->getDynamicsWorld()->updateSingleAabb(obj);
+	return true;
+}
+
+/**
+ * Free all memory allocated to an object. The caller must have previously removed
+ * the object from the dynamicsWorld.
+ * @param worldID ID of the world to modify.
+ * @param id Object ID.
+ * @return True on success, false if the object was not found.
+ */
+EXTERN_C DLL_EXPORT bool DestroyObject2(BulletSim* world, btCollisionObject* obj)
+{
+
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb)
+	{
+		// If we added a motionState to the object, delete that
+		btMotionState* motionState = rb->getMotionState();
+		if (motionState)
+			delete motionState;
+	}
+	
+	// Delete the rest of the memory allocated to this object
+	btCollisionShape* shape = obj->getCollisionShape();
+	if (shape) 
+		delete shape;
+
+	// finally make the object itself go away
+	delete obj;
+
+	return true;
 }
 
 // =====================================================================
@@ -263,8 +530,8 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 	heightfieldTr.setOrigin(pos.GetBtVector3());
 	heightfieldTr.setRotation(rot.GetBtQuaternion());
 
-	// Use the default motion state since we are not interested in the
-	//   terrain reporting its collisions. Other objects will report their
+	// Use the default motion state since we are not interested in these
+	//   objects reporting collisions. Other objects will report their
 	//   collisions with the terrain.
 	btDefaultMotionState* motionState = new btDefaultMotionState(heightfieldTr);
 	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, shape);
@@ -277,27 +544,33 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 
 // Given a previously allocated collision object and a new collision shape,
 //    replace the shape on the collision object with the new shape.
-EXTERN_C DLL_EXPORT bool ReplaceBodyShape2(BulletSim* sim, btCollisionObject* obj, btCollisionShape* shape)
+EXTERN_C DLL_EXPORT bool SetBodyShape2(BulletSim* sim, btCollisionObject* obj, btCollisionShape* shape)
 {
-	bool ret = false;
+	obj->setCollisionShape(shape);
 
-	// Remove and return the object from the world so base stuff gets recalculated.
-	if (RemoveObjectFromWorld2(sim, obj))
-	{
-		btCollisionShape* oldShape = obj->getCollisionShape();
-		obj->setCollisionShape(shape);
-		AddObjectToWorld2(sim, obj);
+	// test
+	btOverlappingPairCache* opp = sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache();
+	opp->cleanProxyFromPairs(obj->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
 
-		// get rid of the old shape so there are no memory leaks
-		if (oldShape)
-			delete oldShape;
-		ret = true;
-	}
-	return ret;
+	// We don't free the old shape here since it could be shared with other
+	//    bodies. The managed code should be keeping track of the shapes
+	//    and their use counts and creating and deleting them as needed.
+
+	return true;
+}
+
+// For dubugging
+EXTERN_C void DumpMapInfo(BulletSim* sim, HeightMapInfo* mapInfo)
+{
+	sim->getWorldData()->BSLog("HeightMapInfo: sizeX=%d, sizeY=%d, collMargin=%f, id=%u, minH=%f, maxH=%f", 
+		mapInfo->sizeX, mapInfo->sizeY, mapInfo->collisionMargin, mapInfo->id, mapInfo->minHeight, mapInfo->maxHeight );
+	sim->getWorldData()->BSLog("HeightMapInfo: minCoords=<%f,%f,%f> maxCoords=<%f,%f,%f>", 
+		mapInfo->minCoords.getX(), mapInfo->minCoords.getY(), mapInfo->minCoords.getZ(),
+		mapInfo->maxCoords.getX(), mapInfo->maxCoords.getY(), mapInfo->maxCoords.getZ() );
 }
 
 // Given a previously allocated HeightMapInfo, fill with the information about the heightmap
-EXTERN_C DLL_EXPORT void FillHeightMapInfo2(HeightMapInfo* mapInfo, IDTYPE id, 
+EXTERN_C DLL_EXPORT void FillHeightMapInfo2(BulletSim* sim, HeightMapInfo* mapInfo, IDTYPE id, 
 				Vector3 minCoords, Vector3 maxCoords, float* heightMap, float collisionMargin)
 {
 	mapInfo->minCoords = minCoords.GetBtVector3();
@@ -311,35 +584,44 @@ EXTERN_C DLL_EXPORT void FillHeightMapInfo2(HeightMapInfo* mapInfo, IDTYPE id,
 
 	mapInfo->minHeight = btScalar(minCoords.Z);
 	mapInfo->maxHeight = btScalar(maxCoords.Z);
+
+	// Make sure top and bottom are different so a bounding box can be built.
+	// This is not really necessary (it should be done in the calling code)
+	//    but a sanity check doesn't hurt.
 	if (mapInfo->minHeight == mapInfo->maxHeight)
 		mapInfo->minHeight -= TERRAIN_MIN_THICKNESS;
 
 	int numEntries = mapInfo->sizeX * mapInfo->sizeY;
 
+	// Copy the heightmap local because the passed in array will be freed on return
 	float* localHeightMap = new float[numEntries];
-	bsMemcpy(localHeightMap, heightMap, numEntries* sizeof(float));
+	bsMemcpy(localHeightMap, heightMap, numEntries * sizeof(float));
 
+	// Free any existing heightmap memory
 	if (mapInfo->heightMap != NULL)
 		delete mapInfo->heightMap;
 	mapInfo->heightMap = localHeightMap;
+
+	// DumpMapInfo(sim, mapInfo);
 
 	return;
 }
 
 // Bullet requires us to manage the heightmap array so these methods create
 //    and release the memory for the heightmap.
-EXTERN_C DLL_EXPORT HeightMapInfo* CreateHeightMapInfo2(IDTYPE id,
+EXTERN_C DLL_EXPORT HeightMapInfo* CreateHeightMapInfo2(BulletSim* sim, IDTYPE id,
 				Vector3 minCoords, Vector3 maxCoords, float* heightMap, float collisionMargin)
 {
 	HeightMapInfo* mapInfo = new HeightMapInfo();
-	mapInfo->heightMap = NULL;	// make sure there is no memory allocated
-	FillHeightMapInfo2(mapInfo, id, minCoords, maxCoords, heightMap, collisionMargin);
+	mapInfo->heightMap = NULL;	// make sure there is no memory to deallocate
+	FillHeightMapInfo2(sim, mapInfo, id, minCoords, maxCoords, heightMap, collisionMargin);
 	return mapInfo;
 }
 
 EXTERN_C DLL_EXPORT bool ReleaseHeightMapInfo2(HeightMapInfo* mapInfo)
 {
-	delete mapInfo->heightMap;
+	if (mapInfo->heightMap)
+		delete mapInfo->heightMap;
 	delete mapInfo;
 	return true;
 }
@@ -673,256 +955,6 @@ EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* c
 {
 	sim->getDynamicsWorld()->removeConstraint(constrain);
 	delete constrain;
-	return true;
-}
-
-// =====================================================================
-EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
-{
-	btTransform xform = obj->getWorldTransform();
-	btVector3 p = xform.getOrigin();
-	return Vector3(p.getX(), p.getY(), p.getZ());
-}
-
-EXTERN_C DLL_EXPORT Quaternion GetOrientation2(btCollisionObject* obj)
-{
-	btTransform xform = obj->getWorldTransform();
-	btQuaternion p = xform.getRotation();
-	return Quaternion(p.getX(), p.getY(), p.getZ(), p.getW());
-}
-
-EXTERN_C DLL_EXPORT bool SetTranslation2(btCollisionObject* obj, Vector3 position, Quaternion rotation)
-{
-	btVector3 pos = position.GetBtVector3();
-	btQuaternion rot = rotation.GetBtQuaternion();
-	// Build a transform containing the new position and rotation
-	btTransform transform;
-	transform.setIdentity();
-	transform.setOrigin(pos);
-	transform.setRotation(rot);
-
-	// Set the new transform for the rigid body and the motion state
-	obj->setWorldTransform(transform);
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetVelocity2(btCollisionObject* obj, Vector3 velocity)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setLinearVelocity(velocity.GetBtVector3());
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetAngularVelocity2(btCollisionObject* obj, Vector3 angularVelocity)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setAngularVelocity(angularVelocity.GetBtVector3());
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetObjectForce2(btCollisionObject* obj, Vector3 force)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	// Oddly, Bullet doesn't have a way to directly set the force so this
-	//    subtracts the total force (making force zero) and then adds our new force.
-	rb->applyCentralForce(force.GetBtVector3() - rb->getTotalForce());
-	return true;
-}
-
-// Adding a force is different than adding an impulse
-EXTERN_C DLL_EXPORT bool AddObjectForce2(btCollisionObject* obj, Vector3 force)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->applyCentralForce(force.GetBtVector3());
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetCcdMotionThreshold2(btCollisionObject* obj, float val)
-{
-	obj->setCcdMotionThreshold(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetCcdSweepSphereRadius2(btCollisionObject* obj, float val)
-{
-	obj->setCcdSweptSphereRadius(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetDamping2(btCollisionObject* obj, float lin_damping, float ang_damping)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setDamping(btScalar(lin_damping), btScalar(ang_damping));
-	return true;
-
-}
-
-EXTERN_C DLL_EXPORT bool SetDeactivationTime2(btCollisionObject* obj, float val)
-{
-	obj->setDeactivationTime(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetSleepingThresholds2(btCollisionObject* obj, float lin_threshold, float ang_threshold)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setSleepingThresholds(btScalar(lin_threshold), btScalar(ang_threshold));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetContactProcessingThreshold2(btCollisionObject* obj, float val)
-{
-	obj->setContactProcessingThreshold(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetFriction2(btCollisionObject* obj, float val)
-{
-	obj->setFriction(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetHitFraction2(btCollisionObject* obj, float val)
-{
-	obj->setHitFraction(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetRestitution2(btCollisionObject* obj, float val)
-{
-	obj->setRestitution(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetLinearVelocity2(btCollisionObject* obj, Vector3 val)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setLinearVelocity(val.GetBtVector3());
-	return true;
-}
-
-// (sets both linear and angular interpolation velocity)
-EXTERN_C DLL_EXPORT bool SetInterpolation2(btCollisionObject* obj, Vector3 lin, Vector3 ang)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setInterpolationLinearVelocity(lin.GetBtVector3());
-	rb->setInterpolationAngularVelocity(ang.GetBtVector3());
-	rb->setInterpolationWorldTransform(rb->getWorldTransform());
-	return true;
-}
-
-EXTERN_C DLL_EXPORT int GetCollisionFlags2(btCollisionObject* obj)
-{
-	return obj->getCollisionFlags();
-}
-
-EXTERN_C DLL_EXPORT bool SetCollisionFlags2(btCollisionObject* obj, uint32_t flags)
-{
-	obj->setCollisionFlags(flags);
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool AddToCollisionFlags2(btCollisionObject* obj, uint32_t flags)
-{
-	obj->setCollisionFlags(obj->getCollisionFlags() | flags);
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool RemoveFromCollisionFlags2(btCollisionObject* obj, uint32_t flags)
-{
-	obj->setCollisionFlags(obj->getCollisionFlags() & ~flags);
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetMassProps2(btCollisionObject* obj, float mass, Vector3 inertia)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setMassProps(btScalar(mass), inertia.GetBtVector3());
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool UpdateInertiaTensor2(btCollisionObject* obj)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->updateInertiaTensor();
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetGravity2(btCollisionObject* obj, Vector3 val)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->setGravity(val.GetBtVector3());
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool ClearForces2(btCollisionObject* obj)
-{
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	rb->clearForces();
-	return true;
-}
-
-// Zero out all forces and bring the object to a dead stop
-EXTERN_C DLL_EXPORT bool ClearAllForces2(btCollisionObject* obj)
-{
-	Vector3 zeroVector = Vector3();
-
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL) return false;
-
-	SetLinearVelocity2(rb, zeroVector);
-	SetAngularVelocity2(rb, zeroVector);
-	SetObjectForce2(rb, zeroVector);
-	SetInterpolation2(rb, zeroVector, zeroVector);
-	rb->clearForces();
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool SetMargin2(btCollisionObject* obj, float val)
-{
-	obj->getCollisionShape()->setMargin(btScalar(val));
-	return true;
-}
-
-EXTERN_C DLL_EXPORT bool UpdateSingleAabb2(BulletSim* world, btCollisionObject* obj)
-{
-	world->getDynamicsWorld()->updateSingleAabb(obj);
-	return true;
-}
-
-/**
- * Stop simulation for a character or rigid body and free all memory allocated by it.
- * @param worldID ID of the world to modify.
- * @param id Object ID.
- * @return True on success, false if the object was not found.
- */
-EXTERN_C DLL_EXPORT bool DestroyObject2(BulletSim* world, btCollisionObject* obj)
-{
-	delete obj;
 	return true;
 }
 

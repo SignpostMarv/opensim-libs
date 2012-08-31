@@ -135,8 +135,6 @@ void TerrainObject::CreateTerrainBody()
 			((float)heightMapLength) * 0.5f,
 			minHeight + (maxHeight - minHeight) * 0.5f));
 
-	btVector3 theOrigin = heightfieldTr.getOrigin();
-
 	// Use the default motion state since we are not interested in the
 	//   terrain reporting its collisions. Other objects will report their
 	//   collisions with the terrain.

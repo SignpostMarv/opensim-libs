@@ -283,12 +283,18 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
 			btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
 
-			// one of the objects has to want to hear about collisions
+			// DEBUG BEGIN
+			// IDTYPE idAx = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
+			// IDTYPE idBx = CONVLOCALID(objB->getCollisionShape()->getUserPointer());
+			// m_worldData.BSLog("Collision: A=%u/%x, B=%u/%x", idAx, objA->getCollisionFlags(), idBx, objB->getCollisionFlags());
+			// DEBUG END
+
+			// One of the objects has to want to hear about collisions
 			if ((objA->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0
 					&& (objB->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0)
 				continue;
 
-			// when two objects collide, we only report one contact point
+			// When two objects collide, we only report one contact point
 			const btManifoldPoint& manifoldPoint = contactManifold->getContactPoint(0);
 			const btVector3& contactPoint = manifoldPoint.getPositionWorldOnB();
 			btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A

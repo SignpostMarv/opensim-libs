@@ -87,7 +87,7 @@ public:
 		float ret = 0.0;
 		if (xx >= 0 && xx < MaxX && yy >= 0 && yy < MaxY)
 		{
-			ret = HeightMap[((int)xx) * ((int)MaxX) + ((int)yy)];
+			ret = HeightMap[((int)xx) + (((int)yy) * ((int)MaxY))];
 		}
 		return ret;
 	}
