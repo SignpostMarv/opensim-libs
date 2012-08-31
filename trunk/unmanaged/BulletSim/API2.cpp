@@ -523,6 +523,17 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 	return body;
 }
 
+EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, btRigidBody::btRigidBodyConstructionInfo* consInfo)
+{
+	// Use the BulletSim motion state so motion updates will be sent up
+	btRigidBody* body = new btRigidBody(*consInfo);
+	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
+
+	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+
+	return body;
+}
+
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btCollisionShape* shape, Vector3 pos, Quaternion rot)
 {
 	btTransform heightfieldTr;
@@ -549,6 +560,7 @@ EXTERN_C DLL_EXPORT bool SetBodyShape2(BulletSim* sim, btCollisionObject* obj, b
 	obj->setCollisionShape(shape);
 
 	// test
+	// These are attempts to make Bullet accept the new shape that has been stuffed into the RigidBody.
 	btOverlappingPairCache* opp = sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache();
 	opp->cleanProxyFromPairs(obj->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
 
@@ -559,8 +571,44 @@ EXTERN_C DLL_EXPORT bool SetBodyShape2(BulletSim* sim, btCollisionObject* obj, b
 	return true;
 }
 
+// Build a RigidBody construction info from an existing RigidBody.
+// Can be used later to recreate the rigid body.
+EXTERN_C DLL_EXPORT btRigidBody::btRigidBodyConstructionInfo* AllocateBodyInfo2(btCollisionObject* obj)
+{
+
+	btRigidBody::btRigidBodyConstructionInfo* consInfo = NULL;
+
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb)
+	{
+		consInfo = new btRigidBody::btRigidBodyConstructionInfo(
+			1.0 / rb->getInvMass(), rb->getMotionState(), rb->getCollisionShape() );
+		consInfo->m_localInertia = btVector3(0.0, 0.0, 0.0);
+		consInfo->m_linearDamping = rb->getLinearDamping();
+		consInfo->m_angularDamping = rb->getAngularDamping();
+		consInfo->m_friction = rb->getFriction();
+		consInfo->m_restitution = rb->getRestitution();
+		consInfo->m_linearSleepingThreshold = rb->getLinearSleepingThreshold();
+		consInfo->m_angularSleepingThreshold = rb->getAngularSleepingThreshold();
+		// The following are unaccessable but they are usually the default anyway.
+		// If these are used, they must be later set on the restored RigidBody.
+		// consInfo->m_additionalDamping = rb->m_additionalDamping;
+		// consInfo->m_additionalDampingFactor = rb->m_additionalDampingFactor;
+		// consInfo->m_additionalLinearDampingThresholdSqr = rb->m_additionalLinearDampingThresholdSqr;
+		// consInfo->m_additionalAngularDampingThresholdSqr = rb->m_additionalAngularDampingThresholdSqr;
+		// consInfo->m_additionalAngularDampingFactor = rb->m_additionalAngularDampingFactor;
+	}
+	return consInfo;
+}
+
+EXTERN_C DLL_EXPORT void ReleaseBodyInfo2(btRigidBody::btRigidBodyConstructionInfo* consInfo)
+{
+	delete consInfo;
+	return;
+}
+
 // For dubugging
-EXTERN_C void DumpMapInfo(BulletSim* sim, HeightMapInfo* mapInfo)
+EXTERN_C DLL_EXPORT void DumpMapInfo(BulletSim* sim, HeightMapInfo* mapInfo)
 {
 	sim->getWorldData()->BSLog("HeightMapInfo: sizeX=%d, sizeY=%d, collMargin=%f, id=%u, minH=%f, maxH=%f", 
 		mapInfo->sizeX, mapInfo->sizeY, mapInfo->collisionMargin, mapInfo->id, mapInfo->minHeight, mapInfo->maxHeight );
