@@ -309,21 +309,28 @@ EXTERN_C DLL_EXPORT int GetCollisionFlags2(btCollisionObject* obj)
 	return obj->getCollisionFlags();
 }
 
-EXTERN_C DLL_EXPORT bool SetCollisionFlags2(btCollisionObject* obj, uint32_t flags)
+EXTERN_C DLL_EXPORT uint32_t SetCollisionFlags2(btCollisionObject* obj, uint32_t flags)
 {
 	obj->setCollisionFlags(flags);
-	return true;
+	return obj->getCollisionFlags();
 }
 
-EXTERN_C DLL_EXPORT bool AddToCollisionFlags2(btCollisionObject* obj, uint32_t flags)
+EXTERN_C DLL_EXPORT uint32_t AddToCollisionFlags2(btCollisionObject* obj, uint32_t flags)
 {
 	obj->setCollisionFlags(obj->getCollisionFlags() | flags);
-	return true;
+	return obj->getCollisionFlags();
 }
 
-EXTERN_C DLL_EXPORT bool RemoveFromCollisionFlags2(btCollisionObject* obj, uint32_t flags)
+EXTERN_C DLL_EXPORT uint32_t RemoveFromCollisionFlags2(btCollisionObject* obj, uint32_t flags)
 {
 	obj->setCollisionFlags(obj->getCollisionFlags() & ~flags);
+	return obj->getCollisionFlags();
+}
+
+EXTERN_C DLL_EXPORT bool SetCollisionFilterMask(btCollisionObject* obj, unsigned int filter, unsigned int mask)
+{
+	obj->getBroadphaseHandle()->m_collisionFilterGroup = (short)filter;
+	obj->getBroadphaseHandle()->m_collisionFilterMask = (short)mask;
 	return true;
 }
 
@@ -379,6 +386,11 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 EXTERN_C DLL_EXPORT void Activate2(btCollisionObject* obj, bool forceActivation)
 {
 	obj->activate(forceActivation);
+}
+
+EXTERN_C DLL_EXPORT void ForceActivationState2(btCollisionObject* obj, int newState)
+{
+	obj->forceActivationState(newState);
 }
 
 EXTERN_C DLL_EXPORT bool ClearForces2(btCollisionObject* obj)
@@ -523,13 +535,18 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 	return body;
 }
 
+// Create a RigidBody from passed shape and construction info.
+// NOTE: it is presumed that a previous RigidBody was saved into the construction info
+//     and that, in particular, the motionState is a SimMotionState from the saved RigidBody.
+//     This WILL NOT WORK for terrain bodies.
+// This does not restore collisionFlags.
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, btRigidBody::btRigidBodyConstructionInfo* consInfo)
 {
-	// Use the BulletSim motion state so motion updates will be sent up
+	consInfo->m_collisionShape = shape;
 	btRigidBody* body = new btRigidBody(*consInfo);
-	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
 
-	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+	// The saved motion state was the SimMotionState saved from before.
+	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
 
 	return body;
 }
@@ -555,7 +572,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 
 // Given a previously allocated collision object and a new collision shape,
 //    replace the shape on the collision object with the new shape.
-EXTERN_C DLL_EXPORT bool SetBodyShape2(BulletSim* sim, btCollisionObject* obj, btCollisionShape* shape)
+EXTERN_C DLL_EXPORT bool SetCollisionShape2(BulletSim* sim, btCollisionObject* obj, btCollisionShape* shape)
 {
 	obj->setCollisionShape(shape);
 
@@ -569,6 +586,11 @@ EXTERN_C DLL_EXPORT bool SetBodyShape2(BulletSim* sim, btCollisionObject* obj, b
 	//    and their use counts and creating and deleting them as needed.
 
 	return true;
+}
+
+EXTERN_C DLL_EXPORT btCollisionShape* GetCollisionShape2(btCollisionObject* obj)
+{
+	return obj->getCollisionShape();
 }
 
 // Build a RigidBody construction info from an existing RigidBody.
@@ -674,7 +696,7 @@ EXTERN_C DLL_EXPORT bool ReleaseHeightMapInfo2(HeightMapInfo* mapInfo)
 	return true;
 }
 
-// Build and return a btCollsionShape for the terrain
+// Build and return a btCollisionShape for the terrain
 EXTERN_C DLL_EXPORT btCollisionShape* CreateTerrainShape2(HeightMapInfo* mapInfo)
 {
 	const int upAxis = 2;
@@ -719,7 +741,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateGroundPlaneShape2(
  * @param lowAngular low bounds of angular constraint
  * @param hiAngular hi bounds of angular constraint
  * @param 'true' if to use FrameA as reference for the constraint action
- * @param 'true' if disable collsions between the constrained objects
+ * @param 'true' if disable collisions between the constrained objects
  */
 EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 frame1loc, Quaternion frame1rot,

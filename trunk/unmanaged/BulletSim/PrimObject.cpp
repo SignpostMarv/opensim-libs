@@ -49,8 +49,8 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 	btScalar mass = btScalar(data->Mass);
 	btScalar friction = btScalar(data->Friction);
 	btScalar restitution = btScalar(data->Restitution);
-	bool isStatic = (data->Static == 1.0);
-	bool isCollidable = (data->Collidable == 1.0);
+	bool isStatic = (data->Static == ParamTrue);
+	bool isCollidable = (data->Collidable == ParamTrue);
 
 	// Save the ID for this shape in the user settable variable (used to know what is colliding)
 	shape->setUserPointer(PACKLOCALID(id));
@@ -120,8 +120,8 @@ bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 // TODO: generalize these parameters so we can model the non-physical/phantom/collidable objects of OpenSimulator
 bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass, bool removeIt)
 {
-	// m_worldData->BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
-	// 				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
+	m_worldData->BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
+	 				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
 	if (removeIt)
 	{
 		// NOTE: From the author of Bullet: "If you want to change important data 
@@ -212,32 +212,29 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 	if (isDynamic)
 	{
 		m_body->setCollisionFlags(m_body->getCollisionFlags() & ~btCollisionObject::CF_STATIC_OBJECT);
+
 		// We can't deactivate a physical object because Bullet does not tell us when
 		// the object goes idle. The lack of this event means small velocity values are
 		// left on the object and the viewer displays the object floating off.
 		// m_body->setActivationState(DISABLE_DEACTIVATION);
 		// Change for if Bullet has been modified to call MotionState when body goes inactive
 
-		// Recalculate local inertia based on the new mass
-		m_body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
-
 		// Set the new mass
 		m_body->setMassProps(mass, localInertia);
+		m_body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
 		m_body->updateInertiaTensor();
 
 		m_body->activate(true);
 
-		// btVector3 Dvel = m_body->getLinearVelocity();
-		// btVector3 Dgrav = m_body->getGravity();
+		btVector3 Dvel = m_body->getLinearVelocity();
+		btVector3 Dgrav = m_body->getGravity();
 		// m_worldData->BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
 		// 		m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}
 	else
 	{
+		// It's a static object
 		m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
-		// m_body->setActivationState(WANTS_DEACTIVATION);
-		// force the static object to be inactive
-		m_body->forceActivationState(ISLAND_SLEEPING);
 
 		// Clear all forces for this object
 		ClearAllForces2(m_body);
@@ -246,6 +243,9 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		// mass MUST be zero for Bullet to handle it as a static object
 		m_body->setMassProps(0.0, ZERO_VECTOR);
 		m_body->updateInertiaTensor();
+
+		// force the static object to be inactive
+		m_body->forceActivationState(ISLAND_SLEEPING);
 
 		// m_worldData->BSLog("PrimObject::SetObjectDynamic: static. ID=%u", m_id);
 	}
