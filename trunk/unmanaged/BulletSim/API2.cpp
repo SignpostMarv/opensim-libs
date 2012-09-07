@@ -935,8 +935,7 @@ EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
 // Helper function to get the rotation from the world transform.
 EXTERN_C DLL_EXPORT Quaternion GetOrientation2(btCollisionObject* obj)
 {
-	Quaternion ret = obj->getWorldTransform().getRotation();
-	return ret;
+	return Quaternion(obj->getWorldTransform().getRotation());
 }
 
 // Helper routine that sets the world transform based on the passed position and rotation.
@@ -1525,7 +1524,8 @@ EXTERN_C DLL_EXPORT Vector3 GetLocalScaling2(btCollisionShape* shape)
 
 EXTERN_C DLL_EXPORT void CalculateLocalInertia2(btCollisionShape* shape, float mass, Vector3 inertia)
 {
-	shape->calculateLocalInertia(btScalar(mass), inertia.GetBtVector3());
+	btVector3 btInertia = inertia.GetBtVector3();
+	shape->calculateLocalInertia(btScalar(mass), btInertia);
 }
 
 EXTERN_C DLL_EXPORT int GetShapeType2(btCollisionShape* shape)

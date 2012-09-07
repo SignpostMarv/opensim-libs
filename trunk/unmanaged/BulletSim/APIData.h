@@ -124,7 +124,7 @@ struct Quaternion
 		W = ww;
 	}
 
-	Quaternion(btQuaternion& btq)
+	Quaternion(const btQuaternion& btq)
 	{
 		X = btq.getX();
 		Y = btq.getY();
