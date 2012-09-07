@@ -226,8 +226,8 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 
 		m_body->activate(true);
 
-		btVector3 Dvel = m_body->getLinearVelocity();
-		btVector3 Dgrav = m_body->getGravity();
+		// btVector3 Dvel = m_body->getLinearVelocity();
+		// btVector3 Dgrav = m_body->getGravity();
 		// m_worldData->BSLog("PrimObject::SetObjectDynamic: dynamic. ID=%u, Mass = %f, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
 		// 		m_id, mass, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 	}

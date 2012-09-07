@@ -58,6 +58,13 @@ struct Vector3
 		Z = z;
 	}
 
+	Vector3(const btVector3& v)
+	{
+		X = v.getX();
+		Y = v.getY();
+		Z = v.getZ();
+	}
+
 	bool AlmostEqual(const Vector3& v, const float nEpsilon)
 	{
 		return
@@ -117,6 +124,14 @@ struct Quaternion
 		W = ww;
 	}
 
+	Quaternion(btQuaternion& btq)
+	{
+		X = btq.getX();
+		Y = btq.getY();
+		Z = btq.getZ();
+		W = btq.getW();
+	}
+
 	bool AlmostEqual(const Quaternion& q, float nEpsilon)
 	{
 		return
@@ -140,6 +155,54 @@ struct Quaternion
 	}
 };
 
+struct Matrix3x3
+{
+	Vector3 m_el[3];
+public:
+	Matrix3x3()
+	{
+		m_el[0] = Vector3(1.0, 0.0, 0.0);
+		m_el[1] = Vector3(0.0, 1.0, 0.0);
+		m_el[2] = Vector3(0.0, 0.0, 1.0);
+	}
+	void operator= (const btMatrix3x3& o)
+	{
+		m_el[0] = o.getRow(0);
+		m_el[1] = o.getRow(1);
+		m_el[2] = o.getRow(2);
+	}
+	btMatrix3x3 GetBtMatrix3x3()
+	{
+		return btMatrix3x3(
+			m_el[0].X, m_el[0].Y, m_el[0].Z,
+			m_el[1].X, m_el[1].Y, m_el[1].Z,
+			m_el[2].X, m_el[2].Y, m_el[2].Z );
+	}
+};
+
+struct Transform
+{
+	// A btTransform is made of a 3x3 array plus a btVector3 copy of the origin.
+	// Note that a btVector3 is defined as 4 floats (probably for alignment)
+	//    which is why the assignment is done explicitly to get type conversion.
+	Matrix3x3 m_basis;
+	Vector3 m_origin;
+public:
+	Transform() { 
+		m_basis = Matrix3x3();
+		m_origin = Vector3();
+	}
+	Transform(const btTransform& t)
+	{
+		m_basis = t.getBasis();
+		m_origin = t.getOrigin();
+	}
+	btTransform GetBtTransform()
+	{
+		return btTransform(m_basis.GetBtMatrix3x3(), m_origin.GetBtVector3());
+	}
+
+};
 
 // API-exposed structure defining an object
 struct ShapeData
