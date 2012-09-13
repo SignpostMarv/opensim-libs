@@ -170,6 +170,33 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShape2(BulletSim* sim, btCollisio
 	return sim->BuildHullShape2(mesh);
 }
 
+EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim)
+{
+	btCompoundShape* cShape = new btCompoundShape();
+	return cShape;
+}
+
+EXTERN_C DLL_EXPORT void AddChildShapeToCompoundShape2(btCompoundShape* cShape, 
+				btCollisionShape* addShape, Vector3 relativePosition, Quaternion relativeRotation)
+{
+	btTransform relativeTransform;
+	relativeTransform.setIdentity();
+	relativeTransform.setOrigin(relativePosition.GetBtVector3());
+	relativeTransform.setRotation(relativeRotation.GetBtQuaternion());
+
+	cShape->addChildShape(relativeTransform, addShape);
+}
+
+EXTERN_C DLL_EXPORT void RemoveChildShapeFromCompoundShape2(btCompoundShape* cShape, btCollisionShape* removeShape)
+{
+	cShape->removeChildShape(removeShape);
+}
+
+EXTERN_C DLL_EXPORT void RecalculatecompoundShapeLocalAabb2(btCompoundShape* cShape)
+{
+	cShape->recalculateLocalAabb();
+}
+
 EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim,
 						float shapeType, float collisionMargin, Vector3 scale)
 {
@@ -570,13 +597,11 @@ EXTERN_C DLL_EXPORT bool SetFrames2(btTypedConstraint* constrain,
 EXTERN_C DLL_EXPORT void SetConstraintEnable2(btTypedConstraint* constrain, float trueFalse)
 {
 	constrain->setEnabled(trueFalse == ParamTrue ? true : false);
-	return;
 }
 
 EXTERN_C DLL_EXPORT void SetConstraintNumSolverIterations2(btTypedConstraint* constrain, float iterations)
 {
 	constrain->setOverrideNumSolverIterations((int)iterations);
-	return;
 }
 
 EXTERN_C DLL_EXPORT bool SetLinearLimits2(btTypedConstraint* constrain, Vector3 low, Vector3 high)
@@ -935,7 +960,14 @@ EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
 // Helper function to get the rotation from the world transform.
 EXTERN_C DLL_EXPORT Quaternion GetOrientation2(btCollisionObject* obj)
 {
-	return Quaternion(obj->getWorldTransform().getRotation());
+	Quaternion ret = Quaternion();
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb) 
+		ret = rb->getOrientation();
+	else
+		ret = obj->getWorldTransform().getRotation();
+
+	return ret;
 }
 
 // Helper routine that sets the world transform based on the passed position and rotation.
@@ -1292,7 +1324,7 @@ EXTERN_C DLL_EXPORT Vector3 GetCenterOfMassPosition2(btCollisionObject* obj)
 	return ret;
 }
 
-/* We supply a helper function that works generally for btCollisionObject's
+/* A helper function is above that works generally for btCollisionObject's
 EXTERN_C DLL_EXPORT Quaternion GetOrientation2(btCollisionObject* obj)
 {
 	Quaternion ret = Quaternion();
@@ -1522,10 +1554,11 @@ EXTERN_C DLL_EXPORT Vector3 GetLocalScaling2(btCollisionShape* shape)
 	return shape->getLocalScaling();
 }
 
-EXTERN_C DLL_EXPORT void CalculateLocalInertia2(btCollisionShape* shape, float mass, Vector3 inertia)
+EXTERN_C DLL_EXPORT Vector3 CalculateLocalInertia2(btCollisionShape* shape, float mass)
 {
-	btVector3 btInertia = inertia.GetBtVector3();
+	btVector3 btInertia;
 	shape->calculateLocalInertia(btScalar(mass), btInertia);
+	return Vector3(btInertia);
 }
 
 EXTERN_C DLL_EXPORT int GetShapeType2(btCollisionShape* shape)

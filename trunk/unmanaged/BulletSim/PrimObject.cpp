@@ -120,8 +120,8 @@ bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollis
 // TODO: generalize these parameters so we can model the non-physical/phantom/collidable objects of OpenSimulator
 bool PrimObject::SetObjectProperties(bool isStatic, bool isSolid, bool genCollisions, float mass, bool removeIt)
 {
-	m_worldData->BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
-	 				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
+	// m_worldData->BSLog("PrimObject::SetObjectProperties: id=%u, rem=%s, isStatic=%d, isSolid=%d, genCollisions=%d, mass=%f", 
+	//  				m_id, removeIt?"true":"false", isStatic, isSolid, genCollisions, mass);
 	if (removeIt)
 	{
 		// NOTE: From the author of Bullet: "If you want to change important data 
@@ -220,8 +220,8 @@ bool PrimObject::SetObjectDynamic(bool isDynamic, float mass, bool removeIt)
 		// Change for if Bullet has been modified to call MotionState when body goes inactive
 
 		// Set the new mass
-		m_body->setMassProps(mass, localInertia);
 		m_body->getCollisionShape()->calculateLocalInertia(mass, localInertia);
+		m_body->setMassProps(mass, localInertia);
 		m_body->updateInertiaTensor();
 
 		m_body->activate(true);
