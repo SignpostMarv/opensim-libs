@@ -228,6 +228,28 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim,
 	return shape;
 }
 
+// Return 'true' if this shape is a Bullet implemented native shape
+EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
+{
+	bool ret = false;
+	switch (shape->getShapeType())
+	{
+	case ShapeData::SHAPE_BOX:
+		ret = true;
+		break;
+	case ShapeData::SHAPE_CONE:
+		ret = true;
+		break;
+	case ShapeData::SHAPE_CYLINDER:
+		ret = true;
+		break;
+	case ShapeData::SHAPE_SPHERE:
+		ret = true;
+		break;
+	}
+	return ret;
+}
+
 EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape* shape)
 {
 	delete shape;
