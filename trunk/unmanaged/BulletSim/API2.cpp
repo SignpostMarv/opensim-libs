@@ -381,7 +381,7 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* world, btCollisionObject* obj
 
 // =====================================================================
 // Terrain creation and helper routines
-EXTERN_C DLL_EXPORT void DumpMapInfo(BulletSim* sim, HeightMapInfo* mapInfo)
+EXTERN_C DLL_EXPORT void DumpMapInfo2(BulletSim* sim, HeightMapInfo* mapInfo)
 {
 	sim->getWorldData()->BSLog("HeightMapInfo: sizeX=%d, sizeY=%d, collMargin=%f, id=%u, minH=%f, maxH=%f", 
 		mapInfo->sizeX, mapInfo->sizeY, mapInfo->collisionMargin, mapInfo->id, mapInfo->minHeight, mapInfo->maxHeight );
@@ -423,7 +423,7 @@ EXTERN_C DLL_EXPORT void FillHeightMapInfo2(BulletSim* sim, HeightMapInfo* mapIn
 		delete mapInfo->heightMap;
 	mapInfo->heightMap = localHeightMap;
 
-	// DumpMapInfo(sim, mapInfo);
+	// DumpMapInfo2(sim, mapInfo);
 
 	return;
 }
@@ -1664,6 +1664,100 @@ EXTERN_C DLL_EXPORT Vector3 RecoverFromPenetration2(BulletSim* world, unsigned i
 
 // =====================================================================
 // Debugging
+EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb)
+	{
+		sim->getWorldData()->BSLog("DumpRigidBody: id= %u, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
+					CONVLOCALID(rb->getUserPointer()),
+					(float)rb->getWorldTransform().getOrigin().getX(),
+					(float)rb->getWorldTransform().getOrigin().getY(),
+					(float)rb->getWorldTransform().getOrigin().getZ(),
+					(float)rb->getOrientation().getX(),
+					(float)rb->getOrientation().getY(),
+					(float)rb->getOrientation().getZ(),
+					(float)rb->getOrientation().getW()
+			);
+
+			// rb->getActivationState(),
+			// rb->getNumConstraintRefs(),
+
+		sim->getWorldData()->BSLog("DumpRigidBody: lVel=<%f,%f,%f>, deltaLVel=<%f,%f,%f>, pushVel=<%f,%f,%f> turnVel=<%f,%f,%f>",
+					(float)rb->getLinearVelocity().getX(),
+					(float)rb->getLinearVelocity().getY(),
+					(float)rb->getLinearVelocity().getZ(),
+					(float)rb->getDeltaLinearVelocity().getX(),
+					(float)rb->getDeltaLinearVelocity().getY(),
+					(float)rb->getDeltaLinearVelocity().getZ(),
+					(float)rb->getPushVelocity().getX(),
+					(float)rb->getPushVelocity().getY(),
+					(float)rb->getPushVelocity().getZ(),
+					(float)rb->getTurnVelocity().getX(),
+					(float)rb->getTurnVelocity().getY(),
+					(float)rb->getTurnVelocity().getZ()
+			);
+
+		sim->getWorldData()->BSLog("DumpRigidBody: aVel=<%f,%f,%f>, deltaAVel=<%f,%f,%f>, aFactor=<%f,%f,%f> sleepThresh=%f, aDamp=%f",
+					(float)rb->getAngularVelocity().getX(),
+					(float)rb->getAngularVelocity().getY(),
+					(float)rb->getAngularVelocity().getZ(),
+					(float)rb->getDeltaAngularVelocity().getX(),
+					(float)rb->getDeltaAngularVelocity().getY(),
+					(float)rb->getDeltaAngularVelocity().getZ(),
+					(float)rb->getAngularFactor().getX(),
+					(float)rb->getAngularFactor().getY(),
+					(float)rb->getAngularFactor().getZ(),
+					(float)rb->getAngularSleepingThreshold(),
+					(float)rb->getAngularDamping()
+			);
+
+		sim->getWorldData()->BSLog("DumpRigidBody: totForce=<%f,%f,%f>, totTorque=<%f,%f,%f>",
+					(float)rb->getTotalForce().getX(),
+					(float)rb->getTotalForce().getY(),
+					(float)rb->getTotalForce().getZ(),
+					(float)rb->getTotalTorque().getX(),
+					(float)rb->getTotalTorque().getY(),
+					(float)rb->getTotalTorque().getZ()
+			);
+
+		sim->getWorldData()->BSLog("DumpRigidBody: grav=<%f,%f,%f>, COMPos=<%f,%f,%f>, invMass=%f",
+					(float)rb->getGravity().getX(),
+					(float)rb->getGravity().getY(),
+					(float)rb->getGravity().getZ(),
+					(float)rb->getCenterOfMassPosition().getX(),
+					(float)rb->getCenterOfMassPosition().getY(),
+					(float)rb->getCenterOfMassPosition().getZ(),
+					(float)rb->getInvMass()
+			);
+
+		sim->getWorldData()->BSLog("DumpRigidBody: interpLVel=<%f,%f,%f>, interpAVel=<%f,%f,%f>",
+					(float)rb->getInterpolationLinearVelocity().getX(),
+					(float)rb->getInterpolationLinearVelocity().getY(),
+					(float)rb->getInterpolationLinearVelocity().getZ(),
+					(float)rb->getInterpolationAngularVelocity().getX(),
+					(float)rb->getInterpolationAngularVelocity().getY(),
+					(float)rb->getInterpolationAngularVelocity().getZ()
+					// rb->getInterpolationWorldTransform(), // btTransform
+			);
+
+		btScalar inertiaTensorYaw, inertiaTensorPitch, inertiaTensorRoll;
+		rb->getInvInertiaTensorWorld().getEulerYPR(inertiaTensorYaw, inertiaTensorPitch, inertiaTensorRoll);
+		sim->getWorldData()->BSLog("DumpRigidBody: invInertDiag=<%f,%f,%f>, invInertiaTensorW: yaw=%f, pitch=%f, roll=%f",
+					(float)rb->getInvInertiaDiagLocal().getX(),
+					(float)rb->getInvInertiaDiagLocal().getY(),
+					(float)rb->getInvInertiaDiagLocal().getZ(),
+					(float)inertiaTensorYaw,
+					(float)inertiaTensorPitch,
+					(float)inertiaTensorRoll
+			);
+	}
+	else
+	{
+		sim->getWorldData()->BSLog("DumpRigidBody: Passed collision object not a btRigidBody");
+	}
+}
+
 // Causes detailed physics performance statistics to be logged.
 EXTERN_C DLL_EXPORT void DumpPhysicsStatistics2(BulletSim* world)
 {
