@@ -1669,8 +1669,8 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
-		sim->getWorldData()->BSLog("DumpRigidBody: id= %u, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
-					CONVLOCALID(rb->getUserPointer()),
+		sim->getWorldData()->BSLog("DumpRigidBody: id=%u, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
+					CONVLOCALID(rb->getCollisionShape()->getUserPointer()),
 					(float)rb->getWorldTransform().getOrigin().getX(),
 					(float)rb->getWorldTransform().getOrigin().getY(),
 					(float)rb->getWorldTransform().getOrigin().getZ(),
