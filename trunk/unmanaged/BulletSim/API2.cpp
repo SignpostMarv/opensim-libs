@@ -968,13 +968,30 @@ EXTERN_C DLL_EXPORT void SetWorldTransform2(btCollisionObject* obj, Transform& t
 
 EXTERN_C DLL_EXPORT Transform GetWorldTransform2(btCollisionObject* obj)
 {
-	return obj->getWorldTransform();
+	btTransform xform;
+
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb)
+		xform = rb->getWorldTransform();
+	else
+		xform = obj->getWorldTransform();
+
+	return xform;
 }
 
 // Helper function to get the position from the world transform.
 EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
 {
-	btTransform xform = obj->getWorldTransform();
+	btTransform xform;
+
+	// getWorldTransform() on a collisionObject adds interpolation to the position.
+	// Getting the transform directly from the rigidBody gets the real value.
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb)
+		xform = rb->getWorldTransform();
+	else
+		xform = obj->getWorldTransform();
+
 	btVector3 p = xform.getOrigin();
 	return Vector3(p.getX(), p.getY(), p.getZ());
 }
@@ -983,6 +1000,7 @@ EXTERN_C DLL_EXPORT Vector3 GetPosition2(btCollisionObject* obj)
 EXTERN_C DLL_EXPORT Quaternion GetOrientation2(btCollisionObject* obj)
 {
 	Quaternion ret = Quaternion();
+
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb) 
 		ret = rb->getOrientation();
