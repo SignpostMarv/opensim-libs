@@ -81,7 +81,7 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	m_broadphase = new btDbvtBroadphase();
 
 	// the following is needed to enable GhostObjects
-	// m_broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
+	m_broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 	
 	m_solver = new btSequentialImpulseConstraintSolver();
 

@@ -250,10 +250,17 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 	return ret;
 }
 
+// Note: this does not do a deep deletion.
 EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape* shape)
 {
 	delete shape;
 	return true;
+}
+
+// Returns a btCollisionObject::CollisionObjectTypes
+EXTERN_C DLL_EXPORT int GetBodyType2(btCollisionObject* obj)
+{
+	return obj->getInternalType();
 }
 
 // Create aa btRigidBody with our MotionState structure so we can track updates to this body.
@@ -312,6 +319,24 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
 
 	return body;
+}
+
+// Create a btGhostObject with the passed shape
+EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btCollisionShape* shape, Vector3 pos, Quaternion rot)
+{
+	btTransform bodyTransform;
+	bodyTransform.setIdentity();
+	bodyTransform.setOrigin(pos.GetBtVector3());
+	bodyTransform.setRotation(rot.GetBtQuaternion());
+
+	btGhostObject* gObj = new btGhostObject();
+	// btGhostObject* gObj = new btPairCachingGhostObject();
+	gObj->setWorldTransform(bodyTransform);
+	gObj->setCollisionShape(shape);
+	
+	gObj->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
+
+	return gObj;
 }
 
 // Build a RigidBody construction info from an existing RigidBody.
@@ -806,10 +831,10 @@ EXTERN_C DLL_EXPORT void SetForceUpdateAllAabbs2(BulletSim* world, bool forceUpd
 EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL)
-		sim->getDynamicsWorld()->addCollisionObject(obj);
-	else
+	if (rb)
 		sim->getDynamicsWorld()->addRigidBody(rb);
+	else
+		sim->getDynamicsWorld()->addCollisionObject(obj);
 	return true;
 }
 
@@ -817,10 +842,10 @@ EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* ob
 EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObject* obj)
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb == NULL)
-		sim->getDynamicsWorld()->removeCollisionObject(obj);
-	else
+	if (rb)
 		sim->getDynamicsWorld()->removeRigidBody(rb);
+	else
+		sim->getDynamicsWorld()->removeCollisionObject(obj);
 	return true;
 }
 
