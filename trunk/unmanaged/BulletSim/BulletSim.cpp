@@ -316,6 +316,9 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			// We check for duplicate collisions between the two objects because
 			//    there may be multiple hulls involved and thus multiple collisions.
 			// TODO: decide if this is really a problem -- can this checking be removed?
+			//    Since the motionState builds a hashset based on ID, there cannot be more
+			//    than one collision per ID. Not doing this check would, at worst, mean
+			//    twice as many collisions are sent up (A to B and B to A).
 			COLLIDERKEYTYPE collisionID = ((COLLIDERKEYTYPE)idA << 32) | idB;
 
 			// If this collision has not been seen yet, record it

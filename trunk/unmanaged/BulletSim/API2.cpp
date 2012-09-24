@@ -197,11 +197,10 @@ EXTERN_C DLL_EXPORT void RecalculatecompoundShapeLocalAabb2(btCompoundShape* cSh
 	cShape->recalculateLocalAabb();
 }
 
-EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim,
-						float shapeType, float collisionMargin, Vector3 scale)
+EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeData* shapeData)
 {
 	btCollisionShape* shape = NULL;
-	switch ((int)shapeType)
+	switch ((int)shapeData->Type)
 	{
 		case ShapeData::SHAPE_BOX:
 			// btBoxShape subtracts the collision margin from the half extents, so no 
@@ -209,20 +208,21 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim,
 			// boxes are defined by their half extents
 			shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));	// this is really a unit box
 			break;
-		// case ShapeData::SHAPE_CONE:	// TODO:
-		// 	shape = new btConeShapeZ(0.5, 1.0);
-		// 	break;
-		// case ShapeData::SHAPE_CYLINDER:	// TODO:
-		// 	shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
-		// 	break;
+		case ShapeData::SHAPE_CONE:	// TODO:
+			shape = new btConeShapeZ(0.5, 1.0);
+			break;
+		case ShapeData::SHAPE_CYLINDER:	// TODO:
+			shape = new btCylinderShapeZ(btVector3(0.5f, 0.5f, 0.5f));
+			break;
 		case ShapeData::SHAPE_SPHERE:
 			shape = new btSphereShape(0.5);		// this is really a unit sphere
 			break;
 	}
 	if (shape != NULL)
 	{
-		shape->setMargin(btScalar(collisionMargin));
-		shape->setLocalScaling(scale.GetBtVector3());
+		shape->setMargin(btScalar(sim->getWorldData()->params->collisionMargin));
+		shape->setLocalScaling(shapeData->Scale.GetBtVector3());
+		shape->setUserPointer(PACKLOCALID(shapeData->ID));
 	}
 
 	return shape;
@@ -255,6 +255,55 @@ EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape*
 {
 	delete shape;
 	return true;
+}
+
+EXTERN_C DLL_EXPORT btCollisionShape* DuplicateCollisionShape2(BulletSim* sim, btCollisionShape* src, unsigned int id)
+{
+	btCollisionShape* newShape = NULL;
+
+	int shapeType = src->getShapeType();
+	switch (shapeType)
+	{
+		case BroadphaseNativeTypes::TRIANGLE_MESH_SHAPE_PROXYTYPE:
+		{
+			btBvhTriangleMeshShape* srcTriShape = (btBvhTriangleMeshShape*)src;
+			newShape = new btBvhTriangleMeshShape(srcTriShape->getMeshInterface(), true, true);
+			break;
+		}
+		/*
+		case BroadphaseNativeTypes::SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE:
+		{
+			btScaledBvhTriangleMeshShape* srcTriShape = (btScaledBvhTriangleMeshShape*)src;
+			newShape = new btScaledBvhTriangleMeshShape(srcTriShape, src->getLocalScaling());
+			break;
+		}
+		*/
+		case BroadphaseNativeTypes::COMPOUND_SHAPE_PROXYTYPE:
+		{
+			btCompoundShape* srcCompShape = (btCompoundShape*)src;
+
+			btCompoundShape* newCompoundShape = new btCompoundShape(false);
+			int childCount = srcCompShape->getNumChildShapes();
+			btCompoundShapeChild* children = srcCompShape->getChildList();
+
+			for (int i = 0; i < childCount; i++)
+			{
+				btCollisionShape* childShape = children[i].m_childShape;
+				btTransform childTransform = children[i].m_transform;
+
+				newCompoundShape->addChildShape(childTransform, childShape);
+			}
+			newShape = newCompoundShape;
+			break;
+		}
+		default:
+			break;
+	}
+	if (newShape != NULL)
+	{
+		newShape->setUserPointer(PACKLOCALID(id));
+	}
+	return newShape;
 }
 
 // Returns a btCollisionObject::CollisionObjectTypes
@@ -329,8 +378,8 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btC
 	bodyTransform.setOrigin(pos.GetBtVector3());
 	bodyTransform.setRotation(rot.GetBtQuaternion());
 
-	btGhostObject* gObj = new btGhostObject();
-	// btGhostObject* gObj = new btPairCachingGhostObject();
+	// btGhostObject* gObj = new btGhostObject();
+	btGhostObject* gObj = new btPairCachingGhostObject();
 	gObj->setWorldTransform(bodyTransform);
 	gObj->setCollisionShape(shape);
 	
