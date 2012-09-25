@@ -31,8 +31,6 @@
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
-#include <set>
-
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
 	// Make sure structures that will be created in initPhysics are marked as not created
@@ -250,6 +248,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			}
 		}
 
+		// OBJECT UPDATES =================================================================
 		// Put all of the updates this frame into m_updatesThisFrameArray
 		int updates = 0;
 		if (m_worldData.updatesThisFrame.size() > 0)
@@ -269,9 +268,10 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		*updatedEntityCount = updates;
 		*updatedEntities = m_updatesThisFrameArray;
 
+		// COLLISIONS =================================================================
 		// Put all of the colliders this frame into m_collidersThisFrameArray
-		std::set<COLLIDERKEYTYPE> collidersThisFrame;
-		int collisions = 0;
+		m_collidersThisFrame.clear();
+		m_collisionsThisFrame = 0;
 		int numManifolds = m_worldData.dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
 		{
@@ -299,51 +299,123 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			const btVector3& contactPoint = manifoldPoint.getPositionWorldOnB();
 			btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A
 
-			// Get the IDs of colliding objects (stored in the one user definable field)
-			IDTYPE idA = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
-			IDTYPE idB = CONVLOCALID(objB->getCollisionShape()->getUserPointer());
+			RecordCollision(objA, objB, contactPoint, contactNormal);
 
-			// Make sure idA is the lower ID so we don't record both 'A hit B' and 'B hit A'
-			if (idA > idB)
-			{
-				IDTYPE temp = idA;
-				idA = idB;
-				idB = temp;
-				contactNormal = -contactNormal;
-			}
-
-			// Create a unique ID for this collision from the two colliding object IDs
-			// We check for duplicate collisions between the two objects because
-			//    there may be multiple hulls involved and thus multiple collisions.
-			// TODO: decide if this is really a problem -- can this checking be removed?
-			//    Since the motionState builds a hashset based on ID, there cannot be more
-			//    than one collision per ID. Not doing this check would, at worst, mean
-			//    twice as many collisions are sent up (A to B and B to A).
-			COLLIDERKEYTYPE collisionID = ((COLLIDERKEYTYPE)idA << 32) | idB;
-
-			// If this collision has not been seen yet, record it
-			if (collidersThisFrame.find(collisionID) == collidersThisFrame.end())
-			{
-				collidersThisFrame.insert(collisionID);
-
-				CollisionDesc cDesc;
-				cDesc.aID = idA;
-				cDesc.bID = idB;
-				cDesc.point = contactPoint;
-				cDesc.normal = contactNormal;
-				m_collidersThisFrameArray[collisions] = cDesc;
-				collisions++;
-			}
-
-			if (collisions >= m_maxCollisionsPerFrame) 
+			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
 				break;
 		}
 
-		*collidersCount = collisions;
+		// Any ghost objects must be relieved of its collisions.
+		int dnumSpecial, dnumGhosts, dnumManifolds, dnumPairs, dnumCollisions;
+		dnumSpecial = dnumGhosts = dnumManifolds = dnumPairs = dnumCollisions = 0;
+		WorldData::SpecialCollisionObjectMapType::iterator it = m_worldData.specialCollisionObjects.begin();
+		for (; it != m_worldData.specialCollisionObjects.end(); it++)
+		{
+			dnumSpecial++;
+			btCollisionObject* collObj = it->second;
+			btPairCachingGhostObject* obj = (btPairCachingGhostObject*)btGhostObject::upcast(collObj);
+			if (obj)
+			{
+				dnumGhosts++;
+				btManifoldArray   manifoldArray;
+				btBroadphasePairArray& pairArray = obj->getOverlappingPairCache()->getOverlappingPairArray();
+				int numPairs = pairArray.size();
+				dnumPairs += numPairs;
+
+				// For all the pairs of sets of contact points
+				for (int i=0; i < numPairs; i++)
+				{
+					manifoldArray.clear();
+
+					const btBroadphasePair& pair = pairArray[i];
+
+					// The real representation is over in the world pair cache
+					btBroadphasePair* collisionPair = m_worldData.dynamicsWorld->getPairCache()->findPair(pair.m_pProxy0,pair.m_pProxy1);
+					if (!collisionPair)
+						continue;
+
+					if (collisionPair->m_algorithm)
+						collisionPair->m_algorithm->getAllContactManifolds(manifoldArray);
+
+					dnumManifolds += manifoldArray.size();
+
+					for (int j=0; j < manifoldArray.size(); j++)
+					{
+						btPersistentManifold* contactManifold = manifoldArray[j];
+
+						btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
+						btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+
+						for (int p=0; p < contactManifold->getNumContacts(); p++)
+						{
+							const btManifoldPoint& pt = contactManifold->getContactPoint(p);
+							if (pt.getDistance()<0.f)
+							{
+								const btVector3& contactPoint = pt.getPositionWorldOnA();
+								const btVector3& normalOnA = -pt.m_normalWorldOnB;
+								RecordCollision(objA, objB, contactPoint, normalOnA);
+								dnumCollisions++;
+								// Only one contact point for each set of colliding objects
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (dnumSpecial > 0)
+		{
+			m_worldData.BSLog("Ghost Collisions: numSpecial=%d, numGhosts=%d, numPairs=%d, numManifolds=%d, numCollisions=%d",
+							dnumSpecial, dnumGhosts, dnumPairs, dnumManifolds, dnumCollisions);
+		}
+
+		*collidersCount = m_collisionsThisFrame;
 		*colliders = m_collidersThisFrameArray;
 	}
 
 	return numSimSteps;
+}
+
+void BulletSim::RecordCollision(btCollisionObject* objA, btCollisionObject* objB, const btVector3& contact, const btVector3& norm)
+{
+	btVector3 contactNormal = norm;
+
+	// Get the IDs of colliding objects (stored in the one user definable field)
+	IDTYPE idA = CONVLOCALID(objA->getUserPointer());
+	IDTYPE idB = CONVLOCALID(objB->getUserPointer());
+
+	// Make sure idA is the lower ID so we don't record both 'A hit B' and 'B hit A'
+	if (idA > idB)
+	{
+		IDTYPE temp = idA;
+		idA = idB;
+		idB = temp;
+		contactNormal = -contactNormal;
+	}
+
+	// Create a unique ID for this collision from the two colliding object IDs
+	// We check for duplicate collisions between the two objects because
+	//    there may be multiple hulls involved and thus multiple collisions.
+	// TODO: decide if this is really a problem -- can this checking be removed?
+	//    How many duplicate manifolds are there?
+	// Also, using obj->getCollisionFlags() we can pass up only the collisions
+	//    for one object if it's the only one requesting. Wouldn't have to do
+	//    the "Collide(a,b);Collide(b,a)" in BSScene.
+	COLLIDERKEYTYPE collisionID = ((COLLIDERKEYTYPE)idA << 32) | idB;
+
+	// If this collision has not been seen yet, record it
+	if (m_collidersThisFrame.find(collisionID) == m_collidersThisFrame.end())
+	{
+		m_collidersThisFrame.insert(collisionID);
+
+		CollisionDesc cDesc;
+		cDesc.aID = idA;
+		cDesc.bID = idB;
+		cDesc.point = contact;
+		cDesc.normal = contactNormal;
+		m_collidersThisFrameArray[m_collisionsThisFrame] = cDesc;
+		m_collisionsThisFrame++;
+	}
 }
 
 // Register to be called just after the simulation step of Bullet.
@@ -582,8 +654,9 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 //   HACD hull creation code. The created hull will go into the hull collection
 //   so remember to delete it later.
 // Returns the created collision shape or NULL if couldn't create
-btCollisionShape* BulletSim::BuildHullShape2(btCollisionShape* mesh)
+btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh)
 {
+	// TODO: write the code to use the Bullet HACD routine
 	return NULL;
 }
 

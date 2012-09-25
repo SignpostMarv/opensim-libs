@@ -74,6 +74,11 @@ struct WorldData
 	typedef std::map<IDTYPE, IPhysObject*> StepObjectCallbacksMapType;
 	StepObjectCallbacksMapType stepObjectCallbacks;
 
+	// Some collisionObjects can set themselves up for special collision processing.
+	// This is used for ghost objects to be handed in the simulation step.
+	typedef std::map<IDTYPE, btCollisionObject*> SpecialCollisionObjectMapType;
+	SpecialCollisionObjectMapType specialCollisionObjects;
+
 	// Objects in this world
 	// We create a class instance (using IPhysObjectFactory()) for each of the
 	// object types kept in the world. This separates the code for handling

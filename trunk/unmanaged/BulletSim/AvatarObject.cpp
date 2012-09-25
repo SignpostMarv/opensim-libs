@@ -61,9 +61,6 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	btCollisionShape* shape = new btCapsuleShapeZ(1.0, 1.0);
 	shape->setMargin(m_worldData->params->collisionMargin);
 	
-	// Save the ID for this shape in the user settable variable (used to know what is colliding)
-	shape->setUserPointer(PACKLOCALID(m_id));
-	
 	// Create a starting transform
 	btTransform startTransform;
 	startTransform.setIdentity();
@@ -82,6 +79,9 @@ AvatarObject::AvatarObject(WorldData* world, ShapeData* data) {
 	btRigidBody::btRigidBodyConstructionInfo cInfo(mass, motionState, shape, localInertia);
 	m_body = new btRigidBody(cInfo);
 	motionState->RigidBody = m_body;
+
+	// Save the ID for this shape in the user settable variable (used to know what is colliding)
+	m_body->setUserPointer(PACKLOCALID(m_id));
 
 	// Characters can have special collision operations.
 	m_body->setCollisionFlags(m_body->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);

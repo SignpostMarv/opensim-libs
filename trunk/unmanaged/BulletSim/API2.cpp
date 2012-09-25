@@ -166,8 +166,8 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim,
 	return sim->CreateHullShape2(hullCount, hulls);
 }
 
-EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShape2(BulletSim* sim, btCollisionShape* mesh) {
-	return sim->BuildHullShape2(mesh);
+EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh) {
+	return sim->BuildHullShapeFromMesh2(mesh);
 }
 
 EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim)
@@ -313,15 +313,13 @@ EXTERN_C DLL_EXPORT int GetBodyType2(btCollisionObject* obj)
 }
 
 // Create aa btRigidBody with our MotionState structure so we can track updates to this body.
-EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCollisionShape* shape, Vector3 pos, Quaternion rot)
+EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCollisionShape* shape, 
+						IDTYPE id, Vector3 pos, Quaternion rot)
 {
 	btTransform bodyTransform;
 	bodyTransform.setIdentity();
 	bodyTransform.setOrigin(pos.GetBtVector3());
 	bodyTransform.setRotation(rot.GetBtQuaternion());
-
-	// Extract the id of the collision shape so SimMotionState can report collisions for this.
-	IDTYPE id = CONVLOCALID(shape->getUserPointer());
 
 	// Use the BulletSim motion state so motion updates will be sent up
 	SimMotionState* motionState = new SimMotionState(id, bodyTransform, &(sim->getWorldData()->updatesThisFrame));
@@ -329,7 +327,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 	btRigidBody* body = new btRigidBody(cInfo);
 	motionState->RigidBody = body;
 
-	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+	body->setUserPointer(PACKLOCALID(id));
 
 	return body;
 }
@@ -339,19 +337,22 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 //     and that, in particular, the motionState is a SimMotionState from the saved RigidBody.
 //     This WILL NOT WORK for terrain bodies.
 // This does not restore collisionFlags.
-EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, btRigidBody::btRigidBodyConstructionInfo* consInfo)
+EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, 
+						IDTYPE id, btRigidBody::btRigidBodyConstructionInfo* consInfo)
 {
 	consInfo->m_collisionShape = shape;
 	btRigidBody* body = new btRigidBody(*consInfo);
 
 	// The saved motion state was the SimMotionState saved from before.
 	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
+	body->setUserPointer(PACKLOCALID(id));
 
 	return body;
 }
 
 // Create a btRigidBody with the default MotionState. We will not get any movement updates from this body.
-EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btCollisionShape* shape, Vector3 pos, Quaternion rot)
+EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btCollisionShape* shape, 
+						IDTYPE id, Vector3 pos, Quaternion rot)
 {
 	btTransform heightfieldTr;
 	heightfieldTr.setIdentity();
@@ -365,26 +366,29 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 	btRigidBody::btRigidBodyConstructionInfo cInfo(0.0, motionState, shape);
 	btRigidBody* body = new btRigidBody(cInfo);
 
-	body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+	body->setUserPointer(PACKLOCALID(id));
 
 	return body;
 }
 
 // Create a btGhostObject with the passed shape
-EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btCollisionShape* shape, Vector3 pos, Quaternion rot)
+EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btCollisionShape* shape, 
+						IDTYPE id, Vector3 pos, Quaternion rot)
 {
 	btTransform bodyTransform;
 	bodyTransform.setIdentity();
 	bodyTransform.setOrigin(pos.GetBtVector3());
 	bodyTransform.setRotation(rot.GetBtQuaternion());
 
-	// btGhostObject* gObj = new btGhostObject();
 	btGhostObject* gObj = new btPairCachingGhostObject();
 	gObj->setWorldTransform(bodyTransform);
 	gObj->setCollisionShape(shape);
-	
-	gObj->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
+	gObj->setUserPointer(PACKLOCALID(id));
+
+	// place the ghost object in the list to be scanned for colliions at step time
+	sim->getWorldData()->specialCollisionObjects[id] = gObj;
+	
 	return gObj;
 }
 
@@ -432,7 +436,7 @@ EXTERN_C DLL_EXPORT void ReleaseBodyInfo2(btRigidBody::btRigidBodyConstructionIn
  * @param id Object ID.
  * @return True on success, false if the object was not found.
  */
-EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* world, btCollisionObject* obj)
+EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 {
 
 	btRigidBody* rb = btRigidBody::upcast(obj);
@@ -448,6 +452,10 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* world, btCollisionObject* obj
 	btCollisionShape* shape = obj->getCollisionShape();
 	if (shape) 
 		delete shape;
+
+	// Remove from special collision objects. A NOOP if not in the list.
+	IDTYPE id = CONVLOCALID(obj->getUserPointer());
+	sim->getWorldData()->stepObjectCallbacks.erase(id);
 
 	// finally make the object itself go away
 	delete obj;
@@ -488,7 +496,7 @@ EXTERN_C DLL_EXPORT void FillHeightMapInfo2(BulletSim* sim, HeightMapInfo* mapIn
 
 	int numEntries = mapInfo->sizeX * mapInfo->sizeY;
 
-	// Copy the heightmap local because the passed in array will be freed on return
+	// Copy the heightmap local because the passed in array will be freed on return.
 	float* localHeightMap = new float[numEntries];
 	bsMemcpy(localHeightMap, heightMap, numEntries * sizeof(float));
 
@@ -1690,7 +1698,7 @@ EXTERN_C DLL_EXPORT float GetMargin2(btCollisionShape* shape)
 	return shape->getMargin();
 }
 
-EXTERN_C DLL_EXPORT void SetCollisionFilterMask(btCollisionObject* obj, unsigned int filter, unsigned int mask)
+EXTERN_C DLL_EXPORT void SetCollisionFilterMask2(btCollisionObject* obj, unsigned int filter, unsigned int mask)
 {
 	btBroadphaseProxy* proxy = obj->getBroadphaseHandle();
 	// If the object is not in the world, there won't be a proxy.
@@ -1756,25 +1764,72 @@ EXTERN_C DLL_EXPORT Vector3 RecoverFromPenetration2(BulletSim* world, unsigned i
 
 // =====================================================================
 // Debugging
+// Dump a btCollisionObject and even more if it's a btRigidBody.
 EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 {
+	sim->getWorldData()->BSLog("DumpRigidBody: id=%u, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
+				CONVLOCALID(obj->getCollisionShape()->getUserPointer()),
+				(float)obj->getWorldTransform().getOrigin().getX(),
+				(float)obj->getWorldTransform().getOrigin().getY(),
+				(float)obj->getWorldTransform().getOrigin().getZ(),
+				(float)obj->getWorldTransform().getRotation().getX(),
+				(float)obj->getWorldTransform().getRotation().getY(),
+				(float)obj->getWorldTransform().getRotation().getZ(),
+				(float)obj->getWorldTransform().getRotation().getW()
+		);
+
+	sim->getWorldData()->BSLog("DumpRigidBody: actState=%d, active=%s, static=%s, mergesIslnd=%s, contactResp=%s, cFlag=%d, deactTime=%f",
+				obj->getActivationState(),
+				obj->isActive() ? "true" : "false",
+				obj->isStaticObject() ? "true" : "false",
+				obj->mergesSimulationIslands() ? "true" : "false",
+				obj->hasContactResponse() ? "true" : "false",
+				obj->getCollisionFlags(),
+				(float)obj->getDeactivationTime()
+		);
+
+	sim->getWorldData()->BSLog("DumpRigidBody: ccdTrsh=%f, ccdSweep=%f, contProc=%f, frict=%f, hitFrict=%f, restit=%f, internTyp=%f",
+				(float)obj->getCcdMotionThreshold(),
+				(float)obj->getCcdSweptSphereRadius(),
+				(float)obj->getContactProcessingThreshold(),
+				(float)obj->getFriction(),
+				(float)obj->getHitFraction(),
+				(float)obj->getRestitution(),
+				(float)obj->getInternalType()
+		);
+
+	btBroadphaseProxy* proxy = obj->getBroadphaseHandle();
+	if (proxy)
+	{
+		sim->getWorldData()->BSLog("DumpRigidBody: collisionFilterGroup=%X, mask=%X",
+									proxy->m_collisionFilterGroup,
+									proxy->m_collisionFilterMask);
+	}
+
+	btTransform interpTrans = obj->getInterpolationWorldTransform();
+	btVector3 interpPos = interpTrans.getOrigin();
+	btQuaternion interpRot = interpTrans.getRotation();
+	sim->getWorldData()->BSLog("DumpRigidBody: interpPos=<%f,%f,%f>, interpRot=<%f,%f,%f,%f>, interpLVel=<%f,%f,%f>, interpAVel=<%f,%f,%f>",
+				(float)interpPos.getX(),
+				(float)interpPos.getY(),
+				(float)interpPos.getZ(),
+				(float)interpRot.getX(),
+				(float)interpRot.getY(),
+				(float)interpRot.getZ(),
+				(float)interpRot.getW(),
+				(float)obj->getInterpolationLinearVelocity().getX(),
+				(float)obj->getInterpolationLinearVelocity().getY(),
+				(float)obj->getInterpolationLinearVelocity().getZ(),
+				(float)obj->getInterpolationAngularVelocity().getX(),
+				(float)obj->getInterpolationAngularVelocity().getY(),
+				(float)obj->getInterpolationAngularVelocity().getZ()
+		);
+
+
+
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
-		sim->getWorldData()->BSLog("DumpRigidBody: id=%u, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
-					CONVLOCALID(rb->getCollisionShape()->getUserPointer()),
-					(float)rb->getWorldTransform().getOrigin().getX(),
-					(float)rb->getWorldTransform().getOrigin().getY(),
-					(float)rb->getWorldTransform().getOrigin().getZ(),
-					(float)rb->getOrientation().getX(),
-					(float)rb->getOrientation().getY(),
-					(float)rb->getOrientation().getZ(),
-					(float)rb->getOrientation().getW()
-			);
-
-			// rb->getActivationState(),
-			// rb->getNumConstraintRefs(),
-
 		sim->getWorldData()->BSLog("DumpRigidBody: lVel=<%f,%f,%f>, deltaLVel=<%f,%f,%f>, pushVel=<%f,%f,%f> turnVel=<%f,%f,%f>",
 					(float)rb->getLinearVelocity().getX(),
 					(float)rb->getLinearVelocity().getY(),
@@ -1823,16 +1878,6 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 					(float)rb->getInvMass()
 			);
 
-		sim->getWorldData()->BSLog("DumpRigidBody: interpLVel=<%f,%f,%f>, interpAVel=<%f,%f,%f>",
-					(float)rb->getInterpolationLinearVelocity().getX(),
-					(float)rb->getInterpolationLinearVelocity().getY(),
-					(float)rb->getInterpolationLinearVelocity().getZ(),
-					(float)rb->getInterpolationAngularVelocity().getX(),
-					(float)rb->getInterpolationAngularVelocity().getY(),
-					(float)rb->getInterpolationAngularVelocity().getZ()
-					// rb->getInterpolationWorldTransform(), // btTransform
-			);
-
 		btScalar inertiaTensorYaw, inertiaTensorPitch, inertiaTensorRoll;
 		rb->getInvInertiaTensorWorld().getEulerYPR(inertiaTensorYaw, inertiaTensorPitch, inertiaTensorRoll);
 		sim->getWorldData()->BSLog("DumpRigidBody: invInertDiag=<%f,%f,%f>, invInertiaTensorW: yaw=%f, pitch=%f, roll=%f",
@@ -1844,10 +1889,22 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 					(float)inertiaTensorRoll
 			);
 	}
-	else
-	{
-		sim->getWorldData()->BSLog("DumpRigidBody: Passed collision object not a btRigidBody");
-	}
+}
+
+EXTERN_C DLL_EXPORT void DumpCollisionShape2(BulletSim* sim, btCollisionShape* shape)
+{
+		sim->getWorldData()->BSLog("DumpCollisionShape: type=%d, id=%u, margin=%f, isMoving=%s, isConvex=%s",
+				shape->getShapeType(),
+				CONVLOCALID(shape->getUserPointer()),
+				(float)shape->getMargin(),
+				shape->isNonMoving() ? "true" : "false",
+				shape->isConvex() ? "true" : "false"
+			);
+		sim->getWorldData()->BSLog("DumpCollisionShape:   localScaling=<%f,%f,%f>",
+				(float)shape->getLocalScaling().getX(),
+				(float)shape->getLocalScaling().getY(),
+				(float)shape->getLocalScaling().getZ()
+			);
 }
 
 // Causes detailed physics performance statistics to be logged.

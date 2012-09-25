@@ -41,6 +41,7 @@
 #include "LinearMath/btMotionState.h"
 #include "btBulletDynamicsCommon.h"
 
+#include <set>
 #include <map>
 
 // #define TOLERANCE 0.00001
@@ -58,6 +59,7 @@ static bool IsPhantom(const btCollisionObject* obj)
 {
 	// Characters are never phantom, but everything else with CF_NO_CONTACT_RESPONSE is
 	// TODO: figure out of this assumption for phantom sensing is still true
+	//    This is used in the raycast code an should be rethought for the real implementation.
 	return obj->getCollisionShape()->getShapeType() != CAPSULE_SHAPE_PROXYTYPE &&
 		(obj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
 };
@@ -252,7 +254,11 @@ private:
 
 	// Used to expose colliders from Bullet to the BulletSim API
 	int m_maxCollisionsPerFrame;
+	int m_collisionsThisFrame;
 	CollisionDesc* m_collidersThisFrameArray;
+
+	std::set<COLLIDERKEYTYPE> m_collidersThisFrame;
+	void RecordCollision(btCollisionObject* objA, btCollisionObject* objB, const btVector3& contact, const btVector3& norm);
 
 public:
 
@@ -282,7 +288,7 @@ public:
 
 	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices );
 	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
-	btCollisionShape* BuildHullShape2(btCollisionShape* mesh);
+	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh);
 
 	bool CreateObject(ShapeData* shapeData);
 	bool DestroyObject(IDTYPE id);
