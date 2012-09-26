@@ -289,11 +289,6 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			// m_worldData.BSLog("Collision: A=%u/%x, B=%u/%x", idAx, objA->getCollisionFlags(), idBx, objB->getCollisionFlags());
 			// DEBUG END
 
-			// One of the objects has to want to hear about collisions
-			if ((objA->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0
-					&& (objB->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0)
-				continue;
-
 			// When two objects collide, we only report one contact point
 			const btManifoldPoint& manifoldPoint = contactManifold->getContactPoint(0);
 			const btVector3& contactPoint = manifoldPoint.getPositionWorldOnB();
@@ -305,68 +300,19 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 				break;
 		}
 
-		// Any ghost objects must be relieved of its collisions.
-		int dnumSpecial, dnumGhosts, dnumManifolds, dnumPairs, dnumCollisions;
-		dnumSpecial = dnumGhosts = dnumManifolds = dnumPairs = dnumCollisions = 0;
+		// Any ghost objects must be relieved of their collisions.
 		WorldData::SpecialCollisionObjectMapType::iterator it = m_worldData.specialCollisionObjects.begin();
 		for (; it != m_worldData.specialCollisionObjects.end(); it++)
 		{
-			dnumSpecial++;
 			btCollisionObject* collObj = it->second;
 			btPairCachingGhostObject* obj = (btPairCachingGhostObject*)btGhostObject::upcast(collObj);
 			if (obj)
 			{
-				dnumGhosts++;
-				btManifoldArray   manifoldArray;
-				btBroadphasePairArray& pairArray = obj->getOverlappingPairCache()->getOverlappingPairArray();
-				int numPairs = pairArray.size();
-				dnumPairs += numPairs;
-
-				// For all the pairs of sets of contact points
-				for (int i=0; i < numPairs; i++)
-				{
-					manifoldArray.clear();
-
-					const btBroadphasePair& pair = pairArray[i];
-
-					// The real representation is over in the world pair cache
-					btBroadphasePair* collisionPair = m_worldData.dynamicsWorld->getPairCache()->findPair(pair.m_pProxy0,pair.m_pProxy1);
-					if (!collisionPair)
-						continue;
-
-					if (collisionPair->m_algorithm)
-						collisionPair->m_algorithm->getAllContactManifolds(manifoldArray);
-
-					dnumManifolds += manifoldArray.size();
-
-					for (int j=0; j < manifoldArray.size(); j++)
-					{
-						btPersistentManifold* contactManifold = manifoldArray[j];
-
-						btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
-						btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
-
-						for (int p=0; p < contactManifold->getNumContacts(); p++)
-						{
-							const btManifoldPoint& pt = contactManifold->getContactPoint(p);
-							if (pt.getDistance()<0.f)
-							{
-								const btVector3& contactPoint = pt.getPositionWorldOnA();
-								const btVector3& normalOnA = -pt.m_normalWorldOnB;
-								RecordCollision(objA, objB, contactPoint, normalOnA);
-								dnumCollisions++;
-								// Only one contact point for each set of colliding objects
-								break;
-							}
-						}
-					}
-				}
+				RecordGhostCollisions(obj);
 			}
-		}
-		if (dnumSpecial > 0)
-		{
-			m_worldData.BSLog("Ghost Collisions: numSpecial=%d, numGhosts=%d, numPairs=%d, numManifolds=%d, numCollisions=%d",
-							dnumSpecial, dnumGhosts, dnumPairs, dnumManifolds, dnumCollisions);
+
+			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
+				break;
 		}
 
 		*collidersCount = m_collisionsThisFrame;
@@ -379,6 +325,13 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 void BulletSim::RecordCollision(btCollisionObject* objA, btCollisionObject* objB, const btVector3& contact, const btVector3& norm)
 {
 	btVector3 contactNormal = norm;
+
+	// One of the objects has to want to hear about collisions
+	if ((objA->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0
+						&& (objB->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0)
+	{
+		return;
+	}
 
 	// Get the IDs of colliding objects (stored in the one user definable field)
 	IDTYPE idA = CONVLOCALID(objA->getUserPointer());
@@ -415,6 +368,57 @@ void BulletSim::RecordCollision(btCollisionObject* objA, btCollisionObject* objB
 		cDesc.normal = contactNormal;
 		m_collidersThisFrameArray[m_collisionsThisFrame] = cDesc;
 		m_collisionsThisFrame++;
+	}
+}
+
+void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
+{
+	btManifoldArray   manifoldArray;
+	btBroadphasePairArray& pairArray = obj->getOverlappingPairCache()->getOverlappingPairArray();
+	int numPairs = pairArray.size();
+
+	// For all the pairs of sets of contact points
+	for (int i=0; i < numPairs; i++)
+	{
+		manifoldArray.clear();
+
+		const btBroadphasePair& pair = pairArray[i];
+
+		// The real representation is over in the world pair cache
+		btBroadphasePair* collisionPair = m_worldData.dynamicsWorld->getPairCache()->findPair(pair.m_pProxy0,pair.m_pProxy1);
+		if (!collisionPair)
+			continue;
+
+		if (collisionPair->m_algorithm)
+			collisionPair->m_algorithm->getAllContactManifolds(manifoldArray);
+
+		// The collision pair has sets of collision points (manifolds)
+		for (int j=0; j < manifoldArray.size(); j++)
+		{
+			btPersistentManifold* contactManifold = manifoldArray[j];
+			int numContacts = contactManifold->getNumContacts();
+
+			btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
+			btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+
+			// TODO: this is a more thurough check than the regular collision code --
+			//     here we find the penetrating contact in the manifold but for regular
+			//     collisions we assume the first point in the manifold is good enough.
+			//     Decide of this extra checking is required or if first point is good enough.
+			for (int p=0; p < numContacts; p++)
+			{
+				const btManifoldPoint& pt = contactManifold->getContactPoint(p);
+				// If a penetrating contact, this is a hit
+				if (pt.getDistance()<0.f)
+				{
+					const btVector3& contactPoint = pt.getPositionWorldOnA();
+					const btVector3& normalOnA = -pt.m_normalWorldOnB;
+					RecordCollision(objA, objB, contactPoint, normalOnA);
+					// Only one contact point for each set of colliding objects
+					break;
+				}
+			}
+		}
 	}
 }
 

@@ -222,7 +222,6 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeDat
 	{
 		shape->setMargin(btScalar(sim->getWorldData()->params->collisionMargin));
 		shape->setLocalScaling(shapeData->Scale.GetBtVector3());
-		shape->setUserPointer(PACKLOCALID(shapeData->ID));
 	}
 
 	return shape;
@@ -1421,13 +1420,15 @@ EXTERN_C DLL_EXPORT void ClearAllForces2(btCollisionObject* obj)
 {
 	btVector3 zeroVector = btVector3(0.0, 0.0, 0.0);
 
+	obj->setInterpolationLinearVelocity(zeroVector);
+	obj->setInterpolationAngularVelocity(zeroVector);
+	obj->setInterpolationWorldTransform(obj->getWorldTransform());
+
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
 		rb->setLinearVelocity(zeroVector);
 		rb->setAngularVelocity(zeroVector);
-		rb->setInterpolationLinearVelocity(zeroVector);
-		rb->setInterpolationAngularVelocity(zeroVector);
 		rb->clearForces();
 	}
 }
