@@ -82,8 +82,8 @@ PrimObject::PrimObject(WorldData* world, ShapeData* data) {
 
 	world->dynamicsWorld->addRigidBody(body);
 
-	btVector3 Dvel = m_body->getLinearVelocity();
-	btVector3 Dgrav = m_body->getGravity();
+	// btVector3 Dvel = m_body->getLinearVelocity();
+	// btVector3 Dgrav = m_body->getGravity();
 	// m_worldData->BSLog("PrimObject::constructor: id=%u, vel=<%f,%f,%f>, grav=<%f,%f,%f>", 
 	// 		m_id, Dvel.x(), Dvel.y(), Dvel.z(), Dgrav.x(), Dgrav.y(), Dgrav.z());
 }
