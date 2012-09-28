@@ -29,6 +29,7 @@
 #include <stdarg.h>
 
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "BulletCollision/BroadphaseCollision/btBroadphaseProxy.h"
 
 #include <map>
 
@@ -263,21 +264,21 @@ EXTERN_C DLL_EXPORT btCollisionShape* DuplicateCollisionShape2(BulletSim* sim, b
 	int shapeType = src->getShapeType();
 	switch (shapeType)
 	{
-		case BroadphaseNativeTypes::TRIANGLE_MESH_SHAPE_PROXYTYPE:
+		case TRIANGLE_MESH_SHAPE_PROXYTYPE:
 		{
 			btBvhTriangleMeshShape* srcTriShape = (btBvhTriangleMeshShape*)src;
 			newShape = new btBvhTriangleMeshShape(srcTriShape->getMeshInterface(), true, true);
 			break;
 		}
 		/*
-		case BroadphaseNativeTypes::SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE:
+		case SCALED_TRIANGLE_MESH_SHAPE_PROXYTYPE:
 		{
 			btScaledBvhTriangleMeshShape* srcTriShape = (btScaledBvhTriangleMeshShape*)src;
 			newShape = new btScaledBvhTriangleMeshShape(srcTriShape, src->getLocalScaling());
 			break;
 		}
 		*/
-		case BroadphaseNativeTypes::COMPOUND_SHAPE_PROXYTYPE:
+		case COMPOUND_SHAPE_PROXYTYPE:
 		{
 			btCompoundShape* srcCompShape = (btCompoundShape*)src;
 
