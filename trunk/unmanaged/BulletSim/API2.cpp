@@ -198,10 +198,10 @@ EXTERN_C DLL_EXPORT void RecalculatecompoundShapeLocalAabb2(btCompoundShape* cSh
 	cShape->recalculateLocalAabb();
 }
 
-EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeData* shapeData)
+EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeData shapeData)
 {
 	btCollisionShape* shape = NULL;
-	switch ((int)shapeData->Type)
+	switch ((int)shapeData.Type)
 	{
 		case ShapeData::SHAPE_BOX:
 			// btBoxShape subtracts the collision margin from the half extents, so no 
@@ -222,7 +222,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeDat
 	if (shape != NULL)
 	{
 		shape->setMargin(btScalar(sim->getWorldData()->params->collisionMargin));
-		shape->setLocalScaling(shapeData->Scale.GetBtVector3());
+		shape->setLocalScaling(shapeData.Scale.GetBtVector3());
 	}
 
 	return shape;
