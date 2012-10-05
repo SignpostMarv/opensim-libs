@@ -33,6 +33,8 @@
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
+	bsDebug_Initialize();
+
 	// Make sure structures that will be created in initPhysics are marked as not created
 	m_worldData.dynamicsWorld = NULL;
 	m_worldData.objects = NULL;

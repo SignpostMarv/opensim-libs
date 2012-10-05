@@ -85,6 +85,8 @@ EXTERN_C DLL_EXPORT BulletSim* Initialize2(Vector3 maxPosition, ParamBlock* parm
 											int maxCollisions, CollisionDesc* collisionArray,
 											int maxUpdates, EntityProperties* updateArray)
 {
+	bsDebug_Initialize();
+
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
 	sim->initPhysics(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
 
@@ -110,6 +112,7 @@ EXTERN_C DLL_EXPORT bool UpdateParameter2(BulletSim* sim, unsigned int localID, 
 EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
 {
 	sim->exitPhysics();
+	bsDebug_AllDone();
 	delete sim;
 }
 
@@ -138,6 +141,7 @@ EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubS
 EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownCollisionObject(obj, "PushUpdate2: not a known body");
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb != NULL)
 	{
@@ -158,22 +162,29 @@ EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 EXTERN_C DLL_EXPORT btCollisionShape* CreateMeshShape2(BulletSim* sim, 
 						int indicesCount, int* indices, int verticesCount, float* vertices )
 {
-	return sim->CreateMeshShape2(indicesCount, indices, verticesCount, vertices);
+	btCollisionShape* shape = sim->CreateMeshShape2(indicesCount, indices, verticesCount, vertices);
+	bsDebug_RememberCollisionShape(shape);
+	return shape;
 }
 
 EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim, 
 						int hullCount, float* hulls )
 {
-	return sim->CreateHullShape2(hullCount, hulls);
+	btCollisionShape* shape = sim->CreateHullShape2(hullCount, hulls);
+	bsDebug_RememberCollisionShape(shape);
+	return shape;
 }
 
 EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh) {
-	return sim->BuildHullShapeFromMesh2(mesh);
+	btCollisionShape* shape = sim->BuildHullShapeFromMesh2(mesh);
+	bsDebug_RememberCollisionShape(shape);
+	return shape;
 }
 
 EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim)
 {
 	btCompoundShape* cShape = new btCompoundShape();
+	bsDebug_RememberCollisionShape(cShape);
 	return cShape;
 }
 
@@ -223,6 +234,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeDat
 	{
 		shape->setMargin(btScalar(sim->getWorldData()->params->collisionMargin));
 		shape->setLocalScaling(shapeData.Scale.GetBtVector3());
+		bsDebug_RememberCollisionShape(shape);
 	}
 
 	return shape;
@@ -232,6 +244,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeDat
 EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownCollisionShape(shape, "IsNativeShape2: not known shape");
 	switch (shape->getShapeType())
 	{
 	case ShapeData::SHAPE_BOX:
@@ -253,6 +266,8 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 // Note: this does not do a deep deletion.
 EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape* shape)
 {
+	bsDebug_AssertIsKnownCollisionShape(shape, "DeleteCollisionShape2: not known shape");
+	bsDebug_ForgetCollisionShape(shape);
 	delete shape;
 	return true;
 }
@@ -260,6 +275,7 @@ EXTERN_C DLL_EXPORT bool DeleteCollisionShape2(BulletSim* sim, btCollisionShape*
 EXTERN_C DLL_EXPORT btCollisionShape* DuplicateCollisionShape2(BulletSim* sim, btCollisionShape* src, unsigned int id)
 {
 	btCollisionShape* newShape = NULL;
+	bsDebug_AssertIsKnownCollisionShape(shape, "DuplicateCollisionShape2: not known shape");
 
 	int shapeType = src->getShapeType();
 	switch (shapeType)
@@ -302,6 +318,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* DuplicateCollisionShape2(BulletSim* sim, b
 	if (newShape != NULL)
 	{
 		newShape->setUserPointer(PACKLOCALID(id));
+		bsDebug_RememberCollisionShape(newShape);
 	}
 	return newShape;
 }
@@ -309,6 +326,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* DuplicateCollisionShape2(BulletSim* sim, b
 // Returns a btCollisionObject::CollisionObjectTypes
 EXTERN_C DLL_EXPORT int GetBodyType2(btCollisionObject* obj)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj, "GetBodyType2: not known collisionObject");
 	return obj->getInternalType();
 }
 
@@ -316,6 +334,7 @@ EXTERN_C DLL_EXPORT int GetBodyType2(btCollisionObject* obj)
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCollisionShape* shape, 
 						IDTYPE id, Vector3 pos, Quaternion rot)
 {
+	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyFromShape2: unknown collision shape");
 	btTransform bodyTransform;
 	bodyTransform.setIdentity();
 	bodyTransform.setOrigin(pos.GetBtVector3());
@@ -328,6 +347,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 	motionState->RigidBody = body;
 
 	body->setUserPointer(PACKLOCALID(id));
+	bsDebug_RememberCollisionObject(obj);
 
 	return body;
 }
@@ -340,12 +360,14 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, 
 						IDTYPE id, btRigidBody::btRigidBodyConstructionInfo* consInfo)
 {
+	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyFromShapeAndInfo2: unknown collision shape");
 	consInfo->m_collisionShape = shape;
 	btRigidBody* body = new btRigidBody(*consInfo);
 
 	// The saved motion state was the SimMotionState saved from before.
 	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
 	body->setUserPointer(PACKLOCALID(id));
+	bsDebug_RememberCollisionObject(body);
 
 	return body;
 }
@@ -354,6 +376,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* si
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btCollisionShape* shape, 
 						IDTYPE id, Vector3 pos, Quaternion rot)
 {
+	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyWithDefaultMotionState2: unknown collision shape");
 	btTransform heightfieldTr;
 	heightfieldTr.setIdentity();
 	heightfieldTr.setOrigin(pos.GetBtVector3());
@@ -367,6 +390,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 	btRigidBody* body = new btRigidBody(cInfo);
 
 	body->setUserPointer(PACKLOCALID(id));
+	bsDebug_RememberCollisionObject(body);
 
 	return body;
 }
@@ -375,6 +399,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btCollisionShape* shape, 
 						IDTYPE id, Vector3 pos, Quaternion rot)
 {
+	bsDebug_AssertIsKnownCollisionShape(shape, "CreateGhostFromShape2: unknown collision shape");
 	btTransform bodyTransform;
 	bodyTransform.setIdentity();
 	bodyTransform.setOrigin(pos.GetBtVector3());
@@ -385,6 +410,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btC
 	gObj->setCollisionShape(shape);
 
 	gObj->setUserPointer(PACKLOCALID(id));
+	bsDebug_RememberCollisionObject(gObj);
 
 	// place the ghost object in the list to be scanned for colliions at step time
 	sim->getWorldData()->specialCollisionObjects[id] = gObj;
@@ -439,6 +465,7 @@ EXTERN_C DLL_EXPORT void ReleaseBodyInfo2(btRigidBody::btRigidBodyConstructionIn
 EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 {
 
+	bsDebug_AssertIsKnownCollisionObject(obj, "DestroyObject2: unknown collisionObject");
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
@@ -451,13 +478,18 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 	// Delete the rest of the memory allocated to this object
 	btCollisionShape* shape = obj->getCollisionShape();
 	if (shape) 
+	{
+		bsDebug_AssertIsKnownCollisionShape(shape, "DestroyObject2: unknonw collisionShape");
+		bsDebug_ForgetCollisionShape(shape);
 		delete shape;
+	}
 
 	// Remove from special collision objects. A NOOP if not in the list.
 	IDTYPE id = CONVLOCALID(obj->getUserPointer());
 	sim->getWorldData()->stepObjectCallbacks.erase(id);
 
 	// finally make the object itself go away
+	bsDebug_ForgetCollisionObject(obj);
 	delete obj;
 }
 
@@ -544,6 +576,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateTerrainShape2(HeightMapInfo* mapInfo
 
 	// Add the localID to the object so we know about collisions
 	terrainShape->setUserPointer(PACKLOCALID(mapInfo->id));
+	bsDebug_RememberCollisionShape(terrainShape);
 
 	return terrainShape;
 }
@@ -559,6 +592,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateGroundPlaneShape2(
 	m_planeShape->setMargin(collisionMargin);
 
 	m_planeShape->setUserPointer(PACKLOCALID(id));
+	bsDebug_RememberCollisionShape(m_planeShape);
 
 	return m_planeShape;
 }
@@ -577,11 +611,16 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateGroundPlaneShape2(
  * @param 'true' if to use FrameA as reference for the constraint action
  * @param 'true' if disable collisions between the constrained objects
  */
-EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
+EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 frame1loc, Quaternion frame1rot,
 				Vector3 frame2loc, Quaternion frame2rot,
 				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj1, "Create6DofConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "Create6DofConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "Create6DofConstraint2: constraint exists");
+
 	btTransform frame1t, frame2t;
 	frame1t.setIdentity();
 	frame1t.setOrigin(frame1loc.GetBtVector3());
@@ -600,6 +639,7 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btC
 
 		constrain->calculateTransforms();
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+		bsDebug_RememberConstraint(constrain);
 	}
 
 	// sim->getWorldData()->BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
@@ -612,11 +652,15 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim, btC
 }
 
 // Create a 6Dof constraint between two objects and around the given world point.
-EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
+EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 joinPoint,
 				Vector3 frame2loc, Quaternion frame2rot,
 				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj1, "Create6DofConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "Create6DofConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "Create6DofConstraint2: constraint exists");
 	btGeneric6DofConstraint* constrain = NULL;
 
 	btRigidBody* rb1 = btRigidBody::upcast(obj1);
@@ -634,6 +678,7 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* s
 		constrain = new btGeneric6DofConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
 
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+		bsDebug_RememberConstraint(constrain);
 
 		// sim->getWorldData()->BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
 		// 					CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
@@ -646,13 +691,17 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* s
 	return constrain;
 }
 
-EXTERN_C DLL_EXPORT btTypedConstraint* CreateHingeConstraint2(BulletSim* sim, btCollisionObject* obj1, btCollisionObject* obj2,
+EXTERN_C DLL_EXPORT btTypedConstraint* CreateHingeConstraint2(BulletSim* sim,
+						btCollisionObject* obj1, btCollisionObject* obj2,
 						Vector3 pivotInA, Vector3 pivotInB,
 						Vector3 axisInA, Vector3 axisInB,
 						bool useReferenceFrameA,
 						bool disableCollisionsBetweenLinkedBodies
 						)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj1, "CreateHingeConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "CreateHingeConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "CreateHingeConstraint2: constraint exists");
 	btHingeConstraint* constrain = NULL;
 
 	btRigidBody* rb1 = btRigidBody::upcast(obj1);
@@ -666,6 +715,7 @@ EXTERN_C DLL_EXPORT btTypedConstraint* CreateHingeConstraint2(BulletSim* sim, bt
 									useReferenceFrameA);
 
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+		bsDebug_RememberConstraint(constrain);
 	}
 
 	return constrain;
@@ -675,6 +725,7 @@ EXTERN_C DLL_EXPORT bool SetFrames2(btTypedConstraint* constrain,
 			Vector3 frameA, Quaternion frameArot, Vector3 frameB, Quaternion frameBrot)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "SetFrame2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
 	case D6_CONSTRAINT_TYPE:
@@ -700,17 +751,20 @@ EXTERN_C DLL_EXPORT bool SetFrames2(btTypedConstraint* constrain,
 
 EXTERN_C DLL_EXPORT void SetConstraintEnable2(btTypedConstraint* constrain, float trueFalse)
 {
+	bsDebug_AssertIsKnownConstraint(constrain, "SetConstraintEnable2: unknown constraint");
 	constrain->setEnabled(trueFalse == ParamTrue ? true : false);
 }
 
 EXTERN_C DLL_EXPORT void SetConstraintNumSolverIterations2(btTypedConstraint* constrain, float iterations)
 {
+	bsDebug_AssertIsKnownConstraint(constrain, "SetConstraintNumSolverIterations2: unknown constraint");
 	constrain->setOverrideNumSolverIterations((int)iterations);
 }
 
 EXTERN_C DLL_EXPORT bool SetLinearLimits2(btTypedConstraint* constrain, Vector3 low, Vector3 high)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "SetLinearLimits2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
 	case D6_CONSTRAINT_TYPE:
@@ -730,6 +784,7 @@ EXTERN_C DLL_EXPORT bool SetLinearLimits2(btTypedConstraint* constrain, Vector3 
 EXTERN_C DLL_EXPORT bool SetAngularLimits2(btTypedConstraint* constrain, Vector3 low, Vector3 high)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "SetAngularLimits2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
 	case D6_CONSTRAINT_TYPE:
@@ -749,6 +804,7 @@ EXTERN_C DLL_EXPORT bool SetAngularLimits2(btTypedConstraint* constrain, Vector3
 EXTERN_C DLL_EXPORT bool UseFrameOffset2(btTypedConstraint* constrain, float enable)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "UseFrameOffset2: unknown constraint");
 	bool onOff = (enable == ParamTrue);
 	switch (constrain->getConstraintType())
 	{
@@ -776,6 +832,7 @@ EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(btTypedConstraint* constrain,
 				float enable, float targetVelocity, float maxMotorForce)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "TranslationalLimitMotor2: unknown constraint");
 	bool onOff = (enable == ParamTrue);
 	switch (constrain->getConstraintType())
 	{
@@ -798,6 +855,7 @@ EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(btTypedConstraint* constrain,
 EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constrain, float thresh)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "SetBreakingImpulseThreshold2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
 	case D6_CONSTRAINT_TYPE:
@@ -817,6 +875,7 @@ EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constra
 EXTERN_C DLL_EXPORT bool CalculateTransforms2(btTypedConstraint* constrain)
 {
 	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "CalculateTransforms2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
 	case D6_CONSTRAINT_TYPE:
@@ -834,6 +893,7 @@ EXTERN_C DLL_EXPORT bool CalculateTransforms2(btTypedConstraint* constrain)
 
 EXTERN_C DLL_EXPORT bool SetConstraintParam2(btTypedConstraint* constrain, int paramIndex, float value, int axis)
 {
+	bsDebug_AssertIsKnownConstraint(constrain, "SetConstraintParam2: unknown constraint");
 	if (axis == COLLISION_AXIS_LINEAR_ALL || axis == COLLISION_AXIS_ALL)
 	{
 		constrain->setParam(paramIndex, btScalar(value), 0);
@@ -855,7 +915,9 @@ EXTERN_C DLL_EXPORT bool SetConstraintParam2(btTypedConstraint* constrain, int p
 
 EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* constrain)
 {
+	bsDebug_AssertIsKnownConstraint(constrain, "DestroyConstraint2: unknown constraint");
 	sim->getDynamicsWorld()->removeConstraint(constrain);
+	bsDebug_ForgetConstraint(constrain);
 	delete constrain;
 	return true;
 }
@@ -864,6 +926,7 @@ EXTERN_C DLL_EXPORT bool DestroyConstraint2(BulletSim* sim, btTypedConstraint* c
 // btCollisionWorld entries
 EXTERN_C DLL_EXPORT void UpdateSingleAabb2(BulletSim* world, btCollisionObject* obj)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj, "updateSingleAabb2: unknown collisionObject");
 	world->getDynamicsWorld()->updateSingleAabb(obj);
 }
 
@@ -887,6 +950,8 @@ EXTERN_C DLL_EXPORT void SetForceUpdateAllAabbs2(BulletSim* world, bool forceUpd
 // TODO: Remember to restore any constraints
 EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* obj)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj, "AddObjectToWorld2: unknown collisionObject");
+	bsDebug_AssertCollisionObjectIsNotInWorld(sim, obj, "AddObjectToWorld2: collisionObject already in world");
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 		sim->getDynamicsWorld()->addRigidBody(rb);
@@ -898,6 +963,8 @@ EXTERN_C DLL_EXPORT bool AddObjectToWorld2(BulletSim* sim, btCollisionObject* ob
 // Remember to remove any constraints
 EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObject* obj)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj, "RemoveObjectFromWorld2: unknown collisionObject");
+	bsDebug_AssertCollisionObjectIsInWorld(sim, obj, "RemoveObjectToWorld2: collisionObject not in world");
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 		sim->getDynamicsWorld()->removeRigidBody(rb);
@@ -908,12 +975,16 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 
 EXTERN_C DLL_EXPORT bool AddConstraintToWorld2(BulletSim* sim, btTypedConstraint* constrain, bool disableCollisionsBetweenLinkedBodies)
 {
+	bsDebug_AssertIsKnownConstraint(constrain, "AddConstraintToWorld2: unknown constraint");
+	bsDebug_AssertConstraintIsNotInWorld(sim, constrain, "AddConstraintToWorld2: constraint already in world");
 	sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
 	return true;
 }
 
-EXTERN_C DLL_EXPORT bool RemoveConstraintToWorld2(BulletSim* sim, btTypedConstraint* constrain)
+EXTERN_C DLL_EXPORT bool RemoveConstraintFromWorld2(BulletSim* sim, btTypedConstraint* constrain)
 {
+	bsDebug_AssertIsKnownConstraint(constrain, "RemoveConstraintToWorld2: unknown constraint");
+	bsDebug_AssertConstraintIsInWorld(sim, constrain, "RemoveConstraintToWorld2: constraint not in world");
 	sim->getDynamicsWorld()->removeConstraint(constrain);
 	return true;
 }
@@ -923,6 +994,7 @@ EXTERN_C DLL_EXPORT bool RemoveConstraintToWorld2(BulletSim* sim, btTypedConstra
 // These are in the order they are defined in btCollisionObject.h.
 EXTERN_C DLL_EXPORT Vector3 GetAnisotropicFriction2(btCollisionObject* obj)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj, "GetAnisotropicFriction2: unknown collisionObject");
 	btVector3 aFrict = obj->getAnisotropicFriction();
 	return Vector3(aFrict.getX(), aFrict.getY(), aFrict.getZ());
 }
@@ -971,12 +1043,17 @@ EXTERN_C DLL_EXPORT bool HasContactResponse2(btCollisionObject* obj)
 //    replace the shape on the collision object with the new shape.
 EXTERN_C DLL_EXPORT void SetCollisionShape2(BulletSim* sim, btCollisionObject* obj, btCollisionShape* shape)
 {
+	bsDebug_AssertIsKnownCollisionObject(obj, "SetCollisionShape2: unknown collisionObject");
+	bsDebug_AssertIsKnownCollisionShape(obj, "SetCollisionShape2: unknown collisionShape");
+	bsDebug_AssertCollisionObjectIsNotInWorld(obj, "SetCollisionShape2: collision object is in world");
+
 	obj->setCollisionShape(shape);
 
 	// test
 	// These are attempts to make Bullet accept the new shape that has been stuffed into the RigidBody.
-	btOverlappingPairCache* opp = sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache();
-	opp->cleanProxyFromPairs(obj->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
+	// NOTE: This does not work here because the collisionObject is not in the world
+	// btOverlappingPairCache* opp = sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache();
+	// opp->cleanProxyFromPairs(obj->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
 
 	// Don't free the old shape here since it could be shared with other
 	//    bodies. The managed code should be keeping track of the shapes
@@ -985,7 +1062,10 @@ EXTERN_C DLL_EXPORT void SetCollisionShape2(BulletSim* sim, btCollisionObject* o
 
 EXTERN_C DLL_EXPORT btCollisionShape* GetCollisionShape2(btCollisionObject* obj)
 {
-	return obj->getCollisionShape();
+	bsDebug_AssertIsKnownCollisionObject(obj, "GetCollisionShape: unknown collisionObject");
+	btCollisionShape* shape = obj->getCollisionShape();
+	bsDebug_AssertIsKnownCollisionShape(obj, "GetCollisionShape2: unknown collisionShape");
+	return shape;
 }
 
 EXTERN_C DLL_EXPORT int GetActivationState2(btCollisionObject* obj)
@@ -1769,8 +1849,9 @@ EXTERN_C DLL_EXPORT Vector3 RecoverFromPenetration2(BulletSim* world, unsigned i
 // Dump a btCollisionObject and even more if it's a btRigidBody.
 EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 {
-	sim->getWorldData()->BSLog("DumpRigidBody: id=%u, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
-				CONVLOCALID(obj->getCollisionShape()->getUserPointer()),
+	sim->getWorldData()->BSLog("DumpRigidBody: id=%u, loc=%x, pos=<%f,%f,%f>, orient=<%f,%f,%f,%f>",
+				CONVLOCALID(obj->getUserPointer()),
+				obj,
 				(float)obj->getWorldTransform().getOrigin().getX(),
 				(float)obj->getWorldTransform().getOrigin().getY(),
 				(float)obj->getWorldTransform().getOrigin().getZ(),
@@ -1895,26 +1976,78 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 
 EXTERN_C DLL_EXPORT void DumpCollisionShape2(BulletSim* sim, btCollisionShape* shape)
 {
-		sim->getWorldData()->BSLog("DumpCollisionShape: type=%d, id=%u, margin=%f, isMoving=%s, isConvex=%s",
-				shape->getShapeType(),
-				CONVLOCALID(shape->getUserPointer()),
-				(float)shape->getMargin(),
-				shape->isNonMoving() ? "true" : "false",
-				shape->isConvex() ? "true" : "false"
-			);
-		sim->getWorldData()->BSLog("DumpCollisionShape:   localScaling=<%f,%f,%f>",
-				(float)shape->getLocalScaling().getX(),
-				(float)shape->getLocalScaling().getY(),
-				(float)shape->getLocalScaling().getZ()
-			);
+	int shapeType = shape->getShapeType();
+	char* shapeTypeName;
+	switch (shapeType)
+	{
+		case BOX_SHAPE_PROXYTYPE: shapeTypeName = "boxShape"; break;
+		case TRIANGLE_SHAPE_PROXYTYPE: shapeTypeName = "triangleShape"; break;
+		case SPHERE_SHAPE_PROXYTYPE: shapeTypeName = "sphereShape"; break;
+		case CAPSULE_SHAPE_PROXYTYPE: shapeTypeName = "capsuleShape"; break;
+		case TRIANGLE_MESH_SHAPE_PROXYTYPE: shapeTypeName = "triangleMeshShape"; break;
+		case COMPOUND_SHAPE_PROXYTYPE: shapeTypeName = "compoundShape"; break;
+		default: shapeTypeName = "unknown"; break;
+	}
+	sim->getWorldData()->BSLog("DumpCollisionShape: type=%s, id=%u, loc=%x, margin=%f, isMoving=%s, isConvex=%s",
+			shapeTypeName,
+			CONVLOCALID(shape->getUserPointer()),
+			shape,
+			(float)shape->getMargin(),
+			shape->isNonMoving() ? "true" : "false",
+			shape->isConvex() ? "true" : "false"
+		);
+	sim->getWorldData()->BSLog("DumpCollisionShape:   localScaling=<%f,%f,%f>",
+			(float)shape->getLocalScaling().getX(),
+			(float)shape->getLocalScaling().getY(),
+			(float)shape->getLocalScaling().getZ()
+		);
 }
 
-// Causes detailed physics performance statistics to be logged.
-EXTERN_C DLL_EXPORT void DumpPhysicsStatistics2(BulletSim* world)
+// Outputs constraint information
+EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* constrain)
 {
-	if (world->getWorldData()->debugLogCallback)
+		sim->getWorldData()->BSLog("DumpConstraint: obj1=%x, obj2=%x, enabled=%s",
+			&(constrain->getRigidBodyA()),
+			&(constrain->getRigidBodyB()),
+			constrain->isEnabled() ? "true" : "false");
+}
+
+EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
+{
+	btDynamicsWorld* world = sim->getDynamicsWorld();
+	btCollisionObjectArray& collisionObjects = world->getCollisionObjectArray();
+	int numCollisionObjects = collisionObjects.size();
+	for (int ii=0; ii < numCollisionObjects; ii++)
 	{
-		world->DumpPhysicsStats();
+		btCollisionObject* obj = collisionObjects[ii];
+		if (obj)
+		{
+			sim->getWorldData()->BSLog("===========================================");
+			DumpRigidBody2(sim, obj);
+			btCollisionShape* shape = obj->getCollisionShape();
+			if (shape)
+			{
+				DumpCollisionShape2(sim, shape);
+			}
+		}
+	}
+
+	sim->getWorldData()->BSLog("=CONSTRAINTS==========================================");
+	int numConstraints = world->getNumConstraints();
+	for (int jj=0; jj < numConstraints; jj++)
+	{
+		DumpConstraint2(sim, world->getConstraint(jj));
+	}
+	sim->getWorldData()->BSLog("=END==========================================");
+}
+
+
+// Causes detailed physics performance statistics to be logged.
+EXTERN_C DLL_EXPORT void DumpPhysicsStatistics2(BulletSim* sim)
+{
+	if (sim->getWorldData()->debugLogCallback)
+	{
+		sim->DumpPhysicsStats();
 	}
 	return;
 }

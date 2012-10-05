@@ -29,6 +29,8 @@
 #ifndef BULLET_SIM_H
 #define BULLET_SIM_H
 
+#include "DebugLogic.h"
+
 #include "ArchStuff.h"
 #include "APIData.h"
 #include "IPhysObject.h"

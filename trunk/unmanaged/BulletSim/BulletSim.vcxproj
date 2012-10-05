@@ -194,6 +194,7 @@
     <ClInclude Include="ArchStuff.h" />
     <ClInclude Include="AvatarObject.h" />
     <ClInclude Include="BulletSim.h" />
+    <ClInclude Include="DebugLogic.h" />
     <ClInclude Include="GroundPlaneObject.h" />
     <ClInclude Include="IPhysObject.h" />
     <ClInclude Include="ObjectCollection.h" />
