@@ -357,6 +357,9 @@ struct ParamBlock
     float linkConstraintTransMotorMaxForce;
     float linkConstraintERP;
     float linkConstraintCFM;
+	float linkConstraintSolverIterations;
+
+	float physicsLoggingFrames;
 };
 
 

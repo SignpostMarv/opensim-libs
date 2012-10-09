@@ -102,16 +102,19 @@ struct WorldData
 
 	// Call back into the managed world to output a log message with formatting
 	void BSLog(const char* msg, ...) {
+		va_list args;
+		va_start(args, msg);
+		BSLog2(msg, args);
+		va_end(args);
+	}
+	void BSLog2(const char* msg, va_list argp)
+	{
 		char buff[2048];
 		if (debugLogCallback != NULL) {
-			va_list args;
-			va_start(args, msg);
-			vsprintf(buff, msg, args);
-			va_end(args);
+			vsprintf(buff, msg, argp);
 			(*debugLogCallback)(buff);
 		}
 	}
-
 };
 
 #endif // WORLD_DATA_H

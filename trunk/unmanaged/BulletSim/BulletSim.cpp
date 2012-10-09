@@ -31,6 +31,8 @@
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
+extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
+
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
 	bsDebug_Initialize();
@@ -114,6 +116,14 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 	// Earth-like gravity
 	dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_worldData.params->gravity));
+
+	m_dumpStatsCount = 0;
+	if (m_worldData.debugLogCallback != NULL)
+	{
+		m_dumpStatsCount = (int)m_worldData.params->physicsLoggingFrames;
+		if (m_dumpStatsCount != 0)
+			m_worldData.BSLog("Logging detailed physics stats every %d frames", m_dumpStatsCount);
+	}
 
 	// Information on creating a custom collision computation routine and a pointer to the computation
 	// of friction and restitution at:
@@ -210,6 +220,15 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 		// The simulation calls the SimMotionState to put object updates into updatesThisFrame.
 		// m_worldData.BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
+
+		if (m_dumpStatsCount != 0)
+		{
+			if (--m_dumpStatsCount <= 0)
+			{
+				m_dumpStatsCount = (int)m_worldData.params->physicsLoggingFrames;
+				DumpPhysicsStatistics2(this);
+			}
+		}
 
 		/*
 		// BEGIN constraint debug==============================================================
@@ -1052,6 +1071,3 @@ void BulletSim::DumpPhysicsStats()
 	// CProfileManager::dumpAll();
 	return;
 }
-
-
-

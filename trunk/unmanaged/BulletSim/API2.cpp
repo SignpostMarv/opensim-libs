@@ -2041,13 +2041,27 @@ EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
 	sim->getWorldData()->BSLog("=END==========================================");
 }
 
+// Version of log printer that takes the simulator as a parameter.
+// Used for statistics logging from Bullet.
+// Bullet must be patched to enable this functionality -- by default it does a printf.
+EXTERN_C DLL_EXPORT void DebugLogger2(void* xxx, const char* msg, ...)
+{
+	BulletSim* sim = (BulletSim*)xxx;
+	va_list args;
+	va_start(args, msg);
+	sim->getWorldData()->BSLog2(msg, args);
+	va_end(args);
+	return;
+}
 
 // Causes detailed physics performance statistics to be logged.
 EXTERN_C DLL_EXPORT void DumpPhysicsStatistics2(BulletSim* sim)
 {
 	if (sim->getWorldData()->debugLogCallback)
 	{
-		sim->DumpPhysicsStats();
+		// Uncomment the next line to enable timing logging from Bullet.
+		// The Bullet library MUST be patched to create this entry point.
+		// CProfileManager::dumpAll(DebugLogger2, (void*)sim);
 	}
 	return;
 }

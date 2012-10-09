@@ -247,6 +247,8 @@ private:
 	btConstraintSolver*	m_solver;
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
 
+	int m_dumpStatsCount;
+
 	// Information about the world that is shared with all the objects
 	WorldData m_worldData;
 
