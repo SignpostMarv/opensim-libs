@@ -70,16 +70,17 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 	// create the functional parts of the physics simulation
 	btDefaultCollisionConstructionInfo cci;
-	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
-	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
-
 	// if you are setting a pool size, you should disable dynamic allocation
 	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
 		cci.m_defaultMaxPersistentManifoldPoolSize = (int)m_worldData.params->maxPersistantManifoldPoolSize;
-	if (m_worldData.params->maxCollisionAlgorithmPoolSize > 0)
 	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
 		m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
+	if (m_worldData.params->maxCollisionAlgorithmPoolSize > 0)
+		cci.m_defaultMaxCollisionAlgorithmPoolSize = m_worldData.params->maxCollisionAlgorithmPoolSize;
 	
+	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
+	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+
 	m_broadphase = new btDbvtBroadphase();
 
 	// the following is needed to enable GhostObjects
@@ -99,6 +100,7 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
 	if (m_worldData.params->shouldRandomizeSolverOrder != ParamFalse)
 		dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+	dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_USE_WARMSTARTING;
 
 	// setting to false means the islands are not reordered and split up for individual processing
 	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
