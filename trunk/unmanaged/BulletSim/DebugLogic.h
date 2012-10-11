@@ -34,25 +34,22 @@
 #define bsDebug_Initialize()
 #define bsDebug_AllDone()
 
-#define bsDebug_RememberCollisionObject(x)
-#define bsDebug_IsKnownCollisionObject(x)
-#define bsDebug_ForgetCollisionObject(x)
-#define bsDebug_AssertIsKnownCollisionObject(x,msg)
-#define bsDebug_AssertCollisionObjectIsInWorld(w,x,msg)
-#define bsDebug_AssertCollisionObjectIsNotInWorld(w,x,msg)
+#define bsDebug_RememberCollisionObject(obj)
+#define bsDebug_ForgetCollisionObject(obj)
+#define bsDebug_AssertIsKnownCollisionObject(obj,msg)
+#define bsDebug_AssertCollisionObjectIsInWorld(w,obj,msg)
+#define bsDebug_AssertCollisionObjectIsNotInWorld(world,obj,msg)
 
-#define bsDebug_RememberCollisionShape(x)
-#define bsDebug_IsKnownCollisionShape(x)
-#define bsDebug_ForgetCollisionShape(x)
-#define bsDebug_AssertIsKnownCollisionShape(x,msg)
+#define bsDebug_RememberCollisionShape(shape)
+#define bsDebug_ForgetCollisionShape(shape)
+#define bsDebug_AssertIsKnownCollisionShape(shape,msg)
 
-#define bsDebug_RememberConstraint(x)
-#define bsDebug_IsKnownConstraint(x)
-#define bsDebug_ForgetConstraint(x)
-#define bsDebug_AssertIsKnownConstraint(x,msg)
+#define bsDebug_RememberConstraint(constrain)
+#define bsDebug_ForgetConstraint(constrain)
+#define bsDebug_AssertIsKnownConstraint(constrain,msg)
 #define bsDebug_AssertNoExistingConstraint(o1, o2, msg)
-#define bsDebug_AssertConstraintIsInWorld(w,x,msg)
-#define bsDebug_AssertConstraintIsNotInWorld(w,x,msg)
+#define bsDebug_AssertConstraintIsInWorld(world,constrain,msg)
+#define bsDebug_AssertConstraintIsNotInWorld(world,constrain,msg)
 
 
 #else	// BSDEBUG

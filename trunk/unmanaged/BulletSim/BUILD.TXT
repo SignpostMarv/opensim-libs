@@ -4,9 +4,9 @@ written in C++ and is statically linked with the Bullet engine.
 BulletSim.dll must be compiled separately as the OpenSimulator build
 environment only builds the C# code.
 
-For Visual Studio 2008, the steps are:
+For Visual Studio 2010, the steps are:
 
-1) Download Bullet v2.80 (http://code.google.com/p/bullet/downloads/)
+1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
 1a) If you are adventurous, you can fetch the latest v2.* from svn
     (http://code.google.com/p/bullet/source/checkout).
     As of this writing (Mar 28, 2012), Bullet development is mostly doing
@@ -15,9 +15,9 @@ For Visual Studio 2008, the steps are:
     will probably not build or link and will require rework.
     In the mean time, any of the v2.79+ versions should work.
 2) Unpack the tgz or zip into the BulletSim directory (so there is a new
-    directory "BulletSim/bullet-2.80/")
+    directory "BulletSim/bullet-2.81/")
 3) Apply all the patches for bullet:
-	cd bullet-2.80 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
+	cd bullet-2.81 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
 4) cd into the bullet directory and build using your preferred method
     For Visual Studio 2008, open "msvc/2008/0BulletSolution.sln"
     Build a "Release" version.
@@ -36,12 +36,12 @@ For Visual Studio 2008, the steps are:
     OpenSimulator "bin/" directory
 
 For Linux (tested on Ubuntu)
-1) Download Bullet v2.80 (http://code.google.com/p/bullet/downloads/)
+1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
 1b) As noted above, you can also fetch the latest Subversion
     version of the version 2 Bullet.
 2) Unpack the tgz or zip into the BulletSim directory somewhere
 3) Apply all patches for bullet:
-	cd bullet-2.80 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
+	cd bullet-2.81 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
 4) Follow the Bullet build instructions 
     (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation),
     create the directory "bullet-build" and cd into that directory.
@@ -57,6 +57,6 @@ For Linux (tested on Ubuntu)
 directories depending on the architecture of your system.
 
 
-This was developed with Bullet v2.80. If you use a different version, you will
+This was developed with Bullet v2.81. If you use a different version, you will
 need to change the include and library directories for the BulletSim compilation.
 

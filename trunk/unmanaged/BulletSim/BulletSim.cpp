@@ -100,7 +100,6 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
 	if (m_worldData.params->shouldRandomizeSolverOrder != ParamFalse)
 		dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
-	dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_USE_WARMSTARTING;
 
 	// setting to false means the islands are not reordered and split up for individual processing
 	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
@@ -303,8 +302,8 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			if (numContacts == 0)
 				continue;
 
-			btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
-			btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+			const btCollisionObject* objA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+			const btCollisionObject* objB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
 
 			// DEBUG BEGIN
 			// IDTYPE idAx = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
@@ -345,7 +344,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	return numSimSteps;
 }
 
-void BulletSim::RecordCollision(btCollisionObject* objA, btCollisionObject* objB, const btVector3& contact, const btVector3& norm)
+void BulletSim::RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, const btVector3& contact, const btVector3& norm)
 {
 	btVector3 contactNormal = norm;
 
@@ -403,8 +402,10 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 	// For all the pairs of sets of contact points
 	for (int i=0; i < numPairs; i++)
 	{
-		manifoldArray.clear();
+		if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
+			break;
 
+		manifoldArray.clear();
 		const btBroadphasePair& pair = pairArray[i];
 
 		// The real representation is over in the world pair cache
@@ -421,8 +422,8 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 			btPersistentManifold* contactManifold = manifoldArray[j];
 			int numContacts = contactManifold->getNumContacts();
 
-			btCollisionObject* objA = static_cast<btCollisionObject*>(contactManifold->getBody0());
-			btCollisionObject* objB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+			const btCollisionObject* objA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
+			const btCollisionObject* objB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
 
 			// TODO: this is a more thurough check than the regular collision code --
 			//     here we find the penetrating contact in the manifold but for regular

@@ -262,7 +262,7 @@ private:
 	CollisionDesc* m_collidersThisFrameArray;
 
 	std::set<COLLIDERKEYTYPE> m_collidersThisFrame;
-	void RecordCollision(btCollisionObject* objA, btCollisionObject* objB, const btVector3& contact, const btVector3& norm);
+	void RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, const btVector3& contact, const btVector3& norm);
 	void RecordGhostCollisions(btPairCachingGhostObject* obj);
 
 public:

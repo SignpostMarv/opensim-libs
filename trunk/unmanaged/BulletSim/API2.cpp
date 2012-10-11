@@ -466,6 +466,7 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 {
 
 	bsDebug_AssertIsKnownCollisionObject(obj, "DestroyObject2: unknown collisionObject");
+
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
@@ -487,6 +488,7 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 	// Remove from special collision objects. A NOOP if not in the list.
 	IDTYPE id = CONVLOCALID(obj->getUserPointer());
 	sim->getWorldData()->stepObjectCallbacks.erase(id);
+	sim->getWorldData()->specialCollisionObjects.erase(id);
 
 	// finally make the object itself go away
 	bsDebug_ForgetCollisionObject(obj);
@@ -1050,7 +1052,7 @@ EXTERN_C DLL_EXPORT void SetCollisionShape2(BulletSim* sim, btCollisionObject* o
 	obj->setCollisionShape(shape);
 
 	// test
-	// These are attempts to make Bullet accept the new shape that has been stuffed into the RigidBody.
+	// An attempt to make Bullet accept the new shape that has been stuffed into the RigidBody.
 	// NOTE: This does not work here because the collisionObject is not in the world
 	// btOverlappingPairCache* opp = sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache();
 	// opp->cleanProxyFromPairs(obj->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
@@ -1658,38 +1660,6 @@ EXTERN_C DLL_EXPORT int GetNumConstraintRefs2(btCollisionObject* obj)
 	return ret;
 }
 
-EXTERN_C DLL_EXPORT Vector3 GetDeltaLinearVelocity2(btCollisionObject* obj)
-{
-	Vector3 ret = Vector3();
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb) ret = rb->getDeltaLinearVelocity();
-	return ret;
-}
-
-EXTERN_C DLL_EXPORT Vector3 GetDeltaAngularVelocity2(btCollisionObject* obj)
-{
-	Vector3 ret = Vector3();
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb) ret = rb->getDeltaAngularVelocity();
-	return ret;
-}
-
-EXTERN_C DLL_EXPORT Vector3 GetPushVelocity2(btCollisionObject* obj)
-{
-	Vector3 ret = Vector3();
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb) ret = rb->getPushVelocity();
-	return ret;
-}
-
-EXTERN_C DLL_EXPORT Vector3 GetTurnVelocity2(btCollisionObject* obj)
-{
-	Vector3 ret = Vector3();
-	btRigidBody* rb = btRigidBody::upcast(obj);
-	if (rb) ret = rb->getTurnVelocity();
-	return ret;
-}
-
 // ========================================
 // btCollisionShape methods and related
 
@@ -1913,28 +1883,13 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
-		sim->getWorldData()->BSLog("DumpRigidBody: lVel=<%f,%f,%f>, deltaLVel=<%f,%f,%f>, pushVel=<%f,%f,%f> turnVel=<%f,%f,%f>",
+		sim->getWorldData()->BSLog("DumpRigidBody: lVel=<%f,%f,%f>, aVel=<%f,%f,%f>, aFactor=<%f,%f,%f> sleepThresh=%f, aDamp=%f",
 					(float)rb->getLinearVelocity().getX(),
 					(float)rb->getLinearVelocity().getY(),
 					(float)rb->getLinearVelocity().getZ(),
-					(float)rb->getDeltaLinearVelocity().getX(),
-					(float)rb->getDeltaLinearVelocity().getY(),
-					(float)rb->getDeltaLinearVelocity().getZ(),
-					(float)rb->getPushVelocity().getX(),
-					(float)rb->getPushVelocity().getY(),
-					(float)rb->getPushVelocity().getZ(),
-					(float)rb->getTurnVelocity().getX(),
-					(float)rb->getTurnVelocity().getY(),
-					(float)rb->getTurnVelocity().getZ()
-			);
-
-		sim->getWorldData()->BSLog("DumpRigidBody: aVel=<%f,%f,%f>, deltaAVel=<%f,%f,%f>, aFactor=<%f,%f,%f> sleepThresh=%f, aDamp=%f",
 					(float)rb->getAngularVelocity().getX(),
 					(float)rb->getAngularVelocity().getY(),
 					(float)rb->getAngularVelocity().getZ(),
-					(float)rb->getDeltaAngularVelocity().getX(),
-					(float)rb->getDeltaAngularVelocity().getY(),
-					(float)rb->getDeltaAngularVelocity().getZ(),
 					(float)rb->getAngularFactor().getX(),
 					(float)rb->getAngularFactor().getY(),
 					(float)rb->getAngularFactor().getZ(),
