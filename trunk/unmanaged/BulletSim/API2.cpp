@@ -1047,7 +1047,7 @@ EXTERN_C DLL_EXPORT void SetCollisionShape2(BulletSim* sim, btCollisionObject* o
 {
 	bsDebug_AssertIsKnownCollisionObject(obj, "SetCollisionShape2: unknown collisionObject");
 	bsDebug_AssertIsKnownCollisionShape(obj, "SetCollisionShape2: unknown collisionShape");
-	bsDebug_AssertCollisionObjectIsNotInWorld(obj, "SetCollisionShape2: collision object is in world");
+	bsDebug_AssertCollisionObjectIsNotInWorld(sim, obj, "SetCollisionShape2: collision object is in world");
 
 	obj->setCollisionShape(shape);
 
@@ -1932,7 +1932,7 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 EXTERN_C DLL_EXPORT void DumpCollisionShape2(BulletSim* sim, btCollisionShape* shape)
 {
 	int shapeType = shape->getShapeType();
-	char* shapeTypeName;
+	const char* shapeTypeName;
 	switch (shapeType)
 	{
 		case BOX_SHAPE_PROXYTYPE: shapeTypeName = "boxShape"; break;
