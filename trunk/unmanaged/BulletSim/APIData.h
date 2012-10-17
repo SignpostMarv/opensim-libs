@@ -336,6 +336,7 @@ struct ParamBlock
     float terrainHitFraction;
     float terrainRestitution;
     float avatarFriction;
+    float avatarStandingFriction;
     float avatarDensity;
     float avatarRestitution;
     float avatarCapsuleRadius;

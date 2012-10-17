@@ -83,11 +83,13 @@ EXTERN_C DLL_EXPORT char* GetVersion2()
  */
 EXTERN_C DLL_EXPORT BulletSim* Initialize2(Vector3 maxPosition, ParamBlock* parms,
 											int maxCollisions, CollisionDesc* collisionArray,
-											int maxUpdates, EntityProperties* updateArray)
+											int maxUpdates, EntityProperties* updateArray,
+											DebugLogCallback* debugLog)
 {
 	bsDebug_Initialize();
 
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
+	sim->getWorldData()->debugLogCallback = debugLog;
 	sim->initPhysics(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
 
 	return sim;
@@ -261,6 +263,18 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 		break;
 	}
 	return ret;
+}
+
+EXTERN_C DLL_EXPORT btCollisionShape* BuildCapsuleShape2(BulletSim* sim, float radius, float height, Vector3 scale)
+{
+	btCollisionShape* shape = new btCapsuleShapeZ(btScalar(radius), btScalar(height));
+	if (shape)
+	{
+		shape->setMargin(sim->getWorldData()->params->collisionMargin);
+		shape->setLocalScaling(scale.GetBtVector3());
+		bsDebug_RememberCollisionShape(shape);
+	}
+	return shape;
 }
 
 // Note: this does not do a deep deletion.
