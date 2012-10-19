@@ -100,7 +100,18 @@ struct WorldData
 	// This callback is only initialized if the simulator is running in DEBUG mode.
 	DebugLogCallback* debugLogCallback;
 
+	void BSLog(const char* msg, ...) {
+		char buff[2048];
+		if (debugLogCallback != NULL) {
+			va_list args;
+			va_start(args, msg);
+			vsprintf(buff, msg, args);
+			va_end(args);
+			(*debugLogCallback)(buff);
+		}
+	}
 	// Call back into the managed world to output a log message with formatting
+	/*
 	void BSLog(const char* msg, ...) {
 		if (debugLogCallback != NULL) {
 			va_list args;
@@ -117,6 +128,7 @@ struct WorldData
 			(*debugLogCallback)(buff);
 		}
 	}
+	*/
 };
 
 #endif // WORLD_DATA_H

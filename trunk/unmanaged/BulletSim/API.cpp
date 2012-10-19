@@ -447,6 +447,6 @@ EXTERN_C DLL_EXPORT void DumpPhysicsStatistics(unsigned int worldID)
 	return;
 }
 
-// EXTERN_C DLL_EXPORT void SetDebugLogCallback(DebugLogCallback* dlc) {
-// 	debugLogCallback = dlc;
-// }
+EXTERN_C DLL_EXPORT void SetDebugLogCallback(DebugLogCallback* dlc) {
+	// debugLogCallback = dlc;
+}

@@ -2018,7 +2018,7 @@ EXTERN_C DLL_EXPORT void DebugLogger2(void* xxx, const char* msg, ...)
 	BulletSim* sim = (BulletSim*)xxx;
 	va_list args;
 	va_start(args, msg);
-	sim->getWorldData()->BSLog2(msg, args);
+	// sim->getWorldData()->BSLog2(msg, args);
 	va_end(args);
 	return;
 }
