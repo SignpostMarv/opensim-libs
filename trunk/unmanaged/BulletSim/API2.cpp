@@ -1201,6 +1201,16 @@ EXTERN_C DLL_EXPORT void SetTranslation2(btCollisionObject* obj, Vector3 positio
 
 	// Set the new transform for the rigid body and the motion state
 	obj->setWorldTransform(transform);
+
+	// If this is also a rigid body, push the object movement so it will be recoreded as an update.
+	// The setWorldTransform() above only sets the transform variable in the object. In order to
+	//      have the movement show up as a property update, it must be pushed through the motionState.
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb)
+		if (!rb->isStaticOrKinematicObject())
+			if (rb->getMotionState())
+				rb->getMotionState()->setWorldTransform(transform);
+
 	return;
 }
 
