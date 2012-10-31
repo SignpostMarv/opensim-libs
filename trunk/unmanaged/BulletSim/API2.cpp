@@ -1300,7 +1300,7 @@ EXTERN_C DLL_EXPORT float GetCcdSweptSphereRadius2(btCollisionObject* obj)
 	return obj->getCcdSweptSphereRadius();
 }
 
-EXTERN_C DLL_EXPORT void SetCcdsweptSphereRadius2(btCollisionObject* obj, float val)
+EXTERN_C DLL_EXPORT void SetCcdSweptSphereRadius2(btCollisionObject* obj, float val)
 {
 	obj->setCcdSweptSphereRadius(btScalar(val));
 }
@@ -1907,10 +1907,13 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb)
 	{
-		sim->getWorldData()->BSLog("DumpRigidBody: lVel=<%f,%f,%f>, aVel=<%f,%f,%f>, aFactor=<%f,%f,%f> sleepThresh=%f, aDamp=%f",
+		sim->getWorldData()->BSLog("DumpRigidBody: lVel=<%f,%f,%f>, lFactor=<%f,%f,%f>, aVel=<%f,%f,%f>, aFactor=<%f,%f,%f> sleepThresh=%f, aDamp=%f",
 					(float)rb->getLinearVelocity().getX(),
 					(float)rb->getLinearVelocity().getY(),
 					(float)rb->getLinearVelocity().getZ(),
+					(float)rb->getLinearFactor().getX(),
+					(float)rb->getLinearFactor().getY(),
+					(float)rb->getLinearFactor().getZ(),
 					(float)rb->getAngularVelocity().getX(),
 					(float)rb->getAngularVelocity().getY(),
 					(float)rb->getAngularVelocity().getZ(),
@@ -1930,14 +1933,15 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 					(float)rb->getTotalTorque().getZ()
 			);
 
-		sim->getWorldData()->BSLog("DumpRigidBody: grav=<%f,%f,%f>, COMPos=<%f,%f,%f>, invMass=%f",
+		sim->getWorldData()->BSLog("DumpRigidBody: grav=<%f,%f,%f>, COMPos=<%f,%f,%f>, invMass=%f, mass=%f",
 					(float)rb->getGravity().getX(),
 					(float)rb->getGravity().getY(),
 					(float)rb->getGravity().getZ(),
 					(float)rb->getCenterOfMassPosition().getX(),
 					(float)rb->getCenterOfMassPosition().getY(),
 					(float)rb->getCenterOfMassPosition().getZ(),
-					(float)rb->getInvMass()
+					(float)rb->getInvMass(),
+					1.0 / (float)rb->getInvMass()
 			);
 
 		btScalar inertiaTensorYaw, inertiaTensorPitch, inertiaTensorRoll;
