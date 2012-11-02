@@ -190,6 +190,11 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim)
 	return cShape;
 }
 
+EXTERN_C DLL_EXPORT int GetNumberOfCompoundChildren2(btCompoundShape* cShape)
+{
+	return cShape->getNumChildShapes();
+}
+
 EXTERN_C DLL_EXPORT void AddChildShapeToCompoundShape2(btCompoundShape* cShape, 
 				btCollisionShape* addShape, Vector3 relativePosition, Quaternion relativeRotation)
 {
@@ -201,9 +206,21 @@ EXTERN_C DLL_EXPORT void AddChildShapeToCompoundShape2(btCompoundShape* cShape,
 	cShape->addChildShape(relativeTransform, addShape);
 }
 
+EXTERN_C DLL_EXPORT btCollisionShape* GetChildShapeFromCompoundShapeIndex2(btCompoundShape* cShape, int ii)
+{
+	return cShape->getChildShape(ii);
+}
+
 EXTERN_C DLL_EXPORT void RemoveChildShapeFromCompoundShape2(btCompoundShape* cShape, btCollisionShape* removeShape)
 {
 	cShape->removeChildShape(removeShape);
+}
+
+EXTERN_C DLL_EXPORT btCollisionShape* RemoveChildShapeFromCompoundShapeIndex2(btCompoundShape* cShape, int ii)
+{
+	btCollisionShape* ret = cShape->getChildShape(ii);
+	cShape->removeChildShapeByIndex(ii);
+	return ret;
 }
 
 EXTERN_C DLL_EXPORT void RecalculatecompoundShapeLocalAabb2(btCompoundShape* cShape)

@@ -352,6 +352,7 @@ struct ParamBlock
 	float shouldEnableFrictionCaching;
 	float numberOfSolverIterations;
 
+    float linksetImplementation;
     float linkConstraintUseFrameOffset;
     float linkConstraintEnableTransMotor;
     float linkConstraintTransMotorMaxVel;

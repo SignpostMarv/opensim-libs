@@ -36,7 +36,7 @@
 // 2) memcpy changed implementation in glibc 2.14. As of 20120806, when
 //    linked on an Ubuntu system, the resulting .so will require that
 //    version of the library. Other Linux distributions don't have this
-//    new glibc so the .so's won't run there. Thus, our own implementation
+//    new glibc yet so the .so's won't run there. Thus, our own implementation
 //    to remove that library dependency.
 static void* bsMemcpy(void* dst, void* src, size_t siz)
 {
