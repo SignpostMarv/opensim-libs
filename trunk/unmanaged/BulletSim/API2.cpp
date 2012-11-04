@@ -265,10 +265,10 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 	bsDebug_AssertIsKnownCollisionShape(shape, "IsNativeShape2: not known shape");
 	switch (shape->getShapeType())
 	{
-		case BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE:
-		case BroadphaseNativeTypes::CONE_SHAPE_PROXYTYPE:
-		case BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE:
-		case BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE:
+		case BOX_SHAPE_PROXYTYPE:
+		case CONE_SHAPE_PROXYTYPE:
+		case SPHERE_SHAPE_PROXYTYPE:
+		case CYLINDER_SHAPE_PROXYTYPE:
 			ret = true;
 			break;
 		default:
