@@ -219,7 +219,6 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 	if (m_worldData.dynamicsWorld)
 	{
 		// The simulation calls the SimMotionState to put object updates into updatesThisFrame.
-		// m_worldData.BSLog("BulletSim::PhysicsStep: ts=%f, maxSteps=%d, fixedTS=%f", timeStep, maxSubSteps, fixedTimeStep);
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
 
 		if (m_dumpStatsCount != 0)
@@ -230,34 +229,6 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 				DumpPhysicsStatistics2(this);
 			}
 		}
-
-		/*
-		// BEGIN constraint debug==============================================================
-		// Log the state of all the constraints.
-		int numConstraints = m_worldData.dynamicsWorld->getNumConstraints();
-		for (int kk = 0; kk < numConstraints; kk++)
-		{
-			btTypedConstraint* constrain = m_worldData.dynamicsWorld->getConstraint(kk);
-			if (constrain->getConstraintType() == D6_CONSTRAINT_TYPE)
-			{
-				btGeneric6DofConstraint* constrain6 = (btGeneric6DofConstraint*)constrain;
-				m_worldData.BSLog("constrain[%d]: A=%u, B=%u, enable=%s, limited=%s%s%s%s%s%s, impulse=%f",
-					kk,
-					CONVLOCALID(constrain6->getRigidBodyA().getCollisionShape()->getUserPointer()),
-					CONVLOCALID(constrain6->getRigidBodyB().getCollisionShape()->getUserPointer()),
-					(constrain6->isEnabled()) ? "true" : "false",
-					(constrain6->isLimited(0)) ? "t" : "f",
-					(constrain6->isLimited(1)) ? "t" : "f",
-					(constrain6->isLimited(2)) ? "t" : "f",
-					(constrain6->isLimited(3)) ? "t" : "f",
-					(constrain6->isLimited(4)) ? "t" : "f",
-					(constrain6->isLimited(5)) ? "t" : "f",
-					constrain6->getAppliedImpulse()
-				);
-			}
-		}
-		// END constraint debug================================================================
-		*/
 
 		// Objects can register to be called after each step.
 		// This allows objects to do per-step modification of returned values.
@@ -336,6 +307,7 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
 				break;
 		}
+
 
 		*collidersCount = m_collisionsThisFrame;
 		*colliders = m_collidersThisFrameArray;

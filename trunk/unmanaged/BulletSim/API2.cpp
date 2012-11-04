@@ -138,8 +138,7 @@ EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubS
 
 // Cause a position update to happen next physics step.
 // This works by placing an entry for this object in the SimMotionState's
-//    update event array. This will be sent to the simulator after the
-//    physics step has added other updates.
+//    update event array.
 EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 {
 	bool ret = false;
@@ -183,9 +182,9 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, bt
 	return shape;
 }
 
-EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim)
+EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim, bool enableDynamicAabbTree)
 {
-	btCompoundShape* cShape = new btCompoundShape();
+	btCompoundShape* cShape = new btCompoundShape(enableDynamicAabbTree);
 	bsDebug_RememberCollisionShape(cShape);
 	return cShape;
 }
@@ -266,18 +265,15 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 	bsDebug_AssertIsKnownCollisionShape(shape, "IsNativeShape2: not known shape");
 	switch (shape->getShapeType())
 	{
-	case ShapeData::SHAPE_BOX:
-		ret = true;
-		break;
-	case ShapeData::SHAPE_CONE:
-		ret = true;
-		break;
-	case ShapeData::SHAPE_CYLINDER:
-		ret = true;
-		break;
-	case ShapeData::SHAPE_SPHERE:
-		ret = true;
-		break;
+		case BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE:
+		case BroadphaseNativeTypes::CONE_SHAPE_PROXYTYPE:
+		case BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE:
+		case BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE:
+			ret = true;
+			break;
+		default:
+			ret = false;
+			break;
 	}
 	return ret;
 }
@@ -2020,7 +2016,8 @@ EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
 	for (int ii=0; ii < numCollisionObjects; ii++)
 	{
 		btCollisionObject* obj = collisionObjects[ii];
-		if (obj)
+		// If there is an object and it probably is not terrain, dump.
+		if (obj && (CONVLOCALID(obj->getUserPointer()) > 100))
 		{
 			sim->getWorldData()->BSLog("===========================================");
 			DumpRigidBody2(sim, obj);
