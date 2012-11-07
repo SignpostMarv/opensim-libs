@@ -112,6 +112,8 @@ void BulletSim::initPhysics(ParamBlock* parms,
 	// Performance speedup: from BenchmarkDemo.cpp, ln 381
 	if (m_worldData.params->shouldEnableFrictionCaching != ParamFalse)
 		m_worldData.dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
+
+	// Increasing solver interations can increase stability.
 	if (m_worldData.params->numberOfSolverIterations > 0)
 		m_worldData.dynamicsWorld->getSolverInfo().m_numIterations = (int)m_worldData.params->numberOfSolverIterations;
 

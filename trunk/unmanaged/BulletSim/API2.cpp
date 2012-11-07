@@ -222,7 +222,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* RemoveChildShapeFromCompoundShapeIndex2(bt
 	return ret;
 }
 
-EXTERN_C DLL_EXPORT void RecalculatecompoundShapeLocalAabb2(btCompoundShape* cShape)
+EXTERN_C DLL_EXPORT void RecalculateCompoundShapeLocalAabb2(btCompoundShape* cShape)
 {
 	cShape->recalculateLocalAabb();
 }
@@ -1255,7 +1255,7 @@ EXTERN_C DLL_EXPORT void SetInterpolationLinearVelocity2(btCollisionObject* obj,
 
 EXTERN_C DLL_EXPORT void SetInterpolationAngularVelocity2(btCollisionObject* obj, Vector3& vel)
 {
-	obj->setInterpolationLinearVelocity(vel.GetBtVector3());
+	obj->setInterpolationAngularVelocity(vel.GetBtVector3());
 }
 
 // Helper function that sets both linear and angular interpolation velocity
@@ -1369,6 +1369,18 @@ EXTERN_C DLL_EXPORT void SetDamping2(btCollisionObject* obj, float lin_damping, 
 {
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb) rb->setDamping(btScalar(lin_damping), btScalar(ang_damping));
+}
+
+EXTERN_C DLL_EXPORT void SetLinearDamping2(btCollisionObject* obj, float lin_damping)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb) rb->setDamping(btScalar(lin_damping), rb->getAngularDamping());
+}
+
+EXTERN_C DLL_EXPORT void SetAngularDamping2(btCollisionObject* obj, float ang_damping)
+{
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb) rb->setDamping(rb->getLinearDamping(), btScalar(ang_damping));
 }
 
 EXTERN_C DLL_EXPORT float GetLinearDamping2(btCollisionObject* obj)
@@ -1946,6 +1958,7 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 					(float)rb->getTotalTorque().getZ()
 			);
 
+		float invMass = (float)rb->getInvMass();
 		sim->getWorldData()->BSLog("DumpRigidBody: grav=<%f,%f,%f>, COMPos=<%f,%f,%f>, invMass=%f, mass=%f",
 					(float)rb->getGravity().getX(),
 					(float)rb->getGravity().getY(),
@@ -1953,8 +1966,8 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 					(float)rb->getCenterOfMassPosition().getX(),
 					(float)rb->getCenterOfMassPosition().getY(),
 					(float)rb->getCenterOfMassPosition().getZ(),
-					(float)rb->getInvMass(),
-					1.0 / (float)rb->getInvMass()
+					invMass,
+					invMass == 0.0 ? 0.0 : (1.0 / invMass)
 			);
 
 		btScalar inertiaTensorYaw, inertiaTensorPitch, inertiaTensorRoll;
