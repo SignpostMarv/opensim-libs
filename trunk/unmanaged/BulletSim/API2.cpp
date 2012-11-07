@@ -1890,7 +1890,7 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 				(float)obj->getDeactivationTime()
 		);
 
-	sim->getWorldData()->BSLog("DumpRigidBody: ccdTrsh=%f, ccdSweep=%f, contProc=%f, frict=%f, hitFrict=%f, restit=%f, internTyp=%f",
+	sim->getWorldData()->BSLog("DumpRigidBody: ccdTrsh=%f, ccdSweep=%f, contProc=%f, frict=%f, hitFract=%f, restit=%f, internTyp=%f",
 				(float)obj->getCcdMotionThreshold(),
 				(float)obj->getCcdSweptSphereRadius(),
 				(float)obj->getContactProcessingThreshold(),
@@ -1959,13 +1959,20 @@ EXTERN_C DLL_EXPORT void DumpRigidBody2(BulletSim* sim, btCollisionObject* obj)
 			);
 
 		float invMass = (float)rb->getInvMass();
-		sim->getWorldData()->BSLog("DumpRigidBody: grav=<%f,%f,%f>, COMPos=<%f,%f,%f>, invMass=%f, mass=%f",
+		btTransform COMtransform = rb->getCenterOfMassTransform();
+		btVector3 COMPosition = COMtransform.getOrigin();
+		btQuaternion COMRotation = COMtransform.getRotation();
+		sim->getWorldData()->BSLog("DumpRigidBody: grav=<%f,%f,%f>, COMPos=<%f,%f,%f>, COMRot=<%f,%f,%f,%f>,invMass=%f, mass=%f",
 					(float)rb->getGravity().getX(),
 					(float)rb->getGravity().getY(),
 					(float)rb->getGravity().getZ(),
-					(float)rb->getCenterOfMassPosition().getX(),
-					(float)rb->getCenterOfMassPosition().getY(),
-					(float)rb->getCenterOfMassPosition().getZ(),
+					(float)COMPosition.getX(),
+					(float)COMPosition.getY(),
+					(float)COMPosition.getZ(),
+					(float)COMRotation.getX(),
+					(float)COMRotation.getY(),
+					(float)COMRotation.getZ(),
+					(float)COMRotation.getW(),
 					invMass,
 					invMass == 0.0 ? 0.0 : (1.0 / invMass)
 			);
