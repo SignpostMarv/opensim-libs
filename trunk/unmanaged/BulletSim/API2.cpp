@@ -26,6 +26,7 @@
  */
 
 #include "BulletSim.h"
+#include "Util.h"
 #include <stdarg.h>
 
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
@@ -90,7 +91,7 @@ EXTERN_C DLL_EXPORT BulletSim* Initialize2(Vector3 maxPosition, ParamBlock* parm
 
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
 	sim->getWorldData()->debugLogCallback = debugLog;
-	sim->initPhysics(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
+	sim->initPhysics2(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
 
 	return sim;
 }
@@ -104,7 +105,7 @@ EXTERN_C DLL_EXPORT BulletSim* Initialize2(Vector3 maxPosition, ParamBlock* parm
  */
 EXTERN_C DLL_EXPORT bool UpdateParameter2(BulletSim* sim, unsigned int localID, const char* parm, float value)
 {
-	return sim->UpdateParameter(localID, parm, value);
+	return sim->UpdateParameter2(localID, parm, value);
 }
 
 /**
@@ -113,7 +114,7 @@ EXTERN_C DLL_EXPORT bool UpdateParameter2(BulletSim* sim, unsigned int localID, 
  */
 EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
 {
-	sim->exitPhysics();
+	sim->exitPhysics2();
 	bsDebug_AllDone();
 	delete sim;
 }
@@ -133,7 +134,7 @@ EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
 EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubSteps, float fixedTimeStep, 
 			int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders)
 {
-	return sim->PhysicsStep(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
+	return sim->PhysicsStep2(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
 }
 
 // Cause a position update to happen next physics step.
@@ -439,7 +440,6 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btC
 	gObj->setUserPointer(PACKLOCALID(id));
 	bsDebug_RememberCollisionObject(gObj);
 
-	// place the ghost object in the list to be scanned for colliions at step time
 	sim->getWorldData()->specialCollisionObjects[id] = gObj;
 	
 	return gObj;
@@ -507,14 +507,13 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 	btCollisionShape* shape = obj->getCollisionShape();
 	if (shape) 
 	{
-		bsDebug_AssertIsKnownCollisionShape(shape, "DestroyObject2: unknonw collisionShape");
+		bsDebug_AssertIsKnownCollisionShape(shape, "DestroyObject2: unknown collisionShape");
 		bsDebug_ForgetCollisionShape(shape);
 		delete shape;
 	}
 
 	// Remove from special collision objects. A NOOP if not in the list.
 	IDTYPE id = CONVLOCALID(obj->getUserPointer());
-	sim->getWorldData()->stepObjectCallbacks.erase(id);
 	sim->getWorldData()->specialCollisionObjects.erase(id);
 
 	// finally make the object itself go away

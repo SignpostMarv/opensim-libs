@@ -29,6 +29,9 @@
 #ifndef DEBUG_LOGIC_H
 #define DEBUG_LOGIC_H
 
+// Conditional compiled system for tracking the creation, reference and destruction
+//    of Bullet objects.
+// TODO: Implement if needed.
 #ifndef BSDEBUG
 
 #define bsDebug_Initialize()

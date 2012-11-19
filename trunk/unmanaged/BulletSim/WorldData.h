@@ -58,10 +58,6 @@ struct WorldData
 	// pointer to the containing world control structure
 	btDynamicsWorld* dynamicsWorld;
 
-	// the terrain is based on a heightmap
-	TerrainObject* Terrain;
-	GroundPlaneObject* GroundPlane;
-
 	// The minimum and maximum points in the defined physical space
 	btVector3 MinPosition;
 	btVector3 MaxPosition;
@@ -70,28 +66,10 @@ struct WorldData
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
 	UpdatesThisFrameMapType updatesThisFrame;
 
-	// Objects can register themselves to be called back each step
-	typedef std::map<IDTYPE, IPhysObject*> StepObjectCallbacksMapType;
-	StepObjectCallbacksMapType stepObjectCallbacks;
-
 	// Some collisionObjects can set themselves up for special collision processing.
 	// This is used for ghost objects to be handed in the simulation step.
 	typedef std::map<IDTYPE, btCollisionObject*> SpecialCollisionObjectMapType;
 	SpecialCollisionObjectMapType specialCollisionObjects;
-
-	// Objects in this world
-	// We create a class instance (using IPhysObjectFactory()) for each of the
-	// object types kept in the world. This separates the code for handling
-	// the physical object from the interface to the simulator.
-	// Once collection object is created to hold the objects. This also
-	// has the list manipulation functions.
-	ObjectCollection* objects;
-
-	// Mesh and Hull data
-	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
-	MeshesMapType Meshes;
-	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
-	HullsMapType Hulls;
 
 	// DEBUGGGING
 	// ============================================================================================

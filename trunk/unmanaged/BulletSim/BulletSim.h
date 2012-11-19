@@ -33,9 +33,6 @@
 
 #include "ArchStuff.h"
 #include "APIData.h"
-#include "IPhysObject.h"
-#include "TerrainObject.h"
-#include "ObjectCollection.h"
 #include "WorldData.h"
 
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
@@ -271,15 +268,22 @@ public:
 
 	virtual ~BulletSim()
 	{
-		exitPhysics();
+		exitPhysics2();
 	}
 
-	void initPhysics(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
-	void CreateInitialGroundPlaneAndTerrain();
-	void exitPhysics();
+	void initPhysics2(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
+	void exitPhysics2();
 
-	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
+	int PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
 		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
+
+	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices );
+	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
+	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh);
+
+	/*
+	void CreateInitialGroundPlaneAndTerrain();
+
 	void SetHeightmap(float* heightmap);
 
 	bool RegisterStepCallback(IDTYPE id, IPhysObject* target);
@@ -290,10 +294,6 @@ public:
 	bool CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
 	bool DestroyMesh(MESHKEYTYPE id);
 	bool CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey);
-
-	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices );
-	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
-	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh);
 
 	bool CreateObject(ShapeData* shapeData);
 	bool DestroyObject(IDTYPE id);
@@ -310,6 +310,7 @@ public:
 	bool SetObjectDynamic(IDTYPE id, bool isDynamic, float mass);
 	bool SetObjectBuoyancy(IDTYPE id, float buoyancy);
 	bool SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass);
+	*/
 
 	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
@@ -318,7 +319,7 @@ public:
 	WorldData* getWorldData() { return &m_worldData; }
 	btDynamicsWorld* getDynamicsWorld() { return m_worldData.dynamicsWorld; };
 
-	bool UpdateParameter(IDTYPE localID, const char* parm, float value);
+	bool UpdateParameter2(IDTYPE localID, const char* parm, float value);
 	void DumpPhysicsStats();
 
 protected:

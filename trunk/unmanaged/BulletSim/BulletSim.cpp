@@ -25,8 +25,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "BulletSim.h"
-#include "GroundPlaneObject.h"
-#include "TerrainObject.h"
 #include "Util.h"
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
@@ -39,8 +37,6 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 
 	// Make sure structures that will be created in initPhysics are marked as not created
 	m_worldData.dynamicsWorld = NULL;
-	m_worldData.objects = NULL;
-	m_worldData.Terrain = NULL;
 
 	m_worldData.sim = this;
 
@@ -48,7 +44,7 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	m_worldData.MaxPosition = btVector3(maxX, maxY, maxZ);
 }
 
-void BulletSim::initPhysics(ParamBlock* parms, 
+void BulletSim::initPhysics2(ParamBlock* parms, 
 							int maxCollisions, CollisionDesc* collisionArray, 
 							int maxUpdates, EntityProperties* updateArray)
 {
@@ -65,8 +61,6 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 	// Parameters are in a block of pinned memory
 	m_worldData.params = parms;
-	// the collection of all the objects that are passed to the physics engine
-	m_worldData.objects = new ObjectCollection();
 
 	// create the functional parts of the physics simulation
 	btDefaultCollisionConstructionInfo cci;
@@ -137,50 +131,10 @@ void BulletSim::initPhysics(ParamBlock* parms,
 
 }
 
-void BulletSim::CreateInitialGroundPlaneAndTerrain()
-{
-	CreateGroundPlane();
-	CreateTerrain();
-}
-
-void BulletSim::exitPhysics()
+void BulletSim::exitPhysics2()
 {
 	if (m_worldData.dynamicsWorld == NULL)
 		return;
-
-	if (m_worldData.objects)
-	{
-		m_worldData.objects->Clear();	// remove and delete all objects
-		delete m_worldData.objects;		// get rid of the object collection itself
-		m_worldData.objects = NULL;
-	}
-
-	// The terrain and ground plane objects are deleted when the object list is cleared
-	m_worldData.Terrain = NULL;
-	m_worldData.GroundPlane = NULL;
-
-	// Delete collision meshes
-	for (WorldData::HullsMapType::const_iterator it = m_worldData.Hulls.begin(); it != m_worldData.Hulls.end(); ++it)
-    {
-		btCollisionShape* collisionShape = it->second;
-		delete collisionShape;
-	}
-	m_worldData.Hulls.clear();
-
-	// Delete collision meshes
-	for (WorldData::MeshesMapType::const_iterator it = m_worldData.Meshes.begin(); it != m_worldData.Meshes.end(); ++it)
-    {
-		btCollisionShape* collisionShape = it->second;
-		delete collisionShape;
-	}
-	m_worldData.Meshes.clear();
-
-	// Must delete the dynamics world before deleting it's solver, broadphase, ...
-	if (m_worldData.dynamicsWorld != NULL)
-	{
-		delete m_worldData.dynamicsWorld;
-		m_worldData.dynamicsWorld = NULL;
-	}
 
 	// Delete solver
 	if (m_solver != NULL)
@@ -212,7 +166,7 @@ void BulletSim::exitPhysics()
 }
 
 // Step the simulation forward by one full step and potentially some number of substeps
-int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
+int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
 						   int* updatedEntityCount, EntityProperties** updatedEntities, 
 						   int* collidersCount, CollisionDesc** colliders)
 {
@@ -229,17 +183,6 @@ int BulletSim::PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTim
 			{
 				m_dumpStatsCount = (int)m_worldData.params->physicsLoggingFrames;
 				DumpPhysicsStatistics2(this);
-			}
-		}
-
-		// Objects can register to be called after each step.
-		// This allows objects to do per-step modification of returned values.
-		if (m_worldData.stepObjectCallbacks.size() > 0)
-		{
-			WorldData::StepObjectCallbacksMapType::const_iterator it;
-			for (it = m_worldData.stepObjectCallbacks.begin(); it != m_worldData.stepObjectCallbacks.end(); ++it)
-			{
-				(it->second)->StepCallback(it->first, &m_worldData);
 			}
 		}
 
@@ -420,179 +363,10 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 	}
 }
 
-// Register to be called just after the simulation step of Bullet.
-bool BulletSim::RegisterStepCallback(IDTYPE id, IPhysObject* target)
-{
-	UnregisterStepCallback(id);
-	m_worldData.stepObjectCallbacks[id] = target;
-	return true;
-}
-
-// Remove a registration for step callback.
-// Safe to call if not registered.
-// Returns 'true' if something was actually unregistered.
-bool BulletSim::UnregisterStepCallback(IDTYPE id)
-{
-	size_type cnt = m_worldData.stepObjectCallbacks.erase(id);
-	return (cnt > 0);
-}
-
-// Copy the passed heightmap into the memory block used by Bullet
-void BulletSim::SetHeightmap(float* heightmap)
-{
-	if (m_worldData.Terrain)
-	{
-		m_worldData.Terrain->UpdateHeightMap(heightmap);
-	}
-}
-
-// Create a collision plane at height zero to stop things falling to oblivion
-void BulletSim::CreateGroundPlane()
-{
-	m_worldData.objects->RemoveAndDestroyObject(ID_GROUND_PLANE);
-	IPhysObject* groundPlane = new GroundPlaneObject(&m_worldData, ID_GROUND_PLANE);
-	m_worldData.objects->AddObject(ID_GROUND_PLANE, groundPlane);
-}
-
-// Based on the heightmap, create a mesh for the terrain and put it in the world
-void BulletSim::CreateTerrain()
-{
-	// get rid of any old terrains lying around
-	m_worldData.objects->RemoveAndDestroyObject(ID_TERRAIN);
-	m_worldData.Terrain = NULL;
-
-	// Create the new terrain based on the heightmap in m_worldData
-	m_worldData.Terrain = new TerrainObject(&m_worldData, ID_TERRAIN);
-	m_worldData.objects->AddObject(ID_TERRAIN, m_worldData.Terrain);
-}
-
 // If using Bullet' convex hull code, refer to following link for parameter setting
 // http://kmamou.blogspot.com/2011/11/hacd-parameters.html
 // Another useful reference for ConvexDecomp
 // http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
-
-// Create a hull based on passed convex hull information
-bool BulletSim::CreateHull(MESHKEYTYPE meshKey, int hullCount, float* hulls)
-{
-	// m_worldData.BSLog("CreateHull: key=%ld, hullCount=%d", meshKey, hullCount);
-	bool ret = false;
-
-	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
-	if (it == m_worldData.Hulls.end())
-	{
-		// Create a compound shape that will wrap the set of convex hulls
-		btCompoundShape* compoundShape = new btCompoundShape(false);
-
-		btTransform childTrans;
-		childTrans.setIdentity();
-		compoundShape->setMargin(m_worldData.params->collisionMargin);
-		
-		// Loop through all of the convex hulls and add them to our compound shape
-		int ii = 1;
-		for (int i = 0; i < hullCount; i++)
-		{
-			int vertexCount = (int)hulls[ii];
-
-			// Offset this child hull by its calculated centroid
-			btVector3 centroid = btVector3((btScalar)hulls[ii+1], (btScalar)hulls[ii+2], (btScalar)hulls[ii+3]);
-			childTrans.setOrigin(centroid);
-
-			// Create the child hull and add it to our compound shape
-			btScalar* hullVertices = (btScalar*)&hulls[ii+4];
-			btConvexHullShape* convexShape = new btConvexHullShape(hullVertices, vertexCount, sizeof(Vector3));
-			convexShape->setMargin(m_worldData.params->collisionMargin);
-			compoundShape->addChildShape(childTrans, convexShape);
-
-			ii += (vertexCount * 3 + 4);
-		}
-
-		// Track this mesh
-		m_worldData.Hulls[meshKey] = compoundShape;
-		ret = true;
-	}
-	return ret;
-}
-
-// Delete a hull
-bool BulletSim::DestroyHull(MESHKEYTYPE meshKey)
-{
-	// m_worldData.BSLog("BulletSim::DestroyHull: key=%ld", meshKey);
-	// m_worldData.BSLog("DeleteHull:");
-	WorldData::HullsMapType::iterator it = m_worldData.Hulls.find(meshKey);
-	if (it != m_worldData.Hulls.end())
-	{
-		btCompoundShape* compoundShape = m_worldData.Hulls[meshKey];
-		delete compoundShape;
-		m_worldData.Hulls.erase(it);
-		return true;
-	}
-	return false;
-}
-
-// Quote from http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7997
-//       Yes, btBvhTriangleMeshShape can be used for static/kinematic objects only. 
-//       You can use btGImpactMeshShapes (or btCompoundShapes plus HACD) for concave 
-//       dynamic rigidbodies, or you can just throw away the indices and create a 
-//       btConvexHullShape with the vertices of your mesh, but this would result in your 
-//       shape becoming convex.
-//       Create a mesh structure to be used for static objects
-bool BulletSim::CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices)
-{
-	// m_worldData.BSLog("BulletSim::CreateMesh: key=$ld, nIndices=%d, nVertices=%d", meshKey, indicesCount, verticesCount);
-	bool ret = false;
-
-	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
-	if (it == m_worldData.Meshes.end())
-	{
-		// We must copy the indices and vertices since the passed memory is released when this call returns.
-		btIndexedMesh indexedMesh;
-		int* copiedIndices = new int[indicesCount];
-		bsMemcpy(copiedIndices, indices, indicesCount * sizeof(int));
-		int numVertices = verticesCount * 3;
-		float* copiedVertices = new float[numVertices];
-		bsMemcpy(copiedVertices, vertices, numVertices * sizeof(float));
-
-		indexedMesh.m_indexType = PHY_INTEGER;
-		indexedMesh.m_triangleIndexBase = (const unsigned char*)copiedIndices;
-		indexedMesh.m_triangleIndexStride = sizeof(int) * 3;
-		indexedMesh.m_numTriangles = indicesCount / 3;
-		indexedMesh.m_vertexType = PHY_FLOAT;
-		indexedMesh.m_numVertices = verticesCount;
-		indexedMesh.m_vertexBase = (const unsigned char*)copiedVertices;
-		indexedMesh.m_vertexStride = sizeof(float) * 3;
-
-		btTriangleIndexVertexArray* vertexArray = new btTriangleIndexVertexArray();
-		vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
-
-		btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
-		
-		m_worldData.Meshes[meshKey] = meshShape;
-		ret = true;
-	}
-	return ret;
-}
-
-// Delete a mesh
-bool BulletSim::DestroyMesh(MESHKEYTYPE meshKey)
-{
-	// m_worldData.BSLog("BulletSim::DeleteMesh: key=%ld", meshKey);
-	bool ret = false;
-	WorldData::MeshesMapType::iterator it = m_worldData.Meshes.find(meshKey);
-	if (it != m_worldData.Meshes.end())
-	{
-		btBvhTriangleMeshShape* tms = m_worldData.Meshes[meshKey];
-		/* This causes memory corruption.
-		 * TODO: figure out when to properly release the memory allocated in CreateMesh.
-		btIndexedMesh* smi = (btIndexedMesh*)tms->getMeshInterface();
-		delete smi->m_triangleIndexBase;
-		delete smi->m_vertexBase;
-		*/
-		delete tms;
-		m_worldData.Meshes.erase(it);
-		ret = true;
-	}
-	return ret;
-}
 
 btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices )
 {
@@ -660,199 +434,6 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh)
 {
 	// TODO: write the code to use the Bullet HACD routine
 	return NULL;
-}
-
-// From a previously created mesh shape, create a convex hull using the Bullet
-//   HACD hull creation code. The created hull will go into the hull collection
-//   so remember to delete it later.
-// Returns 'true' if the hull was successfully created.
-bool BulletSim::CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey)
-{
-	// TODO: well, you know, like, write the code.
-	return false;
-}
-
-// Using the shape data, create the RigidObject and put it in the world
-bool BulletSim::CreateObject(ShapeData* data)
-{
-	// m_worldData.BSLog("BulletSim::CreateObject: id=%d", data->ID);
-
-	bool ret = false;
-
-	// If the object already exists, destroy it
-	m_worldData.objects->RemoveAndDestroyObject(data->ID);
-
-	// Create and add the new physical object
-	IPhysObject* newObject = IPhysObject::PhysObjectFactory(&m_worldData, data);
-	if (newObject != NULL)
-	{
-		// m_worldData.BSLog("CreateObject: created object of type= '%s'", newObject->GetType());
-		m_worldData.objects->AddObject(data->ID, newObject);
-		ret = true;
-	}
-
-	return ret;
-}
-
-btVector3 BulletSim::GetObjectPosition(IDTYPE id)
-{
-	btVector3 ret = btVector3(0.0, 0.0, 0.0);
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		ret = obj->GetObjectPosition();
-	}
-	return ret;
-}
-
-btQuaternion BulletSim::GetObjectOrientation(IDTYPE id)
-{
-	btQuaternion ret = btQuaternion::getIdentity();
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		ret = obj->GetObjectOrientation();
-	}
-	return ret;
-}
-
-bool BulletSim::SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectTranslation(position, rotation);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectVelocity(IDTYPE id, btVector3& velocity)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectVelocity(velocity);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectAngularVelocity(angularVelocity);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectForce(IDTYPE id, btVector3& force)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectForce(force);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectScaleMass(IDTYPE id, btVector3& scale, float mass, bool isDynamic)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectScaleMass(scale, mass, isDynamic);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectCollidable(IDTYPE id, bool collidable)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectCollidable(collidable);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectDynamic(IDTYPE id, bool isDynamic, float mass)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectDynamic(isDynamic, mass);
-		ret = true;
-	}
-
-	return ret;
-}
-
-// Adjust how gravity effects the object
-// neg=fall quickly, 0=1g, 1=0g, pos=float up
-bool BulletSim::SetObjectBuoyancy(IDTYPE id, float buoy)
-{
-	bool ret = false;
-
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectBuoyancy(buoy);
-		ret = true;
-	}
-
-	return ret;
-}
-
-bool BulletSim::SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass)
-{
-	bool ret = false;
-	IPhysObject* obj;
-	if (m_worldData.objects->TryGetObject(id, &obj))
-	{
-		obj->SetObjectProperties(isStatic, isSolid, genCollisions, mass);
-		ret = true;
-	}
-	return ret;
-}
-
-bool BulletSim::HasObject(IDTYPE id)
-{
-	return m_worldData.objects->HasObject(id);
-}
-
-bool BulletSim::DestroyObject(IDTYPE id)
-{
-	// m_worldData.BSLog("BulletSim::DestroyObject: id=%d", id);
-	return m_worldData.objects->RemoveAndDestroyObject(id);
 }
 
 // TODO: get this code working
@@ -984,7 +565,7 @@ const btVector3 BulletSim::RecoverFromPenetration(IDTYPE id)
 	return btVector3(0.0, 0.0, 0.0);
 }
 
-bool BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
+bool BulletSim::UpdateParameter2(IDTYPE localID, const char* parm, float val)
 {
 	btScalar btVal = btScalar(val);
 	btVector3 btZeroVector3 = btVector3(0, 0, 0);
@@ -995,49 +576,7 @@ bool BulletSim::UpdateParameter(IDTYPE localID, const char* parm, float val)
 		m_worldData.dynamicsWorld->setGravity(btVector3(0.f, 0.f, val));
 		return true;
 	}
-
-	// something changed in the terrain so reset all the terrain parameters to values from m_worldData.params
-	if (strcmp(parm, "terrain") == 0)
-	{
-		// some terrain physical parameter changed. Reset the terrain.
-		if (m_worldData.Terrain)
-		{
-			m_worldData.Terrain->UpdatePhysicalParameters(
-							m_worldData.params->terrainFriction,
-							m_worldData.params->terrainRestitution,
-							btZeroVector3);
-		}
-		return true;
-	}
-
-	IPhysObject* obj;
-	if (!m_worldData.objects->TryGetObject(localID, &obj))
-	{
-		return false;
-	}
-
-	// the friction or restitution changed in the default parameters. Reset same.
-	if (strcmp(parm, "avatar") == 0)
-	{
-		obj->UpdatePhysicalParameters(
-				m_worldData.params->avatarFriction, 
-				m_worldData.params->avatarRestitution,
-				btZeroVector3);
-		return true;
-	}
-
-	// the friction or restitution changed in the default parameters. Reset same.
-	if (strcmp(parm, "object") == 0)
-	{
-		obj->UpdatePhysicalParameters(
-				m_worldData.params->defaultFriction, 
-				m_worldData.params->defaultRestitution,
-				btZeroVector3);
-		return true;
-	}
-
-	// changes to an object
-	return obj->UpdateParameter(parm, val);
+	return false;
 }
 
 // #include "LinearMath/btQuickprof.h"
