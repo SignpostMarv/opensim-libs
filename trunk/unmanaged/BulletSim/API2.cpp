@@ -572,6 +572,9 @@ EXTERN_C DLL_EXPORT void FillHeightMapInfo2(BulletSim* sim, HeightMapInfo* mapIn
 
 // Bullet requires us to manage the heightmap array so these methods create
 //    and release the memory for the heightmap.
+// Note to the future: Most of the data in the heightmap was used in the old API where 
+//    the C++ code needed to keep the heightmap information so it could compute
+//    terrain height. Now this only exists to hold and release the link to the local copy of the heightmap.
 EXTERN_C DLL_EXPORT HeightMapInfo* CreateHeightMapInfo2(BulletSim* sim, IDTYPE id,
 				Vector3 minCoords, Vector3 maxCoords, float* heightMap, float collisionMargin)
 {

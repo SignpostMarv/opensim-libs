@@ -332,6 +332,7 @@ struct ParamBlock
     float ccdSweptSphereRadius;
     float contactProcessingThreshold;
 
+    float terrainImplementation;
     float terrainFriction;
     float terrainHitFraction;
     float terrainRestitution;
