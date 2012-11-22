@@ -340,7 +340,8 @@ struct ParamBlock
     float avatarStandingFriction;
     float avatarDensity;
     float avatarRestitution;
-    float avatarCapsuleRadius;
+    float avatarCapsuleWidth;
+    float avatarCapsuleDepth;
     float avatarCapsuleHeight;
 	float avatarContactProcessingThreshold;
 
