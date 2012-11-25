@@ -391,6 +391,7 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
 	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+	meshShape->setMargin(m_worldData.params->collisionMargin);
 
 	return meshShape;
 }
@@ -402,6 +403,7 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 
 	btTransform childTrans;
 	childTrans.setIdentity();
+
 	compoundShape->setMargin(m_worldData.params->collisionMargin);
 	
 	// Loop through all of the convex hulls and add them to our compound shape

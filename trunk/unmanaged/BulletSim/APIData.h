@@ -336,6 +336,8 @@ struct ParamBlock
     float terrainFriction;
     float terrainHitFraction;
     float terrainRestitution;
+    float terrainCollisionMargin;
+
     float avatarFriction;
     float avatarStandingFriction;
     float avatarDensity;
@@ -344,6 +346,8 @@ struct ParamBlock
     float avatarCapsuleDepth;
     float avatarCapsuleHeight;
 	float avatarContactProcessingThreshold;
+
+	float vehicleAngularDamping;
 
 	float maxPersistantManifoldPoolSize;
 	float maxCollisionAlgorithmPoolSize;

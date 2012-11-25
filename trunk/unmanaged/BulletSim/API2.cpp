@@ -279,6 +279,12 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 	return ret;
 }
 
+EXTERN_C DLL_EXPORT void SetShapeCollisionMargin(btCollisionShape* shape, float margin)
+{
+	bsDebug_AssertIsKnownCollisionShape(obj, "SetShapeCollisonMargin: unknown collisionShape");
+	shape->setMargin(btScalar(margin));
+}
+
 EXTERN_C DLL_EXPORT btCollisionShape* BuildCapsuleShape2(BulletSim* sim, float radius, float height, Vector3 scale)
 {
 	btCollisionShape* shape = new btCapsuleShapeZ(btScalar(radius), btScalar(height));
@@ -358,6 +364,7 @@ EXTERN_C DLL_EXPORT int GetBodyType2(btCollisionObject* obj)
 	return obj->getInternalType();
 }
 
+// ========================================================================
 // Create aa btRigidBody with our MotionState structure so we can track updates to this body.
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCollisionShape* shape, 
 						IDTYPE id, Vector3 pos, Quaternion rot)
