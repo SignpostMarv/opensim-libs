@@ -102,7 +102,7 @@ public:
 		// Put the new transform into m_properties
 		m_properties.Position = m_xform.getOrigin();
 		m_properties.Rotation = m_xform.getRotation();
-		// A problem in stock Bullet is that we don't get an event when an object is deactivated.
+		// A problem with stock Bullet is that we don't get an event when an object is deactivated.
 		// This means that the last non-zero values for linear and angular velocity
 		// are left in the viewer who does dead reconning and the objects look like
 		// they float off.
@@ -113,7 +113,7 @@ public:
 		// Is this transform any different from the previous one?
 		// TODO: decide of this 'if' statement is needed. Since the updates are kept by ID,
 		//     couldn't we just always put any update into the map? The only down side would
-		//     be sending updates every tick for very small jiggles that happen over a long period of time.
+		//     be sending updates every tick for very small jiggles which happen over a long period of time.
 		if (force
 			|| !m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
 			|| !m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE)
@@ -122,12 +122,12 @@ public:
 			//    make sure a property update is sent so the zeros make it to the viewer.
 			|| ((m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
 				&& (m_properties.Velocity != m_lastProperties.Velocity || m_properties.AngularVelocity != m_lastProperties.AngularVelocity))
-			//	If Velocity and AngularVelocity are non-zero but more than almost the same, send an update.
+			//	If Velocity and AngularVelocity are non-zero but have changed, send an update.
 			|| !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
 			|| !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
 			)
 		{
-			// If so, add this update to the list of updates for this frame.
+			// Add this update to the list of updates for this frame.
 			m_lastProperties = m_properties;
 			(*m_updatesThisFrame)[m_properties.ID] = &m_properties;
 		}

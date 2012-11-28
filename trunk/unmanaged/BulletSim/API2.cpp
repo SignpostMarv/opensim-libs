@@ -1252,19 +1252,19 @@ EXTERN_C DLL_EXPORT Transform GetInterpolationWorldTransform2(btCollisionObject*
 	return ret;
 }
 
-EXTERN_C DLL_EXPORT void SetInterpolationWorldTransform2(btCollisionObject* obj, Transform& trans)
+EXTERN_C DLL_EXPORT void SetInterpolationWorldTransform2(btCollisionObject* obj, Transform trans)
 {
 	obj->setInterpolationWorldTransform(trans.GetBtTransform());
 }
 
-EXTERN_C DLL_EXPORT void SetInterpolationLinearVelocity2(btCollisionObject* obj, Vector3& vel)
+EXTERN_C DLL_EXPORT void SetInterpolationLinearVelocity2(btCollisionObject* obj, Vector3 vel)
 {
 	obj->setInterpolationLinearVelocity(vel.GetBtVector3());
 }
 
-EXTERN_C DLL_EXPORT void SetInterpolationAngularVelocity2(btCollisionObject* obj, Vector3& vel)
+EXTERN_C DLL_EXPORT void SetInterpolationAngularVelocity2(btCollisionObject* obj, Vector3 ang)
 {
-	obj->setInterpolationAngularVelocity(vel.GetBtVector3());
+	obj->setInterpolationAngularVelocity(ang.GetBtVector3());
 }
 
 // Helper function that sets both linear and angular interpolation velocity
