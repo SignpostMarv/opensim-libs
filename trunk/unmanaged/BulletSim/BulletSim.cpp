@@ -29,7 +29,9 @@
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 
+// Linkages to debugging dump routines
 extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
+extern "C" void DumpActivationInfo2(BulletSim* sim);
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
@@ -183,6 +185,7 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 			{
 				m_dumpStatsCount = (int)m_worldData.params->physicsLoggingFrames;
 				DumpPhysicsStatistics2(this);
+				DumpActivationInfo2(this);
 			}
 		}
 

@@ -142,8 +142,8 @@ EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubS
 //    update event array.
 EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 {
-	bool ret = false;
 	bsDebug_AssertIsKnownCollisionObject(obj, "PushUpdate2: not a known body");
+	bool ret = false;
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb != NULL)
 	{
@@ -2067,6 +2067,38 @@ EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
 	sim->getWorldData()->BSLog("=END==========================================");
 }
 
+// Dump info about the number of objects and their activation state
+EXTERN_C DLL_EXPORT void DumpActivationInfo2(BulletSim* sim)
+{
+	btDynamicsWorld* world = sim->getDynamicsWorld();
+	btCollisionObjectArray& collisionObjects = world->getCollisionObjectArray();
+	int numRigidBodies = 0;
+	int* activeStates = new int[10];
+	for (int ii=0; ii<10; ii++) activeStates[ii] = 0;
+
+	int numCollisionObjects = collisionObjects.size();
+	for (int ii=0; ii < numCollisionObjects; ii++)
+	{
+		btCollisionObject* obj = collisionObjects[ii];
+		int activeState = obj->getActivationState();
+		activeStates[activeState]++;
+
+		btRigidBody* rb = btRigidBody::upcast(obj);
+		if (rb)
+		{
+			numRigidBodies++;
+		}
+	}
+	sim->getWorldData()->BSLog("     num CollisionObject = %d", numCollisionObjects);
+	sim->getWorldData()->BSLog("         num RigidBodies = %d", numRigidBodies);
+	sim->getWorldData()->BSLog("          num ACTIVE_TAG = %d", activeStates[ACTIVE_TAG]);
+	sim->getWorldData()->BSLog("     num ISLAND_SLEEPING = %d", activeStates[ISLAND_SLEEPING]);
+	sim->getWorldData()->BSLog("  num WANTS_DEACTIVATION = %d", activeStates[WANTS_DEACTIVATION]);
+	sim->getWorldData()->BSLog("num DISABLE_DEACTIVATION = %d", activeStates[DISABLE_DEACTIVATION]);
+	sim->getWorldData()->BSLog("  num DISABLE_SIMULATION = %d", activeStates[DISABLE_SIMULATION]);
+	sim->getWorldData()->BSLog("    num overlappingPairs = %d", world->getPairCache()->getNumOverlappingPairs());
+}
+
 // Version of log printer that takes the simulator as a parameter.
 // Used for statistics logging from Bullet.
 // Bullet must be patched to enable this functionality -- by default it does a printf.
@@ -2075,7 +2107,7 @@ EXTERN_C DLL_EXPORT void DebugLogger2(void* xxx, const char* msg, ...)
 	BulletSim* sim = (BulletSim*)xxx;
 	va_list args;
 	va_start(args, msg);
-	// sim->getWorldData()->BSLog2(msg, args);
+	sim->getWorldData()->BSLog2(msg, args);
 	va_end(args);
 	return;
 }
