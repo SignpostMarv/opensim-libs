@@ -1808,15 +1808,18 @@ EXTERN_C DLL_EXPORT float GetMargin2(btCollisionShape* shape)
 	return shape->getMargin();
 }
 
-EXTERN_C DLL_EXPORT void SetCollisionFilterMask2(btCollisionObject* obj, unsigned int filter, unsigned int mask)
+EXTERN_C DLL_EXPORT bool SetCollisionGroupMask2(btCollisionObject* obj, unsigned int group, unsigned int mask)
 {
+	bool ret = false;
 	btBroadphaseProxy* proxy = obj->getBroadphaseHandle();
 	// If the object is not in the world, there won't be a proxy.
 	if (proxy)
 	{
-		proxy->m_collisionFilterGroup = (short)filter;
+		proxy->m_collisionFilterGroup = (short)group;
 		proxy->m_collisionFilterMask = (short)mask;
+		ret = true;
 	}
+	return ret;
 }
 
 // =====================================================================
