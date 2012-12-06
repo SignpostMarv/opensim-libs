@@ -2122,7 +2122,7 @@ EXTERN_C DLL_EXPORT void DumpPhysicsStatistics2(BulletSim* sim)
 	{
 		// Uncomment the next line to enable timing logging from Bullet.
 		// The Bullet library MUST be patched to create this entry point.
-		// CProfileManager::dumpAll(DebugLogger2, (void*)sim);
+		sim->getWorldData()->dumpAll();
 	}
 	return;
 }
