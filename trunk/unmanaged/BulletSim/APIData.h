@@ -248,9 +248,11 @@ struct CollisionDesc
 // BulletSim extends the definition of the collision flags
 //   so we can control when collisions are desired.
 #define BS_SUBSCRIBE_COLLISION_EVENTS    (0x0400)
-#define BS_VOLUME_DETECT_OBJECT          (0x0800)
-#define BS_PHANTOM_OBJECT                (0x1000)
-#define BS_PHYSICAL_OBJECT               (0x2000)
+#define BS_FLOATS_ON_WATER               (0x0800)
+#define BS_VEHICLE_COLLISIONS            (0x1000)
+
+// Combination of above bits for all settings that want collisions reported
+#define BS_WANTS_COLLISIONS              (0x1400)
 
 // API-exposed structure to input a convex hull
 struct ConvexHull

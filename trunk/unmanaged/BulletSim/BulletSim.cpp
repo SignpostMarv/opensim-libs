@@ -269,8 +269,8 @@ void BulletSim::RecordCollision(const btCollisionObject* objA, const btCollision
 	btVector3 contactNormal = norm;
 
 	// One of the objects has to want to hear about collisions
-	if ((objA->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0
-						&& (objB->getCollisionFlags() & BS_SUBSCRIBE_COLLISION_EVENTS) == 0)
+	if ((objA->getCollisionFlags() & BS_WANTS_COLLISIONS) == 0
+			&& (objB->getCollisionFlags() & BS_WANTS_COLLISIONS) == 0)
 	{
 		return;
 	}
