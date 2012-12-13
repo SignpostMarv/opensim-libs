@@ -10,15 +10,9 @@ BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/li
 CC = g++
 CFLAGS = -I$(IDIR) -fPIC -g
 
-BASEFILES = API.cpp API2.cpp BulletSim.cpp
+BASEFILES = API2.cpp BulletSim.cpp
 
-OBJECTFILES = IPhysObject.cpp AvatarObject.cpp PrimObject.cpp GroundPlaneObject.cpp TerrainObject.cpp
-
-THINGFILES = 
-
-COLLECTIONFILES = ObjectCollection.cpp
-
-SRC = $(BASEFILES) $(OBJECTFILES) $(THINGFILES) $(COLLECTIONFILES)
+SRC = $(BASEFILES)
 # SRC = $(wildcard *.cpp)
 
 BIN = $(patsubst %.cpp, %.o, $(SRC))
@@ -32,37 +26,11 @@ libBulletSim.so : $(BIN)
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?
 
-BulletSim.cpp : BulletSim.h GroundPlaneObject.h TerrainObject.h Util.h
+BulletSim.cpp : BulletSim.h Util.h
 
-BulletSim.h: ArchStuff.h APIData.h IPhysObject.h TerrainObject.h ObjectCollection.h WorldData.h
-
-API.cpp : BulletSim.h
+BulletSim.h: ArchStuff.h APIData.h WorldData.h
 
 API2.cpp : BulletSim.h
-
-IPhysObject.cpp: IPhysObject.h AvatarObject.h PrimObject.h
-
-IPhysObject.h: APIData.h WorldData.h
-
-AvatarObject.cpp:  AvatarObject.h BulletSim.h
-
-AvatarObject.h: IPhysObject.h APIData.h WorldData.h
-
-PrimObject.cpp: PrimObject.h
-
-PrimObject.h: IPhysObject.h APIData.h WorldData.h
-
-GroundPlaneObject.cpp: GroundPlaneObject.h 
-
-GroundPlaneObject.h: IPhysObject.h APIData.h WorldData.h
-
-TerrainObject.cpp: TerrainObject.h
-
-TerrainObject.h: IPhysObject.h APIData.h WorldData.h Util.h
-
-ObjectCollection.cpp: ObjectCollection.h
-
-ObjectCollection.h: IPhysObject.h ArchStuff.h
 
 clean:
 	rm -f *.o *.so

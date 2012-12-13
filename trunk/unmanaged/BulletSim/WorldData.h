@@ -58,10 +58,6 @@ struct WorldData
 	// pointer to the containing world control structure
 	btDynamicsWorld* dynamicsWorld;
 
-	// the terrain is based on a heightmap
-	TerrainObject* Terrain;
-	GroundPlaneObject* GroundPlane;
-
 	// The minimum and maximum points in the defined physical space
 	btVector3 MinPosition;
 	btVector3 MaxPosition;
@@ -70,28 +66,10 @@ struct WorldData
 	typedef std::map<IDTYPE, EntityProperties*> UpdatesThisFrameMapType;
 	UpdatesThisFrameMapType updatesThisFrame;
 
-	// Objects can register themselves to be called back each step
-	typedef std::map<IDTYPE, IPhysObject*> StepObjectCallbacksMapType;
-	StepObjectCallbacksMapType stepObjectCallbacks;
-
 	// Some collisionObjects can set themselves up for special collision processing.
 	// This is used for ghost objects to be handed in the simulation step.
 	typedef std::map<IDTYPE, btCollisionObject*> SpecialCollisionObjectMapType;
 	SpecialCollisionObjectMapType specialCollisionObjects;
-
-	// Objects in this world
-	// We create a class instance (using IPhysObjectFactory()) for each of the
-	// object types kept in the world. This separates the code for handling
-	// the physical object from the interface to the simulator.
-	// Once collection object is created to hold the objects. This also
-	// has the list manipulation functions.
-	ObjectCollection* objects;
-
-	// Mesh and Hull data
-	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
-	MeshesMapType Meshes;
-	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
-	HullsMapType Hulls;
 
 	// DEBUGGGING
 	// ============================================================================================
@@ -100,6 +78,7 @@ struct WorldData
 	// This callback is only initialized if the simulator is running in DEBUG mode.
 	DebugLogCallback* debugLogCallback;
 
+	/*
 	void BSLog(const char* msg, ...) {
 		char buff[2048];
 		if (debugLogCallback != NULL) {
@@ -110,8 +89,8 @@ struct WorldData
 			(*debugLogCallback)(buff);
 		}
 	}
+	*/
 	// Call back into the managed world to output a log message with formatting
-	/*
 	void BSLog(const char* msg, ...) {
 		if (debugLogCallback != NULL) {
 			va_list args;
@@ -128,7 +107,67 @@ struct WorldData
 			(*debugLogCallback)(buff);
 		}
 	}
-	*/
+
+	// The following code was stolen from Bullet.
+	// The Bullet dumper uses printf to output stats and BulletSim needs it to call BSLog.]
+	// Just copying the code here turned out to be the quickest and easiest solution.
+	void dumpRecursive(CProfileIterator* profileIterator, int spacing)
+	{
+		profileIterator->First();
+		if (profileIterator->Is_Done())
+			return;
+
+		char dots[256];
+		for (int ii=0; ii<spacing; ii++)
+			dots[ii] = '.';
+		dots[spacing] = '\0';
+
+		float accumulated_time=0,parent_time = profileIterator->Is_Root() ? CProfileManager::Get_Time_Since_Reset() : profileIterator->Get_Current_Parent_Total_Time();
+		int i;
+		int frames_since_reset = CProfileManager::Get_Frame_Count_Since_Reset();
+		BSLog("%s----------------------------------\n", dots);
+		BSLog("%sProfiling: %s (total running time: %.3f ms) ---\n",dots,profileIterator->Get_Current_Parent_Name(), parent_time );
+		float totalTime = 0.f;
+
+		
+		int numChildren = 0;
+		
+		for (i = 0; !profileIterator->Is_Done(); i++,profileIterator->Next())
+		{
+			numChildren++;
+			float current_total_time = profileIterator->Get_Current_Total_Time();
+			accumulated_time += current_total_time;
+			float fraction = parent_time > SIMD_EPSILON ? (current_total_time / parent_time) * 100 : 0.f;
+			BSLog("%s%d -- %s (%.2f %%) :: %.3f ms / frame (%d calls)\n",dots,i, profileIterator->Get_Current_Name(), fraction,(current_total_time / (double)frames_since_reset),profileIterator->Get_Current_Total_Calls());
+			totalTime += current_total_time;
+			//recurse into children
+		}
+
+		if (parent_time < accumulated_time)
+		{
+			BSLog("what's wrong\n");
+		}
+		BSLog("%s%s (%.3f %%) :: %.3f ms\n", dots,"Unaccounted:",parent_time > SIMD_EPSILON ? ((parent_time - accumulated_time) / parent_time) * 100 : 0.f, parent_time - accumulated_time);
+		
+		for (i=0;i<numChildren;i++)
+		{
+			profileIterator->Enter_Child(i);
+			dumpRecursive(profileIterator,spacing+3);
+			profileIterator->Enter_Parent();
+		}
+	}
+
+	void	dumpAll()
+	{
+		CProfileIterator* profileIterator = 0;
+		profileIterator = CProfileManager::Get_Iterator();
+
+		dumpRecursive(profileIterator,0);
+
+		CProfileManager::Release_Iterator(profileIterator);
+	}
+
 };
+
 
 #endif // WORLD_DATA_H

@@ -26,6 +26,7 @@
  */
 
 #include "BulletSim.h"
+#include "Util.h"
 #include <stdarg.h>
 
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
@@ -90,7 +91,7 @@ EXTERN_C DLL_EXPORT BulletSim* Initialize2(Vector3 maxPosition, ParamBlock* parm
 
 	BulletSim* sim = new BulletSim(maxPosition.X, maxPosition.Y, maxPosition.Z);
 	sim->getWorldData()->debugLogCallback = debugLog;
-	sim->initPhysics(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
+	sim->initPhysics2(parms, maxCollisions, collisionArray, maxUpdates, updateArray);
 
 	return sim;
 }
@@ -104,7 +105,7 @@ EXTERN_C DLL_EXPORT BulletSim* Initialize2(Vector3 maxPosition, ParamBlock* parm
  */
 EXTERN_C DLL_EXPORT bool UpdateParameter2(BulletSim* sim, unsigned int localID, const char* parm, float value)
 {
-	return sim->UpdateParameter(localID, parm, value);
+	return sim->UpdateParameter2(localID, parm, value);
 }
 
 /**
@@ -113,7 +114,7 @@ EXTERN_C DLL_EXPORT bool UpdateParameter2(BulletSim* sim, unsigned int localID, 
  */
 EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
 {
-	sim->exitPhysics();
+	sim->exitPhysics2();
 	bsDebug_AllDone();
 	delete sim;
 }
@@ -133,7 +134,7 @@ EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
 EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubSteps, float fixedTimeStep, 
 			int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders)
 {
-	return sim->PhysicsStep(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
+	return sim->PhysicsStep2(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
 }
 
 // Cause a position update to happen next physics step.
@@ -141,8 +142,8 @@ EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubS
 //    update event array.
 EXTERN_C DLL_EXPORT bool PushUpdate2(btCollisionObject* obj)
 {
-	bool ret = false;
 	bsDebug_AssertIsKnownCollisionObject(obj, "PushUpdate2: not a known body");
+	bool ret = false;
 	btRigidBody* rb = btRigidBody::upcast(obj);
 	if (rb != NULL)
 	{
@@ -278,6 +279,12 @@ EXTERN_C DLL_EXPORT bool IsNativeShape2(btCollisionShape* shape)
 	return ret;
 }
 
+EXTERN_C DLL_EXPORT void SetShapeCollisionMargin(btCollisionShape* shape, float margin)
+{
+	bsDebug_AssertIsKnownCollisionShape(obj, "SetShapeCollisonMargin: unknown collisionShape");
+	shape->setMargin(btScalar(margin));
+}
+
 EXTERN_C DLL_EXPORT btCollisionShape* BuildCapsuleShape2(BulletSim* sim, float radius, float height, Vector3 scale)
 {
 	btCollisionShape* shape = new btCapsuleShapeZ(btScalar(radius), btScalar(height));
@@ -357,6 +364,7 @@ EXTERN_C DLL_EXPORT int GetBodyType2(btCollisionObject* obj)
 	return obj->getInternalType();
 }
 
+// ========================================================================
 // Create aa btRigidBody with our MotionState structure so we can track updates to this body.
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCollisionShape* shape, 
 						IDTYPE id, Vector3 pos, Quaternion rot)
@@ -439,7 +447,6 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btC
 	gObj->setUserPointer(PACKLOCALID(id));
 	bsDebug_RememberCollisionObject(gObj);
 
-	// place the ghost object in the list to be scanned for colliions at step time
 	sim->getWorldData()->specialCollisionObjects[id] = gObj;
 	
 	return gObj;
@@ -507,14 +514,13 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 	btCollisionShape* shape = obj->getCollisionShape();
 	if (shape) 
 	{
-		bsDebug_AssertIsKnownCollisionShape(shape, "DestroyObject2: unknonw collisionShape");
+		bsDebug_AssertIsKnownCollisionShape(shape, "DestroyObject2: unknown collisionShape");
 		bsDebug_ForgetCollisionShape(shape);
 		delete shape;
 	}
 
 	// Remove from special collision objects. A NOOP if not in the list.
 	IDTYPE id = CONVLOCALID(obj->getUserPointer());
-	sim->getWorldData()->stepObjectCallbacks.erase(id);
 	sim->getWorldData()->specialCollisionObjects.erase(id);
 
 	// finally make the object itself go away
@@ -573,6 +579,9 @@ EXTERN_C DLL_EXPORT void FillHeightMapInfo2(BulletSim* sim, HeightMapInfo* mapIn
 
 // Bullet requires us to manage the heightmap array so these methods create
 //    and release the memory for the heightmap.
+// Note to the future: Most of the data in the heightmap was used in the old API where 
+//    the C++ code needed to keep the heightmap information so it could compute
+//    terrain height. Now this only exists to hold and release the link to the local copy of the heightmap.
 EXTERN_C DLL_EXPORT HeightMapInfo* CreateHeightMapInfo2(BulletSim* sim, IDTYPE id,
 				Vector3 minCoords, Vector3 maxCoords, float* heightMap, float collisionMargin)
 {
@@ -1243,19 +1252,19 @@ EXTERN_C DLL_EXPORT Transform GetInterpolationWorldTransform2(btCollisionObject*
 	return ret;
 }
 
-EXTERN_C DLL_EXPORT void SetInterpolationWorldTransform2(btCollisionObject* obj, Transform& trans)
+EXTERN_C DLL_EXPORT void SetInterpolationWorldTransform2(btCollisionObject* obj, Transform trans)
 {
 	obj->setInterpolationWorldTransform(trans.GetBtTransform());
 }
 
-EXTERN_C DLL_EXPORT void SetInterpolationLinearVelocity2(btCollisionObject* obj, Vector3& vel)
+EXTERN_C DLL_EXPORT void SetInterpolationLinearVelocity2(btCollisionObject* obj, Vector3 vel)
 {
 	obj->setInterpolationLinearVelocity(vel.GetBtVector3());
 }
 
-EXTERN_C DLL_EXPORT void SetInterpolationAngularVelocity2(btCollisionObject* obj, Vector3& vel)
+EXTERN_C DLL_EXPORT void SetInterpolationAngularVelocity2(btCollisionObject* obj, Vector3 ang)
 {
-	obj->setInterpolationAngularVelocity(vel.GetBtVector3());
+	obj->setInterpolationAngularVelocity(ang.GetBtVector3());
 }
 
 // Helper function that sets both linear and angular interpolation velocity
@@ -1799,15 +1808,18 @@ EXTERN_C DLL_EXPORT float GetMargin2(btCollisionShape* shape)
 	return shape->getMargin();
 }
 
-EXTERN_C DLL_EXPORT void SetCollisionFilterMask2(btCollisionObject* obj, unsigned int filter, unsigned int mask)
+EXTERN_C DLL_EXPORT bool SetCollisionGroupMask2(btCollisionObject* obj, unsigned int group, unsigned int mask)
 {
+	bool ret = false;
 	btBroadphaseProxy* proxy = obj->getBroadphaseHandle();
 	// If the object is not in the world, there won't be a proxy.
 	if (proxy)
 	{
-		proxy->m_collisionFilterGroup = (short)filter;
+		proxy->m_collisionFilterGroup = (short)group;
 		proxy->m_collisionFilterMask = (short)mask;
+		ret = true;
 	}
+	return ret;
 }
 
 // =====================================================================
@@ -2058,6 +2070,38 @@ EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
 	sim->getWorldData()->BSLog("=END==========================================");
 }
 
+// Dump info about the number of objects and their activation state
+EXTERN_C DLL_EXPORT void DumpActivationInfo2(BulletSim* sim)
+{
+	btDynamicsWorld* world = sim->getDynamicsWorld();
+	btCollisionObjectArray& collisionObjects = world->getCollisionObjectArray();
+	int numRigidBodies = 0;
+	int* activeStates = new int[10];
+	for (int ii=0; ii<10; ii++) activeStates[ii] = 0;
+
+	int numCollisionObjects = collisionObjects.size();
+	for (int ii=0; ii < numCollisionObjects; ii++)
+	{
+		btCollisionObject* obj = collisionObjects[ii];
+		int activeState = obj->getActivationState();
+		activeStates[activeState]++;
+
+		btRigidBody* rb = btRigidBody::upcast(obj);
+		if (rb)
+		{
+			numRigidBodies++;
+		}
+	}
+	sim->getWorldData()->BSLog("     num CollisionObject = %d", numCollisionObjects);
+	sim->getWorldData()->BSLog("         num RigidBodies = %d", numRigidBodies);
+	sim->getWorldData()->BSLog("          num ACTIVE_TAG = %d", activeStates[ACTIVE_TAG]);
+	sim->getWorldData()->BSLog("     num ISLAND_SLEEPING = %d", activeStates[ISLAND_SLEEPING]);
+	sim->getWorldData()->BSLog("  num WANTS_DEACTIVATION = %d", activeStates[WANTS_DEACTIVATION]);
+	sim->getWorldData()->BSLog("num DISABLE_DEACTIVATION = %d", activeStates[DISABLE_DEACTIVATION]);
+	sim->getWorldData()->BSLog("  num DISABLE_SIMULATION = %d", activeStates[DISABLE_SIMULATION]);
+	sim->getWorldData()->BSLog("    num overlappingPairs = %d", world->getPairCache()->getNumOverlappingPairs());
+}
+
 // Version of log printer that takes the simulator as a parameter.
 // Used for statistics logging from Bullet.
 // Bullet must be patched to enable this functionality -- by default it does a printf.
@@ -2066,7 +2110,7 @@ EXTERN_C DLL_EXPORT void DebugLogger2(void* xxx, const char* msg, ...)
 	BulletSim* sim = (BulletSim*)xxx;
 	va_list args;
 	va_start(args, msg);
-	// sim->getWorldData()->BSLog2(msg, args);
+	sim->getWorldData()->BSLog2(msg, args);
 	va_end(args);
 	return;
 }
@@ -2078,7 +2122,7 @@ EXTERN_C DLL_EXPORT void DumpPhysicsStatistics2(BulletSim* sim)
 	{
 		// Uncomment the next line to enable timing logging from Bullet.
 		// The Bullet library MUST be patched to create this entry point.
-		// CProfileManager::dumpAll(DebugLogger2, (void*)sim);
+		sim->getWorldData()->dumpAll();
 	}
 	return;
 }
