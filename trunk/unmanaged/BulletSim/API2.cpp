@@ -375,26 +375,6 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 	return body;
 }
 
-// Create a RigidBody from passed shape and construction info.
-// NOTE: it is presumed that a previous RigidBody was saved into the construction info
-//     and that, in particular, the motionState is a SimMotionState from the saved RigidBody.
-//     This WILL NOT WORK for terrain bodies.
-// This does not restore collisionFlags.
-EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, 
-						IDTYPE id, btRigidBody::btRigidBodyConstructionInfo* consInfo)
-{
-	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyFromShapeAndInfo2: unknown collision shape");
-	consInfo->m_collisionShape = shape;
-	btRigidBody* body = new btRigidBody(*consInfo);
-
-	// The saved motion state was the SimMotionState saved from before.
-	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
-	body->setUserPointer(PACKLOCALID(id));
-	bsDebug_RememberCollisionObject(body);
-
-	return body;
-}
-
 // Create a btRigidBody with the default MotionState. We will not get any movement updates from this body.
 EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btCollisionShape* shape, 
 						IDTYPE id, Vector3 pos, Quaternion rot)
@@ -440,6 +420,27 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btC
 	return gObj;
 }
 
+/*
+// Create a RigidBody from passed shape and construction info.
+// NOTE: it is presumed that a previous RigidBody was saved into the construction info
+//     and that, in particular, the motionState is a SimMotionState from the saved RigidBody.
+//     This WILL NOT WORK for terrain bodies.
+// This does not restore collisionFlags.
+EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShapeAndInfo2(BulletSim* sim, btCollisionShape* shape, 
+						IDTYPE id, btRigidBody::btRigidBodyConstructionInfo* consInfo)
+{
+	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyFromShapeAndInfo2: unknown collision shape");
+	consInfo->m_collisionShape = shape;
+	btRigidBody* body = new btRigidBody(*consInfo);
+
+	// The saved motion state was the SimMotionState saved from before.
+	((SimMotionState*)consInfo->m_motionState)->RigidBody = body;
+	body->setUserPointer(PACKLOCALID(id));
+	bsDebug_RememberCollisionObject(body);
+
+	return body;
+}
+
 // Build a RigidBody construction info from an existing RigidBody.
 // Can be used later to recreate the rigid body.
 EXTERN_C DLL_EXPORT btRigidBody::btRigidBodyConstructionInfo* AllocateBodyInfo2(btCollisionObject* obj)
@@ -476,6 +477,7 @@ EXTERN_C DLL_EXPORT void ReleaseBodyInfo2(btRigidBody::btRigidBodyConstructionIn
 	delete consInfo;
 	return;
 }
+*/
 
 /**
  * Free all memory allocated to an object. The caller must have previously removed
