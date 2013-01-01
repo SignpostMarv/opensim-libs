@@ -49,18 +49,6 @@
 
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
 
-// A structure for keeping track of terrain heightmaps
-struct HeightMapInfo {
-	int sizeX;
-	int sizeY;
-	btScalar minHeight;
-	btScalar maxHeight;
-	btVector3 minCoords;
-	btVector3 maxCoords;
-	float collisionMargin;
-	float* heightMap;
-	IDTYPE id;
-};
 // The minimum thickness for terrain. If less than this, we correct
 #define TERRAIN_MIN_THICKNESS (0.2)
 
@@ -530,90 +518,20 @@ EXTERN_C DLL_EXPORT void DestroyObject2(BulletSim* sim, btCollisionObject* obj)
 
 // =====================================================================
 // Terrain creation and helper routines
-EXTERN_C DLL_EXPORT void DumpMapInfo2(BulletSim* sim, HeightMapInfo* mapInfo)
-{
-	sim->getWorldData()->BSLog("HeightMapInfo: sizeX=%d, sizeY=%d, collMargin=%f, id=%u, minH=%f, maxH=%f", 
-		mapInfo->sizeX, mapInfo->sizeY, mapInfo->collisionMargin, mapInfo->id, mapInfo->minHeight, mapInfo->maxHeight );
-	sim->getWorldData()->BSLog("HeightMapInfo: minCoords=<%f,%f,%f> maxCoords=<%f,%f,%f>", 
-		mapInfo->minCoords.getX(), mapInfo->minCoords.getY(), mapInfo->minCoords.getZ(),
-		mapInfo->maxCoords.getX(), mapInfo->maxCoords.getY(), mapInfo->maxCoords.getZ() );
-}
 
-// Given a previously allocated HeightMapInfo, fill with the information about the heightmap
-EXTERN_C DLL_EXPORT void FillHeightMapInfo2(BulletSim* sim, HeightMapInfo* mapInfo, IDTYPE id, 
-				Vector3 minCoords, Vector3 maxCoords, float* heightMap, float collisionMargin)
-{
-	mapInfo->minCoords = minCoords.GetBtVector3();
-	mapInfo->maxCoords = maxCoords.GetBtVector3();
-
-	mapInfo->sizeX = (int)(maxCoords.X - minCoords.X);
-	mapInfo->sizeY = (int)(maxCoords.Y - minCoords.Y);
-
-	mapInfo->collisionMargin = collisionMargin;
-	mapInfo->id = id;
-
-	mapInfo->minHeight = btScalar(minCoords.Z);
-	mapInfo->maxHeight = btScalar(maxCoords.Z);
-
-	// Make sure top and bottom are different so a bounding box can be built.
-	// This is not really necessary (it should be done in the calling code)
-	//    but a sanity check doesn't hurt.
-	if (mapInfo->minHeight == mapInfo->maxHeight)
-		mapInfo->minHeight -= TERRAIN_MIN_THICKNESS;
-
-	int numEntries = mapInfo->sizeX * mapInfo->sizeY;
-
-	// Copy the heightmap local because the passed in array will be freed on return.
-	float* localHeightMap = new float[numEntries];
-	bsMemcpy(localHeightMap, heightMap, numEntries * sizeof(float));
-
-	// Free any existing heightmap memory
-	if (mapInfo->heightMap != NULL)
-		delete mapInfo->heightMap;
-	mapInfo->heightMap = localHeightMap;
-
-	// DumpMapInfo2(sim, mapInfo);
-
-	return;
-}
-
-// Bullet requires us to manage the heightmap array so these methods create
-//    and release the memory for the heightmap.
-// Note to the future: Most of the data in the heightmap was used in the old API where 
-//    the C++ code needed to keep the heightmap information so it could compute
-//    terrain height. Now this only exists to hold and release the link to the local copy of the heightmap.
-EXTERN_C DLL_EXPORT HeightMapInfo* CreateHeightMapInfo2(BulletSim* sim, IDTYPE id,
-				Vector3 minCoords, Vector3 maxCoords, float* heightMap, float collisionMargin)
-{
-	HeightMapInfo* mapInfo = new HeightMapInfo();
-	mapInfo->heightMap = NULL;	// make sure there is no memory to deallocate
-	FillHeightMapInfo2(sim, mapInfo, id, minCoords, maxCoords, heightMap, collisionMargin);
-	return mapInfo;
-}
-
-EXTERN_C DLL_EXPORT bool ReleaseHeightMapInfo2(HeightMapInfo* mapInfo)
-{
-	if (mapInfo->heightMap)
-		delete mapInfo->heightMap;
-	delete mapInfo;
-	return true;
-}
-
-// Build and return a btCollisionShape for the terrain
-EXTERN_C DLL_EXPORT btCollisionShape* CreateTerrainShape2(HeightMapInfo* mapInfo)
+EXTERN_C DLL_EXPORT btCollisionShape* CreateTerrainShape2(IDTYPE id, Vector3 size, float minHeight, float maxHeight, float* heightMap, 
+								float scaleFactor, float collisionMargin)
 {
 	const int upAxis = 2;
-	const btScalar scaleFactor = 1.0;
 	btHeightfieldTerrainShape* terrainShape = new btHeightfieldTerrainShape(
-			mapInfo->sizeX, mapInfo->sizeY, 
-			mapInfo->heightMap, scaleFactor, 
-			mapInfo->minHeight, mapInfo->maxHeight, upAxis, PHY_FLOAT, false);
+										size.X, size.Y, heightMap, scaleFactor, 
+										minHeight, maxHeight, upAxis, PHY_FLOAT, false);
 
-	terrainShape->setMargin(btScalar(mapInfo->collisionMargin));
+	terrainShape->setMargin(btScalar(collisionMargin));
 	terrainShape->setUseDiamondSubdivision(true);
 
 	// Add the localID to the object so we know about collisions
-	terrainShape->setUserPointer(PACKLOCALID(mapInfo->id));
+	terrainShape->setUserPointer(PACKLOCALID(id));
 	bsDebug_RememberCollisionShape(terrainShape);
 
 	return terrainShape;
