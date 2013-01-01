@@ -168,9 +168,7 @@ void BulletSim::exitPhysics2()
 }
 
 // Step the simulation forward by one full step and potentially some number of substeps
-int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
-						   int* updatedEntityCount, EntityProperties** updatedEntities, 
-						   int* collidersCount, CollisionDesc** colliders)
+int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, int* collidersCount)
 {
 	int numSimSteps = 0;
 
@@ -207,7 +205,6 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 
 		// Update the values passed by reference into this function
 		*updatedEntityCount = updates;
-		*updatedEntities = m_updatesThisFrameArray;
 
 		// COLLISIONS =================================================================
 		// Put all of the colliders this frame into m_collidersThisFrameArray
@@ -258,7 +255,6 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 
 
 		*collidersCount = m_collisionsThisFrame;
-		*colliders = m_collidersThisFrameArray;
 	}
 
 	return numSimSteps;

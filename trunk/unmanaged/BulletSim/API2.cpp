@@ -132,9 +132,9 @@ EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
  * @return Number of sub steps that were taken this call.
  */
 EXTERN_C DLL_EXPORT int PhysicsStep2(BulletSim* sim, float timeStep, int maxSubSteps, float fixedTimeStep, 
-			int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders)
+										int* updatedEntityCount, int* collidersCount)
 {
-	return sim->PhysicsStep2(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, updatedEntities, collidersCount, colliders);
+	return sim->PhysicsStep2(timeStep, maxSubSteps, fixedTimeStep, updatedEntityCount, collidersCount);
 }
 
 // Cause a position update to happen next physics step.
