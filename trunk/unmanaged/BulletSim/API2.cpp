@@ -107,6 +107,18 @@ EXTERN_C DLL_EXPORT void Shutdown2(BulletSim* sim)
 	delete sim;
 }
 
+// Very low level reset of collision proxy pool
+EXTERN_C DLL_EXPORT void ResetBroadphasePool(BulletSim* sim)
+{
+	sim->getDynamicsWorld()->getBroadphase()->resetPool(sim->getDynamicsWorld()->getDispatcher());
+}
+// Very low level reset of the constraint solver
+EXTERN_C DLL_EXPORT void ResetConstraintSolver(BulletSim* sim)
+{
+	sim->getDynamicsWorld()->getConstraintSolver()->reset();
+}
+
+
 /**
  * Steps the simulation forward a given amount of time and retrieves any physics updates.
  * @param worldID ID of the world to step.

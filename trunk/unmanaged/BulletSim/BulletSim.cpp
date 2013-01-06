@@ -367,7 +367,7 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 // Another useful reference for ConvexDecomp
 // http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
 
-btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices )
+btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// We must copy the indices and vertices since the passed memory is released when this call returns.
 	btIndexedMesh indexedMesh;
@@ -390,6 +390,7 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
 	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+
 	meshShape->setMargin(m_worldData.params->collisionMargin);
 
 	return meshShape;
