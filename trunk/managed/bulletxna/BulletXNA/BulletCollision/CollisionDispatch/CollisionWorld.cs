@@ -94,8 +94,10 @@ namespace BulletXNA.BulletCollision
             }
         }
 
-        public List<EntityProperties> UpdatedObjects;
-        public List<CollisionDesc> UpdatedCollisions;
+        public int LastEntityProperty = 0;
+        public int LastCollisionDesc = 0;
+        public EntityProperties[] UpdatedObjects;
+        public CollisionDesc[] UpdatedCollisions;
         //this constructor doesn't own the dispatcher and paircache/broadphase
         public CollisionWorld(IDispatcher dispatcher, IBroadphaseInterface broadphasePairCache, ICollisionConfiguration collisionConfiguration)
         {
@@ -105,8 +107,8 @@ namespace BulletXNA.BulletCollision
             m_dispatchInfo = new DispatcherInfo();
             m_forceUpdateAllAabbs = true;
             WorldSettings.Params = new WorldData.ParamData();
-            UpdatedObjects = new List<EntityProperties>();
-            UpdatedCollisions = new List<CollisionDesc>();
+            UpdatedObjects = new EntityProperties[0];
+            UpdatedCollisions = new CollisionDesc[0];
         }
 
         public virtual void Cleanup()
