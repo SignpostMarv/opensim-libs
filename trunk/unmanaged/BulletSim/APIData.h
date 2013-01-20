@@ -325,31 +325,31 @@ struct ParamBlock
     float collisionMargin;
     float gravity;
 
-    float linearDamping;
-    float angularDamping;
-    float deactivationTime;
-    float linearSleepingThreshold;
-    float angularSleepingThreshold;
-    float ccdMotionThreshold;
-    float ccdSweptSphereRadius;
-    float contactProcessingThreshold;
+    float XlinearDamping;
+    float XangularDamping;
+    float XdeactivationTime;
+    float XlinearSleepingThreshold;
+    float XangularSleepingThreshold;
+    float XccdMotionThreshold;
+    float XccdSweptSphereRadius;
+    float XcontactProcessingThreshold;
 
-    float terrainImplementation;
-    float terrainFriction;
-    float terrainHitFraction;
-    float terrainRestitution;
-    float terrainCollisionMargin;
+    float XterrainImplementation;
+    float XterrainFriction;
+    float XterrainHitFraction;
+    float XterrainRestitution;
+    float XterrainCollisionMargin;
 
-    float avatarFriction;
-    float avatarStandingFriction;
-    float avatarDensity;
-    float avatarRestitution;
-    float avatarCapsuleWidth;
-    float avatarCapsuleDepth;
-    float avatarCapsuleHeight;
-	float avatarContactProcessingThreshold;
+    float XavatarFriction;
+    float XavatarStandingFriction;
+    float XavatarDensity;
+    float XavatarRestitution;
+    float XavatarCapsuleWidth;
+    float XavatarCapsuleDepth;
+    float XavatarCapsuleHeight;
+	float XavatarContactProcessingThreshold;
 
-	float vehicleAngularDamping;
+	float XvehicleAngularDamping;
 
 	float maxPersistantManifoldPoolSize;
 	float maxCollisionAlgorithmPoolSize;
@@ -360,14 +360,14 @@ struct ParamBlock
 	float shouldEnableFrictionCaching;
 	float numberOfSolverIterations;
 
-    float linksetImplementation;
-    float linkConstraintUseFrameOffset;
-    float linkConstraintEnableTransMotor;
-    float linkConstraintTransMotorMaxVel;
-    float linkConstraintTransMotorMaxForce;
-    float linkConstraintERP;
-    float linkConstraintCFM;
-	float linkConstraintSolverIterations;
+    float XlinksetImplementation;
+    float XlinkConstraintUseFrameOffset;
+    float XlinkConstraintEnableTransMotor;
+    float XlinkConstraintTransMotorMaxVel;
+    float XlinkConstraintTransMotorMaxForce;
+    float XlinkConstraintERP;
+    float XlinkConstraintCFM;
+	float XlinkConstraintSolverIterations;
 
 	float physicsLoggingFrames;
 };

@@ -168,9 +168,7 @@ void BulletSim::exitPhysics2()
 }
 
 // Step the simulation forward by one full step and potentially some number of substeps
-int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
-						   int* updatedEntityCount, EntityProperties** updatedEntities, 
-						   int* collidersCount, CollisionDesc** colliders)
+int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, int* collidersCount)
 {
 	int numSimSteps = 0;
 
@@ -207,7 +205,6 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 
 		// Update the values passed by reference into this function
 		*updatedEntityCount = updates;
-		*updatedEntities = m_updatesThisFrameArray;
 
 		// COLLISIONS =================================================================
 		// Put all of the colliders this frame into m_collidersThisFrameArray
@@ -258,7 +255,6 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 
 
 		*collidersCount = m_collisionsThisFrame;
-		*colliders = m_collidersThisFrameArray;
 	}
 
 	return numSimSteps;
@@ -371,7 +367,7 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 // Another useful reference for ConvexDecomp
 // http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
 
-btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices )
+btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// We must copy the indices and vertices since the passed memory is released when this call returns.
 	btIndexedMesh indexedMesh;
@@ -394,6 +390,7 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
 	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+
 	meshShape->setMargin(m_worldData.params->collisionMargin);
 
 	return meshShape;
