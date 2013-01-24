@@ -198,10 +198,7 @@ EXTERN_C DLL_EXPORT int GetNumberOfCompoundChildren2(btCompoundShape* cShape)
 EXTERN_C DLL_EXPORT void AddChildShapeToCompoundShape2(btCompoundShape* cShape, 
 				btCollisionShape* addShape, Vector3 relativePosition, Quaternion relativeRotation)
 {
-	btTransform relativeTransform;
-	relativeTransform.setIdentity();
-	relativeTransform.setOrigin(relativePosition.GetBtVector3());
-	relativeTransform.setRotation(relativeRotation.GetBtQuaternion());
+	btTransform relativeTransform(relativeRotation.GetBtQuaternion(), relativePosition.GetBtVector3());
 
 	cShape->addChildShape(relativeTransform, addShape);
 }
@@ -227,6 +224,13 @@ EXTERN_C DLL_EXPORT void RecalculateCompoundShapeLocalAabb2(btCompoundShape* cSh
 {
 	cShape->recalculateLocalAabb();
 }
+
+EXTERN_C DLL_EXPORT void UpdateChildTransform2(btCompoundShape* cShape, int childIndex, Vector3 pos, Quaternion rot, bool shouldRecalculateLocalAabb)
+{
+	btTransform newTrans(rot.GetBtQuaternion(), pos.GetBtVector3());
+	cShape->updateChildTransform(childIndex, newTrans, shouldRecalculateLocalAabb);
+}
+
 
 EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeData shapeData)
 {
@@ -370,10 +374,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyFromShape2(BulletSim* sim, btCo
 						IDTYPE id, Vector3 pos, Quaternion rot)
 {
 	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyFromShape2: unknown collision shape");
-	btTransform bodyTransform;
-	bodyTransform.setIdentity();
-	bodyTransform.setOrigin(pos.GetBtVector3());
-	bodyTransform.setRotation(rot.GetBtQuaternion());
+	btTransform bodyTransform(rot.GetBtQuaternion(), pos.GetBtVector3());
 
 	// Use the BulletSim motion state so motion updates will be sent up
 	SimMotionState* motionState = new SimMotionState(id, bodyTransform, &(sim->getWorldData()->updatesThisFrame));
@@ -392,10 +393,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateBodyWithDefaultMotionState2(btColli
 						IDTYPE id, Vector3 pos, Quaternion rot)
 {
 	bsDebug_AssertIsKnownCollisionShape(shape, "CreateBodyWithDefaultMotionState2: unknown collision shape");
-	btTransform heightfieldTr;
-	heightfieldTr.setIdentity();
-	heightfieldTr.setOrigin(pos.GetBtVector3());
-	heightfieldTr.setRotation(rot.GetBtQuaternion());
+	btTransform heightfieldTr(rot.GetBtQuaternion(), pos.GetBtVector3());
 
 	// Use the default motion state since we are not interested in these
 	//   objects reporting collisions. Other objects will report their
@@ -415,10 +413,7 @@ EXTERN_C DLL_EXPORT btCollisionObject* CreateGhostFromShape2(BulletSim* sim, btC
 						IDTYPE id, Vector3 pos, Quaternion rot)
 {
 	bsDebug_AssertIsKnownCollisionShape(shape, "CreateGhostFromShape2: unknown collision shape");
-	btTransform bodyTransform;
-	bodyTransform.setIdentity();
-	bodyTransform.setOrigin(pos.GetBtVector3());
-	bodyTransform.setRotation(rot.GetBtQuaternion());
+	btTransform bodyTransform(rot.GetBtQuaternion(), pos.GetBtVector3());
 
 	btGhostObject* gObj = new btPairCachingGhostObject();
 	gObj->setWorldTransform(bodyTransform);
@@ -591,13 +586,8 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim,
 	bsDebug_AssertIsKnownCollisionObject(obj2, "Create6DofConstraint2: obj2 unknown CollisionObject");
 	bsDebug_AssertNoExistingConstraint(obj1, obj2, "Create6DofConstraint2: constraint exists");
 
-	btTransform frame1t, frame2t;
-	frame1t.setIdentity();
-	frame1t.setOrigin(frame1loc.GetBtVector3());
-	frame1t.setRotation(frame1rot.GetBtQuaternion());
-	frame2t.setIdentity();
-	frame2t.setOrigin(frame2loc.GetBtVector3());
-	frame2t.setRotation(frame2rot.GetBtQuaternion());
+	btTransform frame1t(frame1rot.GetBtQuaternion(), frame1loc.GetBtVector3());
+	btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
 
 	btRigidBody* rb1 = btRigidBody::upcast(obj1);
 	btRigidBody* rb2 = btRigidBody::upcast(obj2);
@@ -701,14 +691,8 @@ EXTERN_C DLL_EXPORT bool SetFrames2(btTypedConstraint* constrain,
 	case D6_CONSTRAINT_TYPE:
 	{
 		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		btTransform transA;
-		transA.setIdentity();
-		transA.setOrigin(frameA.GetBtVector3());
-		transA.setRotation(frameArot.GetBtQuaternion());
-		btTransform transB;
-		transB.setIdentity();
-		transB.setOrigin(frameB.GetBtVector3());
-		transB.setRotation(frameBrot.GetBtQuaternion());
+		btTransform transA(frameArot.GetBtQuaternion(), frameA.GetBtVector3());
+		btTransform transB(frameBrot.GetBtQuaternion(), frameB.GetBtVector3());
 		cc->setFrames(transA, transB);
 		ret = true;
 		break;

@@ -231,8 +231,9 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 			const btManifoldPoint& manifoldPoint = contactManifold->getContactPoint(0);
 			const btVector3& contactPoint = manifoldPoint.getPositionWorldOnB();
 			btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A
+			float penetration = manifoldPoint.getDistance();
 
-			RecordCollision(objA, objB, contactPoint, contactNormal);
+			RecordCollision(objA, objB, contactPoint, contactNormal, penetration);
 
 			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
 				break;
@@ -242,15 +243,15 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 		WorldData::SpecialCollisionObjectMapType::iterator it = m_worldData.specialCollisionObjects.begin();
 		for (; it != m_worldData.specialCollisionObjects.end(); it++)
 		{
+			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
+				break;
+
 			btCollisionObject* collObj = it->second;
 			btPairCachingGhostObject* obj = (btPairCachingGhostObject*)btGhostObject::upcast(collObj);
 			if (obj)
 			{
 				RecordGhostCollisions(obj);
 			}
-
-			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
-				break;
 		}
 
 
@@ -260,7 +261,8 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 	return numSimSteps;
 }
 
-void BulletSim::RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, const btVector3& contact, const btVector3& norm)
+void BulletSim::RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, 
+					const btVector3& contact, const btVector3& norm, const float penetration)
 {
 	btVector3 contactNormal = norm;
 
@@ -304,6 +306,7 @@ void BulletSim::RecordCollision(const btCollisionObject* objA, const btCollision
 		cDesc.bID = idB;
 		cDesc.point = contact;
 		cDesc.normal = contactNormal;
+		cDesc.penetration = penetration;
 		m_collidersThisFrameArray[m_collisionsThisFrame] = cDesc;
 		m_collisionsThisFrame++;
 	}
@@ -353,7 +356,7 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 				{
 					const btVector3& contactPoint = pt.getPositionWorldOnA();
 					const btVector3& normalOnA = -pt.m_normalWorldOnB;
-					RecordCollision(objA, objB, contactPoint, normalOnA);
+					RecordCollision(objA, objB, contactPoint, normalOnA, pt.getDistance());
 					// Only one contact point for each set of colliding objects
 					break;
 				}

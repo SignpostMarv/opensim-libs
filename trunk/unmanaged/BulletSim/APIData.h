@@ -243,6 +243,7 @@ struct CollisionDesc
 	IDTYPE bID;
 	Vector3 point;
 	Vector3 normal;
+	float penetration;
 };
 
 // BulletSim extends the definition of the collision flags
