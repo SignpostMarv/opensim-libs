@@ -21,6 +21,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+using BulletXNA.BulletDynamics;
 using BulletXNA.LinearMath;
 
 namespace BulletXNA
@@ -31,5 +32,7 @@ namespace BulletXNA
 		//Bullet only calls the update of worldtransform for active objects
         void SetWorldTransform(IndexedMatrix worldTrans);
         void SetWorldTransform(ref IndexedMatrix worldTrans);
+
+        void SetRigidBody(RigidBody body);
     }
 }

@@ -97,10 +97,9 @@ namespace BulletXNA.BulletDynamics
 	    public RigidBody(float mass, IMotionState motionState, CollisionShape collisionShape, IndexedVector3 localInertia)
         {
             RigidBodyConstructionInfo cinfo = new RigidBodyConstructionInfo(mass,motionState,collisionShape,localInertia);
-            if (motionState is SimMotionState)
-            {
-                (motionState as SimMotionState).Rigidbody = this;
-            }
+            
+            motionState.SetRigidBody(this);
+
 	        SetupRigidBody(cinfo);
         }
 

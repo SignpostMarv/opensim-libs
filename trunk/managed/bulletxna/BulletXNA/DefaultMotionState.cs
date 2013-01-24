@@ -22,6 +22,7 @@
  */
 
 using System;
+using BulletXNA.BulletDynamics;
 using BulletXNA.LinearMath;
 
 namespace BulletXNA
@@ -71,11 +72,17 @@ namespace BulletXNA
             m_graphicsWorldTrans._origin += v;
         }
 
-
+        
 
         public IndexedMatrix m_graphicsWorldTrans;
         public IndexedMatrix m_centerOfMassOffset;
         public IndexedMatrix m_startWorldTrans;
         public Object m_userPointer;
+
+
+        public virtual void SetRigidBody(RigidBody body)
+        {
+            
+        }
     }
 }
