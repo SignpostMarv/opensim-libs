@@ -208,7 +208,7 @@ namespace BulletXNA.BulletDynamics
                 {
                     IndexedMatrix interpolatedTransform;
                     TransformUtil.IntegrateTransform(body.GetInterpolationWorldTransform(),
-                        body.GetInterpolationLinearVelocity(), body.GetInterpolationAngularVelocity(),
+                        body.SetInterpolationLinearVelocity(), body.GetInterpolationAngularVelocity(),
                         m_localTime * body.GetHitFraction(), out interpolatedTransform);
                     body.GetMotionState().SetWorldTransform(ref interpolatedTransform);
                 }
@@ -333,8 +333,8 @@ namespace BulletXNA.BulletDynamics
                 }
 
                 bool isDynamic = !(body.IsStaticObject() || body.IsKinematicObject());
-                CollisionFilterGroups collisionFilterGroup = isDynamic ? CollisionFilterGroups.BDefaultGroup : CollisionFilterGroups.BStaticGroup;
-                CollisionFilterGroups collisionFilterMask = isDynamic ? CollisionFilterGroups.BAllGroup : (CollisionFilterGroups.BAllGroup ^ CollisionFilterGroups.BStaticGroup);
+                CollisionFilterGroups collisionFilterGroup = isDynamic ? CollisionFilterGroups.DefaultFilter : CollisionFilterGroups.StaticFilter;
+                CollisionFilterGroups collisionFilterMask = isDynamic ? CollisionFilterGroups.AllFilter : (CollisionFilterGroups.AllFilter ^ CollisionFilterGroups.StaticFilter);
 
                 AddCollisionObject(body, collisionFilterGroup, collisionFilterMask);
             }
@@ -735,6 +735,10 @@ namespace BulletXNA.BulletDynamics
                                 IndexedVector3 zero = IndexedVector3.Zero;
                                 body.SetAngularVelocity(ref zero);
                                 body.SetLinearVelocity(ref zero);
+                                if (body.GetMotionState()!= null)
+                                { 
+                                    body.GetMotionState().SetWorldTransform(body.GetWorldTransform());
+                                }
                             }
                         }
                     }
