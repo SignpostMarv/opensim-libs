@@ -100,7 +100,7 @@ namespace BulletXNA
                 Rotation = starTransform.GetRotation()
             };
             m_world = pWorld;
-
+            m_xform = starTransform;
         }
 
         public override void GetWorldTransform(out IndexedMatrix worldTrans)
@@ -153,8 +153,9 @@ namespace BulletXNA
             {
                 // Add this update to the list of updates for this frame.
                 m_lastProperties = m_properties;
-                m_world.UpdatedObjects.Add(m_properties);
-               
+                if (m_world.LastEntityProperty < m_world.UpdatedObjects.Length)
+                    m_world.UpdatedObjects[m_world.LastEntityProperty++]=(m_properties);
+                
                 //(*m_updatesThisFrame)[m_properties.ID] = &m_properties;
             }
                 

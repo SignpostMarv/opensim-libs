@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Diagnostics;
 
 namespace BulletXNA.LinearMath
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct  IndexedVector4
     {
         public IndexedVector4(float x, float y, float z,float w)
