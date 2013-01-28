@@ -192,8 +192,8 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 		int updates = 0;
 		if (m_worldData.updatesThisFrame.size() > 0)
 		{
-			for (WorldData::UpdatesThisFrameMapType::const_iterator it = m_worldData.updatesThisFrame.begin(); 
-										it != m_worldData.updatesThisFrame.end(); ++it)
+			WorldData::UpdatesThisFrameMapType::const_iterator it = m_worldData.updatesThisFrame.begin(); 
+			for (; it != m_worldData.updatesThisFrame.end(); it++)
 			{
 				m_updatesThisFrameArray[updates] = *(it->second);
 				updates++;
@@ -221,17 +221,11 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 			const btCollisionObject* objA = static_cast<const btCollisionObject*>(contactManifold->getBody0());
 			const btCollisionObject* objB = static_cast<const btCollisionObject*>(contactManifold->getBody1());
 
-			// DEBUG BEGIN
-			// IDTYPE idAx = CONVLOCALID(objA->getCollisionShape()->getUserPointer());
-			// IDTYPE idBx = CONVLOCALID(objB->getCollisionShape()->getUserPointer());
-			// m_worldData.BSLog("Collision: A=%u/%x, B=%u/%x", idAx, objA->getCollisionFlags(), idBx, objB->getCollisionFlags());
-			// DEBUG END
-
 			// When two objects collide, we only report one contact point
 			const btManifoldPoint& manifoldPoint = contactManifold->getContactPoint(0);
 			const btVector3& contactPoint = manifoldPoint.getPositionWorldOnB();
-			btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A
-			float penetration = manifoldPoint.getDistance();
+			const btVector3 contactNormal = -manifoldPoint.m_normalWorldOnB;	// make relative to A
+			const float penetration = manifoldPoint.getDistance();
 
 			RecordCollision(objA, objB, contactPoint, contactNormal, penetration);
 
@@ -253,7 +247,6 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 				RecordGhostCollisions(obj);
 			}
 		}
-
 
 		*collidersCount = m_collisionsThisFrame;
 	}
@@ -285,6 +278,8 @@ void BulletSim::RecordCollision(const btCollisionObject* objA, const btCollision
 		idB = temp;
 		contactNormal = -contactNormal;
 	}
+
+	// m_worldData.BSLog("Collision: idA=%d, idB=%d, contact=<%f,%f,%f>", idA, idB, contact.getX(), contact.getY(), contact.getZ());
 
 	// Create a unique ID for this collision from the two colliding object IDs
 	// We check for duplicate collisions between the two objects because
