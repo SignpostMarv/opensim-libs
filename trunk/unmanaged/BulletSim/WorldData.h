@@ -108,6 +108,12 @@ struct WorldData
 		}
 	}
 
+	void	dumpAll()
+	{
+		BSLog("PROFILE LOGGING IS NOT ENABLED IN BULLET");
+	}
+
+	/*	Uncomment this if profiling is turned on in Bullet.
 	// The following code was borrowed directly from Bullet.
 	// The Bullet dumper uses printf to output stats and BulletSim needs it to call BSLog.]
 	// Just copying the code here turned out to be the quickest and easiest solution.
@@ -166,6 +172,7 @@ struct WorldData
 
 		CProfileManager::Release_Iterator(profileIterator);
 	}
+	*/
 
 };
 
