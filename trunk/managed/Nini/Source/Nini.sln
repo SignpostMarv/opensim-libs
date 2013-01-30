@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nini", "Nini.csproj", "{6D09607D-1A25-4788-AEBD-CDCFA180372F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiniTest", "Test\NiniTest.csproj", "{16E8AE04-15A3-432D-A858-576436A23FDD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16E8AE04-15A3-432D-A858-576436A23FDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16E8AE04-15A3-432D-A858-576436A23FDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16E8AE04-15A3-432D-A858-576436A23FDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16E8AE04-15A3-432D-A858-576436A23FDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D09607D-1A25-4788-AEBD-CDCFA180372F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D09607D-1A25-4788-AEBD-CDCFA180372F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D09607D-1A25-4788-AEBD-CDCFA180372F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D09607D-1A25-4788-AEBD-CDCFA180372F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Nini.csproj
+	EndGlobalSection
+EndGlobal

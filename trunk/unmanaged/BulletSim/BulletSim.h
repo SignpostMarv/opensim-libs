@@ -29,35 +29,19 @@
 #ifndef BULLET_SIM_H
 #define BULLET_SIM_H
 
+#include "DebugLogic.h"
+
+#include "ArchStuff.h"
+#include "APIData.h"
+#include "WorldData.h"
+
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
-#include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
-#include "BulletCollision/Gimpact/btGImpactShape.h"
-#include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 #include "LinearMath/btAlignedObjectArray.h"
 #include "LinearMath/btMotionState.h"
 #include "btBulletDynamicsCommon.h"
 
+#include <set>
 #include <map>
-
-// define types that are always 32bits (don't change on 64 bit systems)
-#ifdef _MSC_VER
-typedef signed __int32		int32_t;
-typedef unsigned __int32	uint32_t;
-#else
-typedef signed int			int32_t;
-typedef unsigned int		uint32_t;
-#endif
-
-#ifdef __x86_64__
-// 64bit systems don't allow you to cast directly from a void* to an unsigned int
-#define CONVLOCALID(xx) (unsigned int)((unsigned long)(xx))
-#else
-#define CONVLOCALID(xx) (unsigned int)(xx)
-#endif
-
-#define ID_TERRAIN 0	// OpenSimulator identifies collisions with terrain by localID of zero
-#define ID_GROUND_PLANE 1
-#define ID_INVALID_HIT 0xFFFFFFFF
 
 // #define TOLERANCE 0.00001
 // these values match the ones in SceneObjectPart.SendScheduledUpdates()
@@ -67,223 +51,18 @@ typedef unsigned int		uint32_t;
 #define ANGULARVELOCITY_TOLERANCE 0.01f
 
 // TODO: find a way to build this
-static char BulletSimVersionString[] = "v0001 svn126";
+static char BulletSimVersionString[] = "v0002";
 
 // Helper method to determine if an object is phantom or not
 static bool IsPhantom(const btCollisionObject* obj)
 {
 	// Characters are never phantom, but everything else with CF_NO_CONTACT_RESPONSE is
 	// TODO: figure out of this assumption for phantom sensing is still true
+	//    This is used in the raycast code an should be rethought for the real implementation.
 	return obj->getCollisionShape()->getShapeType() != CAPSULE_SHAPE_PROXYTYPE &&
 		(obj->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
 };
 
-
-// API-exposed structure for a 3D vector
-struct Vector3
-{
-	float X;
-	float Y;
-	float Z;
-
-	Vector3()
-	{
-		X = 0.0;
-		Y = 0.0;
-		Z = 0.0;
-	}
-
-	Vector3(float x, float y, float z)
-	{
-		X = x;
-		Y = y;
-		Z = z;
-	}
-
-	bool AlmostEqual(const Vector3& v, const float nEpsilon)
-	{
-		return
-			(((v.X - nEpsilon) < X) && (X < (v.X + nEpsilon))) &&
-			(((v.Y - nEpsilon) < Y) && (Y < (v.Y + nEpsilon))) &&
-			(((v.Z - nEpsilon) < Z) && (Z < (v.Z + nEpsilon)));
-	}
-
-	btVector3 GetBtVector3()
-	{
-		return btVector3(X, Y, Z);
-	}
-
-	void operator= (const btVector3& v)
-	{
-		X = v.getX();
-		Y = v.getY();
-		Z = v.getZ();
-	}
-
-	bool operator==(const Vector3& b)
-	{
-		return (X == b.X && Y == b.Y && Z == b.Z);
-	}
-};
-
-// API-exposed structure for a rotation
-struct Quaternion
-{
-	float X;
-	float Y;
-	float Z;
-	float W;
-
-	bool AlmostEqual(const Quaternion& q, float nEpsilon)
-	{
-		return
-			(((q.X - nEpsilon) < X) && (X < (q.X + nEpsilon))) &&
-			(((q.Y - nEpsilon) < Y) && (Y < (q.Y + nEpsilon))) &&
-			(((q.Z - nEpsilon) < Z) && (Z < (q.Z + nEpsilon))) &&
-			(((q.W - nEpsilon) < W) && (W < (q.W + nEpsilon)));
-	}
-
-	btQuaternion GetBtQuaternion()
-	{
-		return btQuaternion(X, Y, Z, W);
-	}
-
-	void operator= (const btQuaternion& q)
-	{
-		X = q.getX();
-		Y = q.getY();
-		Z = q.getZ();
-		W = q.getW();
-	}
-};
-
-// API-exposed structure defining an object
-struct ShapeData
-{
-	enum PhysicsShapeType
-	{
-		SHAPE_AVATAR = 0,
-		SHAPE_BOX = 1,
-		SHAPE_CONE = 2,
-		SHAPE_CYLINDER = 3,
-		SHAPE_SPHERE = 4,
-		SHAPE_MESH = 5,
-		SHAPE_HULL = 6
-	};
-
-	// note that bool's are passed as int's since bool size changes by language
-	uint32_t ID;
-	PhysicsShapeType Type;
-	Vector3 Position;
-	Quaternion Rotation;
-	Vector3 Velocity;
-	Vector3 Scale;
-	float Mass;
-	float Buoyancy;		// gravity effect on the object
-	unsigned long long HullKey;
-	unsigned long long MeshKey;
-	float Friction;
-	float Restitution;
-	int32_t Collidable;	// things can collide with this object
-	int32_t Static;	// object is non-moving. Otherwise gravity, etc
-};
-
-// API-exposed structure for reporting a collision
-struct CollisionDesc
-{
-	uint32_t aID;
-	uint32_t bID;
-	Vector3 point;
-	Vector3 normal;
-};
-
-// API-exposed structure to input a convex hull
-struct ConvexHull
-{
-	Vector3 Offset;
-	uint32_t VertexCount;
-	Vector3* Vertices;
-};
-
-// API-exposed structured to return a raycast result
-struct RaycastHit
-{
-	uint32_t ID;
-	float Fraction;
-	Vector3 Normal;
-};
-
-// API-exposed structure to return a convex sweep result
-struct SweepHit
-{
-	uint32_t ID;
-	float Fraction;
-	Vector3 Normal;
-	Vector3 Point;
-};
-
-// API-exposed structure to return physics updates from Bullet
-struct EntityProperties
-{
-	uint32_t ID;
-	Vector3 Position;
-	Quaternion Rotation;
-	Vector3 Velocity;
-	Vector3 Acceleration;
-	Vector3 AngularVelocity;
-
-	EntityProperties(unsigned int id, const btTransform& startTransform)
-	{
-		ID = id;
-		Position = startTransform.getOrigin();
-		Rotation = startTransform.getRotation();
-	}
-
-	void operator= (const EntityProperties& e)
-	{
-		ID = e.ID;
-		Position = e.Position;
-		Rotation = e.Rotation;
-		Velocity = e.Velocity;
-		Acceleration = e.Acceleration;
-		AngularVelocity = e.AngularVelocity;
-	}
-};
-
-// Block of parameters passed from the managed code.
-// The memory layout MUST MATCH the layout in the managed code.
-// Rely on the fact that 'float' is always 32 bits in both C# and C++
-struct ParamBlock
-{
-    float defaultFriction;
-    float defaultDensity;
-	float defaultRestitution;
-    float collisionMargin;
-    float gravity;
-
-    float linearDamping;
-    float angularDamping;
-    float deactivationTime;
-    float linearSleepingThreshold;
-    float angularSleepingThreshold;
-	float ccdMotionThreshold;
-	float ccdSweptSphereRadius;
-
-    float terrainFriction;
-    float terrainHitFraction;
-    float terrainRestitution;
-    float avatarFriction;
-    float avatarDensity;
-    float avatarRestitution;
-    float avatarCapsuleRadius;
-    float avatarCapsuleHeight;
-};
-
-// ============================================================================================
-// Callback to managed code for logging
-typedef void DebugLogCallback(const char*);
-extern DebugLogCallback* debugLogCallback;
-extern void BSLog(const char*, ...);
 
 // ============================================================================================
 // Motion state for rigid bodies in the scene. Updates the map of changed 
@@ -292,8 +71,9 @@ class SimMotionState : public btMotionState
 {
 public:
 	btRigidBody* RigidBody;
+	Vector3 ZeroVect;
 
-    SimMotionState(unsigned int id, const btTransform& startTransform, std::map<unsigned int, EntityProperties*>* updatesThisFrame)
+    SimMotionState(IDTYPE id, const btTransform& startTransform, std::map<IDTYPE, EntityProperties*>* updatesThisFrame)
 		: m_properties(id, startTransform), m_lastProperties(id, startTransform)
 	{
         m_xform = startTransform;
@@ -312,35 +92,49 @@ public:
 
     virtual void setWorldTransform(const btTransform& worldTrans)
 	{
+	    setWorldTransform(worldTrans, false);
+	}
+
+    virtual void setWorldTransform(const btTransform& worldTrans, bool force)
+	{
 		m_xform = worldTrans;
 
 		// Put the new transform into m_properties
 		m_properties.Position = m_xform.getOrigin();
 		m_properties.Rotation = m_xform.getRotation();
-		// The problem is that we don't get an event when an object is slept.
+		// A problem with stock Bullet is that we don't get an event when an object is deactivated.
 		// This means that the last non-zero values for linear and angular velocity
 		// are left in the viewer who does dead reconning and the objects look like
 		// they float off.
-		// TODO: figure out how to generate a transform event when an object sleeps.
+		// BulletSim ships with a patch to Bullet which creates such an event.
 		m_properties.Velocity = RigidBody->getLinearVelocity();
 		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
 		// Is this transform any different from the previous one?
-		if (!m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE) ||
-			!m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE) ||
-			!m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE) ||
-			!m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE))
+		// TODO: decide of this 'if' statement is needed. Since the updates are kept by ID,
+		//     couldn't we just always put any update into the map? The only down side would
+		//     be sending updates every tick for very small jiggles which happen over a long period of time.
+		if (force
+			|| !m_properties.Position.AlmostEqual(m_lastProperties.Position, POSITION_TOLERANCE)
+			|| !m_properties.Rotation.AlmostEqual(m_lastProperties.Rotation, ROTATION_TOLERANCE)
+			// If the Velocity and AngularVelocity are zero, most likely the object has
+			//    been deactivated. If they both are zero and they have become zero recently,
+			//    make sure a property update is sent so the zeros make it to the viewer.
+			|| ((m_properties.Velocity == ZeroVect && m_properties.AngularVelocity == ZeroVect)
+				&& (m_properties.Velocity != m_lastProperties.Velocity || m_properties.AngularVelocity != m_lastProperties.AngularVelocity))
+			//	If Velocity and AngularVelocity are non-zero but have changed, send an update.
+			|| !m_properties.Velocity.AlmostEqual(m_lastProperties.Velocity, VELOCITY_TOLERANCE)
+			|| !m_properties.AngularVelocity.AlmostEqual(m_lastProperties.AngularVelocity, ANGULARVELOCITY_TOLERANCE)
+			)
 		{
-			// If so, update the previous transform and add this update to the list of 
-			// updates this frame
+			// Add this update to the list of updates for this frame.
 			m_lastProperties = m_properties;
 			(*m_updatesThisFrame)[m_properties.ID] = &m_properties;
 		}
     }
 
-protected:
-	// forward reference: UpdatesThisFrameMapType* m_updatesThisFrame;
-	std::map<unsigned int, EntityProperties*>* m_updatesThisFrame;
+private:
+	std::map<IDTYPE, EntityProperties*>* m_updatesThisFrame;
     btTransform m_xform;
 	EntityProperties m_properties;
 	EntityProperties m_lastProperties;
@@ -443,47 +237,31 @@ protected:
 // The main physics simulation class.
 class BulletSim
 {
-	// Pointer to block of parameters passed from the managed code on initialization
-	ParamBlock* m_params;
-
-	// Simulation
-	btDiscreteDynamicsWorld* m_dynamicsWorld;
-
-	// Collision shapes
-	btStaticPlaneShape* m_planeShape;
-	btHeightfieldTerrainShape* m_heightfieldShape;
-
-	// Mesh data and scene objects
-	typedef std::map<unsigned long long, btBvhTriangleMeshShape*> MeshesMapType;
-	MeshesMapType m_meshes;
-	typedef std::map<unsigned long long, btCompoundShape*> HullsMapType;
-	HullsMapType m_hulls;
-	typedef std::map<unsigned int, btRigidBody*> BodiesMapType;
-	BodiesMapType m_bodies;
-	typedef std::map<unsigned int, btRigidBody*> CharactersMapType;
-	CharactersMapType m_characters;
-	typedef std::map<unsigned long long, btGeneric6DofConstraint*> ConstraintMapType;
-	ConstraintMapType m_constraints;
-
+private:
 	// Bullet world objects
 	btBroadphaseInterface* m_broadphase;
 	btCollisionDispatcher* m_dispatcher;
 	btConstraintSolver*	m_solver;
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
 
-	// Terrain and world metadata
-	float* m_heightmapData;
-	btVector3 m_maxPosition;
+	int m_dumpStatsCount;
 
-	// Used to expose updates from Bullet to the BulletSim API
-	typedef std::map<unsigned int, EntityProperties*> UpdatesThisFrameMapType;
-	UpdatesThisFrameMapType m_updatesThisFrame;
+	// Information about the world that is shared with all the objects
+	WorldData m_worldData;
+
+	// Where we process the tick's updates for passing back to managed code
 	int m_maxUpdatesPerFrame;
 	EntityProperties* m_updatesThisFrameArray;
 
 	// Used to expose colliders from Bullet to the BulletSim API
 	int m_maxCollisionsPerFrame;
+	int m_collisionsThisFrame;
 	CollisionDesc* m_collidersThisFrameArray;
+
+	std::set<COLLIDERKEYTYPE> m_collidersThisFrame;
+	void RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, 
+							const btVector3& contact, const btVector3& norm, const float penetration);
+	void RecordGhostCollisions(btPairCachingGhostObject* obj);
 
 public:
 
@@ -491,66 +269,62 @@ public:
 
 	virtual ~BulletSim()
 	{
-		exitPhysics();
+		exitPhysics2();
 	}
 
-	btDynamicsWorld* GetDynamicsWorld()
-	{
-		return m_dynamicsWorld;
-	}
+	void initPhysics2(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
+	void exitPhysics2();
 
-	void initPhysics(ParamBlock* parms, int maxCollisions, CollisionDesc* collisionArray, int maxUpdates, EntityProperties* updateArray);
-	void exitPhysics();
+	int PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, int* collidersCount);
 
-	int PhysicsStep(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, 
-		int* updatedEntityCount, EntityProperties** updatedEntities, int* collidersCount, CollisionDesc** colliders);
+	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
+	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
+	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh);
+
+	/*
+	void CreateInitialGroundPlaneAndTerrain();
+
 	void SetHeightmap(float* heightmap);
-	bool CreateHull(unsigned long long meshKey, int hullCount, float* hulls);
-	bool CreateMesh(unsigned long long meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
-	bool CreateObject(ShapeData* shapeData);
-	void CreateLinkset(int objectCount, ShapeData* shapeDatas);
-	void AddConstraint(unsigned int id1, unsigned int id2, 
-				btVector3& frame1, btQuaternion& frame1rot, 
-				btVector3& frame2, btQuaternion& frame2rot,
-				btVector3& lowLinear, btVector3& hiLinear, btVector3& lowAngular, btVector3& hiAngular);
-	bool RemoveConstraintByID(unsigned int id1);
-	bool RemoveConstraint(unsigned int id1, unsigned int id2);
-	btVector3 GetObjectPosition(unsigned int id);
-	bool SetObjectTranslation(unsigned int id, btVector3& position, btQuaternion& rotation);
-	bool SetObjectVelocity(unsigned int id, btVector3& velocity);
-	bool SetObjectAngularVelocity(unsigned int id, btVector3& angularVelocity);
-	bool SetObjectForce(unsigned int id, btVector3& force);
-	bool SetObjectScaleMass(unsigned int id, btVector3& scale, float mass, bool isDynamic);
-	bool SetObjectCollidable(unsigned int id, bool collidable);
-	bool SetObjectDynamic(unsigned int id, bool isDynamic, float mass);
-	bool SetObjectBuoyancy(unsigned int id, float buoyancy);
-	bool SetObjectProperties(unsigned int id, bool isStatic, bool isSolid, bool genCollisions, float mass);
-	bool HasObject(unsigned int id);
-	bool DestroyObject(unsigned int id);
-	bool DestroyHull(unsigned long long meshKey);
-	bool DestroyMesh(unsigned long long id);
-	SweepHit ConvexSweepTest(unsigned int id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
-	RaycastHit RayTest(unsigned int id, btVector3& from, btVector3& to);
-	const btVector3 RecoverFromPenetration(unsigned int id);
 
-	void UpdateParameter(unsigned int localID, const char* parm, float value);
+	bool RegisterStepCallback(IDTYPE id, IPhysObject* target);
+	bool UnregisterStepCallback(IDTYPE id);
+
+	bool CreateHull(MESHKEYTYPE hullKey, int hullCount, float* hulls);
+	bool DestroyHull(MESHKEYTYPE hullKey);
+	bool CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
+	bool DestroyMesh(MESHKEYTYPE id);
+	bool CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey);
+
+	bool CreateObject(ShapeData* shapeData);
+	bool DestroyObject(IDTYPE id);
+	bool HasObject(IDTYPE id);
+
+	btVector3 GetObjectPosition(IDTYPE id);
+	btQuaternion GetObjectOrientation(IDTYPE id);
+	bool SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation);
+	bool SetObjectVelocity(IDTYPE id, btVector3& velocity);
+	bool SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity);
+	bool SetObjectForce(IDTYPE id, btVector3& force);
+	bool SetObjectScaleMass(IDTYPE id, btVector3& scale, float mass, bool isDynamic);
+	bool SetObjectCollidable(IDTYPE id, bool collidable);
+	bool SetObjectDynamic(IDTYPE id, bool isDynamic, float mass);
+	bool SetObjectBuoyancy(IDTYPE id, float buoyancy);
+	bool SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass);
+	*/
+
+	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
+	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
+	const btVector3 RecoverFromPenetration(IDTYPE id);
+
+	WorldData* getWorldData() { return &m_worldData; }
+	btDynamicsWorld* getDynamicsWorld() { return m_worldData.dynamicsWorld; };
+
+	bool UpdateParameter2(IDTYPE localID, const char* parm, float value);
+	void DumpPhysicsStats();
 
 protected:
 	void CreateGroundPlane();
 	void CreateTerrain();
-	void SetTerrainPhysicalParameters(btRigidBody* body);
-	void SetAvatarPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
-	void SetObjectPhysicalParameters(btRigidBody* body, btScalar friction, btScalar restitution, const btVector3& velocity);
-	void SetObjectDynamic(btRigidBody* body, bool isDynamic, float mass);
-	void SetObjectCollidable(btRigidBody* body, bool collidable);
-	unsigned long long GenConstraintID(unsigned int id1, unsigned int id2);
-	void AdjustScaleForCollisionMargin(btCollisionShape* body, btVector3& scale);
-	void SetObjectProperties(btRigidBody* body, bool isStatic, bool isSolid, bool genCollisions, float mass);
-	btCollisionShape* CreateShape(ShapeData* data);
-	bool RecalculateAllConstraintsByID(unsigned int id1);
-	btCompoundShape* DuplicateCompoundShape(btCompoundShape* origionalCompoundShape);
-	btCollisionShape* DuplicateMeshShape(btBvhTriangleMeshShape* origionalTriangleMeshShape);
-	SweepHit GenericConvexSweepTest(btCollisionObject* collisionObject, btVector3& fromPos, btVector3& targetPos);
 };
 
 #endif //BULLET_SIM_H

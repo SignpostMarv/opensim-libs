@@ -1,25 +1,36 @@
-# Scratch makefile for linux
+# Build BulletSim
 
 IDIR = /usr/local/include/bullet
 LDIR = /usr/local/lib
 
-BULLETLIBS = -L$(LDIR) -lBulletDynamics -lBulletCollision -lLinearMath -lc 
+# the Bullet libraries are linked statically so we don't have to also distribute the shared binaries
+BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/libLinearMath.a
  
 #CC = gcc
 CC = g++
 CFLAGS = -I$(IDIR) -fPIC -g
 
+BASEFILES = API2.cpp BulletSim.cpp
+
+SRC = $(BASEFILES)
+# SRC = $(wildcard *.cpp)
+
+BIN = $(patsubst %.cpp, %.o, $(SRC))
+
+
 all: libBulletSim.so
 
-libBulletSim.so : BulletSim.o API.o
-	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so BulletSim.o API.o $(BULLETLIBS)
+libBulletSim.so : $(BIN)
+	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS)
 
-BulletSim.o : BulletSim.h BulletSim.cpp
-	$(CC) $(CFLAGS) -c BulletSim.cpp
+%.o: %.cpp
+	$(CC) $(CFLAGS) -c $?
 
-API.o : API.cpp
-	$(CC) $(CFLAGS) -c API.cpp 
+BulletSim.cpp : BulletSim.h Util.h
+
+BulletSim.h: ArchStuff.h APIData.h WorldData.h
+
+API2.cpp : BulletSim.h
 
 clean:
 	rm -f *.o *.so
-

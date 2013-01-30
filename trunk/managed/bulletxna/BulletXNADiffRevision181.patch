@@ -1,0 +1,913 @@
+Index: BulletXNA/BulletCollision/BroadphaseCollision/BroadphaseProxy.cs
+===================================================================
+--- BulletXNA/BulletCollision/BroadphaseCollision/BroadphaseProxy.cs	(revision 181)
++++ BulletXNA/BulletCollision/BroadphaseCollision/BroadphaseProxy.cs	(working copy)
+@@ -300,15 +300,37 @@
+     };
+ 
+     [Flags]
+-    public enum CollisionFilterGroups
++    public enum CollisionFilterGroups:uint
+     {
+-        DefaultFilter = 1,
+-        StaticFilter = 2,
+-        KinematicFilter = 4,
+-        DebrisFilter = 8,
+-        SensorTrigger = 16,
+-        CharacterFilter = 32,
+-        AllFilter = -1 //all bits sets: DefaultFilter | StaticFilter | KinematicFilter | DebrisFilter | SensorTrigger
++        BNoneGroup = 0,
++        BDefaultGroup = 1 << 0,
++        BStaticGroup = 1 << 1,
++        BKinematicGroup = 1 << 2,
++        BDebrisGroup = 1 << 3,
++        BSensorTrigger = 1 << 4,
++        BCharacterGroup = 1 << 5,
++        BAllGroup = 0xFFFFFFFF, // -1
++        // Filter groups defined by BulletSim
++        BGroundPlaneGroup = 1 << 10,
++        BTerrainGroup = 1 << 11,
++        BRaycastGroup = 1 << 12,
++        BSolidGroup = 1 << 13,
++        BLinksetGroup = 1 << 14,
++
++        // The collsion filters and masked are defined in one place -- don't want them scattered
++        AvatarGroup = BCharacterGroup,
++        AvatarMask = BAllGroup,
++        ObjectGroup = BSolidGroup,
++        ObjectMask = BAllGroup,
++        StaticObjectGroup = BStaticGroup,
++        StaticObjectMask = AvatarGroup | ObjectGroup,    // static things don't interact with much
++        LinksetGroup = BLinksetGroup,
++        LinksetMask = BAllGroup & ~BLinksetGroup, // linkset objects don't collide with each other
++        VolumeDetectGroup = BSensorTrigger,
++        VolumeDetectMask = ~BSensorTrigger,
++        TerrainGroup = BTerrainGroup,
++        TerrainMask = BAllGroup & ~BStaticGroup,  // static objects on the ground don't collide
++        GroundPlaneGroup = BGroundPlaneGroup,
++        GroundPlaneMask = BAllGroup
+     }
+-
+ }
+Index: BulletXNA/BulletCollision/BroadphaseCollision/DbvtBroadphase.cs
+===================================================================
+--- BulletXNA/BulletCollision/BroadphaseCollision/DbvtBroadphase.cs	(revision 181)
++++ BulletXNA/BulletCollision/BroadphaseCollision/DbvtBroadphase.cs	(working copy)
+@@ -685,7 +685,7 @@
+                     po.extents.Y = BroadphaseBenchmark.UnitRand() * 2 + 2;
+                     po.extents.Z = BroadphaseBenchmark.UnitRand() * 2 + 2;
+                     po.time = BroadphaseBenchmark.UnitRand() * 2000;
+-                    po.proxy = broadphaseInterface.CreateProxy(po.center - po.extents, po.center + po.extents, BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE, po, CollisionFilterGroups.DefaultFilter, CollisionFilterGroups.DefaultFilter, null, null);
++                    po.proxy = broadphaseInterface.CreateProxy(po.center - po.extents, po.center + po.extents, BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE, po, CollisionFilterGroups.BDefaultGroup, CollisionFilterGroups.BDefaultGroup, null, null);
+                     objects.Add(po);
+ 
+                 }
+Index: BulletXNA/BulletCollision/BroadphaseCollision/OverlappingPairCache.cs
+===================================================================
+--- BulletXNA/BulletCollision/BroadphaseCollision/OverlappingPairCache.cs	(revision 181)
++++ BulletXNA/BulletCollision/BroadphaseCollision/OverlappingPairCache.cs	(working copy)
+@@ -260,7 +260,7 @@
+             {
+                 BulletGlobals.g_streamWriter.WriteLine("HPC:ProcessAllOverlappingPairs overlap[{0}].", m_overlappingPairArray.Count);
+             }
+-
++            //Debug.WriteLine("Overlapping:" + m_overlappingPairArray.Count);
+             for (int i = 0; i < m_overlappingPairArray.Count; )
+             {
+                 BroadphasePair pair = m_overlappingPairArray[i];
+@@ -275,6 +275,7 @@
+                     i++;
+                 }
+             }
++            
+         }
+ 
+         public ObjectArray<BroadphasePair> GetOverlappingPairArray()
+Index: BulletXNA/BulletCollision/CollisionDispatch/CollisionObject.cs
+===================================================================
+--- BulletXNA/BulletCollision/CollisionDispatch/CollisionObject.cs	(revision 181)
++++ BulletXNA/BulletCollision/CollisionDispatch/CollisionObject.cs	(working copy)
+@@ -27,7 +27,7 @@
+ namespace BulletXNA.BulletCollision
+ {
+     [Flags]
+-    public enum CollisionFlags
++    public enum CollisionFlags : uint
+     {
+         CF_STATIC_OBJECT = 1,
+         CF_KINEMATIC_OBJECT = 2,
+@@ -35,12 +35,13 @@
+         CF_CUSTOM_MATERIAL_CALLBACK = 8,
+         CF_CHARACTER_OBJECT = 16,
+         CF_DISABLE_VISUALIZE_OBJECT = 32, //disable debug drawing
+-        CF_DISABLE_SPU_COLLISION_PROCESSING = 64//disable parallel/SPU processing
++        CF_DISABLE_SPU_COLLISION_PROCESSING = 64,//disable parallel/SPU processing
++        BS_WANTS_COLLISIONS = 0x1400
+     }
+ 
+ 
+ 
+-    public enum CollisionObjectTypes
++    public enum CollisionObjectTypes : int
+     {
+         CO_COLLISION_OBJECT = 1,
+         CO_RIGID_BODY=2,
+@@ -54,7 +55,7 @@
+ 
+ 
+ 
+-    public enum ActivationState
++    public enum ActivationState: uint
+     {
+         UNDEFINED = 0,
+         ACTIVE_TAG = 1,
+Index: BulletXNA/BulletCollision/CollisionDispatch/CollisionWorld.cs
+===================================================================
+--- BulletXNA/BulletCollision/CollisionDispatch/CollisionWorld.cs	(revision 181)
++++ BulletXNA/BulletCollision/CollisionDispatch/CollisionWorld.cs	(working copy)
+@@ -23,6 +23,7 @@
+ 
+ //#define USE_BRUTEFORCE_RAYBROADPHASE
+ 
++using System.Collections.Generic;
+ using System.Diagnostics;
+ using BulletXNA.LinearMath;
+ using BulletXNA.BulletDynamics;
+@@ -32,7 +33,69 @@
+ {
+     public class CollisionWorld
+     {
++        public struct WorldData
++        {
++            public ParamData Params;
++            public struct ParamData
++            {
++                public float defaultFriction;
+ 
++                public float defaultDensity;
++                public float defaultRestitution;
++                public float collisionMargin;
++                public float gravity;
++
++                public float linearDamping;
++                public float angularDamping;
++                public float deactivationTime;
++                public float linearSleepingThreshold;
++                public float angularSleepingThreshold;
++                public float ccdMotionThreshold;
++                public float ccdSweptSphereRadius;
++                public float contactProcessingThreshold;
++
++                public float terrainImplementation;
++                public float terrainFriction;
++                public float terrainHitFraction;
++                public float terrainRestitution;
++                public float terrainCollisionMargin;
++
++                public float avatarFriction;
++                public float avatarStandingFriction;
++                public float avatarDensity;
++                public float avatarRestitution;
++                public float avatarCapsuleWidth;
++                public float avatarCapsuleDepth;
++                public float avatarCapsuleHeight;
++                public float avatarContactProcessingThreshold;
++
++                public float vehicleAngularDamping;
++
++                public float maxPersistantManifoldPoolSize;
++                public float maxCollisionAlgorithmPoolSize;
++                public float shouldDisableContactPoolDynamicAllocation;
++                public float shouldForceUpdateAllAabbs;
++                public float shouldRandomizeSolverOrder;
++                public float shouldSplitSimulationIslands;
++                public float shouldEnableFrictionCaching;
++                public float numberOfSolverIterations;
++
++                public float linksetImplementation;
++                public float linkConstraintUseFrameOffset;
++                public float linkConstraintEnableTransMotor;
++                public float linkConstraintTransMotorMaxVel;
++                public float linkConstraintTransMotorMaxForce;
++                public float linkConstraintERP;
++                public float linkConstraintCFM;
++                public float linkConstraintSolverIterations;
++
++                public float physicsLoggingFrames;
++
++            }
++        }
++
++        public List<EntityProperties> UpdatedObjects;
++        public List<CollisionDesc> UpdatedCollisions;
+         //this constructor doesn't own the dispatcher and paircache/broadphase
+         public CollisionWorld(IDispatcher dispatcher, IBroadphaseInterface broadphasePairCache, ICollisionConfiguration collisionConfiguration)
+         {
+@@ -41,6 +104,9 @@
+             m_collisionObjects = new ObjectArray<CollisionObject>();
+             m_dispatchInfo = new DispatcherInfo();
+             m_forceUpdateAllAabbs = true;
++            WorldSettings.Params = new WorldData.ParamData();
++            UpdatedObjects = new List<EntityProperties>();
++            UpdatedCollisions = new List<CollisionDesc>();
+         }
+ 
+         public virtual void Cleanup()
+@@ -561,9 +627,12 @@
+ 
+         public virtual void AddCollisionObject(CollisionObject collisionObject)
+         {
+-            AddCollisionObject(collisionObject, CollisionFilterGroups.DefaultFilter, CollisionFilterGroups.AllFilter);
++            AddCollisionObject(collisionObject, CollisionFilterGroups.BDefaultGroup, CollisionFilterGroups.BAllGroup);
+         }
+-
++        public bool IsInWorld(CollisionObject collisionObject)
++        {
++            return m_collisionObjects.Contains(collisionObject);
++        }
+         public virtual void AddCollisionObject(CollisionObject collisionObject, CollisionFilterGroups collisionFilterGroup, CollisionFilterGroups collisionFilterMask)
+         {
+             //check that the object isn't already added
+@@ -1041,6 +1110,8 @@
+         protected bool m_forceUpdateAllAabbs;
+ 
+ 	       protected IProfileManager m_profileManager;
++        public WorldData WorldSettings = new WorldData();
++
+     }
+ 
+ 
+@@ -1104,8 +1175,8 @@
+         {
+             m_closestHitFraction = 1f;
+             m_collisionObject = null;
+-            m_collisionFilterGroup = CollisionFilterGroups.DefaultFilter;
+-            m_collisionFilterMask = CollisionFilterGroups.AllFilter;
++            m_collisionFilterGroup = CollisionFilterGroups.BDefaultGroup;
++            m_collisionFilterMask = CollisionFilterGroups.BAllGroup;
+             //@BP Mod
+             m_flags = 0;
+         }
+@@ -1206,8 +1277,73 @@
+ 
+     }
+ 
++    public class ClosestNotMeRayResultCallback : ClosestRayResultCallback, IDisposable
++    {
++        public ClosestNotMeRayResultCallback() { } // for pool
+ 
++        public ClosestNotMeRayResultCallback(IndexedVector3 rayFromWorld, IndexedVector3 rayToWorld,
++                                                CollisionObject NotMeShape)
++        {
++            m_rayFromWorld = rayFromWorld;
++            m_rayToWorld = rayToWorld;
++            ObjectToAvoid = (uint) NotMeShape.GetUserPointer();
++        }
+ 
++        public ClosestNotMeRayResultCallback(IndexedVector3 rayFromWorld, IndexedVector3 rayToWorld)
++        {
++            m_rayFromWorld = rayFromWorld;
++            m_rayToWorld = rayToWorld;
++        }
++
++
++        public ClosestNotMeRayResultCallback(ref IndexedVector3 rayFromWorld, ref IndexedVector3 rayToWorld)
++        {
++            m_rayFromWorld = rayFromWorld;
++            m_rayToWorld = rayToWorld;
++        }
++
++        public new void Initialize(IndexedVector3 rayFromWorld, IndexedVector3 rayToWorld)
++        {
++            base.Initialize(rayFromWorld, rayToWorld);
++        }
++
++        public new void Initialize(ref IndexedVector3 rayFromWorld, ref IndexedVector3 rayToWorld)
++        {
++            base.Initialize(rayFromWorld, rayToWorld);
++
++        }
++
++        private uint ObjectToAvoid;
++
++        //public void Initialize(Vector3 rayFromWorld, Vector3 rayToWorld)
++        //{
++        //    m_rayFromWorld = rayFromWorld;
++        //    m_rayToWorld = rayToWorld;
++        //}
++
++        public override float AddSingleResult(ref LocalRayResult rayResult, bool normalInWorldSpace)
++        {
++            //caller already does the filter on the m_closestHitFraction
++            //btAssert(rayResult.m_hitFraction <= m_closestHitFraction);
++
++            
++                
++            m_closestHitFraction = rayResult.m_hitFraction;
++            m_collisionObject = rayResult.m_collisionObject;
++            uint obj = 0;
++            object specialobj = m_collisionObject.GetUserPointer();
++            if (specialobj is uint)
++            {
++                obj = (uint) specialobj;
++                if (obj == ObjectToAvoid)
++                    return 1.0f;
++            }
++
++            return base.AddSingleResult(ref rayResult, normalInWorldSpace);
++        }
++
++    }
++
+     public struct LocalConvexResult
+     {
+         public LocalConvexResult(CollisionObject hitCollisionObject,
+@@ -1298,15 +1434,15 @@
+         public ConvexResultCallback()
+         {
+             m_closestHitFraction = 1f;
+-            m_collisionFilterGroup = CollisionFilterGroups.DefaultFilter;
+-            m_collisionFilterMask = CollisionFilterGroups.AllFilter;
++            m_collisionFilterGroup = CollisionFilterGroups.BDefaultGroup;
++            m_collisionFilterMask = CollisionFilterGroups.BAllGroup;
+         }
+ 
+         public virtual void Initialize()
+         {
+             m_closestHitFraction = 1f;
+-            m_collisionFilterGroup = CollisionFilterGroups.DefaultFilter;
+-            m_collisionFilterMask = CollisionFilterGroups.AllFilter;
++            m_collisionFilterGroup = CollisionFilterGroups.BDefaultGroup;
++            m_collisionFilterMask = CollisionFilterGroups.BAllGroup;
+         }
+ 
+ 
+@@ -1733,8 +1869,8 @@
+ 
+         public ContactResultCallback()
+         {
+-            m_collisionFilterGroup = CollisionFilterGroups.DefaultFilter;
+-            m_collisionFilterMask = CollisionFilterGroups.AllFilter;
++            m_collisionFilterGroup = CollisionFilterGroups.BDefaultGroup;
++            m_collisionFilterMask = CollisionFilterGroups.BAllGroup;
+         }
+ 
+         public virtual bool NeedsCollision(BroadphaseProxy proxy0)
+Index: BulletXNA/BulletCollision/CollisionDispatch/DefaultCollisionConfiguration.cs
+===================================================================
+--- BulletXNA/BulletCollision/CollisionDispatch/DefaultCollisionConfiguration.cs	(revision 181)
++++ BulletXNA/BulletCollision/CollisionDispatch/DefaultCollisionConfiguration.cs	(working copy)
+@@ -34,8 +34,8 @@
+     ///stack allocator, pool memory allocators
+     ///@todo: describe the meaning
+ 
+-        protected int m_persistentManifoldPoolSize;
+-        protected bool m_useEpaPenetrationAlgorithm;
++        public int m_persistentManifoldPoolSize;
++        public bool m_useEpaPenetrationAlgorithm;
+ 
+     //btStackAlloc*	m_stackAlloc;
+     //bool	m_ownsStackAllocator;
+Index: BulletXNA/BulletCollision/CollisionShapes/ConvexShape.cs
+===================================================================
+--- BulletXNA/BulletCollision/CollisionShapes/ConvexShape.cs	(revision 181)
++++ BulletXNA/BulletCollision/CollisionShapes/ConvexShape.cs	(working copy)
+@@ -24,6 +24,7 @@
+ using System;
+ using System.Collections.Generic;
+ using System.Diagnostics;
++using System.Collections.Generic;
+ 
+ using BulletXNA.LinearMath;
+ 
+@@ -31,6 +32,8 @@
+ {
+     public abstract class ConvexShape : CollisionShape
+     {
++        private IndexedVector3 singleResult = new IndexedVector3();
++
+         public ConvexShape()
+         {
+         }
+@@ -63,7 +66,8 @@
+ 
+         public IndexedVector3 LocalGetSupportVertexWithoutMarginNonVirtual(ref IndexedVector3 localDir)
+         {
+-            IndexedVector3 result = IndexedVector3.Zero;
++            singleResult = IndexedVector3.Zero;
++
+             if (BulletGlobals.g_streamWriter != null && BulletGlobals.debugConvexShape)
+             {
+                 BulletGlobals.g_streamWriter.WriteLine("localGetSupportVertexWithoutMarginNonVirtual " + GetName());
+@@ -73,7 +77,7 @@
+             {
+                 case BroadphaseNativeTypes.SPHERE_SHAPE_PROXYTYPE:
+                     {
+-                        result = new IndexedVector3();
++                        singleResult = new IndexedVector3();
+                         break;
+                     }
+                 case BroadphaseNativeTypes.BOX_SHAPE_PROXYTYPE:
+@@ -81,7 +85,7 @@
+                         BoxShape convexShape = this as BoxShape;
+                         IndexedVector3 halfExtents = convexShape.GetImplicitShapeDimensions();
+ 
+-                        result = new IndexedVector3(MathUtil.FSel(localDir.X, halfExtents.X, -halfExtents.X),
++                        singleResult = new IndexedVector3(MathUtil.FSel(localDir.X, halfExtents.X, -halfExtents.X),
+                             MathUtil.FSel(localDir.Y, halfExtents.Y, -halfExtents.Y),
+                             MathUtil.FSel(localDir.Z, halfExtents.Z, -halfExtents.Z));
+ 						if (BulletGlobals.g_streamWriter != null && BulletGlobals.debugConvexShape)
+@@ -89,7 +93,7 @@
+                             BulletGlobals.g_streamWriter.WriteLine("localGetSupportVertexWithoutMarginNonVirtual::Box");
+                             MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "halfEx", halfExtents);
+                             MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "localDir", localDir);
+-                            MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "result", result);
++                            MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "result", singleResult);
+                         }
+ 
+                         break;
+@@ -115,9 +119,9 @@
+ 
+                         }
+ 
+-                        
+-                        
+-                        result = sup;
++
++
++                        singleResult = sup;
+                         break;
+                     }
+                 case BroadphaseNativeTypes.CYLINDER_SHAPE_PROXYTYPE:
+@@ -175,14 +179,14 @@
+                             tmp[XX] = v[XX] * d;
+                             tmp[YY] = v[YY] < 0.0f ? -halfHeight : halfHeight;
+                             tmp[ZZ] = v[ZZ] * d;
+-                            result = tmp;
++                            singleResult = tmp;
+                         }
+                         else
+                         {
+                             tmp[XX] = radius;
+                             tmp[YY] = v[YY] < 0.0f ? -halfHeight : halfHeight;
+                             tmp[ZZ] = 0.0f;
+-                            result = tmp;
++                            singleResult = tmp;
+                         }
+                         break;
+                     }
+@@ -242,7 +246,7 @@
+                                 supVec = vtx;
+                             }
+                         }
+-                        result = supVec;
++                        singleResult = supVec;
+                         break;
+                     }
+                 case BroadphaseNativeTypes.CONVEX_POINT_CLOUD_SHAPE_PROXYTYPE:
+@@ -251,7 +255,7 @@
+                         IList<IndexedVector3> points = convexPointCloudShape.GetUnscaledPoints();
+                         int numPoints = convexPointCloudShape.GetNumPoints();
+                         IndexedVector3 localScaling = convexPointCloudShape.GetLocalScalingNV();
+-                        result = ConvexHullSupport(ref localDir, points, numPoints, ref localScaling);
++                        singleResult = ConvexHullSupport(ref localDir, points, numPoints, ref localScaling);
+                         break;
+                     }
+                 case BroadphaseNativeTypes.CONVEX_HULL_SHAPE_PROXYTYPE:
+@@ -260,11 +264,11 @@
+                         IList<IndexedVector3> points = convexHullShape.GetUnscaledPoints();
+                         int numPoints = convexHullShape.GetNumPoints();
+                         IndexedVector3 localScaling = convexHullShape.GetLocalScalingNV();
+-                        result = ConvexHullSupport(ref localDir, points, numPoints, ref localScaling);
++                        singleResult = ConvexHullSupport(ref localDir, points, numPoints, ref localScaling);
+                         break;
+                     }
+                 default:
+-                    result = LocalGetSupportingVertexWithoutMargin(ref localDir);
++                    singleResult = LocalGetSupportingVertexWithoutMargin(ref localDir);
+                     break;
+             }
+ 
+@@ -274,9 +278,9 @@
+             {
+                 BulletGlobals.g_streamWriter.WriteLine("localGetSupportVertexWithoutMarginNonVirtual");
+                 MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "localDir", localDir);
+-                MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "result", result);
++                MathUtil.PrintVector3(BulletGlobals.g_streamWriter, "result", singleResult);
+             }
+-            return result;
++            return singleResult;
+ 
+         }
+ 
+Index: BulletXNA/BulletDynamics/ConstraintSolver/TypedConstraint.cs
+===================================================================
+--- BulletXNA/BulletDynamics/ConstraintSolver/TypedConstraint.cs	(revision 181)
++++ BulletXNA/BulletDynamics/ConstraintSolver/TypedConstraint.cs	(working copy)
+@@ -40,7 +40,7 @@
+ 		MAX_CONSTRAINT_TYPE
+ 	}
+ 
+-	public enum ConstraintParams
++	public enum ConstraintParams:int
+ 	{
+ 		BT_CONSTRAINT_ERP = 1,
+ 		BT_CONSTRAINT_STOP_ERP,
+Index: BulletXNA/BulletDynamics/Dynamics/DiscreteDynamicsWorld.cs
+===================================================================
+--- BulletXNA/BulletDynamics/Dynamics/DiscreteDynamicsWorld.cs	(revision 181)
++++ BulletXNA/BulletDynamics/Dynamics/DiscreteDynamicsWorld.cs	(working copy)
+@@ -208,7 +208,7 @@
+                 {
+                     IndexedMatrix interpolatedTransform;
+                     TransformUtil.IntegrateTransform(body.GetInterpolationWorldTransform(),
+-                        body.SetInterpolationLinearVelocity(), body.GetInterpolationAngularVelocity(),
++                        body.GetInterpolationLinearVelocity(), body.GetInterpolationAngularVelocity(),
+                         m_localTime * body.GetHitFraction(), out interpolatedTransform);
+                     body.GetMotionState().SetWorldTransform(ref interpolatedTransform);
+                 }
+@@ -282,7 +282,7 @@
+         }
+         public override void AddCollisionObject(CollisionObject collisionObject)
+         {
+-            AddCollisionObject(collisionObject, CollisionFilterGroups.StaticFilter, CollisionFilterGroups.AllFilter ^ CollisionFilterGroups.StaticFilter);
++            AddCollisionObject(collisionObject, CollisionFilterGroups.BStaticGroup, CollisionFilterGroups.BAllGroup ^ CollisionFilterGroups.BStaticGroup);
+         }
+         public override void AddCollisionObject(CollisionObject collisionObject, CollisionFilterGroups collisionFilterGroup, CollisionFilterGroups collisionFilterMask)
+         {
+@@ -333,8 +333,8 @@
+                 }
+ 
+                 bool isDynamic = !(body.IsStaticObject() || body.IsKinematicObject());
+-                CollisionFilterGroups collisionFilterGroup = isDynamic ? CollisionFilterGroups.DefaultFilter : CollisionFilterGroups.StaticFilter;
+-                CollisionFilterGroups collisionFilterMask = isDynamic ? CollisionFilterGroups.AllFilter : (CollisionFilterGroups.AllFilter ^ CollisionFilterGroups.StaticFilter);
++                CollisionFilterGroups collisionFilterGroup = isDynamic ? CollisionFilterGroups.BDefaultGroup : CollisionFilterGroups.BStaticGroup;
++                CollisionFilterGroups collisionFilterMask = isDynamic ? CollisionFilterGroups.BAllGroup : (CollisionFilterGroups.BAllGroup ^ CollisionFilterGroups.BStaticGroup);
+ 
+                 AddCollisionObject(body, collisionFilterGroup, collisionFilterMask);
+             }
+Index: BulletXNA/BulletDynamics/Dynamics/DynamicsWorld.cs
+===================================================================
+--- BulletXNA/BulletDynamics/Dynamics/DynamicsWorld.cs	(revision 181)
++++ BulletXNA/BulletDynamics/Dynamics/DynamicsWorld.cs	(working copy)
+@@ -36,7 +36,7 @@
+ 		BT_SOFT_RIGID_DYNAMICS_WORLD = 4
+ 
+     }
+-
++ 
+     /// Type for the callback for each tick
+     public interface IInternalTickCallback
+     {
+Index: BulletXNA/BulletDynamics/Dynamics/RigidBody.cs
+===================================================================
+--- BulletXNA/BulletDynamics/Dynamics/RigidBody.cs	(revision 181)
++++ BulletXNA/BulletDynamics/Dynamics/RigidBody.cs	(working copy)
+@@ -97,6 +97,10 @@
+ 	    public RigidBody(float mass, IMotionState motionState, CollisionShape collisionShape, IndexedVector3 localInertia)
+         {
+             RigidBodyConstructionInfo cinfo = new RigidBodyConstructionInfo(mass,motionState,collisionShape,localInertia);
++            if (motionState is SimMotionState)
++            {
++                (motionState as SimMotionState).Rigidbody = this;
++            }
+ 	        SetupRigidBody(cinfo);
+         }
+ 
+@@ -472,6 +476,11 @@
+ 		    return m_totalForce;
+ 	    }
+ 
++        public void SetTotalForce(ref IndexedVector3 force)
++        {
++            m_totalForce = force;
++        }
++
+ 	    public IndexedVector3 GetTotalTorque()
+ 	    {
+ 		    return m_totalTorque;
+Index: BulletXNA/BulletXNA-Windows.csproj
+===================================================================
+--- BulletXNA/BulletXNA-Windows.csproj	(revision 181)
++++ BulletXNA/BulletXNA-Windows.csproj	(working copy)
+@@ -1,106 +1,77 @@
+ ﻿<?xml version="1.0" encoding="utf-8"?>
+ <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+   <PropertyGroup>
++    <ProjectType>Local</ProjectType>
++    <ProductVersion>9.0.30729</ProductVersion>
++    <SchemaVersion>2.0</SchemaVersion>
+     <ProjectGuid>{4E1937EE-3139-44CB-989D-F050BC099CE6}</ProjectGuid>
+-    <ProjectTypeGuids>{6D335F3A-9D43-41b4-9D22-F6F17C4BE596};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+     <OutputType>Library</OutputType>
+     <AppDesignerFolder>Properties</AppDesignerFolder>
+     <RootNamespace>BulletXNA</RootNamespace>
+     <AssemblyName>BulletXNA</AssemblyName>
+-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+-    <XnaFrameworkVersion>v4.0</XnaFrameworkVersion>
+-    <XnaPlatform>Windows</XnaPlatform>
+-    <XnaCrossPlatformGroupID>f7804c36-19b1-4fe7-8c82-102673be45f4</XnaCrossPlatformGroupID>
++    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+     <FileUpgradeFlags>
+     </FileUpgradeFlags>
+     <OldToolsVersion>3.5</OldToolsVersion>
+     <UpgradeBackupLocation>
+     </UpgradeBackupLocation>
+-    <IsWebBootstrapper>false</IsWebBootstrapper>
+-    <XnaUpgrade>
+-    </XnaUpgrade>
+-    <XnaOutputType>Library</XnaOutputType>
+-    <XnaProfile>HiDef</XnaProfile>
+-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+-    <PublishUrl>publish\</PublishUrl>
+-    <Install>true</Install>
+-    <InstallFrom>Disk</InstallFrom>
+-    <UpdateEnabled>false</UpdateEnabled>
+-    <UpdateMode>Foreground</UpdateMode>
+-    <UpdateInterval>7</UpdateInterval>
+-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+-    <UpdatePeriodically>false</UpdatePeriodically>
+-    <UpdateRequired>false</UpdateRequired>
+-    <MapFileExtensions>true</MapFileExtensions>
+-    <ApplicationRevision>0</ApplicationRevision>
+-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+-    <UseApplicationTrust>false</UseApplicationTrust>
+-    <BootstrapperEnabled>true</BootstrapperEnabled>
++    <TargetFrameworkProfile>
++    </TargetFrameworkProfile>
+   </PropertyGroup>
+-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+-    <DebugSymbols>true</DebugSymbols>
+-    <DebugType>full</DebugType>
+-    <Optimize>false</Optimize>
+-    <OutputPath>bin\x86\Debug</OutputPath>
+-    <DefineConstants>TRACE;DEBUG;WINDOWS;XNA</DefineConstants>
+-    <ErrorReport>prompt</ErrorReport>
++  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
++    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
++    <BaseAddress>285212672</BaseAddress>
++    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
++    <ConfigurationOverrideFile>
++    </ConfigurationOverrideFile>
++    <DefineConstants>TRACE;DEBUG</DefineConstants>
++    <DocumentationFile>
++    </DocumentationFile>
++    <DebugSymbols>True</DebugSymbols>
++    <FileAlignment>4096</FileAlignment>
++    <Optimize>False</Optimize>
++    <OutputPath>..\..\..\..\bin\</OutputPath>
++    <RegisterForComInterop>False</RegisterForComInterop>
++    <RemoveIntegerChecks>False</RemoveIntegerChecks>
++    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+     <WarningLevel>4</WarningLevel>
+-    <NoStdLib>true</NoStdLib>
+-    <UseVSHostingProcess>false</UseVSHostingProcess>
+-    <PlatformTarget>x86</PlatformTarget>
+-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
++    <NoStdLib>False</NoStdLib>
++    <NoWarn>
++    </NoWarn>
++    <PlatformTarget>AnyCPU</PlatformTarget>
+   </PropertyGroup>
+-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+-    <DebugType>pdbonly</DebugType>
+-    <Optimize>true</Optimize>
+-    <OutputPath>bin\x86\Release</OutputPath>
+-    <DefineConstants>TRACE;WINDOWS;XNA</DefineConstants>
+-    <ErrorReport>prompt</ErrorReport>
++  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
++    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
++    <BaseAddress>285212672</BaseAddress>
++    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
++    <ConfigurationOverrideFile>
++    </ConfigurationOverrideFile>
++    <DefineConstants>TRACE</DefineConstants>
++    <DocumentationFile>
++    </DocumentationFile>
++    <DebugSymbols>False</DebugSymbols>
++    <FileAlignment>4096</FileAlignment>
++    <Optimize>True</Optimize>
++    <OutputPath>..\..\..\..\bin\</OutputPath>
++    <RegisterForComInterop>False</RegisterForComInterop>
++    <RemoveIntegerChecks>False</RemoveIntegerChecks>
++    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+     <WarningLevel>4</WarningLevel>
+-    <NoStdLib>true</NoStdLib>
+-    <UseVSHostingProcess>false</UseVSHostingProcess>
+-    <PlatformTarget>x86</PlatformTarget>
+-    <XnaCompressContent>True</XnaCompressContent>
++    <NoStdLib>False</NoStdLib>
++    <NoWarn>
++    </NoWarn>
++    <PlatformTarget>AnyCPU</PlatformTarget>
+   </PropertyGroup>
+   <ItemGroup>
+-    <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Avatar, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.GamerServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Input.Touch, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Net, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Storage, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Video, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
+-      <Private>False</Private>
+-    </Reference>
+-    <Reference Include="Microsoft.Xna.Framework.Xact, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+-      <Private>False</Private>
+-    </Reference>
+     <Reference Include="mscorlib">
+       <Private>False</Private>
+     </Reference>
+     <Reference Include="System">
+       <Private>False</Private>
+     </Reference>
++    <Reference Include="System.Drawing" />
+   </ItemGroup>
+   <ItemGroup>
+     <Compile Include="BasicProfiler.cs" />
+@@ -256,15 +227,11 @@
+     <Compile Include="LinearMath\UShortVector3.cs" />
+     <Compile Include="Properties\AssemblyInfo.cs" />
+     <Compile Include="LinearMath\TransformUtil.cs" />
++    <Compile Include="SimMotionState.cs" />
+     <Compile Include="TypedObject.cs" />
++    <Compile Include="VertexPositionColor.cs" />
+   </ItemGroup>
+   <ItemGroup>
+-    <NestedContentProject Include="Content\Content.contentproj">
+-      <Project>7652716d-6c9e-4c3d-b6c9-161b9dd77160</Project>
+-      <Visible>False</Visible>
+-    </NestedContentProject>
+-  </ItemGroup>
+-  <ItemGroup>
+     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+       <Visible>False</Visible>
+       <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+@@ -295,32 +262,12 @@
+       <ProductName>Windows Installer 3.1</ProductName>
+       <Install>true</Install>
+     </BootstrapperPackage>
+-    <BootstrapperPackage Include="Microsoft.Xna.Framework.3.1">
+-      <Visible>False</Visible>
+-      <ProductName>Microsoft XNA Framework Redistributable 3.1</ProductName>
+-      <Install>true</Install>
+-    </BootstrapperPackage>
+-    <BootstrapperPackage Include="Microsoft.Xna.Framework.4.0">
+-      <Visible>False</Visible>
+-      <ProductName>Microsoft XNA Framework Redistributable 4.0</ProductName>
+-      <Install>true</Install>
+-    </BootstrapperPackage>
+   </ItemGroup>
+-  <ItemGroup>
+-    <Folder Include="BulletMultiThreaded\" />
+-  </ItemGroup>
+-  <!--
+-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+-  <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\v3.1\Microsoft.Xna.GameStudio.Common.targets" />
+-  <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\v3.1\Microsoft.Xna.GameStudio.NestedContent.targets" />
+-  -->
+-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+-  <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\Microsoft.Xna.GameStudio.targets" />
+-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+-       Other similar extension points exist, see Microsoft.Common.targets.
+-  <Target Name="BeforeBuild">
+-  </Target>
+-  <Target Name="AfterBuild">
+-  </Target>
+-  -->
++  <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
++  <PropertyGroup>
++    <PreBuildEvent>
++    </PreBuildEvent>
++    <PostBuildEvent>
++    </PostBuildEvent>
++  </PropertyGroup>
+ </Project>
+\ No newline at end of file
+Index: BulletXNA/DrawHelper.cs
+===================================================================
+--- BulletXNA/DrawHelper.cs	(revision 181)
++++ BulletXNA/DrawHelper.cs	(working copy)
+@@ -26,10 +26,10 @@
+ using BulletXNA.BulletCollision;
+ using BulletXNA.BulletDynamics;
+ using BulletXNA.LinearMath;
++using System.Drawing;
++//using Microsoft.Xna.Framework.Graphics;
++//using Microsoft.Xna.Framework;
+ 
+-using Microsoft.Xna.Framework.Graphics;
+-using Microsoft.Xna.Framework;
+-
+ namespace BulletXNA
+ {
+ 	public static class DrawHelper
+@@ -285,7 +285,7 @@
+ 					//                            new IndexedVector3(x, y, z),
+ 					//                            new Vector2((float)slice / (float)slices, (float)stack / (float)stacks));
+ 
+-					shapeData.m_verticesArray[index++] = new VertexPositionColor(new Vector3(x, y, z), color);
++					shapeData.m_verticesArray[index++] = new VertexPositionColor(new IndexedVector3(x, y, z), color);
+ 				}
+ 			}
+ 			int stride = slices + 1;
+@@ -306,8 +306,15 @@
+ 			return shapeData;
+ 		}
+ 
++	    public static class MathHelper
++	    {
++	        public const float PiOver2 = (float)(Math.PI/2f);
++	        public const float Pi = (float) Math.PI;
++	        public const float TwoPi = (float) (2*Math.PI);
++	    }
+ 
+-		public static short[] s_cubeIndices = new short[]{
++
++	    public static short[] s_cubeIndices = new short[]{
+                              0,1,2,2,3,0, // face A
+                              0,1,5,5,4,0, // face B
+                              1,2,6,6,5,1, // face c
+Index: BulletXNA/LinearMath/IndexedMatrix.cs
+===================================================================
+--- BulletXNA/LinearMath/IndexedMatrix.cs	(revision 181)
++++ BulletXNA/LinearMath/IndexedMatrix.cs	(working copy)
+@@ -5,8 +5,8 @@
+ {
+     public struct IndexedMatrix : IEquatable<IndexedMatrix>
+     {
+-        private static IndexedMatrix _identity = new IndexedMatrix(1f, 0.0f, 0.0f, 0.0f, 1f, 0.0f,  0.0f, 0.0f, 1f,  0.0f, 0.0f, 0.0f);
+-        public static IndexedMatrix Identity
++        private static readonly IndexedMatrix _identity = new IndexedMatrix(1f, 0.0f, 0.0f, 0.0f, 1f, 0.0f,  0.0f, 0.0f, 1f,  0.0f, 0.0f, 0.0f);
++        public static  IndexedMatrix Identity
+         {
+             get
+             {
+Index: BulletXNA/LinearMath/IndexedQuaternion.cs
+===================================================================
+--- BulletXNA/LinearMath/IndexedQuaternion.cs	(revision 181)
++++ BulletXNA/LinearMath/IndexedQuaternion.cs	(working copy)
+@@ -1,4 +1,6 @@
+ ﻿using System;
++using System.Collections.Generic;
++using System.Text;
+ using System.Diagnostics;
+ 
+ namespace BulletXNA.LinearMath
+Index: BulletXNA/LinearMath/IndexedVector3.cs
+===================================================================
+--- BulletXNA/LinearMath/IndexedVector3.cs	(revision 181)
++++ BulletXNA/LinearMath/IndexedVector3.cs	(working copy)
+@@ -671,7 +671,10 @@
+             return "X : " + X + " Y " + Y + " Z " + Z;
+         }
+ 
+-
++        public IndexedVector3 ToVector3()
++        {
++            return new IndexedVector3(X, Y, Z);
++        }
+         private static IndexedVector3 _zero = new IndexedVector3();
+         private static IndexedVector3 _one = new IndexedVector3(1f, 1f, 1f);
+         private static IndexedVector3 _unitX = new IndexedVector3(1f, 0.0f, 0.0f);
+Index: BulletXNA/LinearMath/IndexedVector4.cs
+===================================================================
+--- BulletXNA/LinearMath/IndexedVector4.cs	(revision 181)
++++ BulletXNA/LinearMath/IndexedVector4.cs	(working copy)
+@@ -1,6 +1,5 @@
+ ﻿using System;
+ using System.Collections.Generic;
+-using System.Linq;
+ using System.Text;
+ using System.Diagnostics;
+ 
+Index: BulletXNA/LinearMath/PooledType.cs
+===================================================================
+--- BulletXNA/LinearMath/PooledType.cs	(revision 181)
++++ BulletXNA/LinearMath/PooledType.cs	(working copy)
+@@ -1,6 +1,5 @@
+ ﻿using System;
+ using System.Collections.Generic;
+-using System.Linq;
+ using System.Text;
+ using System.Diagnostics;
+ 
