@@ -28,10 +28,13 @@
 #include "Util.h"
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
+#include "BulletCollision/CollisionShapes/btTriangleShape.h"
 
 // Linkages to debugging dump routines
 extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
 extern "C" void DumpActivationInfo2(BulletSim* sim);
+
+extern ContactAddedCallback gContactAddedCallback;
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
@@ -45,6 +48,50 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 	m_worldData.MinPosition = btVector3(0, 0, 0);
 	m_worldData.MaxPosition = btVector3(maxX, maxY, maxZ);
 }
+
+// Called when a collision point is being added to the manifold.
+// This is used to modify the collision normal to make meshes collidable on only one side.
+// Code based on example code given in: http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=3052&start=15#p12308
+// Code used under Creative Commons, ShareAlike, Attribution as per Bullet forums.
+static void SingleSidedMeshCheck(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj, int partId, int index)
+{
+        const btCollisionShape *shape = colObj->getCollisionShape();
+
+        if (shape->getShapeType() != TRIANGLE_SHAPE_PROXYTYPE) return;
+        const btTriangleShape* tshape = static_cast<const btTriangleShape*>(colObj->getCollisionShape());
+
+        const btCollisionShape* parent = colObj->getCollisionShape();
+        if (parent == NULL) return;
+        if (parent->getShapeType() != TRIANGLE_MESH_SHAPE_PROXYTYPE) return;
+
+        btTransform orient = colObj->getWorldTransform();
+        orient.setOrigin( btVector3(0.0f,0.0f,0.0f ) );
+
+        btVector3 v1 = tshape->m_vertices1[0];
+        btVector3 v2 = tshape->m_vertices1[1];
+        btVector3 v3 = tshape->m_vertices1[2];
+
+        btVector3 normal = (v2-v1).cross(v3-v1);
+
+        normal = orient * normal;
+        normal.normalize();
+
+        btScalar dot = normal.dot(cp.m_normalWorldOnB);
+        btScalar magnitude = cp.m_normalWorldOnB.length();
+        normal *= dot > 0 ? magnitude : -magnitude;
+
+        cp.m_normalWorldOnB = normal;
+}
+
+static bool SingleSidedMeshCheckCallback(btManifoldPoint& cp, 
+							const btCollisionObjectWrapper* colObj0, int partId0, int index0,
+							const btCollisionObjectWrapper* colObj1, int partId1, int index1)
+{
+        SingleSidedMeshCheck(cp, colObj0, partId0, index0);
+        SingleSidedMeshCheck(cp, colObj1, partId1, index1);
+        return true;
+}
+
 
 void BulletSim::initPhysics2(ParamBlock* parms, 
 							int maxCollisions, CollisionDesc* collisionArray, 
@@ -99,6 +146,10 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 
 	// setting to false means the islands are not reordered and split up for individual processing
 	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
+
+	if (m_worldData.params->useSingleSidedMeshes != ParamFalse)
+		gContactAddedCallback = SingleSidedMeshCheckCallback;
+
 
 	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
 	// Actually a NOOP unless Bullet is compiled with USE_SEPDISTANCE_UTIL2 set.

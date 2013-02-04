@@ -281,37 +281,6 @@ public:
 	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
 	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh);
 
-	/*
-	void CreateInitialGroundPlaneAndTerrain();
-
-	void SetHeightmap(float* heightmap);
-
-	bool RegisterStepCallback(IDTYPE id, IPhysObject* target);
-	bool UnregisterStepCallback(IDTYPE id);
-
-	bool CreateHull(MESHKEYTYPE hullKey, int hullCount, float* hulls);
-	bool DestroyHull(MESHKEYTYPE hullKey);
-	bool CreateMesh(MESHKEYTYPE meshKey, int indicesCount, int* indices, int verticesCount, float* vertices);
-	bool DestroyMesh(MESHKEYTYPE id);
-	bool CreateHullFromMesh(MESHKEYTYPE hullkey, MESHKEYTYPE meshkey);
-
-	bool CreateObject(ShapeData* shapeData);
-	bool DestroyObject(IDTYPE id);
-	bool HasObject(IDTYPE id);
-
-	btVector3 GetObjectPosition(IDTYPE id);
-	btQuaternion GetObjectOrientation(IDTYPE id);
-	bool SetObjectTranslation(IDTYPE id, btVector3& position, btQuaternion& rotation);
-	bool SetObjectVelocity(IDTYPE id, btVector3& velocity);
-	bool SetObjectAngularVelocity(IDTYPE id, btVector3& angularVelocity);
-	bool SetObjectForce(IDTYPE id, btVector3& force);
-	bool SetObjectScaleMass(IDTYPE id, btVector3& scale, float mass, bool isDynamic);
-	bool SetObjectCollidable(IDTYPE id, bool collidable);
-	bool SetObjectDynamic(IDTYPE id, bool isDynamic, float mass);
-	bool SetObjectBuoyancy(IDTYPE id, float buoyancy);
-	bool SetObjectProperties(IDTYPE id, bool isStatic, bool isSolid, bool genCollisions, float mass);
-	*/
-
 	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
 	const btVector3 RecoverFromPenetration(IDTYPE id);

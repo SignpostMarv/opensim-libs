@@ -326,32 +326,6 @@ struct ParamBlock
     float collisionMargin;
     float gravity;
 
-    float XlinearDamping;
-    float XangularDamping;
-    float XdeactivationTime;
-    float XlinearSleepingThreshold;
-    float XangularSleepingThreshold;
-    float XccdMotionThreshold;
-    float XccdSweptSphereRadius;
-    float XcontactProcessingThreshold;
-
-    float XterrainImplementation;
-    float XterrainFriction;
-    float XterrainHitFraction;
-    float XterrainRestitution;
-    float XterrainCollisionMargin;
-
-    float XavatarFriction;
-    float XavatarStandingFriction;
-    float XavatarDensity;
-    float XavatarRestitution;
-    float XavatarCapsuleWidth;
-    float XavatarCapsuleDepth;
-    float XavatarCapsuleHeight;
-	float XavatarContactProcessingThreshold;
-
-	float XvehicleAngularDamping;
-
 	float maxPersistantManifoldPoolSize;
 	float maxCollisionAlgorithmPoolSize;
 	float shouldDisableContactPoolDynamicAllocation;
@@ -360,15 +334,7 @@ struct ParamBlock
 	float shouldSplitSimulationIslands;
 	float shouldEnableFrictionCaching;
 	float numberOfSolverIterations;
-
-    float XlinksetImplementation;
-    float XlinkConstraintUseFrameOffset;
-    float XlinkConstraintEnableTransMotor;
-    float XlinkConstraintTransMotorMaxVel;
-    float XlinkConstraintTransMotorMaxForce;
-    float XlinkConstraintERP;
-    float XlinkConstraintCFM;
-	float XlinkConstraintSolverIterations;
+    float useSingleSidedMeshes;
 
 	float physicsLoggingFrames;
 };
