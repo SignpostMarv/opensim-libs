@@ -23,10 +23,11 @@ namespace HttpServer
         private readonly IHttpRequestParser _parser;
         private readonly int _bufferSize;
         private IHttpRequest _currentRequest;
-        private readonly Socket _sock;
+        private Socket _sock;
 
         public bool Available = true;
         private bool _endWhenDone = false;
+        private bool _streamPassedOff = false;
 
 		/// <summary>
 		/// This context have been cleaned, which means that it can be reused.
@@ -71,10 +72,10 @@ namespace HttpServer
             _parser.HeaderReceived += OnHeaderReceived;
             _parser.BodyBytesReceived += OnBodyBytesReceived;
             _currentRequest = new HttpRequest();
-
+            Available = false;
             IsSecured = secured;
             _stream = stream;
-           
+            _sock = sock;
             _buffer = new byte[bufferSize];
 
         }
@@ -156,7 +157,9 @@ namespace HttpServer
         {
         	if (Stream == null) 
 				return;
-            
+            if (_streamPassedOff)
+                return;
+            _sock = null;
         	Stream.Dispose();
         	Stream = null;
         	_currentRequest.Clear();
@@ -167,6 +170,8 @@ namespace HttpServer
 
         public void Close()
         {
+            if (_streamPassedOff)
+                return;
             Cleanup();
             Available = true;
         }
@@ -295,7 +300,7 @@ namespace HttpServer
 					Buffer.BlockCopy(_buffer, offset, _buffer, 0, _bytesLeft - offset);
 
                 _bytesLeft -= offset;
-				if (Stream != null && Stream.CanRead)
+                if (Stream != null && Stream.CanRead && !_streamPassedOff)
 					Stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
 				else
 				{
@@ -354,7 +359,8 @@ namespace HttpServer
 
             _currentRequest.Body.Seek(0, SeekOrigin.Begin);
             RequestReceived(this, new RequestEventArgs(_currentRequest));
-			_currentRequest.Clear();
+            if (!_streamPassedOff)
+			    _currentRequest.Clear();
         }
 
         /// <summary>
@@ -460,6 +466,19 @@ namespace HttpServer
         /// A request have been received in the context.
         /// </summary>
         public event EventHandler<RequestEventArgs> RequestReceived = delegate{};
+        
+        public HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing()
+        {
+            _endWhenDone = true;
+            _streamPassedOff = true;
+            _parser.RequestCompleted -= OnRequestCompleted;
+            _parser.RequestLineReceived -= OnRequestLine;
+            _parser.HeaderReceived -= OnHeaderReceived;
+            _parser.BodyBytesReceived -= OnBodyBytesReceived;
+            _parser.Clear();
+            
+            return new HTTPNetworkContext() { Socket = _sock ,Stream = _stream as NetworkStream};
+        }
 
         public void Dispose()
         {

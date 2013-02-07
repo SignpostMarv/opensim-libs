@@ -16,3 +16,9 @@ C:\cygwin\home\caseyj\ljc\opensim-libs-git\HttpServer\trunk\HttpServer\bin\Relea
 C:\cygwin\home\caseyj\ljc\opensim-libs-git\HttpServer\trunk\HttpServer\obj\Release\ResolveAssemblyReference.cache
 C:\cygwin\home\caseyj\ljc\opensim-libs-git\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.dll
 C:\cygwin\home\caseyj\ljc\opensim-libs-git\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.xml
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.dll
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.pdb
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\ResolveAssemblyReference.cache
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.dll
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb

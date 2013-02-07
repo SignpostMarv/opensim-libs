@@ -353,6 +353,8 @@ namespace HttpServer
                         Connection = ConnectionType.Close;
                     else if (value.StartsWith("keep-alive", StringComparison.CurrentCultureIgnoreCase))
                         Connection = ConnectionType.KeepAlive;
+                    else if (value.StartsWith("Upgrade", StringComparison.CurrentCultureIgnoreCase))
+                        Connection = ConnectionType.KeepAlive;
                     else
                         throw new BadRequestException("Unknown 'Connection' header type.");
                     break;
