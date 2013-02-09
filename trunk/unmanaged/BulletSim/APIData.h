@@ -335,6 +335,7 @@ struct ParamBlock
 	float shouldEnableFrictionCaching;
 	float numberOfSolverIterations;
     float useSingleSidedMeshes;
+	float globalContactBreakingThreshold;
 
 	float physicsLoggingFrames;
 };

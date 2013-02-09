@@ -34,7 +34,9 @@
 extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
 extern "C" void DumpActivationInfo2(BulletSim* sim);
 
+// Bullet has some parameters that are just global variables
 extern ContactAddedCallback gContactAddedCallback;
+extern btScalar gContactBreakingThreshold;
 
 BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 {
@@ -116,13 +118,16 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	// if you are setting a pool size, you should disable dynamic allocation
 	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
 		cci.m_defaultMaxPersistentManifoldPoolSize = (int)m_worldData.params->maxPersistantManifoldPoolSize;
-	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
-		m_dispatcher->setDispatcherFlags(btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION);
 	if (m_worldData.params->maxCollisionAlgorithmPoolSize > 0)
 		cci.m_defaultMaxCollisionAlgorithmPoolSize = m_worldData.params->maxCollisionAlgorithmPoolSize;
 	
 	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+
+	// optional but not a good idea
+	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
+		m_dispatcher->setDispatcherFlags(
+				btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION | m_dispatcher->getDispatcherFlags());
 
 	m_broadphase = new btDbvtBroadphase();
 
@@ -143,6 +148,10 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
 	if (m_worldData.params->shouldRandomizeSolverOrder != ParamFalse)
 		dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+
+	// Change the breaking threshold if specified.
+	if (m_worldData.params->globalContactBreakingThreshold != 0)
+		gContactBreakingThreshold = m_worldData.params->globalContactBreakingThreshold;
 
 	// setting to false means the islands are not reordered and split up for individual processing
 	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
