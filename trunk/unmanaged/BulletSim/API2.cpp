@@ -231,6 +231,18 @@ EXTERN_C DLL_EXPORT void UpdateChildTransform2(btCompoundShape* cShape, int chil
 	cShape->updateChildTransform(childIndex, newTrans, shouldRecalculateLocalAabb);
 }
 
+EXTERN_C DLL_EXPORT Vector3 GetCompoundChildPosition2(btCompoundShape* cShape, int childIndex)
+{
+	btTransform childTrans = cShape->getChildTransform(childIndex);
+	return childTrans.getOrigin();
+}
+
+EXTERN_C DLL_EXPORT Quaternion GetCompoundChildOrientation2(btCompoundShape* cShape, int childIndex)
+{
+	btTransform childTrans = cShape->getChildTransform(childIndex);
+	return childTrans.getRotation();
+}
+
 
 EXTERN_C DLL_EXPORT btCollisionShape* BuildNativeShape2(BulletSim* sim, ShapeData shapeData)
 {
