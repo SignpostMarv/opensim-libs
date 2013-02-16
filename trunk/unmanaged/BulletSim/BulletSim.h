@@ -100,15 +100,30 @@ public:
 		m_xform = worldTrans;
 
 		// Put the new transform into m_properties
-		m_properties.Position = m_xform.getOrigin();
-		m_properties.Rotation = m_xform.getRotation();
+		if (((RigidBody->getCollisionFlags() & BS_RETURN_ROOT_COMPOUND_SHAPE) != 0) 
+								&& RigidBody->getCollisionShape()->isCompound())
+		{
+			// If this is a compound shape, return the position of the zero shape
+			//     (the root of the linkset).
+			btCompoundShape* cShape = (btCompoundShape*)RigidBody->getCollisionShape();
+			btTransform rootChildTransformL = cShape->getChildTransform(0);
+			btTransform rootChildTransformW = worldTrans * rootChildTransformL;
+			m_properties.Position = rootChildTransformW.getOrigin();
+			m_properties.Rotation = rootChildTransformW.getRotation();
+			m_properties.AngularVelocity = RigidBody->getAngularVelocity();
+		}
+		else
+		{
+			m_properties.Position = m_xform.getOrigin();
+			m_properties.Rotation = m_xform.getRotation();
+			m_properties.AngularVelocity = RigidBody->getAngularVelocity();
+		}
 		// A problem with stock Bullet is that we don't get an event when an object is deactivated.
 		// This means that the last non-zero values for linear and angular velocity
 		// are left in the viewer who does dead reconning and the objects look like
 		// they float off.
 		// BulletSim ships with a patch to Bullet which creates such an event.
 		m_properties.Velocity = RigidBody->getLinearVelocity();
-		m_properties.AngularVelocity = RigidBody->getAngularVelocity();
 
 		// Is this transform any different from the previous one?
 		// TODO: decide of this 'if' statement is needed. Since the updates are kept by ID,

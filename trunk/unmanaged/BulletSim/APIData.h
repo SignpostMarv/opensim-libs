@@ -251,6 +251,7 @@ struct CollisionDesc
 #define BS_SUBSCRIBE_COLLISION_EVENTS    (0x0400)
 #define BS_FLOATS_ON_WATER               (0x0800)
 #define BS_VEHICLE_COLLISIONS            (0x1000)
+#define BS_RETURN_ROOT_COMPOUND_SHAPE    (0x2000)
 
 // Combination of above bits for all settings that want collisions reported
 #define BS_WANTS_COLLISIONS              (0x1400)
