@@ -598,28 +598,28 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim,
 	bsDebug_AssertIsKnownCollisionObject(obj2, "Create6DofConstraint2: obj2 unknown CollisionObject");
 	bsDebug_AssertNoExistingConstraint(obj1, obj2, "Create6DofConstraint2: constraint exists");
 
-	btTransform frame1t(frame1rot.GetBtQuaternion(), frame1loc.GetBtVector3());
-	btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
-
 	btRigidBody* rb1 = btRigidBody::upcast(obj1);
 	btRigidBody* rb2 = btRigidBody::upcast(obj2);
 
 	btGeneric6DofConstraint* constrain = NULL;
 	if (rb1 != NULL && rb2 != NULL)
 	{
+		btTransform frame1t(frame1rot.GetBtQuaternion(), frame1loc.GetBtVector3());
+		btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
+
 		constrain = new btGeneric6DofConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
 
 		constrain->calculateTransforms();
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
-		bsDebug_RememberConstraint(constrain);
-	}
 
-	// sim->getWorldData()->BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
-	// 					CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
-	// 					CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
-	// sim->getWorldData()->BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
-	// 					frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
-	// 					frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
+		bsDebug_RememberConstraint(constrain);
+		// sim->getWorldData()->BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
+		// 					CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
+		// 					CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
+		// sim->getWorldData()->BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
+		// 					frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
+		// 					frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
+	}
 	return constrain;
 }
 
@@ -627,7 +627,6 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraint2(BulletSim* sim,
 EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* sim, 
 				btCollisionObject* obj1, btCollisionObject* obj2,
 				Vector3 joinPoint,
-				Vector3 frame2loc, Quaternion frame2rot,
 				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
 {
 	bsDebug_AssertIsKnownCollisionObject(obj1, "Create6DofConstraint2: obj1 unknown CollisionObject");
@@ -640,7 +639,7 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* s
 
 	if (rb1 != NULL && rb2 != NULL)
 	{
-		// following example at http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=5851
+		// following example at http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=5805
 		btTransform joinPointt, frame1t, frame2t;
 		joinPointt.setIdentity();
 		joinPointt.setOrigin(joinPoint.GetBtVector3());
@@ -650,18 +649,67 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* s
 		constrain = new btGeneric6DofConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
 
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
-		bsDebug_RememberConstraint(constrain);
 
-		// sim->getWorldData()->BSLog("CreateConstraint2: loc=%x, body1=%u, body2=%u", constrain,
-		// 					CONVLOCALID(obj1->getCollisionShape()->getUserPointer()),
-		// 					CONVLOCALID(obj2->getCollisionShape()->getUserPointer()));
-		// sim->getWorldData()->BSLog("          f1=<%f,%f,%f>, f1r=<%f,%f,%f,%f>, f2=<%f,%f,%f>, f2r=<%f,%f,%f,%f>",
-		// 					frame1loc.X, frame1loc.Y, frame1loc.Z, frame1rot.X, frame1rot.Y, frame1rot.Z, frame1rot.W,
-		// 					frame2loc.X, frame2loc.Y, frame2loc.Z, frame2rot.X, frame2rot.Y, frame2rot.Z, frame2rot.W);
+		bsDebug_RememberConstraint(constrain);
 	}
 
 	return constrain;
 }
+
+// Create a 6Dof constraint tied to a temporary, static world object
+EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintFixed2(BulletSim* sim, 
+				btCollisionObject* obj1, Vector3 frameInBloc, Quaternion frameInBrot,
+				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj1, "Create6DofConstraintFixed2: obj1 unknown CollisionObject");
+
+	btGeneric6DofConstraint* constrain = NULL;
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+
+	if (rb1 != NULL)
+	{
+		btTransform frameInB(frameInBrot.GetBtQuaternion(), frameInBloc.GetBtVector3());
+
+		constrain = new btGeneric6DofConstraint(*rb1, frameInB, useLinearReferenceFrameA);
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		bsDebug_RememberConstraint(constrain);
+	}
+
+	return constrain;
+}
+
+EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofSpringConstraint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
+				Vector3 frame1loc, Quaternion frame1rot,
+				Vector3 frame2loc, Quaternion frame2rot,
+				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj1, "Create6DofSpringConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "Create6DofSpringConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "Create6DofSpringConstraint2: constraint exists");
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	btGeneric6DofSpringConstraint* constrain = NULL;
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		btTransform frame1t(frame1rot.GetBtQuaternion(), frame1loc.GetBtVector3());
+		btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
+
+		constrain = new btGeneric6DofSpringConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
+
+		constrain->calculateTransforms();
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		bsDebug_RememberConstraint(constrain);
+	}
+	return constrain;
+}
+
 
 EXTERN_C DLL_EXPORT btTypedConstraint* CreateHingeConstraint2(BulletSim* sim,
 						btCollisionObject* obj1, btCollisionObject* obj2,
@@ -693,24 +741,164 @@ EXTERN_C DLL_EXPORT btTypedConstraint* CreateHingeConstraint2(BulletSim* sim,
 	return constrain;
 }
 
+EXTERN_C DLL_EXPORT btTypedConstraint* CreateSliderConstraint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
+				Vector3 frame1loc, Quaternion frame1rot,
+				Vector3 frame2loc, Quaternion frame2rot,
+				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj1, "CreateSliderConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "CreateSliderConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "CreateSliderConstraint2: constraint exists");
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	btSliderConstraint* constrain = NULL;
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		btTransform frame1t(frame1rot.GetBtQuaternion(), frame1loc.GetBtVector3());
+		btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
+
+		constrain = new btSliderConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		bsDebug_RememberConstraint(constrain);
+	}
+	return constrain;
+}
+
+EXTERN_C DLL_EXPORT btTypedConstraint* CreateConeTwistConstraint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
+				Vector3 frame1loc, Quaternion frame1rot,
+				Vector3 frame2loc, Quaternion frame2rot,
+				bool disableCollisionsBetweenLinkedBodies)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj1, "CreateConeTwistConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "CreateConeTwistConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "CreateConeTwistConstraint2: constraint exists");
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	btConeTwistConstraint* constrain = NULL;
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		btTransform frame1t(frame1rot.GetBtQuaternion(), frame1loc.GetBtVector3());
+		btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
+
+		constrain = new btConeTwistConstraint(*rb1, *rb2, frame1t, frame2t);
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		bsDebug_RememberConstraint(constrain);
+	}
+	return constrain;
+}
+
+EXTERN_C DLL_EXPORT btTypedConstraint* CreateGearConstraint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
+				Vector3 axisInA, Vector3 axisInB,
+				Vector3 frame2loc, Quaternion frame2rot,
+				float ratio, bool disableCollisionsBetweenLinkedBodies)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj1, "CreateGearConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "CreateGearConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "CreateGearConstraint2: constraint exists");
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	btGearConstraint* constrain = NULL;
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		constrain = new btGearConstraint(*rb1, *rb2, axisInA.GetBtVector3(), axisInB.GetBtVector3(), ratio);
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		bsDebug_RememberConstraint(constrain);
+	}
+	return constrain;
+}
+
+EXTERN_C DLL_EXPORT btTypedConstraint* CreatePoint2PointConstraint2(BulletSim* sim, 
+				btCollisionObject* obj1, btCollisionObject* obj2,
+				Vector3 pivotInA, Vector3 pivotInB,
+				bool disableCollisionsBetweenLinkedBodies)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj1, "CreatePoint2PointConstraint2: obj1 unknown CollisionObject");
+	bsDebug_AssertIsKnownCollisionObject(obj2, "CreatePoint2PointConstraint2: obj2 unknown CollisionObject");
+	bsDebug_AssertNoExistingConstraint(obj1, obj2, "CreatePoint2PointConstraint2: constraint exists");
+
+	btRigidBody* rb1 = btRigidBody::upcast(obj1);
+	btRigidBody* rb2 = btRigidBody::upcast(obj2);
+
+	btPoint2PointConstraint* constrain = NULL;
+	if (rb1 != NULL && rb2 != NULL)
+	{
+		constrain = new btPoint2PointConstraint(*rb1, *rb2, pivotInA.GetBtVector3(), pivotInB.GetBtVector3());
+
+		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+
+		bsDebug_RememberConstraint(constrain);
+	}
+	return constrain;
+}
+
 EXTERN_C DLL_EXPORT bool SetFrames2(btTypedConstraint* constrain, 
 			Vector3 frameA, Quaternion frameArot, Vector3 frameB, Quaternion frameBrot)
 {
 	bool ret = false;
 	bsDebug_AssertIsKnownConstraint(constrain, "SetFrame2: unknown constraint");
+
+	btTransform transA(frameArot.GetBtQuaternion(), frameA.GetBtVector3());
+	btTransform transB(frameBrot.GetBtQuaternion(), frameB.GetBtVector3());
 	switch (constrain->getConstraintType())
 	{
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		btTransform transA(frameArot.GetBtQuaternion(), frameA.GetBtVector3());
-		btTransform transB(frameBrot.GetBtQuaternion(), frameB.GetBtVector3());
-		cc->setFrames(transA, transB);
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+		{
+			btHingeConstraint* cc = (btHingeConstraint*)constrain;
+			cc->setFrames(transA, transB);
+			ret = true;
+			break;
+		}
+		case CONETWIST_CONSTRAINT_TYPE:
+		{
+			btConeTwistConstraint* cc = (btConeTwistConstraint*)constrain;
+			cc->setFrames(transA, transB);
+			ret = true;
+			break;
+		}
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setFrames(transA, transB);
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			cc->setFrames(transA, transB);
+			ret = true;
+			break;
+		}
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setFrames(transA, transB);
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 	return ret;
 }
@@ -733,16 +921,36 @@ EXTERN_C DLL_EXPORT bool SetLinearLimits2(btTypedConstraint* constrain, Vector3 
 	bsDebug_AssertIsKnownConstraint(constrain, "SetLinearLimits2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		cc->setLinearLowerLimit(low.GetBtVector3());
-		cc->setLinearUpperLimit(high.GetBtVector3());
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+			break;
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setLinearLowerLimit(low.GetBtVector3());
+			cc->setLinearUpperLimit(high.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setLinearLowerLimit(low.GetBtVector3());
+			cc->setLinearUpperLimit(high.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 	return ret;
 }
@@ -753,16 +961,36 @@ EXTERN_C DLL_EXPORT bool SetAngularLimits2(btTypedConstraint* constrain, Vector3
 	bsDebug_AssertIsKnownConstraint(constrain, "SetAngularLimits2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		cc->setAngularLowerLimit(low.GetBtVector3());
-		cc->setAngularUpperLimit(high.GetBtVector3());
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+			break;
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setAngularLowerLimit(low.GetBtVector3());
+			cc->setAngularUpperLimit(high.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setAngularLowerLimit(low.GetBtVector3());
+			cc->setAngularUpperLimit(high.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 	return ret;
 }
@@ -774,22 +1002,39 @@ EXTERN_C DLL_EXPORT bool UseFrameOffset2(btTypedConstraint* constrain, float ena
 	bool onOff = (enable == ParamTrue);
 	switch (constrain->getConstraintType())
 	{
-	case HINGE_CONSTRAINT_TYPE:
-	{
-		btHingeConstraint* hc = (btHingeConstraint*)constrain;
-		hc->setUseFrameOffset(onOff);
-		ret = true;
-		break;
-	}
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		cc->setUseFrameOffset(onOff);
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+		{
+			btHingeConstraint* hc = (btHingeConstraint*)constrain;
+			hc->setUseFrameOffset(onOff);
+			ret = true;
+			break;
+		}
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setUseFrameOffset(onOff);
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setUseFrameOffset(onOff);
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 	return ret;
 }
@@ -802,17 +1047,44 @@ EXTERN_C DLL_EXPORT bool TranslationalLimitMotor2(btTypedConstraint* constrain,
 	bool onOff = (enable == ParamTrue);
 	switch (constrain->getConstraintType())
 	{
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		cc->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
-		cc->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
-		cc->getTranslationalLimitMotor()->m_maxMotorForce[0] = maxMotorForce;
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+			break;
+		case CONETWIST_CONSTRAINT_TYPE:
+		{
+			btConeTwistConstraint* cc = (btConeTwistConstraint*)constrain;
+			cc->enableMotor(onOff);
+			cc->setMaxMotorImpulse(maxMotorForce);
+			ret = true;
+			break;
+		}
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
+			cc->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
+			cc->getTranslationalLimitMotor()->m_maxMotorForce[0] = maxMotorForce;
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->getTranslationalLimitMotor()->m_enableMotor[0] = onOff;
+			cc->getTranslationalLimitMotor()->m_targetVelocity[0] = targetVelocity;
+			cc->getTranslationalLimitMotor()->m_maxMotorForce[0] = maxMotorForce;
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 
 	return ret;
@@ -824,15 +1096,34 @@ EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constra
 	bsDebug_AssertIsKnownConstraint(constrain, "SetBreakingImpulseThreshold2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		cc->setBreakingImpulseThreshold(btScalar(thresh));
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+			break;
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setBreakingImpulseThreshold(btScalar(thresh));
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setBreakingImpulseThreshold(btScalar(thresh));
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 
 	return ret;
@@ -844,18 +1135,207 @@ EXTERN_C DLL_EXPORT bool CalculateTransforms2(btTypedConstraint* constrain)
 	bsDebug_AssertIsKnownConstraint(constrain, "CalculateTransforms2: unknown constraint");
 	switch (constrain->getConstraintType())
 	{
-	case D6_CONSTRAINT_TYPE:
-	{
-		btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-		cc->calculateTransforms();
-		ret = true;
-		break;
-	}
-	default:
-		break;
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+			break;
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->calculateTransforms();
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			cc->calculateTransforms(cc->getCalculatedTransformA(), cc->getCalculatedTransformB());
+			ret = true;
+			break;
+		}
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->calculateTransforms();
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
 	}
 	return ret;
 }
+/*
+Each of the constraint types have many specialized methods specific to their type.
+		POINT2POINT_CONSTRAINT_TYPE:
+			setPivotA(btVector3)
+			setPivotB(btVector3)
+			btVector3 getPivotInA()
+			btVector3 getPivotInB()
+			m_setting.m_tau	= 0.3
+			m_setting.m_damping = 1
+			m_setting.m_impulseClamp = 0
+		HINGE_CONSTRAINT_TYPE:
+			btVector3 getAnchor()
+			btVector3 getAnchor2()
+			btVector3 getAxis1()
+			btVector3 getAxis2()
+			btVector3 getAngle1()
+			btVector3 getAngle2()
+			setLowerLimit(btScalar);
+			setUpperLimit(btScalar);
+		CONETWIST_CONSTRAINT_TYPE:
+			rtRigidBody& getRigidBodyA()
+			rtRigidBody& getRigidBodyB()
+			setAngularOnly(bool)
+			setLimit(int index, btScalar value)
+			setLimit(btScalar swingSpan1, btScalar swingSpan2, btScalar twistSpan, btScalar softness, btScalar biasFactor, btScalar relaxationFactor)
+			int getSolveTwistLimit()
+			int getSolveSwingLimit()
+			btScalar getSolveTwistLimitSign()
+			btScalar getSwingSpan1()
+			btScalar getSwingSpan2()
+			btScalar getTwistSpan()
+			btScalar getTwistAngle()
+			bool isPastSwingLimit()
+			setDamping(btScalar)
+			enableMotor(bool)
+			setMaxMotorImpulse(btScalar)
+			setMaxMotorImpulseNormalized(btScalar)
+			btScalar getFixThresh()
+			setFixThresh(btScalar)
+			setMotorTarget(btQuaternion)
+			setMotorTargetInConstraintSpace(btQuaternion)
+			btVector3 GetPointForAngle(btScalar fAngleInRadian, btScalar len)
+		D6_CONSTRAINT_TYPE:
+			btTansform getFrameOffsetA()
+			btTansform getFrameOffsetB()
+			btVector3 getAxis(int axisIndex)
+			btScalar getAngle(int axisIndex)
+			btScalar getRelativePivotPosition(int axisIndex)
+			setFrames(btTransform frameA, btTransform frameB)
+			getLinearLowerLimit(btVector3&)
+			getLinearUpperLimit(btVector3&)
+			setAngularLowerLimit(btVector3 angLower)
+			getAngularLowerLimit(btVector3 angLower)
+			setAngularUpperLimit(btVector3 angLower)
+			getAngularUpperLimit(btVector3 angLower)
+			getRotationalLimitMorot(int axisIndex)
+				btScalar m_loLimit
+				btScalar m_hiLimit
+				btScalar m_targetVelocity
+				btScalar m_maxMotorForce
+				btScalar m_maxLimitForce
+				btScalar m_damping
+				btScalar m_limitSoftness
+				btScalar m_normalCFM
+				btScalar m_stopERP
+				btScalar m_stopCFM
+				btScalar m_bounce
+				bool m_enableMotor
+			getTranslationalLimitMorot(int axisIndex)
+				btVector3 m_lowerLimit
+				btVector3 m_upperLimit
+				btScalar m_limitSoftness
+				btScalar m_damping
+				btScalar m_restitution
+				btVector3 m_normalCFM
+				btVector3 m_stopERP
+				btVector3 m_stopCFM
+				btVector3 m_enableMotor[3]
+				btVector3 m_targetVelocity
+				btVector3 m_maxMotorForce
+			setLimit(int axisIndex, btScalar low, btScalar hi)
+			bool getUseFrameOffset()
+			setUserFrameOffset(bool)
+			setAxis(btVector3 axis1, btVector3 axis2)
+		SLIDER_CONSTRAINT_TYPE:
+		    btRigidBody& getRigidBodyA()
+		    btRigidBody& getRigidBodyB()
+		    btTransform& getCalculatedTransformA()
+		    btTransform& getCalculatedTransformB()
+		    btTransform& getFrameOffsetA()
+		    btTransform& getFrameOffsetB()
+		    btTransform& getFrameOffsetA()
+		    btTransform& getFrameOffsetB()
+		    btScalar getLowerLinLimit()
+		    void setLowerLinLimit(btScalar lowerLimit)
+		    btScalar getUpperLinLimit()
+		    void setUpperLinLimit(btScalar upperLimit)
+		    btScalar getLowerAngLimit()
+		    void setLowerAngLimit(btScalar lowerLimit)
+		    btScalar getUpperAngLimit()
+		    void setUpperAngLimit(btScalar upperLimit)
+			bool getUseLinearReferenceFrameA()
+			btScalar getSoftnessDirLin()
+			btScalar getRestitutionDirLin()
+			btScalar getDampingDirLin()
+			btScalar getSoftnessDirAng()
+			btScalar getRestitutionDirAng()
+			btScalar getDampingDirAng()
+			btScalar getSoftnessLimLin()
+			btScalar getRestitutionLimLin()
+			btScalar getDampingLimLin()
+			btScalar getSoftnessLimAng()
+			btScalar getRestitutionLimAng()
+			btScalar getDampingLimAng()
+			btScalar getSoftnessOrthoLin()
+			btScalar getRestitutionOrthoLin()
+			btScalar getDampingOrthoLin()
+			btScalar getSoftnessOrthoAng()
+			btScalar getRestitutionOrthoAng()
+			btScalar getDampingOrthoAng()
+			setSoftnessDirLin(btScalar softnessDirLin)
+			setRestitutionDirLin(btScalar restitutionDirLin)
+			setDampingDirLin(btScalar dampingDirLin)
+			setSoftnessDirAng(btScalar softnessDirAng)
+			setRestitutionDirAng(btScalar restitutionDirAng)
+			setDampingDirAng(btScalar dampingDirAng)
+			setSoftnessLimLin(btScalar softnessLimLin)
+			setRestitutionLimLin(btScalar restitutionLimLin)
+			setDampingLimLin(btScalar dampingLimLin)
+			setSoftnessLimAng(btScalar softnessLimAng)
+			setRestitutionLimAng(btScalar restitutionLimAng)
+			setDampingLimAng(btScalar dampingLimAng)
+			setSoftnessOrthoLin(btScalar softnessOrthoLin)
+			setRestitutionOrthoLin(btScalar restitutionOrthoLin)
+			setDampingOrthoLin(btScalar dampingOrthoLin)
+			setSoftnessOrthoAng(btScalar softnessOrthoAng)
+			setRestitutionOrthoAng(btScalar restitutionOrthoAng)
+			setDampingOrthoAng(btScalar dampingOrthoAng)
+			setPoweredLinMotor(bool onOff)
+			bool getPoweredLinMotor()
+			void setTargetLinMotorVelocity(btScalar targetLinMotorVelocity)
+			btScalar getTargetLinMotorVelocity()
+			void setMaxLinMotorForce(btScalar maxLinMotorForce)
+			btScalar getMaxLinMotorForce()
+			void setPoweredAngMotor(bool onOff)
+			bool getPoweredAngMotor()
+			void setTargetAngMotorVelocity(btScalar targetAngMotorVelocity)
+			btScalar getTargetAngMotorVelocity()
+			void setMaxAngMotorForce(btScalar maxAngMotorForce)
+			btScalar getMaxAngMotorForce()
+			btScalar getLinearPos()
+			btScalar getAngularPos()
+			setFrames(btTransform frameA, btTransform frameB)
+		CONTACT_CONSTRAINT_TYPE:
+		D6_SPRING_CONSTRAINT_TYPE:
+			everything in D6_CONSTRAINT plus
+			enableSpring(int index, bool onOff)
+			setStiffness(int index, btScalar stiffness)
+			setDamping(int index, btScalar damping)
+			setEquilibriumPorint();
+			setEquilibriumPorint(int index);
+			setEquilibriumPorint(int index, btScalar val);
+			setAxis(btVector3& axis1, btVector3& axis2)
+		GEAR_CONSTRAINT_TYPE:
+*/
 
 EXTERN_C DLL_EXPORT bool SetConstraintParam2(btTypedConstraint* constrain, int paramIndex, float value, int axis)
 {
