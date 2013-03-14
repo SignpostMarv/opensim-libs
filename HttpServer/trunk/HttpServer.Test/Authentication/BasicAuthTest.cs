@@ -39,20 +39,20 @@ namespace HttpServer.Test.Authentication
         [Fact]
         public void TestResponse1()
         {
-            Assert.Throws(typeof(ArgumentNullException), delegate { _auth.CreateResponse(null, false); });
+            Assert.Throws(typeof(ArgumentNullException), delegate { _auth.CreateResponse(null, new object[0]); });
         }
 
         [Fact]
         public void TestResponse2()
         {
-            string response = _auth.CreateResponse("myrealm", false);
+            string response = _auth.CreateResponse("myrealm", new object[0]);
             Assert.Equal("Basic realm=\"myrealm\"", response);
         }
 
         [Fact]
         public void TestAuth()
         {
-            _auth.Authenticate("Basic " + "QWxhZGRpbjpvcGVuIHNlc2FtZQ==", "myrealm", "POST", false);
+            _auth.Authenticate("Basic " + "QWxhZGRpbjpvcGVuIHNlc2FtZQ==", "myrealm", "POST", new object[0]);
             //OnAuth will to the checks
         }
 

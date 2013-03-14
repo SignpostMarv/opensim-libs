@@ -127,8 +127,8 @@ namespace HttpServer.Test.TestHelpers
 
         event EventHandler<DisconnectedEventArgs> IHttpClientContext.Disconnected
         {
-            add { throw new System.NotImplementedException(); }
-            remove { throw new System.NotImplementedException(); }
+            add {  }
+            remove {  }
         }
 
         public event EventHandler<RequestEventArgs> RequestReceived;
@@ -139,5 +139,28 @@ namespace HttpServer.Test.TestHelpers
 		}
 
         #endregion
+
+
+        public void Close()
+        {
+            _stream.Close();
+        }
+
+        public bool EndWhenDone
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

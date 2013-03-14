@@ -94,5 +94,25 @@ namespace HttpServer.Test
 			RequestReceived(this, new RequestEventArgs(null));
 
 		}
-	}
+
+
+        public void Close()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool EndWhenDone
+        {
+            get { return true; }
+            set
+            {
+                
+            }
+        }
+
+        public HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing()
+        {
+            return null;
+        }
+    }
 }

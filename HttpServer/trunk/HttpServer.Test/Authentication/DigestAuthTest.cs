@@ -22,7 +22,7 @@ namespace HttpServer.Test.Authentication
         public void TestResponse()
         {
             DigestAuthentication digest = new DigestAuthentication(OnTestAuth, null);
-            string response = digest.CreateResponse("blaj", false);
+            string response = digest.CreateResponse("blaj", new object[0]);
             Assert.Equal("Digest ", response.Substring(0, 7));
 
             NameValueCollection parts = Decode(response);
@@ -77,7 +77,7 @@ namespace HttpServer.Test.Authentication
                       nc=00000001,
                       cnonce=""0a4f113b"",
                       response=""6629fae49393a05397450978507c4ef1"",
-                      opaque=""5ccc069c403ebaf9f0171e9517f40e41"" ", "testrealm@host.com", "GET", false);
+                      opaque=""5ccc069c403ebaf9f0171e9517f40e41"" ", "testrealm@host.com", "GET", new object[0]);
 
             Assert.NotNull(res);
             Assert.Equal("testobj", (string)res);
@@ -98,7 +98,7 @@ namespace HttpServer.Test.Authentication
             string userName = "Jonas";
             string password = "morsOlle";
             DigestAuthentication auth = new DigestAuthentication(OnAuth2, null);
-            string server = auth.CreateResponse(realm);
+            string server = auth.CreateResponse(realm, new object[0]);
 
             NameValueCollection args = Decode(server);
             string cnonce = "a773bd8";
@@ -115,7 +115,7 @@ namespace HttpServer.Test.Authentication
                 realm,
                 userName);
 
-            object obj = auth.Authenticate(client, realm, "GET");
+            object obj = auth.Authenticate(client, realm, "GET", new object[0]);
             Assert.NotNull(obj);
             Assert.Equal("hello", (string)obj);
         }
