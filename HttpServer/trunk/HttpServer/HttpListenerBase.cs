@@ -212,6 +212,7 @@ namespace HttpServer
         public void Stop()
         {
             _shutdown = true;
+            _factory.Shutdown();
             _listener.Stop();
             if (!_shutdownEvent.WaitOne())
                 _logWriter.Write(this, LogPrio.Error, "Failed to shutdown listener properly.");

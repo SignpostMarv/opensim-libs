@@ -9,3 +9,4 @@ I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_Ope
 I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\ResolveAssemblyReference.cache
 I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.dll
 I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.pdb
+I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim.xml
