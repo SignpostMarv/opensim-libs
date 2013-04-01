@@ -4,7 +4,7 @@ IDIR = /usr/local/include/bullet
 LDIR = /usr/local/lib
 
 # the Bullet libraries are linked statically so we don't have to also distribute the shared binaries
-BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/libLinearMath.a
+BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/libLinearMath.a $(LDIR)/libHACD.a
  
 #CC = gcc
 CC = g++

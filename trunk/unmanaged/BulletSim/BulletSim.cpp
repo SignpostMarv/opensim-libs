@@ -31,7 +31,11 @@
 #include "BulletCollision/CollisionShapes/btTriangleShape.h"
 #include "LinearMath/btGeometryUtil.h"
 
+#ifdef __linux__
+#include "HACD/hacdHACD.h"
+#else
 #include "../extras/HACD/hacdHACD.h"
+#endif
 
 
 // Linkages to debugging dump routines

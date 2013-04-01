@@ -45,12 +45,22 @@ For Linux (tested on Ubuntu)
 4) Follow the Bullet build instructions 
     (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation),
     create the directory "bullet-build" and cd into that directory.
-    Do "cmake ../path/to/bullet/dir -G 'Unix Makefiles'"
-        (for 64bit systems, you must also add the cmake flag 
-        -DCMAKE_CXX_FLAGS="-fPIC" )
-    then "make -j4"
-    then "sudo make install"
+	Here is a bash script that builds bullet-2.81:
+				#! /bin/bash
+				cd bullet-2.81
+				mkdir -p bullet-build
+				cd bullet-build
+				cmake .. -G "Unix Makefiles" \
+				        -DBUILD_EXTRAS=on \
+				        -DBUILD_DEMOS=off \
+				        -DINSTALL_LIBS=on \
+				        -DINSTALL_EXTRA_LIBS=on \
+				        -DBUILD_SHARED_LIBS=off \
+				        -DCMAKE_BUILD_TYPE=Release
+				make -j4
+    (for 64bit systems, you must also add the cmake flag -DCMAKE_CXX_FLAGS="-fPIC" )
     This builds bullet static libraries and installs them into /usr/local/lib.
+    Finally, do "sudo make install" to install the include files and .a libraries.
 5) cd back to the BulletSim directory
 6) Do "make"
 7) Copy "libBulletSim.so" into the OpenSimulator "bin/lib32" or "bin/lib64"
