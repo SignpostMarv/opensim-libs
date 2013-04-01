@@ -342,4 +342,19 @@ struct ParamBlock
 };
 
 
+// Block of parameters for HACD algorithm
+struct HACDParams
+{
+	float maxVerticesPerHull;		// 100
+	float minClusters;				// 2
+	float compacityWeight;			// 0.1
+	float volumeWeight;				// 0.0
+	float concavity;				// 100
+	float addExtraDistPoints;		// false
+	float addNeighboursDistPoints;	// false
+	float addFacesPoints;			// false
+	float shouldAdjustCollisionMargin;	// false
+};
+
+
 #endif // API_DATA_H

@@ -177,9 +177,9 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim,
 	return shape;
 }
 
-EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh) {
+EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh, HACDParams* parms) {
 	bsDebug_AssertIsKnownCollisionShape(mesh, "BuildHullShapeFromMesh2: unknown shape passed for conversion");
-	btCollisionShape* shape = sim->BuildHullShapeFromMesh2(mesh);
+	btCollisionShape* shape = sim->BuildHullShapeFromMesh2(mesh, parms);
 	bsDebug_RememberCollisionShape(shape);
 	return shape;
 }

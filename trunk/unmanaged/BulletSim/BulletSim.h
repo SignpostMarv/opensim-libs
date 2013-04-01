@@ -294,7 +294,7 @@ public:
 
 	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
 	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
-	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh);
+	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms);
 
 	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);

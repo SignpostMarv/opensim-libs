@@ -29,6 +29,10 @@
 
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 #include "BulletCollision/CollisionShapes/btTriangleShape.h"
+#include "LinearMath/btGeometryUtil.h"
+
+#include "../extras/HACD/hacdHACD.h"
+
 
 // Linkages to debugging dump routines
 extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
@@ -489,10 +493,151 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 //   HACD hull creation code. The created hull will go into the hull collection
 //   so remember to delete it later.
 // Returns the created collision shape or NULL if couldn't create
-btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh)
+btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms)
 {
+	/*
+	// Get the triangle mesh data out of the passed mesh shape
+	int shapeType = mesh->getShapeType();
+	if (shapeType != TRIANGLE_MESH_SHAPE_PROXYTYPE)
+	{
+		// If the passed shape doesn't have a triangle mesh, we cannot hullify it.
+		return NULL;
+	}
+	btStridingMeshInterface* meshInfo = ((btTriangleMeshShape*)mesh)->getMeshInterface();
+	const unsigned char* vertexBase;
+	int numVerts;
+	PHY_ScalarType vertexType;
+	int vertexStride;
+	const unsigned char* indexBase;
+	int indexStride;
+	int numFaces;
+	PHY_ScalarType indicesType;
+	meshInfo->getLockedReadOnlyVertexIndexBase(&vertexBase, numVerts, vertexType, vertexStride, &indexBase, indexStride, numFaces, indicesType);
 
-	// TODO: write the code to use the Bullet HACD routine
+	if (vertexType != PHY_FLOAT || indicesType != PHY_INTEGER)
+	{
+		// If an odd data structure, we cannot hullify
+		return NULL;
+	}
+
+	// Create pointers to the vertices and indices as the PHY types that they are
+	float* tVertex = (float*)vertexBase;
+	int tVertexStride = vertexStride / sizeof(float);
+	int* tIndices = (int*) indexBase;
+	int tIndicesStride = indexStride / sizeof(int);
+
+	// Copy the vertices/indices into the HACD data structures
+	std::vector< HACD::Vec3<HACD::Real> > points;
+	std::vector< HACD::Vec3<long> > triangles;
+	for (int ii=0; ii < numVerts; ii = tVertexStride)
+	{
+		HACD::Vec3<HACD::Real> vertex(tVertex[ii], tVertex[ii+1],tVertex[ii+2]);
+		points.push_back(vertex);
+	}
+	for(int ii=0; ii < numFaces; ii += tIndicesStride ) 
+	{
+		HACD::Vec3<HACD::Real> vertex( tIndices[ii],  tIndices[ii+1], tIndices[ii+2]);
+		points.push_back(vertex);
+	}
+
+	meshInfo->unLockReadOnlyVertexBase(0);
+
+	// Setup HACD parameters
+	HACD::HACD myHACD;
+	myHACD.SetPoints(&points[0]);
+	myHACD.SetNPoints(points.size());
+	myHACD.SetTriangles(&triangles[0]);
+	myHACD.SetNTriangles(triangles.size());
+
+	myHACD.SetCompacityWeight((double)parms->compacityWeight);
+	myHACD.SetVolumeWeight((double)parms->volumeWeight);
+	myHACD.SetNClusters((size_t)parms->minClusters);
+	myHACD.SetNVerticesPerCH((size_t)parms->maxVerticesPerHull);
+	myHACD.SetConcavity((double)parms->concavity);
+	myHACD.SetAddExtraDistPoints(parms->addExtraDistPoints == ParamTrue ? true : false);   
+	myHACD.SetAddNeighboursDistPoints(parms->addNeighboursDistPoints == ParamTrue ? true : false);   
+	myHACD.SetAddFacesPoints(parms->addFacesPoints == ParamTrue ? true : false); 
+
+	// Hullify the mesh
+	myHACD.Compute();
+	int nHulls = myHACD.GetNClusters();	
+
+	// Create the compound shape all the hulls will be added to
+	btCompoundShape* compoundShape = new btCompoundShape(true);
+	compoundShape->setMargin(m_worldData.params->collisionMargin);
+
+	// Convert each of the built hulls into btConvexHullShape objects and add to the compoundShape
+	for (int hul=0; hul < nHulls; hul++)
+	{
+		size_t nPoints = myHACD.GetNPointsCH(hul);
+		size_t nTriangles = myHACD.GetNTrianglesCH(hul);
+
+		// Get the vertices and indices for one hull
+		HACD::Vec3<HACD::Real> * pointsCH = new HACD::Vec3<HACD::Real>[nPoints];
+		HACD::Vec3<long> * trianglesCH = new HACD::Vec3<long>[nTriangles];
+		myHACD.GetCH(hul, pointsCH, trianglesCH);
+
+		// Average the location of all the vertices to create a centriod for the hull.
+		btVector3 centroid;
+		centroid.setValue(0,0,0);
+		for (int ii=0; ii < nPoints; ii++)
+		{
+			btVector3 vertex(pointsCH[ii].X(), pointsCH[ii].Y(), pointsCH[ii].Z());
+			// vertex *= localScaling;
+			centroid += vertex;
+		}
+		centroid *= 1.f/((float)(nPoints));
+
+		// Copy out the hull vertices into Bullet data structure.
+		btAlignedObjectArray<btVector3> vertices;
+		//const unsigned int *src = result.mHullIndices;
+		for (int ii=0; ii < nPoints; ii++)
+		{
+			btVector3 vertex(pointsCH[ii].X(), pointsCH[ii].Y(), pointsCH[ii].Z());
+			// vertex *= localScaling;
+			vertex -= centroid;
+			vertices.push_back(vertex);
+		}
+
+		delete [] pointsCH;
+		delete [] trianglesCH;
+
+		btConvexHullShape* convexShape;
+		// Optionally compress the hull a little bit to account for the collision margin.
+		if (parms->shouldAdjustCollisionMargin == ParamTrue)
+		{
+			float collisionMargin = 0.01f;
+			
+			btAlignedObjectArray<btVector3> planeEquations;
+			btGeometryUtil::getPlaneEquationsFromVertices(vertices, planeEquations);
+
+			btAlignedObjectArray<btVector3> shiftedPlaneEquations;
+			for (int p=0; p<planeEquations.size(); p++)
+			{
+				btVector3 plane = planeEquations[p];
+				plane[3] += collisionMargin;
+				shiftedPlaneEquations.push_back(plane);
+			}
+			btAlignedObjectArray<btVector3> shiftedVertices;
+			btGeometryUtil::getVerticesFromPlaneEquations(shiftedPlaneEquations,shiftedVertices);
+			
+			convexShape = new btConvexHullShape(&(shiftedVertices[0].getX()),shiftedVertices.size());
+		}
+		else
+		{
+			convexShape = new btConvexHullShape(&(vertices[0].getX()),vertices.size());
+		}
+		convexShape->setMargin(m_worldData.params->collisionMargin);
+
+		// Add the hull shape to the compound shape
+		btTransform childTrans;
+		childTrans.setIdentity();
+		childTrans.setOrigin(centroid);
+		compoundShape->addChildShape(childTrans, convexShape);
+	}
+
+	return compoundShape;
+	*/
 	return NULL;
 }
 
