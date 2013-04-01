@@ -178,6 +178,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim,
 }
 
 EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh) {
+	bsDebug_AssertIsKnownCollisionShape(mesh, "BuildHullShapeFromMesh2: unknown shape passed for conversion");
 	btCollisionShape* shape = sim->BuildHullShapeFromMesh2(mesh);
 	bsDebug_RememberCollisionShape(shape);
 	return shape;
@@ -659,7 +660,7 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintToPoint2(BulletSim* s
 // Create a 6Dof constraint tied to a temporary, static world object
 EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintFixed2(BulletSim* sim, 
 				btCollisionObject* obj1, Vector3 frameInBloc, Quaternion frameInBrot,
-				bool useLinearReferenceFrameA, bool disableCollisionsBetweenLinkedBodies)
+				bool useLinearReferenceFrameB, bool disableCollisionsBetweenLinkedBodies)
 {
 	bsDebug_AssertIsKnownCollisionObject(obj1, "Create6DofConstraintFixed2: obj1 unknown CollisionObject");
 
@@ -671,7 +672,7 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofConstraintFixed2(BulletSim* sim
 	{
 		btTransform frameInB(frameInBrot.GetBtQuaternion(), frameInBloc.GetBtVector3());
 
-		constrain = new btGeneric6DofConstraint(*rb1, frameInB, useLinearReferenceFrameA);
+		constrain = new btGeneric6DofConstraint(*rb1, frameInB, useLinearReferenceFrameB);
 
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
 
@@ -2446,6 +2447,18 @@ EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* cons
 			&(constrain->getRigidBodyA()),
 			&(constrain->getRigidBodyB()),
 			constrain->isEnabled() ? "true" : "false");
+		if (constrain->getConstraintType() == D6_CONSTRAINT_TYPE)
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			btVector3 angLower;
+			btVector3 angUpper;
+			cc->getAngularLowerLimit(angLower);
+			cc->getAngularUpperLimit(angUpper);
+			sim->getWorldData()->BSLog("DumpConstraint: 6DOF: angLow=<%f,%f,%f>, angUp=<%f,%f,%f>,appliedImpulse=%f",
+						angLower.getX(), angLower.getY(), angLower.getZ(),
+						angUpper.getX(), angUpper.getY(), angUpper.getZ(),
+						cc->getAppliedImpulse() );
+		}
 }
 
 EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)

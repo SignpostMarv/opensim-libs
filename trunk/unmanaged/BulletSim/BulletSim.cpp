@@ -159,7 +159,6 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	if (m_worldData.params->useSingleSidedMeshes != ParamFalse)
 		gContactAddedCallback = SingleSidedMeshCheckCallback;
 
-
 	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
 	// Actually a NOOP unless Bullet is compiled with USE_SEPDISTANCE_UTIL2 set.
 	dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
@@ -420,11 +419,6 @@ void BulletSim::RecordGhostCollisions(btPairCachingGhostObject* obj)
 	}
 }
 
-// If using Bullet' convex hull code, refer to following link for parameter setting
-// http://kmamou.blogspot.com/2011/11/hacd-parameters.html
-// Another useful reference for ConvexDecomp
-// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
-
 btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices)
 {
 	// We must copy the indices and vertices since the passed memory is released when this call returns.
@@ -486,12 +480,18 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 	return compoundShape;
 }
 
+// If using Bullet' convex hull code, refer to following link for parameter setting
+// http://kmamou.blogspot.com/2011/11/hacd-parameters.html
+// Another useful reference for ConvexDecomp
+// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?t=7159
+
 // From a previously created mesh shape, create a convex hull using the Bullet
 //   HACD hull creation code. The created hull will go into the hull collection
 //   so remember to delete it later.
 // Returns the created collision shape or NULL if couldn't create
 btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh)
 {
+
 	// TODO: write the code to use the Bullet HACD routine
 	return NULL;
 }
