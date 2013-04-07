@@ -35,7 +35,7 @@ For Visual Studio 2010, the steps are:
 7) Copy "BulletSim/Release/BulletSim.dll" into the
     OpenSimulator "bin/" directory
 
-For Linux (tested on Ubuntu)
+For Linux/Mac OSX (tested on Ubuntu and Lion)
 1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
 1b) As noted above, you can also fetch the latest Subversion
     version of the version 2 Bullet.
@@ -59,12 +59,14 @@ For Linux (tested on Ubuntu)
 				        -DCMAKE_BUILD_TYPE=Release
 				make -j4
     (for 64bit systems, you must also add the cmake flag -DCMAKE_CXX_FLAGS="-fPIC" )
+    (for Mac OSX systems, you must also add the cmake flag -DCMAKE_OSX_ARCHITECTURES=i386 as mono runs as a 32bit process on OSX)
     This builds bullet static libraries and installs them into /usr/local/lib.
     Finally, do "sudo make install" to install the include files and .a libraries.
 5) cd back to the BulletSim directory
 6) Do "make"
-7) Copy "libBulletSim.so" into the OpenSimulator "bin/lib32" or "bin/lib64"
-directories depending on the architecture of your system.
+7) On Linux, copy "libBulletSim.so" into the OpenSimulator "bin/lib32" or "bin/lib64"
+   directories depending on the architecture of your system.
+   On Mac OSX, copy "libBulletSim.dylib" into the OpenSimulator "bin/lib32" directory
 
 
 This was developed with Bullet v2.81. If you use a different version, you will

@@ -31,7 +31,7 @@
 #include "BulletCollision/CollisionShapes/btTriangleShape.h"
 #include "LinearMath/btGeometryUtil.h"
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__) 
 #include "HACD/hacdHACD.h"
 #else
 #include "../extras/HACD/hacdHACD.h"

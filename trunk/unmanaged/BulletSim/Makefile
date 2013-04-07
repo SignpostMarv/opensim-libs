@@ -8,7 +8,18 @@ BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/li
  
 #CC = gcc
 CC = g++
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Linux)
+TARGET = libBulletSim.so
 CFLAGS = -I$(IDIR) -fPIC -g
+LFLAGS = -shared -Wl,-soname,$(TARGET) -o $(TARGET)
+endif
+ifeq ($(UNAME), Darwin)
+TARGET = libBulletSim.dylib
+CFLAGS = -arch i386 -I$(IDIR) -fPIC -g
+LFLAGS = -arch i386 -dynamiclib -Wl -o $(TARGET)
+endif
 
 BASEFILES = API2.cpp BulletSim.cpp
 
@@ -18,10 +29,10 @@ SRC = $(BASEFILES)
 BIN = $(patsubst %.cpp, %.o, $(SRC))
 
 
-all: libBulletSim.so
+all: $(TARGET)
 
-libBulletSim.so : $(BIN)
-	$(CC) -shared -Wl,-soname,libBulletSim.so -o libBulletSim.so $(BIN) $(BULLETLIBS)
+$(TARGET) : $(BIN)
+	$(CC) $(LFLAGS) $(BIN) $(BULLETLIBS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?
@@ -33,4 +44,4 @@ BulletSim.h: ArchStuff.h APIData.h WorldData.h
 API2.cpp : BulletSim.h
 
 clean:
-	rm -f *.o *.so
+	rm -f *.o $(TARGET)
