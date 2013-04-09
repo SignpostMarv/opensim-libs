@@ -24,6 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "BulletSim.h"
 #include "Util.h"
 
@@ -33,10 +34,11 @@
 
 #if defined(__linux__) || defined(__APPLE__) 
 #include "HACD/hacdHACD.h"
-#else
+#elif defined(_WIN32) || defined(_WIN64)
 #include "../extras/HACD/hacdHACD.h"
+#else
+#error "Platform type not understood."
 #endif
-
 
 // Linkages to debugging dump routines
 extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
@@ -61,31 +63,35 @@ BulletSim::BulletSim(btScalar maxX, btScalar maxY, btScalar maxZ)
 
 // Called when a collision point is being added to the manifold.
 // This is used to modify the collision normal to make meshes collidable on only one side.
+// Based on rule: "Ignore collisions if dot product of hit normal and a vector pointing to the center of the the object
+//     is less than zero."
 // Code based on example code given in: http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=3052&start=15#p12308
 // Code used under Creative Commons, ShareAlike, Attribution as per Bullet forums.
 static void SingleSidedMeshCheck(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj, int partId, int index)
 {
-        const btCollisionShape *shape = colObj->getCollisionShape();
+        const btCollisionShape* shape = colObj->getCollisionShape();
 
+		// TODO: compound shapes don't have this proxy type.  How to get vector pointing to object middle?
         if (shape->getShapeType() != TRIANGLE_SHAPE_PROXYTYPE) return;
         const btTriangleShape* tshape = static_cast<const btTriangleShape*>(colObj->getCollisionShape());
-
-        const btCollisionShape* parent = colObj->getCollisionShape();
-        if (parent == NULL) return;
-        if (parent->getShapeType() != TRIANGLE_MESH_SHAPE_PROXYTYPE) return;
-
-        btTransform orient = colObj->getWorldTransform();
-        orient.setOrigin( btVector3(0.0f,0.0f,0.0f ) );
 
         btVector3 v1 = tshape->m_vertices1[0];
         btVector3 v2 = tshape->m_vertices1[1];
         btVector3 v3 = tshape->m_vertices1[2];
 
+		// Create a normal pointing to the center of the mesh based on the first triangle
         btVector3 normal = (v2-v1).cross(v3-v1);
 
+		// Since the collision points are in local coordinates, create a transform for the collided
+		//    object like it was at <0, 0, 0>.
+        btTransform orient = colObj->getWorldTransform();
+        orient.setOrigin( btVector3(0.0, 0.0, 0.0) );
+
+		// Rotate that normal to world coordinates and normalize
         normal = orient * normal;
         normal.normalize();
 
+		// Dot the normal to the center and the collision normal to see if the collision normal is pointing in or out.
         btScalar dot = normal.dot(cp.m_normalWorldOnB);
         btScalar magnitude = cp.m_normalWorldOnB.length();
         normal *= dot > 0 ? magnitude : -magnitude;
@@ -93,6 +99,7 @@ static void SingleSidedMeshCheck(btManifoldPoint& cp, const btCollisionObjectWra
         cp.m_normalWorldOnB = normal;
 }
 
+// Check the collision point and modify the collision direction normal to only point "out" of the mesh
 static bool SingleSidedMeshCheckCallback(btManifoldPoint& cp, 
 							const btCollisionObjectWrapper* colObj0, int partId0, int index0,
 							const btCollisionObjectWrapper* colObj1, int partId1, int index1)
@@ -167,10 +174,12 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	if (m_worldData.params->useSingleSidedMeshes != ParamFalse)
 		gContactAddedCallback = SingleSidedMeshCheckCallback;
 
+	/*
 	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
 	// Actually a NOOP unless Bullet is compiled with USE_SEPDISTANCE_UTIL2 set.
 	dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
 	dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = btScalar(0.01);
+	*/
 
 	// Performance speedup: from BenchmarkDemo.cpp, ln 381
 	if (m_worldData.params->shouldEnableFrictionCaching != ParamFalse)
@@ -499,12 +508,12 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 // Returns the created collision shape or NULL if couldn't create
 btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms)
 {
-	/*
 	// Get the triangle mesh data out of the passed mesh shape
 	int shapeType = mesh->getShapeType();
 	if (shapeType != TRIANGLE_MESH_SHAPE_PROXYTYPE)
 	{
 		// If the passed shape doesn't have a triangle mesh, we cannot hullify it.
+		m_worldData.BSLog("HACD: passed mesh not TRIANGLE_MESH_SHAPE");	// DEBUG DEBUG
 		return NULL;
 	}
 	btStridingMeshInterface* meshInfo = ((btTriangleMeshShape*)mesh)->getMeshInterface();
@@ -521,6 +530,7 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 	if (vertexType != PHY_FLOAT || indicesType != PHY_INTEGER)
 	{
 		// If an odd data structure, we cannot hullify
+		m_worldData.BSLog("HACD: triangle mesh not of right types");	// DEBUG DEBUG
 		return NULL;
 	}
 
@@ -529,22 +539,24 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 	int tVertexStride = vertexStride / sizeof(float);
 	int* tIndices = (int*) indexBase;
 	int tIndicesStride = indexStride / sizeof(int);
+	m_worldData.BSLog("HACD: nVertices=%d, nIndices=%d", numVerts, numFaces*3);	// DEBUG DEBUG
 
 	// Copy the vertices/indices into the HACD data structures
 	std::vector< HACD::Vec3<HACD::Real> > points;
 	std::vector< HACD::Vec3<long> > triangles;
-	for (int ii=0; ii < numVerts; ii = tVertexStride)
+	for (int ii=0; ii < (numVerts * tVertexStride); ii += tVertexStride)
 	{
 		HACD::Vec3<HACD::Real> vertex(tVertex[ii], tVertex[ii+1],tVertex[ii+2]);
 		points.push_back(vertex);
 	}
-	for(int ii=0; ii < numFaces; ii += tIndicesStride ) 
+	for(int ii=0; ii < (numFaces * tIndicesStride); ii += tIndicesStride ) 
 	{
-		HACD::Vec3<HACD::Real> vertex( tIndices[ii],  tIndices[ii+1], tIndices[ii+2]);
-		points.push_back(vertex);
+		HACD::Vec3<long> vertex( tIndices[ii],  tIndices[ii+1], tIndices[ii+2]);
+		triangles.push_back(vertex);
 	}
 
 	meshInfo->unLockReadOnlyVertexBase(0);
+	m_worldData.BSLog("HACD: structures copied");	// DEBUG DEBUG
 
 	// Setup HACD parameters
 	HACD::HACD myHACD;
@@ -562,9 +574,13 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 	myHACD.SetAddNeighboursDistPoints(parms->addNeighboursDistPoints == ParamTrue ? true : false);   
 	myHACD.SetAddFacesPoints(parms->addFacesPoints == ParamTrue ? true : false); 
 
+	m_worldData.BSLog("HACD: Before compute. nPoints=%d, nTriangles=%d, minClusters=%f, maxVerts=%f", 
+		points.size(), triangles.size(), parms->minClusters, parms->maxVerticesPerHull);	// DEBUG DEBUG
+
 	// Hullify the mesh
 	myHACD.Compute();
 	int nHulls = myHACD.GetNClusters();	
+	m_worldData.BSLog("HACD: After compute. nHulls=%d", nHulls);	// DEBUG DEBUG
 
 	// Create the compound shape all the hulls will be added to
 	btCompoundShape* compoundShape = new btCompoundShape(true);
@@ -575,6 +591,7 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 	{
 		size_t nPoints = myHACD.GetNPointsCH(hul);
 		size_t nTriangles = myHACD.GetNTrianglesCH(hul);
+		m_worldData.BSLog("HACD: Add hull %d. nPoints=%d, nTriangles=%d", hul, nPoints, nTriangles);	// DEBUG DEBUG
 
 		// Get the vertices and indices for one hull
 		HACD::Vec3<HACD::Real> * pointsCH = new HACD::Vec3<HACD::Real>[nPoints];
@@ -637,12 +654,11 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 		btTransform childTrans;
 		childTrans.setIdentity();
 		childTrans.setOrigin(centroid);
+		m_worldData.BSLog("HACD: Add child shape %d", hul);	// DEBUG DEBUG
 		compoundShape->addChildShape(childTrans, convexShape);
 	}
 
 	return compoundShape;
-	*/
-	return NULL;
 }
 
 // TODO: get this code working
