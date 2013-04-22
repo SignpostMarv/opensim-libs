@@ -661,6 +661,64 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 	return compoundShape;
 }
 
+btCollisionShape* BulletSim::BuildConvexHullShapeFromMesh2(btCollisionShape* mesh)
+{
+	btConvexHullShape* hullShape = new btConvexHullShape();
+
+	// Get the triangle mesh data out of the passed mesh shape
+	int shapeType = mesh->getShapeType();
+	if (shapeType != TRIANGLE_MESH_SHAPE_PROXYTYPE)
+	{
+		// If the passed shape doesn't have a triangle mesh, we cannot hullify it.
+		m_worldData.BSLog("BuildConvexHullShapeFromMesh2: passed mesh not TRIANGLE_MESH_SHAPE");	// DEBUG DEBUG
+		return NULL;
+	}
+	btStridingMeshInterface* meshInfo = ((btTriangleMeshShape*)mesh)->getMeshInterface();
+	const unsigned char* vertexBase;
+	int numVerts;
+	PHY_ScalarType vertexType;
+	int vertexStride;
+	const unsigned char* indexBase;
+	int indexStride;
+	int numFaces;
+	PHY_ScalarType indicesType;
+	meshInfo->getLockedReadOnlyVertexIndexBase(&vertexBase, numVerts, vertexType, vertexStride, &indexBase, indexStride, numFaces, indicesType);
+
+	if (vertexType != PHY_FLOAT || indicesType != PHY_INTEGER)
+	{
+		// If an odd data structure, we cannot hullify
+		m_worldData.BSLog("BuildConvexHullShapeFromMesh2: triangle mesh not of right types");	// DEBUG DEBUG
+		return NULL;
+	}
+
+	// Create pointers to the vertices and indices as the PHY types that they are
+	float* tVertex = (float*)vertexBase;
+	int tVertexStride = vertexStride / sizeof(float);
+	int* tIndices = (int*) indexBase;
+	int tIndicesStride = indexStride / sizeof(int);
+	m_worldData.BSLog("BuildConvexHullShapeFromMesh2: nVertices=%d, nIndices=%d", numVerts, numFaces*3);	// DEBUG DEBUG
+
+	// Add points to the hull shape
+	for(int ii=0; ii < (numFaces * tIndicesStride); ii += tIndicesStride ) 
+	{
+		int point1Index = tIndices[ii + 0] * tVertexStride;
+		btVector3 point1 = btVector3(tVertex[point1Index + 0], tVertex[point1Index + 1], tVertex[point1Index + 2] );
+		hullShape->addPoint(point1);
+
+		int point2Index = tIndices[ii + 1] * tVertexStride;
+		btVector3 point2 = btVector3(tVertex[point2Index + 0], tVertex[point2Index + 1], tVertex[point2Index + 2] );
+		hullShape->addPoint(point2);
+
+		int point3Index = tIndices[ii + 2] * tVertexStride;
+		btVector3 point3 = btVector3(tVertex[point3Index + 0], tVertex[point3Index + 1], tVertex[point3Index + 2] );
+		hullShape->addPoint(point3);
+	}
+
+	meshInfo->unLockReadOnlyVertexBase(0);
+
+	return hullShape;
+}
+
 // TODO: get this code working
 SweepHit BulletSim::ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin)
 {

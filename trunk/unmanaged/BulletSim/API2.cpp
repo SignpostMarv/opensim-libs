@@ -184,6 +184,13 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, bt
 	return shape;
 }
 
+EXTERN_C DLL_EXPORT btCollisionShape* BuildConvexHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh) {
+	bsDebug_AssertIsKnownCollisionShape(mesh, "BuildConvexHullShapeFromMesh2: unknown shape passed for conversion");
+	btCollisionShape* shape = sim->BuildConvexHullShapeFromMesh2(mesh);
+	bsDebug_RememberCollisionShape(shape);
+	return shape;
+}
+
 EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim, bool enableDynamicAabbTree)
 {
 	btCompoundShape* cShape = new btCompoundShape(enableDynamicAabbTree);
