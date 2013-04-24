@@ -8,12 +8,13 @@ BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/li
  
 #CC = gcc
 CC = g++
+LD = g++
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
 TARGET = libBulletSim.so
 CFLAGS = -I$(IDIR) -fPIC -g
-LFLAGS = -shared -Wl,-soname,$(TARGET) -o $(TARGET)
+LFLAGS = -shared -Wl,--wrap=memcpy -Wl,-soname,$(TARGET) -o $(TARGET)
 endif
 ifeq ($(UNAME), Darwin)
 TARGET = libBulletSim.dylib
@@ -32,7 +33,7 @@ BIN = $(patsubst %.cpp, %.o, $(SRC))
 all: $(TARGET)
 
 $(TARGET) : $(BIN)
-	$(CC) $(LFLAGS) $(BIN) $(BULLETLIBS)
+	$(LD) $(LFLAGS) $(BIN) $(BULLETLIBS)
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $?

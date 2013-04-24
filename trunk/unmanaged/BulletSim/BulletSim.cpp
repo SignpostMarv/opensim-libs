@@ -441,10 +441,10 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	// We must copy the indices and vertices since the passed memory is released when this call returns.
 	btIndexedMesh indexedMesh;
 	int* copiedIndices = new int[indicesCount];
-	bsMemcpy(copiedIndices, indices, indicesCount * sizeof(int));
+	__wrap_memcpy(copiedIndices, indices, indicesCount * sizeof(int));
 	int numVertices = verticesCount * 3;
 	float* copiedVertices = new float[numVertices];
-	bsMemcpy(copiedVertices, vertices, numVertices * sizeof(float));
+	__wrap_memcpy(copiedVertices, vertices, numVertices * sizeof(float));
 
 	indexedMesh.m_indexType = PHY_INTEGER;
 	indexedMesh.m_triangleIndexBase = (const unsigned char*)copiedIndices;
@@ -716,6 +716,28 @@ btCollisionShape* BulletSim::BuildConvexHullShapeFromMesh2(btCollisionShape* mes
 
 	meshInfo->unLockReadOnlyVertexBase(0);
 
+	return hullShape;
+}
+
+btCollisionShape* BulletSim::CreateConvexHullShape2(int indicesCount, int* indices, int verticesCount, float* vertices)
+{
+	btConvexHullShape* hullShape = new btConvexHullShape();
+
+	for (int ii = 0; ii < indicesCount; ii += 3)
+	{
+		int point1Index = indices[ii + 0] * 3;
+		btVector3 point1 = btVector3(vertices[point1Index + 0], vertices[point1Index + 1], vertices[point1Index + 2] );
+		hullShape->addPoint(point1);
+
+		int point2Index = indices[ii + 1] * 3;
+		btVector3 point2 = btVector3(vertices[point2Index + 0], vertices[point2Index + 1], vertices[point2Index + 2] );
+		hullShape->addPoint(point2);
+
+		int point3Index = indices[ii + 2] * 3;
+		btVector3 point3 = btVector3(vertices[point3Index + 0], vertices[point3Index + 1], vertices[point3Index + 2] );
+		hullShape->addPoint(point3);
+
+	}
 	return hullShape;
 }
 

@@ -38,7 +38,16 @@
 //    version of the library. Other Linux distributions don't have this
 //    new glibc yet so the .so's won't run there. Thus, our own implementation
 //    to remove that library dependency.
-static void* bsMemcpy(void* dst, void* src, size_t siz)
+static void* __wrap_memcpy(void* dst, void* src, size_t siz)
+{
+	char* cdst = (char*)dst;
+	const char* csrc = (char*)src;
+	size_t n = siz;
+	for (; 0<n; --n) *cdst++ = *csrc++;
+	return dst;
+}
+
+static void* __real_memcpy(void* dst, void* src, size_t siz)
 {
 	char* cdst = (char*)dst;
 	const char* csrc = (char*)src;

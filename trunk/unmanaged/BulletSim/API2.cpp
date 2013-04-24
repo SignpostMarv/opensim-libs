@@ -191,6 +191,14 @@ EXTERN_C DLL_EXPORT btCollisionShape* BuildConvexHullShapeFromMesh2(BulletSim* s
 	return shape;
 }
 
+EXTERN_C DLL_EXPORT btCollisionShape* CreateConvexHullShape2(BulletSim* sim, 
+						int indicesCount, int* indices, int verticesCount, float* vertices )
+{
+	btCollisionShape* shape = sim->CreateConvexHullShape2(indicesCount, indices, verticesCount, vertices);
+	bsDebug_RememberCollisionShape(shape);
+	return shape;
+}
+
 EXTERN_C DLL_EXPORT btCollisionShape* CreateCompoundShape2(BulletSim* sim, bool enableDynamicAabbTree)
 {
 	btCompoundShape* cShape = new btCompoundShape(enableDynamicAabbTree);
