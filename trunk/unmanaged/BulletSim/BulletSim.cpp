@@ -32,6 +32,9 @@
 #include "BulletCollision/CollisionShapes/btTriangleShape.h"
 #include "LinearMath/btGeometryUtil.h"
 
+#include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
+#include "BulletCollision/Gimpact/btGImpactShape.h"
+
 #if defined(__linux__) || defined(__APPLE__) 
 #include "HACD/hacdHACD.h"
 #elif defined(_WIN32) || defined(_WIN64)
@@ -138,6 +141,9 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	
 	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
+
+	// Register GImpact collsions since that type can be created
+	btGImpactCollisionAlgorithm::registerAlgorithm(m_dispatcher);
 
 	// optional but not a good idea
 	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
@@ -459,6 +465,35 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
 	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+
+	meshShape->setMargin(m_worldData.params->collisionMargin);
+
+	return meshShape;
+}
+
+btCollisionShape* BulletSim::CreateGImpactShape2(int indicesCount, int* indices, int verticesCount, float* vertices)
+{
+	// We must copy the indices and vertices since the passed memory is released when this call returns.
+	btIndexedMesh indexedMesh;
+	int* copiedIndices = new int[indicesCount];
+	__wrap_memcpy(copiedIndices, indices, indicesCount * sizeof(int));
+	int numVertices = verticesCount * 3;
+	float* copiedVertices = new float[numVertices];
+	__wrap_memcpy(copiedVertices, vertices, numVertices * sizeof(float));
+
+	indexedMesh.m_indexType = PHY_INTEGER;
+	indexedMesh.m_triangleIndexBase = (const unsigned char*)copiedIndices;
+	indexedMesh.m_triangleIndexStride = sizeof(int) * 3;
+	indexedMesh.m_numTriangles = indicesCount / 3;
+	indexedMesh.m_vertexType = PHY_FLOAT;
+	indexedMesh.m_numVertices = verticesCount;
+	indexedMesh.m_vertexBase = (const unsigned char*)copiedVertices;
+	indexedMesh.m_vertexStride = sizeof(float) * 3;
+
+	btTriangleIndexVertexArray* vertexArray = new btTriangleIndexVertexArray();
+	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
+
+	btGImpactMeshShape* meshShape = new btGImpactMeshShape(vertexArray);
 
 	meshShape->setMargin(m_worldData.params->collisionMargin);
 

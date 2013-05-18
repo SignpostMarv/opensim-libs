@@ -169,6 +169,14 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateMeshShape2(BulletSim* sim,
 	return shape;
 }
 
+EXTERN_C DLL_EXPORT btCollisionShape* CreateGImpactShape2(BulletSim* sim, 
+						int indicesCount, int* indices, int verticesCount, float* vertices )
+{
+	btCollisionShape* shape = sim->CreateGImpactShape2(indicesCount, indices, verticesCount, vertices);
+	bsDebug_RememberCollisionShape(shape);
+	return shape;
+}
+
 EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim, 
 						int hullCount, float* hulls )
 {

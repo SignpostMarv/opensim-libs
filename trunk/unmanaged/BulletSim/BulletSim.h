@@ -293,6 +293,7 @@ public:
 	int PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep, int* updatedEntityCount, int* collidersCount);
 
 	btCollisionShape* CreateMeshShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
+	btCollisionShape* CreateGImpactShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
 	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
 	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms);
 	btCollisionShape* BuildConvexHullShapeFromMesh2(btCollisionShape* mesh);
