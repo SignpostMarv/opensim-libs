@@ -142,9 +142,6 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 
-	// Register GImpact collsions since that type can be created
-	btGImpactCollisionAlgorithm::registerAlgorithm(m_dispatcher);
-
 	// optional but not a good idea
 	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
 		m_dispatcher->setDispatcherFlags(
@@ -160,6 +157,9 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	// Create the world
 	btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
 	m_worldData.dynamicsWorld = dynamicsWorld;
+
+	// Register GImpact collsions since that type can be created
+	btGImpactCollisionAlgorithm::registerAlgorithm(m_dispatcher);
 	
 	// disable or enable the continuious recalculation of the static AABBs
 	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
