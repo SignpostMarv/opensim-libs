@@ -494,8 +494,12 @@ btCollisionShape* BulletSim::CreateGImpactShape2(int indicesCount, int* indices,
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
 	btGImpactMeshShape* meshShape = new btGImpactMeshShape(vertexArray);
+	m_worldData.BSLog("GreateGImpactShape2: ind=%d, vert=%d", indicesCount, verticesCount);
 
 	meshShape->setMargin(m_worldData.params->collisionMargin);
+
+	// The gimpact shape needs some help to create its AABBs
+	meshShape->updateBound();
 
 	return meshShape;
 }
