@@ -8,9 +8,9 @@ namespace HttpServer
 	/// </summary>
 	class RequestQueue
 	{
-		private int _maxRequestCount = 25;
+		private int _maxRequestCount = 100;
 		private int _currentRequestCount;
-		private int _maxQueueSize = 50;
+		private int _maxQueueSize = 1024;
 		private readonly Queue<QueueItem> _queue = new Queue<QueueItem>();
 		private readonly ManualResetEvent _event = new ManualResetEvent(false);
 		private bool _canRun;

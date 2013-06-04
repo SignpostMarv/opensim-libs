@@ -721,7 +721,7 @@ namespace HttpServer
             Init();
             _httpListener = new HttpListener(address, port, _components.Get<IHttpContextFactory>()) { LogWriter = LogWriter };
 		    _httpListener.RequestReceived += OnRequest;
-		    _httpListener.Start(50);
+		    _httpListener.Start(Int32.MaxValue);
 		    _httpListener.ExceptionThrown += _exceptionHandler;
 		}
 
@@ -746,7 +746,7 @@ namespace HttpServer
             _httpsListener = new HttpListener(address, port, _components.Get<IHttpContextFactory>(), certificate);
 			_httpsListener.LogWriter = LogWriter;
             _httpsListener.RequestReceived += OnRequest;
-			_httpsListener.Start(5);
+			_httpsListener.Start(Int32.MaxValue);
 		    _httpsListener.ExceptionThrown += _exceptionHandler;
 		}
 
