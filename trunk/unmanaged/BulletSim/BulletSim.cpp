@@ -159,7 +159,7 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	m_worldData.dynamicsWorld = dynamicsWorld;
 
 	// Register GImpact collsions since that type can be created
-	btGImpactCollisionAlgorithm::registerAlgorithm(m_dispatcher);
+	btGImpactCollisionAlgorithm::registerAlgorithm((btCollisionDispatcher*)dynamicsWorld->getDispatcher());
 	
 	// disable or enable the continuious recalculation of the static AABBs
 	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
@@ -464,7 +464,9 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	btTriangleIndexVertexArray* vertexArray = new btTriangleIndexVertexArray();
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
-	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, true, true);
+	bool useQuantizedAabbCompression = false;
+	bool buildBvh = true;
+	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, useQuantizedAabbCompression, buildBvh);
 
 	meshShape->setMargin(m_worldData.params->collisionMargin);
 

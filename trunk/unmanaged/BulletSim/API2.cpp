@@ -1153,6 +1153,347 @@ EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constra
 	return ret;
 }
 
+#define HINGE_NOT_SPECIFIED (-1.0)
+EXTERN_C DLL_EXPORT bool ConstraintHingeSetLimit2(btTypedConstraint* constrain, float low, float high, float softness, float bias, float relaxation)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintHingeSetLimits2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case HINGE_CONSTRAINT_TYPE:
+		{
+			btHingeConstraint* cc = (btHingeConstraint*)constrain;
+			if (softness == HINGE_NOT_SPECIFIED)
+				cc->setLimit(low, high);
+			else if (bias == HINGE_NOT_SPECIFIED)
+				cc->setLimit(low, high, softness);
+			else if (relaxation == HINGE_NOT_SPECIFIED)
+				cc->setLimit(low, high, softness, bias);
+			else
+				cc->setLimit(low, high, softness, bias, relaxation);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringEnable2(btTypedConstraint* constrain, int index, bool onOff)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringEnable2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->enableSpring(index, onOff);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringSetEquilibriumPoint2(btTypedConstraint* constrain, int index, float eqPoint)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringEnable2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			if (index == CONSTRAINT_NOT_SPECIFIED)
+			{
+				cc->setEquilibriumPoint();
+			}
+			else
+			{
+				if (eqPoint == CONSTRAINT_NOT_SPECIFIEDF)
+				{
+					cc->setEquilibriumPoint(index);
+				}
+				else
+				{
+					cc->setEquilibriumPoint(index, eqPoint);
+				}
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringSetStiffness2(btTypedConstraint* constrain, int index, float stiffness)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringSetStiffness2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setStiffness(index, stiffness);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringSetDamping2(btTypedConstraint* constrain, int index, float damping)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringSetDamping2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setDamping(index, damping);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define SLIDER_LOWER_LIMIT 0
+#define SLIDER_UPPER_LIMIT 1
+#define SLIDER_LINEAR 2
+#define SLIDER_ANGULAR 3
+EXTERN_C DLL_EXPORT bool ConstraintSliderSetLimits2(btTypedConstraint* constrain, int upperLower, int linAng, float val)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSlider2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (upperLower)
+			{
+				case SLIDER_LOWER_LIMIT:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setLowerLinLimit(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setLowerAngLimit(val);
+							break;
+					}
+					break;
+				case SLIDER_UPPER_LIMIT:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setUpperLinLimit(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setUpperAngLimit(val);
+							break;
+					}
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define SLIDER_SET_SOFTNESS 4
+#define SLIDER_SET_RESTITUTION 5
+#define SLIDER_SET_DAMPING 6
+#define SLIDER_SET_DIRECTION 7
+#define SLIDER_SET_LIMIT 8
+#define SLIDER_SET_ORTHO 9
+EXTERN_C DLL_EXPORT bool ConstraintSliderSet2(btTypedConstraint* constrain, int softRestDamp, int dirLimOrtho, int linAng, float val)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSliderSet2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (softRestDamp)
+			{
+				case SLIDER_SET_SOFTNESS:
+					switch (dirLimOrtho)
+					{
+						case SLIDER_SET_DIRECTION:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setSoftnessDirLin(val); break;
+								case SLIDER_ANGULAR: cc->setSoftnessDirAng(val); break;
+							}
+							break;
+						case SLIDER_SET_LIMIT:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setSoftnessLimLin(val); break;
+								case SLIDER_ANGULAR: cc->setSoftnessLimAng(val); break;
+							}
+							break;
+						case SLIDER_SET_ORTHO:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setSoftnessOrthoLin(val); break;
+								case SLIDER_ANGULAR: cc->setSoftnessOrthoAng(val); break;
+							}
+							break;
+					}
+					break;
+				case SLIDER_SET_RESTITUTION:
+					switch (dirLimOrtho)
+					{
+						case SLIDER_SET_DIRECTION:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setRestitutionDirLin(val); break;
+								case SLIDER_ANGULAR: cc->setRestitutionDirAng(val); break;
+							}
+							break;
+						case SLIDER_SET_LIMIT:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setRestitutionLimLin(val); break;
+								case SLIDER_ANGULAR: cc->setRestitutionLimAng(val); break;
+							}
+							break;
+						case SLIDER_SET_ORTHO:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setRestitutionOrthoLin(val); break;
+								case SLIDER_ANGULAR: cc->setRestitutionOrthoAng(val); break;
+							}
+							break;
+					}
+					break;
+				case SLIDER_SET_DAMPING:
+					switch (dirLimOrtho)
+					{
+						case SLIDER_SET_DIRECTION:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setDampingDirLin(val); break;
+								case SLIDER_ANGULAR: cc->setDampingDirAng(val); break;
+							}
+							break;
+						case SLIDER_SET_LIMIT:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setDampingLimLin(val); break;
+								case SLIDER_ANGULAR: cc->setDampingLimAng(val); break;
+							}
+							break;
+						case SLIDER_SET_ORTHO:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setDampingOrthoLin(val); break;
+								case SLIDER_ANGULAR: cc->setDampingOrthoAng(val); break;
+							}
+							break;
+					}
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSliderMotorEnable2(btTypedConstraint* constrain, int linAng, float numericTrueFalse)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSliderMotorEnable2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (linAng)
+			{
+				case SLIDER_LINEAR:
+					cc->setPoweredLinMotor(numericTrueFalse == 0.0 ? false : true);
+					break;
+				case SLIDER_ANGULAR:
+					cc->setPoweredAngMotor(numericTrueFalse == 0.0 ? false : true);
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define SLIDER_MOTOR_VELOCITY 10
+#define SLIDER_MAX_MOTOR_FORCE 11
+EXTERN_C DLL_EXPORT bool ConstraintSliderMotor2(btTypedConstraint* constrain, int forceVel, int linAng, float val)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSlider2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (forceVel)
+			{
+				case SLIDER_MOTOR_VELOCITY:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setTargetLinMotorVelocity(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setTargetAngMotorVelocity(val);
+							break;
+					}
+					break;
+				case SLIDER_MAX_MOTOR_FORCE:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setMaxLinMotorForce(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setMaxAngMotorForce(val);
+							break;
+					}
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
 EXTERN_C DLL_EXPORT bool CalculateTransforms2(btTypedConstraint* constrain)
 {
 	bool ret = false;
@@ -1354,9 +1695,9 @@ Each of the constraint types have many specialized methods specific to their typ
 			enableSpring(int index, bool onOff)
 			setStiffness(int index, btScalar stiffness)
 			setDamping(int index, btScalar damping)
-			setEquilibriumPorint();
-			setEquilibriumPorint(int index);
-			setEquilibriumPorint(int index, btScalar val);
+			setEquilibriumPoint();
+			setEquilibriumPoint(int index);
+			setEquilibriumPoint(int index, btScalar val);
 			setAxis(btVector3& axis1, btVector3& axis2)
 		GEAR_CONSTRAINT_TYPE:
 */

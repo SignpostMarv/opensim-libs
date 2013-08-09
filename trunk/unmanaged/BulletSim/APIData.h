@@ -356,5 +356,8 @@ struct HACDParams
 	float shouldAdjustCollisionMargin;	// false
 };
 
+#define CONSTRAINT_NOT_SPECIFIED (-1)
+#define CONSTRAINT_NOT_SPECIFIEDF (-1.0)
+
 
 #endif // API_DATA_H
