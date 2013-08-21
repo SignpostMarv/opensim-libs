@@ -109,6 +109,7 @@
     <Compile Include="BulletDynamics\Vehicle\VehicleRaycaster.cs" />
     <Compile Include="BulletDynamics\Vehicle\WheelInfo.cs" />
     <Compile Include="BulletGlobals.cs" />
+    <Compile Include="Parallel.cs" />
     <Compile Include="LinearMath\DebugDraw.cs" />
     <Compile Include="DrawHelper.cs" />
     <Compile Include="LinearMath\AabbUtil2.cs" />

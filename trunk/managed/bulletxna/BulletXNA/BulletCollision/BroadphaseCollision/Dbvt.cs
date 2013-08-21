@@ -555,10 +555,10 @@ namespace BulletXNA.BulletCollision
         public static void RayTest(DbvtNode root,
                                 ref IndexedVector3 rayFrom,
                                 ref IndexedVector3 rayTo,
-                                ICollide policy)
+                                ICollide policy )
         {
-
-            using (DbvtStackDataBlock stackDataBlock = BulletGlobals.DbvtStackDataBlockPool.Get())
+            PooledType<DbvtStackDataBlock> objPool = BulletGlobals.DbvtStackDataBlockPool;
+            using (DbvtStackDataBlock stackDataBlock = objPool.Get())
             {
                 if (root != null)
                 {
@@ -676,36 +676,38 @@ namespace BulletXNA.BulletCollision
         }
 
 
+      
+        public Stack<DbvtNode> CollideTVStack = new Stack<DbvtNode>(SIMPLE_STACKSIZE);
 
-        private static Stack<DbvtNode> CollideTVStack = new Stack<DbvtNode>(SIMPLE_STACKSIZE);
-        private static int CollideTVCount = 0;
+        
+        public int CollideTVCount = 0;
 
-        public static void CollideTV(DbvtNode root, ref DbvtAabbMm volume, ICollide collideable)
+        public static void CollideTV(DbvtNode root, ref DbvtAabbMm volume, ICollide collideable, Stack<DbvtNode> collideTVStack, ref int collideTVCount)
         {
-            CollideTVCount++;
-            Debug.Assert(CollideTVCount < 2);
-            CollideTVStack.Clear();
+            collideTVCount++;
+            //Debug.Assert(CollideTVCount < 2);
+            collideTVStack.Clear();
             if (root != null)
             {
-                CollideTVStack.Push(root);
+                collideTVStack.Push(root);
                 do
                 {
-                    DbvtNode n = CollideTVStack.Pop();
+                    DbvtNode n = collideTVStack.Pop();
                     if (DbvtAabbMm.Intersect(ref n.volume, ref volume))
                     {
                         if (n.IsInternal())
                         {
-                            CollideTVStack.Push(n._children[0]);
-                            CollideTVStack.Push(n._children[1]);
+                            collideTVStack.Push(n._children[0]);
+                            collideTVStack.Push(n._children[1]);
                         }
                         else
                         {
                             collideable.Process(n);
                         }
                     }
-                } while (CollideTVStack.Count > 0);
+                } while (collideTVStack.Count > 0);
             }
-            CollideTVCount--;
+            collideTVCount--;
         }
 
         //

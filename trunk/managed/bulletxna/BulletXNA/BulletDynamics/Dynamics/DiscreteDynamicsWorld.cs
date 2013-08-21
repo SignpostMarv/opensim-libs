@@ -27,6 +27,7 @@ using System.Diagnostics;
 using BulletXNA.BulletCollision;
 using BulletXNA.LinearMath;
 
+
 namespace BulletXNA.BulletDynamics
 {
     public class DiscreteDynamicsWorld : DynamicsWorld
@@ -333,8 +334,8 @@ namespace BulletXNA.BulletDynamics
                 }
 
                 bool isDynamic = !(body.IsStaticObject() || body.IsKinematicObject());
-                CollisionFilterGroups collisionFilterGroup = isDynamic ? CollisionFilterGroups.DefaultFilter : CollisionFilterGroups.StaticFilter;
-                CollisionFilterGroups collisionFilterMask = isDynamic ? CollisionFilterGroups.AllFilter : (CollisionFilterGroups.AllFilter ^ CollisionFilterGroups.StaticFilter);
+                CollisionFilterGroups collisionFilterGroup = isDynamic ? CollisionFilterGroups.BDefaultGroup : CollisionFilterGroups.BStaticGroup;
+                CollisionFilterGroups collisionFilterMask = isDynamic ? CollisionFilterGroups.BAllGroup : (CollisionFilterGroups.BAllGroup ^ CollisionFilterGroups.BStaticGroup);
 
                 AddCollisionObject(body, collisionFilterGroup, collisionFilterMask);
             }
@@ -498,21 +499,25 @@ namespace BulletXNA.BulletDynamics
             {
                 BulletGlobals.g_streamWriter.WriteLine("PredictUnconstraintMotion [{0}][{1}]", length, timeStep);
             }
-
+            Parallel.For(3,0, length, delegate(int i)
+                                        {
+                                            RigidBody body = m_nonStaticRigidBodies[i];
+                                            if (!body.IsStaticOrKinematicObject())
+                                            {
+                                                body.IntegrateVelocities(timeStep);
+                                                //dampingF
+                                                body.ApplyDamping(timeStep);
+                                                IndexedMatrix temp;
+                                                body.PredictIntegratedTransform(timeStep, out temp);
+                                                body.SetInterpolationWorldTransform(ref temp);
+                                            }
+                                        });
             //for (int i = 0; i < length;i++)
             for (int i = 0; i < m_nonStaticRigidBodies.Count;i++ )
             {
-                RigidBody body = m_nonStaticRigidBodies[i];
-                if (!body.IsStaticOrKinematicObject())
-                {
-                    body.IntegrateVelocities(timeStep);
-                    //dampingF
-                    body.ApplyDamping(timeStep);
-                    IndexedMatrix temp;
-                    body.PredictIntegratedTransform(timeStep, out temp);
-                    body.SetInterpolationWorldTransform(ref temp);
+               
                 }
-            }
+            
             BulletGlobals.StopProfile();
         }
 

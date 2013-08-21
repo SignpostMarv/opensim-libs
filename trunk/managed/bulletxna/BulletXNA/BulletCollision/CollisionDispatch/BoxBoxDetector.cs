@@ -63,6 +63,8 @@ namespace BulletXNA.BulletCollision
             IndexedVector3 translationB = new IndexedVector3(transformB._origin);
 
             //IndexedVector3 debugExtents = new IndexedVector3(2f, 2f, 2f);
+            if (box1 == null || box2 == null)
+                return;
 
             IndexedVector3 box1Margin = new IndexedVector3(2f * box1.GetHalfExtentsWithMargin());
             IndexedVector3 box2Margin = new IndexedVector3(2f * box2.GetHalfExtentsWithMargin());

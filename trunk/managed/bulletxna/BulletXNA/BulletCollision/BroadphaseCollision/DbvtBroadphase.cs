@@ -239,7 +239,7 @@ namespace BulletXNA.BulletCollision
 
             if (current != null)
             {
-                DbvtTreeCollider collider = BulletGlobals.DbvtTreeColliderPool.Get();
+                DbvtTreeCollider collider = new DbvtTreeCollider();
                 collider.Initialize(this);
                 do
                 {
@@ -259,12 +259,12 @@ namespace BulletXNA.BulletCollision
                     current = next;
                 } while (current != null);
                 m_fixedleft = m_sets[1].m_leaves;
-                BulletGlobals.DbvtTreeColliderPool.Free(collider);
+                //BulletGlobals.DbvtTreeColliderPool.Free(collider);
                 m_needcleanup = true;
             }
             /* collide dynamics		*/
             {
-                DbvtTreeCollider collider = BulletGlobals.DbvtTreeColliderPool.Get();
+                DbvtTreeCollider collider = new DbvtTreeCollider();
                 collider.Initialize(this);
                 if (m_deferedcollide)
                 {
@@ -284,7 +284,7 @@ namespace BulletXNA.BulletCollision
                     //ddCollideStopwatch.Stop();
                     //m_profiling.m_ddcollide += (ulong)ddCollideStopwatch.ElapsedMilliseconds;
                 }
-                BulletGlobals.DbvtTreeColliderPool.Free(collider);
+                //BulletGlobals.DbvtTreeColliderPool.Free(collider);
             }
             /* clean up				*/
             if (m_needcleanup)
@@ -366,14 +366,15 @@ namespace BulletXNA.BulletCollision
             proxy.m_uniqueId = ++m_gid;
             proxy.leaf = m_sets[0].Insert(ref aabb, proxy);
             ListAppend(proxy, ref m_stageRoots[m_stageCurrent]);
+            
             if (!m_deferedcollide)
             {
-                DbvtTreeCollider collider = BulletGlobals.DbvtTreeColliderPool.Get();
+                DbvtTreeCollider collider = new DbvtTreeCollider();
                 collider.Initialize(this);
                 collider.proxy = proxy;
-                Dbvt.CollideTV(m_sets[0].m_root, ref aabb, collider);
-                Dbvt.CollideTV(m_sets[1].m_root, ref aabb, collider);
-                BulletGlobals.DbvtTreeColliderPool.Free(collider);
+                Dbvt.CollideTV(m_sets[0].m_root, ref aabb, collider, m_sets[0].CollideTVStack, ref m_sets[0].CollideTVCount);
+                Dbvt.CollideTV(m_sets[1].m_root, ref aabb, collider, m_sets[1].CollideTVStack, ref m_sets[1].CollideTVCount);
+                
             }
             return (proxy);
 
@@ -412,6 +413,8 @@ namespace BulletXNA.BulletCollision
 #endif
             {
                 bool docollide = false;
+                if (proxy == null)
+                    return;
                 if (proxy.stage == STAGECOUNT)
                 {/* fixed . dynamic set	*/
                     m_sets[1].Remove(proxy.leaf);
@@ -458,11 +461,11 @@ m_sets[0].Update(proxy.leaf, ref aabb, ref velocity, DBVT_BP_MARGIN)
                     m_needcleanup = true;
                     if (!m_deferedcollide)
                     {
-                        DbvtTreeCollider collider = BulletGlobals.DbvtTreeColliderPool.Get();
+                        DbvtTreeCollider collider = new DbvtTreeCollider();
                         collider.Initialize(this);
                         Dbvt.CollideTTpersistentStack(m_sets[1].m_root, proxy.leaf, collider);
                         Dbvt.CollideTTpersistentStack(m_sets[0].m_root, proxy.leaf, collider);
-                        BulletGlobals.DbvtTreeColliderPool.Free(collider);
+                        //BulletGlobals.DbvtTreeColliderPool.Free(collider);
                     }
                 }
             }
@@ -474,8 +477,8 @@ m_sets[0].Update(proxy.leaf, ref aabb, ref velocity, DBVT_BP_MARGIN)
         {
             BroadphaseAabbTester callback = new BroadphaseAabbTester(aabbCallback);
             DbvtAabbMm bounds = DbvtAabbMm.FromMM(ref aabbMin, ref aabbMax);
-            Dbvt.CollideTV(m_sets[0].m_root, ref bounds, callback);
-            Dbvt.CollideTV(m_sets[1].m_root, ref bounds, callback);
+            Dbvt.CollideTV(m_sets[0].m_root, ref bounds, callback, m_sets[0].CollideTVStack, ref m_sets[0].CollideTVCount);
+            Dbvt.CollideTV(m_sets[1].m_root, ref bounds, callback, m_sets[1].CollideTVStack, ref m_sets[1].CollideTVCount);
         }
 
 
@@ -562,11 +565,11 @@ m_sets[0].Update(proxy.leaf, ref aabb, ref velocity, DBVT_BP_MARGIN)
                 m_needcleanup = true;
                 if (!m_deferedcollide)
                 {
-                    DbvtTreeCollider collider = BulletGlobals.DbvtTreeColliderPool.Get();
+                    DbvtTreeCollider collider = new DbvtTreeCollider();
                     collider.Initialize(this);
                     Dbvt.CollideTTpersistentStack(m_sets[1].m_root, proxy.leaf, collider);
                     Dbvt.CollideTTpersistentStack(m_sets[0].m_root, proxy.leaf, collider);
-                    BulletGlobals.DbvtTreeColliderPool.Free(collider);
+                    //BulletGlobals.DbvtTreeColliderPool.Free(collider);
                 }
             }
         }
