@@ -29,6 +29,7 @@
 #include "Util.h"
 #include <stdarg.h>
 
+#include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "BulletCollision/BroadphaseCollision/btBroadphaseProxy.h"
 
@@ -2825,9 +2826,14 @@ EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* cons
 		}
 }
 
+extern float gDeactivationTime;
 EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
 {
 	btDynamicsWorld* world = sim->getDynamicsWorld();
+
+	sim->getWorldData()->BSLog("gDisableDeactivation=%d, gDeactivationTime=%f, splitIslands=%d",
+		gDisableDeactivation, gDeactivationTime, ((btDiscreteDynamicsWorld*)world)->getSimulationIslandManager()->getSplitIslands());
+
 	btCollisionObjectArray& collisionObjects = world->getCollisionObjectArray();
 	int numCollisionObjects = collisionObjects.size();
 	for (int ii=0; ii < numCollisionObjects; ii++)
