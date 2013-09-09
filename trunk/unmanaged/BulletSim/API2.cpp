@@ -48,6 +48,8 @@
     #define EXTERN_C extern
 #endif
 
+EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* constrain);
+
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
 
 // The minimum thickness for terrain. If less than this, we correct
@@ -726,6 +728,9 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofSpringConstraint2(BulletSim* si
 		btTransform frame2t(frame2rot.GetBtQuaternion(), frame2loc.GetBtVector3());
 
 		constrain = new btGeneric6DofSpringConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
+
+		sim->getWorldData()->BSLog("Create6DofSpringConstraint2 ++++++++++++");
+		DumpConstraint2(sim, constrain);
 
 		constrain->calculateTransforms();
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
@@ -1790,6 +1795,8 @@ EXTERN_C DLL_EXPORT bool AddConstraintToWorld2(BulletSim* sim, btTypedConstraint
 	bsDebug_AssertIsKnownConstraint(constrain, "AddConstraintToWorld2: unknown constraint");
 	bsDebug_AssertConstraintIsNotInWorld(sim, constrain, "AddConstraintToWorld2: constraint already in world");
 	sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+	sim->getWorldData()->BSLog("AddConstraintToWorld2 ++++++++++++");
+	DumpConstraint2(sim, constrain);
 	return true;
 }
 
@@ -1797,6 +1804,8 @@ EXTERN_C DLL_EXPORT bool RemoveConstraintFromWorld2(BulletSim* sim, btTypedConst
 {
 	bsDebug_AssertIsKnownConstraint(constrain, "RemoveConstraintToWorld2: unknown constraint");
 	bsDebug_AssertConstraintIsInWorld(sim, constrain, "RemoveConstraintToWorld2: constraint not in world");
+	sim->getWorldData()->BSLog("RemoveConstraintFromWorld2 ++++++++++++");
+	DumpConstraint2(sim, constrain);
 	sim->getDynamicsWorld()->removeConstraint(constrain);
 	return true;
 }
@@ -2805,6 +2814,43 @@ EXTERN_C DLL_EXPORT void DumpCollisionShape2(BulletSim* sim, btCollisionShape* s
 		);
 }
 
+EXTERN_C DLL_EXPORT void DumpFrameInfo(BulletSim* sim, char* type, btTransform& frameInA, btTransform& frameInB)
+{
+	btVector3 frameInALoc = frameInA.getOrigin();
+	btQuaternion frameInARot = frameInA.getRotation();
+	btVector3  frameInBLoc = frameInB.getOrigin();
+	btQuaternion frameInBRot = frameInB.getRotation();
+	sim->getWorldData()->BSLog("DumpConstraint: %s: frameInALoc=<%f,%f,%f>, frameInARot=<%f,%f,%f,%f>", type,
+				frameInALoc.getX(), frameInALoc.getY(), frameInALoc.getZ(),
+				frameInARot.getX(), frameInARot.getY(), frameInARot.getZ(), frameInARot.getW() );
+	sim->getWorldData()->BSLog("DumpConstraint: %s: frameInBLoc=<%f,%f,%f>, frameInBRot=<%f,%f,%f,%f>", type,
+				frameInBLoc.getX(), frameInBLoc.getY(), frameInBLoc.getZ(),
+				frameInBRot.getX(), frameInBRot.getY(), frameInBRot.getZ(), frameInBRot.getW() );
+}
+
+// Several of the constraints are based on the 6Dof constraint.
+// Print common info.
+EXTERN_C DLL_EXPORT void Dump6DofInfo(BulletSim* sim, char* type, btGeneric6DofConstraint* constrain)
+{
+	btTransform frameInA = constrain->getFrameOffsetA();
+	btTransform frameInB = constrain->getFrameOffsetB();
+	DumpFrameInfo(sim, type, frameInA, frameInB);
+
+	btVector3 linLower, linUpper;
+	btVector3 angLower, angUpper;
+	constrain->getLinearLowerLimit(linLower);
+	constrain->getLinearUpperLimit(linUpper);
+	constrain->getAngularLowerLimit(angLower);
+	constrain->getAngularUpperLimit(angUpper);
+	sim->getWorldData()->BSLog("DumpConstraint: %s: linLow=<%f,%f,%f>, linUp=<%f,%f,%f>", type,
+				linLower.getX(), linLower.getY(), linLower.getZ(),
+				linUpper.getX(), linUpper.getY(), linUpper.getZ() );
+	sim->getWorldData()->BSLog("DumpConstraint: %s: angLow=<%f,%f,%f>, angUp=<%f,%f,%f>,appliedImpulse=%f", type,
+				angLower.getX(), angLower.getY(), angLower.getZ(),
+				angUpper.getX(), angUpper.getY(), angUpper.getZ(),
+				constrain->getAppliedImpulse() );
+}
+
 // Outputs constraint information
 EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* constrain)
 {
@@ -2815,14 +2861,81 @@ EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* cons
 		if (constrain->getConstraintType() == D6_CONSTRAINT_TYPE)
 		{
 			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-			btVector3 angLower;
-			btVector3 angUpper;
-			cc->getAngularLowerLimit(angLower);
-			cc->getAngularUpperLimit(angUpper);
-			sim->getWorldData()->BSLog("DumpConstraint: 6DOF: angLow=<%f,%f,%f>, angUp=<%f,%f,%f>,appliedImpulse=%f",
-						angLower.getX(), angLower.getY(), angLower.getZ(),
-						angUpper.getX(), angUpper.getY(), angUpper.getZ(),
-						cc->getAppliedImpulse() );
+			Dump6DofInfo(sim, "6DOF", cc);
+		}
+		if (constrain->getConstraintType() == D6_SPRING_CONSTRAINT_TYPE)
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			Dump6DofInfo(sim, "Spring", cc);
+		}
+		if (constrain->getConstraintType() == HINGE_CONSTRAINT_TYPE)
+		{
+			btHinge2Constraint* cc = (btHinge2Constraint*)constrain;
+			Dump6DofInfo(sim, "Hinge", cc);
+			btVector3 anchor1, anchor2, axis1, axis2;
+			anchor1 = cc->getAnchor();
+			anchor2 = cc->getAnchor2();
+			axis1 = cc->getAxis1();
+			axis2 = cc->getAxis2();
+			sim->getWorldData()->BSLog("DumpConstraint: Hinge: anchor1=<%f,%f,%f>, anchor2=<%f,%f,%f>, axis1=<%f,%f,%f>, axis2=<%f,%f,%f>",
+						anchor1.getX(), anchor1.getY(), anchor1.getZ(),
+						anchor2.getX(), anchor2.getY(), anchor2.getZ(),
+						axis1.getX(), axis1.getY(), axis1.getZ(),
+						axis2.getX(), axis2.getY(), axis2.getZ() );
+			float angle1, angle2;
+			angle1 = cc->getAngle1();
+			angle2 = cc->getAngle2();
+			sim->getWorldData()->BSLog("DumpConstraint: Hinge: angle1=%f, angle2==%f", angle1, angle2);
+		}
+		if (constrain->getConstraintType() == SLIDER_CONSTRAINT_TYPE)
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			btTransform frameInA = cc->getFrameOffsetA();
+		    btTransform frameInB = cc->getFrameOffsetB();
+			DumpFrameInfo(sim, "Slider", frameInA, frameInB);
+
+		    btScalar lowerLinLimit = cc->getLowerLinLimit();
+		    btScalar upperLinLimit = cc->getUpperLinLimit();
+		    btScalar lowerAngLimit = cc->getLowerAngLimit();
+		    btScalar upperAngLimit = cc->getUpperAngLimit();
+			bool useLinearReferenceFrameA = cc->getUseLinearReferenceFrameA();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: lowLinLim=%f, upperLinLim=%f, lowAngLim=%f, upperAngLim=%f, useRefFrameA=%d", 
+						lowerLinLimit, lowerLinLimit, upperAngLimit, upperAngLimit, useLinearReferenceFrameA );
+
+			btScalar softnessDirLin = cc->getSoftnessDirLin();
+			btScalar restitutionDirLin = cc->getRestitutionDirLin();
+			btScalar dampingDirLin = cc->getDampingDirLin();
+			btScalar softnessDirAng = cc->getSoftnessDirAng();
+			btScalar restitutionDirAng = cc->getRestitutionDirAng();
+			btScalar dampingDirAng = cc->getDampingDirAng();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: DirLin: soft=%f, rest=%f, damp=%f. DirAng: soft=%f, rest=%f, damp=%f",
+										softnessDirLin, restitutionDirLin, dampingDirLin,
+										softnessDirAng, restitutionDirAng, dampingDirAng);
+			btScalar softnessLimLin = cc->getSoftnessLimLin();
+			btScalar restitutionLimLin = cc->getRestitutionLimLin();
+			btScalar dampingLimLin = cc->getDampingLimLin();
+			btScalar softnessLimAng = cc->getSoftnessLimAng();
+			btScalar restitutionLimAng = cc->getRestitutionLimAng();
+			btScalar dampingLimAng = cc->getDampingLimAng();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: LimLin: soft=%f, rest=%f, damp=%f. LimAng: soft=%f, rest=%f, damp=%f",
+										softnessLimLin, restitutionLimLin, dampingLimLin,
+										softnessLimAng, restitutionLimAng, dampingLimAng);
+			btScalar softnessOrthoLin = cc->getSoftnessOrthoLin();
+			btScalar restitutionOrthoLin = cc->getRestitutionOrthoLin();
+			btScalar dampingOrthoLin = cc->getDampingOrthoLin();
+			btScalar softnessOrthoAng = cc->getSoftnessOrthoAng();
+			btScalar restitutionOrthoAng = cc->getRestitutionOrthoAng();
+			btScalar dampingOrthoAng = cc->getDampingOrthoAng();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: OrthoLin: soft=%f, rest=%f, damp=%f. OrthoAng: soft=%f, rest=%f, damp=%f",
+										softnessOrthoLin, restitutionOrthoLin, dampingOrthoLin,
+										softnessOrthoAng, restitutionOrthoAng, dampingOrthoAng );
+		}
+		if (constrain->getConstraintType() == CONETWIST_CONSTRAINT_TYPE)
+		{
+			btConeTwistConstraint* cc = (btConeTwistConstraint*)constrain;
+			btTransform frameInA = cc->getAFrame();
+		    btTransform frameInB = cc->getBFrame();
+			DumpFrameInfo(sim, "ConeTwist", frameInA, frameInB);
 		}
 }
 
