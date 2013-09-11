@@ -1790,6 +1790,23 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 	return true;
 }
 
+EXTERN_C DLL_EXPORT bool ClearCollisionProxyCache2(BulletSim* sim, btCollisionObject* obj)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj, "RemoveObjectFromWorld2: unknown collisionObject");
+	bsDebug_AssertCollisionObjectIsInWorld(sim, obj, "RemoveObjectToWorld2: collisionObject not in world");
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb && rb->getBroadphaseHandle())
+	{
+		// A cheap way of clearing the collision proxy cache is to remove and add the object
+		sim->getDynamicsWorld()->removeCollisionObject(obj);
+		sim->getDynamicsWorld()->addCollisionObject(obj);
+		// sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(rb->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
+		// sim->getDynamicsWorld()->getBroadphase()->destroyProxy(rb->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
+		// rb->setBroadphaseHandle(0);
+	}
+	return true;
+}
+
 EXTERN_C DLL_EXPORT bool AddConstraintToWorld2(BulletSim* sim, btTypedConstraint* constrain, bool disableCollisionsBetweenLinkedBodies)
 {
 	bsDebug_AssertIsKnownConstraint(constrain, "AddConstraintToWorld2: unknown constraint");
