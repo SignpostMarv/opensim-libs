@@ -1159,6 +1159,50 @@ EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constra
 	return ret;
 }
 
+EXTERN_C DLL_EXPORT bool ConstraintSetAxis2(btTypedConstraint* constrain, Vector3 axisA, Vector3 axisB)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "SetConstraintAxis2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+		{
+			btHingeConstraint* cc = (btHingeConstraint*)constrain;
+			btVector3 hingeAxis = axisA.GetBtVector3();
+			cc->setAxis(hingeAxis);
+			ret = true;
+			break;
+		}
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setAxis(axisA.GetBtVector3(), axisB.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setAxis(axisA.GetBtVector3(), axisB.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
+	}
+	return ret;
+}
+
 #define HINGE_NOT_SPECIFIED (-1.0)
 EXTERN_C DLL_EXPORT bool ConstraintHingeSetLimit2(btTypedConstraint* constrain, float low, float high, float softness, float bias, float relaxation)
 {
