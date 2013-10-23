@@ -135,17 +135,26 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	btDefaultCollisionConstructionInfo cci;
 	// if you are setting a pool size, you should disable dynamic allocation
 	if (m_worldData.params->maxPersistantManifoldPoolSize > 0)
+	{
 		cci.m_defaultMaxPersistentManifoldPoolSize = (int)m_worldData.params->maxPersistantManifoldPoolSize;
+		m_worldData.BSLog("initPhysics2: setting defaultMaxPersistentManifoldPoolSize = %f", m_worldData.params->maxPersistantManifoldPoolSize);
+	}
 	if (m_worldData.params->maxCollisionAlgorithmPoolSize > 0)
+	{
 		cci.m_defaultMaxCollisionAlgorithmPoolSize = m_worldData.params->maxCollisionAlgorithmPoolSize;
+		m_worldData.BSLog("initPhysics2: setting defaultMaxCollisionAlgorithmPoolSize = %f", m_worldData.params->maxCollisionAlgorithmPoolSize);
+	}
 	
 	m_collisionConfiguration = new btDefaultCollisionConfiguration(cci);
 	m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 
 	// optional but not a good idea
 	if (m_worldData.params->shouldDisableContactPoolDynamicAllocation != ParamFalse)
+	{
 		m_dispatcher->setDispatcherFlags(
 				btCollisionDispatcher::CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION | m_dispatcher->getDispatcherFlags());
+		m_worldData.BSLog("initPhysics2: adding CD_DISABLE_CONTACTPOOL_DYNAMIC_ALLOCATION to dispatcherFlags");
+	}
 
 	m_broadphase = new btDbvtBroadphase();
 
@@ -165,20 +174,31 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	// http://www.bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9&t=4991
 	// Note that if disabled, movement or changes to a static object will not update the AABB. Must do it explicitly.
 	dynamicsWorld->setForceUpdateAllAabbs(m_worldData.params->shouldForceUpdateAllAabbs != ParamFalse);
+	m_worldData.BSLog("initPhysics2: setForceUpdateAllAabbs = %d", (m_worldData.params->shouldForceUpdateAllAabbs != ParamFalse));
 	
 	// Randomizing the solver order makes object stacking more stable at a slight performance cost
 	if (m_worldData.params->shouldRandomizeSolverOrder != ParamFalse)
+	{
 		dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
+		m_worldData.BSLog("initPhysics2: setting SOLVER_RANMIZE_ORDER");
+
+	}
 
 	// Change the breaking threshold if specified.
 	if (m_worldData.params->globalContactBreakingThreshold != 0)
+	{
 		gContactBreakingThreshold = m_worldData.params->globalContactBreakingThreshold;
+		m_worldData.BSLog("initPhysics2: setting gContactBreakingThreshold = %f", m_worldData.params->globalContactBreakingThreshold);
+	}
 
 	// setting to false means the islands are not reordered and split up for individual processing
 	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
 
 	if (m_worldData.params->useSingleSidedMeshes != ParamFalse)
+	{
 		gContactAddedCallback = SingleSidedMeshCheckCallback;
+		m_worldData.BSLog("initPhysics2: enabling SingleSidedMeshCheckCallback");
+	}
 
 	/*
 	// Performance speedup: http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?p=14367
@@ -189,11 +209,17 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 
 	// Performance speedup: from BenchmarkDemo.cpp, ln 381
 	if (m_worldData.params->shouldEnableFrictionCaching != ParamFalse)
+	{
 		m_worldData.dynamicsWorld->getSolverInfo().m_solverMode |= SOLVER_ENABLE_FRICTION_DIRECTION_CACHING; //don't recalculate friction values each frame
+		m_worldData.BSLog("initPhysics2: enabling SOLVER_ENABLE_FRICTION_DIRECTION_CACHING");
+	}
 
 	// Increasing solver interations can increase stability.
 	if (m_worldData.params->numberOfSolverIterations > 0)
+	{
 		m_worldData.dynamicsWorld->getSolverInfo().m_numIterations = (int)m_worldData.params->numberOfSolverIterations;
+		m_worldData.BSLog("initPhysics2: setting solver iterations = %f", m_worldData.params->numberOfSolverIterations);
+	}
 
 	// Earth-like gravity
 	dynamicsWorld->setGravity(btVector3(0.f, 0.f, m_worldData.params->gravity));
@@ -264,7 +290,7 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 			if (--m_dumpStatsCount <= 0)
 			{
 				m_dumpStatsCount = (int)m_worldData.params->physicsLoggingFrames;
-				DumpPhysicsStatistics2(this);
+				// DumpPhysicsStatistics2(this);
 				DumpActivationInfo2(this);
 			}
 		}

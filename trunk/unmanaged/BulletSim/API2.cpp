@@ -3065,6 +3065,19 @@ EXTERN_C DLL_EXPORT void DumpActivationInfo2(BulletSim* sim)
 	sim->getWorldData()->BSLog("num DISABLE_DEACTIVATION = %d", activeStates[DISABLE_DEACTIVATION]);
 	sim->getWorldData()->BSLog("  num DISABLE_SIMULATION = %d", activeStates[DISABLE_SIMULATION]);
 	sim->getWorldData()->BSLog("    num overlappingPairs = %d", world->getPairCache()->getNumOverlappingPairs());
+
+	/* Code for displaying some of the info in the overlapping pairs cache
+	btBroadphasePairArray& pairArray = world->getPairCache()->getOverlappingPairArray();
+	int numPairs = pairArray.size();
+
+	for (int ii=0; ii < numPairs; ii += 5000)
+	{
+		sim->getWorldData()->BSLog("pairArray[%d], id0=%d, id1=%d", ii,
+											((btCollisionObject*)pairArray[ii].m_pProxy0->m_clientObject)->getUserPointer(),
+											((btCollisionObject*)pairArray[ii].m_pProxy1->m_clientObject)->getUserPointer());
+	}
+	*/
+
 }
 
 // Version of log printer that takes the simulator as a parameter.
