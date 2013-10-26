@@ -490,7 +490,7 @@ btCollisionShape* BulletSim::CreateMeshShape2(int indicesCount, int* indices, in
 	btTriangleIndexVertexArray* vertexArray = new btTriangleIndexVertexArray();
 	vertexArray->addIndexedMesh(indexedMesh, PHY_INTEGER);
 
-	bool useQuantizedAabbCompression = false;
+	bool useQuantizedAabbCompression = true;
 	bool buildBvh = true;
 	btBvhTriangleMeshShape* meshShape = new btBvhTriangleMeshShape(vertexArray, useQuantizedAabbCompression, buildBvh);
 
