@@ -64,6 +64,44 @@ EXTERN_C DLL_EXPORT char* GetVersion2()
 	return &BulletSimVersionString[0];
 }
 
+// DEBUG DEBUG DEBUG =========================================================================================
+// USE ONLY FOR VITAL DEBUGGING!!!!
+// These are really, really dangerous as they rely on static settings which will only work if there
+//     is only one instance of BulletSim.
+//     Put in the log messages and, when done, take them out for release.
+static int lastNumberOverlappingPairs;
+static BulletSim* staticSim;
+
+static void InitCheckOverlappingPairs(BulletSim* pSim)
+{
+	staticSim = pSim;
+	lastNumberOverlappingPairs = staticSim->getDynamicsWorld()->getPairCache()->getNumOverlappingPairs();
+}
+static void CheckOverlappingPairs(char* pReason)
+{
+	int thisOverlapping = staticSim->getDynamicsWorld()->getPairCache()->getNumOverlappingPairs();
+	if (thisOverlapping != lastNumberOverlappingPairs)
+	{
+		btBroadphasePairArray& pairArray = staticSim->getDynamicsWorld()->getPairCache()->getOverlappingPairArray();
+		int ii = thisOverlapping -1;
+		staticSim->getWorldData()->BSLog("Pair cache change. old=%d, new=%d, from=%s. Last added id0=%u, id1=%u",
+											lastNumberOverlappingPairs, thisOverlapping, pReason,
+											((btCollisionObject*)pairArray[ii].m_pProxy0->m_clientObject)->getUserPointer(),
+											((btCollisionObject*)pairArray[ii].m_pProxy1->m_clientObject)->getUserPointer());
+		lastNumberOverlappingPairs = thisOverlapping;
+	}
+}
+void __cdecl StaticBSLog(const char* msg, ...)
+{
+	if (staticSim->getWorldData()->debugLogCallback != NULL) {
+		va_list args;
+		va_start(args, msg);
+		staticSim->getWorldData()->BSLog2(msg, args);
+		va_end(args);
+	}
+}
+// END DEBUG DEBUG DEBUG =========================================================================================
+
 /**
  * Initializes the physical simulation.
  * @param maxPosition Top north-east corner of the simulation, with Z being up. The bottom south-west corner is 0,0,0.
@@ -120,7 +158,6 @@ EXTERN_C DLL_EXPORT void ResetConstraintSolver(BulletSim* sim)
 {
 	sim->getDynamicsWorld()->getConstraintSolver()->reset();
 }
-
 
 /**
  * Steps the simulation forward a given amount of time and retrieves any physics updates.
@@ -1842,8 +1879,10 @@ EXTERN_C DLL_EXPORT bool ClearCollisionProxyCache2(BulletSim* sim, btCollisionOb
 	if (rb && rb->getBroadphaseHandle())
 	{
 		// A cheap way of clearing the collision proxy cache is to remove and add the object
+		short collisionGroup = obj->getBroadphaseHandle()->m_collisionFilterGroup;
+		short collisionMask = obj->getBroadphaseHandle()->m_collisionFilterMask;
 		sim->getDynamicsWorld()->removeCollisionObject(obj);
-		sim->getDynamicsWorld()->addCollisionObject(obj);
+		sim->getDynamicsWorld()->addCollisionObject(obj, collisionGroup, collisionMask);
 		// sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(rb->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
 		// sim->getDynamicsWorld()->getBroadphase()->destroyProxy(rb->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
 		// rb->setBroadphaseHandle(0);
@@ -2659,10 +2698,16 @@ EXTERN_C DLL_EXPORT bool SetCollisionGroupMask2(btCollisionObject* obj, unsigned
 	// If the object is not in the world, there won't be a proxy.
 	if (proxy)
 	{
+		// staticSim->getWorldData()->BSLog("SetCollisionGroupMask. ogroup=%x, omask=%x, ngroup=%x, nmask=%x",
+		// 				(int)proxy->m_collisionFilterGroup, (int)proxy->m_collisionFilterMask, group, mask);
 		proxy->m_collisionFilterGroup = (short)group;
 		proxy->m_collisionFilterMask = (short)mask;
 		ret = true;
 	}
+	// else
+	// {
+	// 	staticSim->getWorldData()->BSLog("SetCollisionGroupMask did not find a proxy");
+	// }
 	return ret;
 }
 
@@ -3070,15 +3115,16 @@ EXTERN_C DLL_EXPORT void DumpActivationInfo2(BulletSim* sim)
 	btBroadphasePairArray& pairArray = world->getPairCache()->getOverlappingPairArray();
 	int numPairs = pairArray.size();
 
-	for (int ii=0; ii < numPairs; ii += 5000)
+	for (int ii=0; ii < numPairs; ii += 10000)
 	{
-		sim->getWorldData()->BSLog("pairArray[%d], id0=%d, id1=%d", ii,
-											((btCollisionObject*)pairArray[ii].m_pProxy0->m_clientObject)->getUserPointer(),
-											((btCollisionObject*)pairArray[ii].m_pProxy1->m_clientObject)->getUserPointer());
+		sim->getWorldData()->BSLog("pairArray[%d], id0=%u, id1=%u", ii,
+					((btCollisionObject*)pairArray[ii].m_pProxy0->m_clientObject)->getUserPointer(),
+					((btCollisionObject*)pairArray[ii].m_pProxy1->m_clientObject)->getUserPointer());
 	}
 	*/
 
 }
+
 
 // Version of log printer that takes the simulator as a parameter.
 // Used for statistics logging from Bullet.
