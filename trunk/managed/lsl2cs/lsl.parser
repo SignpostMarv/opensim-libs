@@ -172,6 +172,11 @@
     }
 }
 
+%symbol StateEntryStateEvent: StateEvent
+{
+    public StateEntryStateEvent(string name, CompoundStatement cs) : base(name, cs) {}
+}
+
 %symbol ArgumentDeclarationList
 {
     public ArgumentDeclarationList(Declaration d)
@@ -234,6 +239,11 @@
     {
         yytext = text;
     }
+}
+
+%symbol EntryEvent : Event
+{
+    public EntryEvent(string text) : base(text) {}
 }
 
 %symbol CompoundStatement
@@ -932,10 +942,16 @@ State
 StateBody
     : StateEvent:se %StateBody(se)
     | StateBody:sb StateEvent:se %StateBody(sb, se)
+    | StateEntryStateEvent:se %StateBody(se)
+    | StateBody:sb StateEntryStateEvent:se %StateBody(sb, se)
     ;
 
 StateEvent
     : Event:e LEFT_PAREN ArgumentDeclarationList:dal RIGHT_PAREN CompoundStatement:cs %StateEvent(e.yytext, dal, cs)
+    ;
+
+StateEntryStateEvent
+    : EntryEvent:e LEFT_PAREN RIGHT_PAREN CompoundStatement:cs %StateEntryStateEvent(e.yytext, cs  )
     ;
 
 ArgumentDeclarationList
@@ -1168,11 +1184,14 @@ Event
     | REMOTE_DATA_EVENT:e %Event(e.yytext)
     | RUN_TIME_PERMISSIONS_EVENT:e %Event(e.yytext)
     | SENSOR_EVENT:e %Event(e.yytext)
-    | STATE_ENTRY_EVENT:e:e %Event(e.yytext)
     | STATE_EXIT_EVENT:e %Event(e.yytext)
     | TIMER_EVENT:e %Event(e.yytext)
     | TOUCH_EVENT:e %Event(e.yytext)
     | TOUCH_END_EVENT:e %Event(e.yytext)
     | TOUCH_START_EVENT:e %Event(e.yytext)
-    | HTTP_REQUEST_EVENT: e %Event(e.yytext)
+    | HTTP_REQUEST_EVENT:e %Event(e.yytext)
+    ;
+
+EntryEvent
+    : STATE_ENTRY_EVENT:e %EntryEvent(e.yytext)
     ;
