@@ -98,7 +98,7 @@ namespace BulletXNA.BulletCollision
                 m_ownManifold = false;
             }
             m_manifoldPtr = null;
-            BulletGlobals.ConvexConvexAlgorithmPool.Free(this);
+            //BulletGlobals.ConvexConvexAlgorithmPool.Free(this);
         }
 
         public override void ProcessCollision(CollisionObject body0, CollisionObject body1, DispatcherInfo dispatchInfo, ManifoldResult resultOut)
@@ -115,9 +115,13 @@ namespace BulletXNA.BulletCollision
             //comment-out next line to test multi-contact generation
             //resultOut.GetPersistentManifold().ClearManifold();
 
-
+            
             ConvexShape min0 = body0.GetCollisionShape() as ConvexShape;
             ConvexShape min1 = body1.GetCollisionShape() as ConvexShape;
+            if (min0 == null)
+                return;
+            if (min1 == null)
+                return;
             IndexedVector3 normalOnB;
             IndexedVector3 pointOnBWorld;
 #if !BT_DISABLE_CAPSULE_CAPSULE_COLLIDER
@@ -727,7 +731,7 @@ namespace BulletXNA.BulletCollision
 
         public override CollisionAlgorithm CreateCollisionAlgorithm(CollisionAlgorithmConstructionInfo ci, CollisionObject body0, CollisionObject body1)
         {
-            ConvexConvexAlgorithm cca = BulletGlobals.ConvexConvexAlgorithmPool.Get();
+            ConvexConvexAlgorithm cca = new ConvexConvexAlgorithm();// BulletGlobals.ConvexConvexAlgorithmPool.Get();
             cca.Initialize(ci.GetManifold(), ci, body0, body1, m_simplexSolver, m_pdSolver, m_numPerturbationIterations, m_minimumPointsPerturbationThreshold);
             return cca;
         }

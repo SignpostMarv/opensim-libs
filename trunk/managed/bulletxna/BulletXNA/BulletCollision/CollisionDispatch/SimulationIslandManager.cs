@@ -51,6 +51,7 @@ namespace BulletXNA.BulletCollision
 
         public void InitUnionFind(int n)
         {
+            lock(m_unionFind)
             m_unionFind.Reset(n);
         }
 
@@ -75,7 +76,7 @@ namespace BulletXNA.BulletCollision
                     if (((colObj0 != null) && ((colObj0).MergesSimulationIslands())) &&
                         ((colObj1 != null) && ((colObj1).MergesSimulationIslands())))
                     {
-
+                        lock (m_unionFind)
                         m_unionFind.Unite((colObj0).GetIslandTag(),
                             (colObj1).GetIslandTag());
                     }
@@ -127,11 +128,15 @@ public void   StoreIslandActivationState(CollisionWorld colWorld)
 			CollisionObject collisionObject= collisionObjects[i];
 			if (!collisionObject.IsStaticOrKinematicObject())
 			{
-				collisionObject.SetIslandTag( m_unionFind.Find(index) );
-				//Set the correct object offset in Collision Object Array
-                //m_unionFind.GetElement(index).m_sz = i;
-                m_unionFind.SetElementSize(index, i);
-				collisionObject.SetCompanionId(-1);
+			    lock (m_unionFind)
+			    {
+			        collisionObject.SetIslandTag(m_unionFind.Find(index));
+			        //Set the correct object offset in Collision Object Array
+			        //m_unionFind.GetElement(index).m_sz = i;
+
+			        m_unionFind.SetElementSize(index, i);
+			    }
+			    collisionObject.SetCompanionId(-1);
 				index++;
 			} else
 			{

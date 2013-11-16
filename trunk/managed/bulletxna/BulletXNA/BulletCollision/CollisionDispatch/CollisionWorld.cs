@@ -90,6 +90,48 @@ namespace BulletXNA.BulletCollision
                 public float linkConstraintSolverIterations;
 
                 public float physicsLoggingFrames;
+                public PooledType<VoronoiSimplexSolver> VoronoiSimplexSolverPool;
+                public PooledType<SubSimplexConvexCast> SubSimplexConvexCastPool;
+                public PooledType<ManifoldPoint> ManifoldPointPool;
+                public PooledType<CastResult> CastResultPool;
+                public PooledType<SphereShape> SphereShapePool;
+                public PooledType<DbvtNode> DbvtNodePool;
+                public PooledType<SingleRayCallback> SingleRayCallbackPool;
+                public PooledType<SubSimplexClosestResult> SubSimplexClosestResultPool;
+                public PooledType<GjkPairDetector> GjkPairDetectorPool;
+                public PooledType<DbvtTreeCollider> DbvtTreeColliderPool;
+                public PooledType<SingleSweepCallback> SingleSweepCallbackPool;
+                public PooledType<BroadphaseRayTester> BroadphaseRayTesterPool;
+                public PooledType<ClosestNotMeConvexResultCallback> ClosestNotMeConvexResultCallbackPool;
+                public PooledType<GjkEpaPenetrationDepthSolver> GjkEpaPenetrationDepthSolverPool;
+                public PooledType<ContinuousConvexCollision> ContinuousConvexCollisionPool;
+                public PooledType<DbvtStackDataBlock> DbvtStackDataBlockPool;
+
+                public PooledType<BoxBoxCollisionAlgorithm> BoxBoxCollisionAlgorithmPool;
+                public PooledType<CompoundCollisionAlgorithm> CompoundCollisionAlgorithmPool;
+                public PooledType<ConvexConcaveCollisionAlgorithm> ConvexConcaveCollisionAlgorithmPool;
+                public PooledType<ConvexConvexAlgorithm> ConvexConvexAlgorithmPool;
+                public PooledType<ConvexPlaneCollisionAlgorithm> ConvexPlaneAlgorithmPool;
+                public PooledType<SphereBoxCollisionAlgorithm> SphereBoxCollisionAlgorithmPool;
+                public PooledType<SphereSphereCollisionAlgorithm> SphereSphereCollisionAlgorithmPool;
+                public PooledType<SphereTriangleCollisionAlgorithm> SphereTriangleCollisionAlgorithmPool;
+                public PooledType<GImpactCollisionAlgorithm> GImpactCollisionAlgorithmPool;
+                public PooledType<GjkEpaSolver2MinkowskiDiff> GjkEpaSolver2MinkowskiDiffPool;
+                public PooledType<PersistentManifold> PersistentManifoldPool;
+                public PooledType<ManifoldResult> ManifoldResultPool;
+                public PooledType<GJK> GJKPool;
+                public PooledType<GIM_ShapeRetriever> GIM_ShapeRetrieverPool;
+                public PooledType<TriangleShape> TriangleShapePool;
+                public PooledType<SphereTriangleDetector> SphereTriangleDetectorPool;
+                public PooledType<CompoundLeafCallback> CompoundLeafCallbackPool;
+                public PooledType<GjkConvexCast> GjkConvexCastPool;
+                public PooledType<LocalTriangleSphereCastCallback> LocalTriangleSphereCastCallbackPool;
+                public PooledType<BridgeTriangleRaycastCallback> BridgeTriangleRaycastCallbackPool;
+                public PooledType<BridgeTriangleConcaveRaycastCallback> BridgeTriangleConcaveRaycastCallbackPool;
+                public PooledType<BridgeTriangleConvexcastCallback> BridgeTriangleConvexcastCallbackPool;
+                public PooledType<MyNodeOverlapCallback> MyNodeOverlapCallbackPool;
+                public PooledType<ClosestRayResultCallback> ClosestRayResultCallbackPool;
+                public PooledType<BulletXNA.DebugDrawcallback> DebugDrawcallbackPool;
 
             }
         }
@@ -106,6 +148,48 @@ namespace BulletXNA.BulletCollision
             m_dispatchInfo = new DispatcherInfo();
             m_forceUpdateAllAabbs = true;
             WorldSettings.Params = new WorldData.ParamData();
+            WorldSettings.Params.VoronoiSimplexSolverPool = new PooledType<VoronoiSimplexSolver>();
+            WorldSettings.Params.SubSimplexConvexCastPool = new PooledType<SubSimplexConvexCast>();
+            WorldSettings.Params.ManifoldPointPool = new PooledType<ManifoldPoint>();
+            WorldSettings.Params.CastResultPool = new PooledType<CastResult>();
+            WorldSettings.Params.SphereShapePool = new PooledType<SphereShape>();
+            WorldSettings.Params.DbvtNodePool = new PooledType<DbvtNode>();
+            WorldSettings.Params.SingleRayCallbackPool = new PooledType<SingleRayCallback>();
+            WorldSettings.Params.SubSimplexClosestResultPool = new PooledType<SubSimplexClosestResult>();
+            WorldSettings.Params.GjkPairDetectorPool = new PooledType<GjkPairDetector>();
+            WorldSettings.Params.DbvtTreeColliderPool = new PooledType<DbvtTreeCollider>();
+            WorldSettings.Params.SingleSweepCallbackPool = new PooledType<SingleSweepCallback>();
+            WorldSettings.Params.BroadphaseRayTesterPool = new PooledType<BroadphaseRayTester>();
+            WorldSettings.Params.ClosestNotMeConvexResultCallbackPool = new PooledType<ClosestNotMeConvexResultCallback>();
+            WorldSettings.Params.GjkEpaPenetrationDepthSolverPool = new PooledType<GjkEpaPenetrationDepthSolver>();
+            WorldSettings.Params.ContinuousConvexCollisionPool = new PooledType<ContinuousConvexCollision>();
+            WorldSettings.Params.DbvtStackDataBlockPool = new PooledType<DbvtStackDataBlock>();
+
+            WorldSettings.Params.BoxBoxCollisionAlgorithmPool = new PooledType<BoxBoxCollisionAlgorithm>();
+            WorldSettings.Params.CompoundCollisionAlgorithmPool = new PooledType<CompoundCollisionAlgorithm>();
+            WorldSettings.Params.ConvexConcaveCollisionAlgorithmPool = new PooledType<ConvexConcaveCollisionAlgorithm>();
+            WorldSettings.Params.ConvexConvexAlgorithmPool = new PooledType<ConvexConvexAlgorithm>();
+            WorldSettings.Params.ConvexPlaneAlgorithmPool = new PooledType<ConvexPlaneCollisionAlgorithm>();
+            WorldSettings.Params.SphereBoxCollisionAlgorithmPool = new PooledType<SphereBoxCollisionAlgorithm>();
+            WorldSettings.Params.SphereSphereCollisionAlgorithmPool = new PooledType<SphereSphereCollisionAlgorithm>();
+            WorldSettings.Params.SphereTriangleCollisionAlgorithmPool = new PooledType<SphereTriangleCollisionAlgorithm>();
+            WorldSettings.Params.GImpactCollisionAlgorithmPool = new PooledType<GImpactCollisionAlgorithm>();
+            WorldSettings.Params.GjkEpaSolver2MinkowskiDiffPool = new PooledType<GjkEpaSolver2MinkowskiDiff>();
+            WorldSettings.Params.PersistentManifoldPool = new PooledType<PersistentManifold>();
+            WorldSettings.Params.ManifoldResultPool = new PooledType<ManifoldResult>();
+            WorldSettings.Params.GJKPool = new PooledType<GJK>();
+            WorldSettings.Params.GIM_ShapeRetrieverPool = new PooledType<GIM_ShapeRetriever>();
+            WorldSettings.Params.TriangleShapePool = new PooledType<TriangleShape>();
+            WorldSettings.Params.SphereTriangleDetectorPool = new PooledType<SphereTriangleDetector>();
+            WorldSettings.Params.CompoundLeafCallbackPool = new PooledType<CompoundLeafCallback>();
+            WorldSettings.Params.GjkConvexCastPool = new PooledType<GjkConvexCast>();
+            WorldSettings.Params.LocalTriangleSphereCastCallbackPool = new PooledType<LocalTriangleSphereCastCallback>();
+            WorldSettings.Params.BridgeTriangleRaycastCallbackPool = new PooledType<BridgeTriangleRaycastCallback>();
+            WorldSettings.Params.BridgeTriangleConcaveRaycastCallbackPool = new PooledType<BridgeTriangleConcaveRaycastCallback>();
+            WorldSettings.Params.BridgeTriangleConvexcastCallbackPool = new PooledType<BridgeTriangleConvexcastCallback>();
+            WorldSettings.Params.MyNodeOverlapCallbackPool = new PooledType<MyNodeOverlapCallback>();
+            WorldSettings.Params.ClosestRayResultCallbackPool = new PooledType<ClosestRayResultCallback>();
+            WorldSettings.Params.DebugDrawcallbackPool = new PooledType<BulletXNA.DebugDrawcallback>();
             
         }
 

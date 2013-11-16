@@ -29,6 +29,7 @@
 #include "Util.h"
 #include <stdarg.h>
 
+#include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "BulletCollision/BroadphaseCollision/btBroadphaseProxy.h"
 
@@ -47,6 +48,8 @@
     #define EXTERN_C extern
 #endif
 
+EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* constrain);
+
 #pragma warning( disable: 4190 ) // Warning about returning Vector3 that we can safely ignore
 
 // The minimum thickness for terrain. If less than this, we correct
@@ -60,6 +63,44 @@ EXTERN_C DLL_EXPORT char* GetVersion2()
 {
 	return &BulletSimVersionString[0];
 }
+
+// DEBUG DEBUG DEBUG =========================================================================================
+// USE ONLY FOR VITAL DEBUGGING!!!!
+// These are really, really dangerous as they rely on static settings which will only work if there
+//     is only one instance of BulletSim.
+//     Put in the log messages and, when done, take them out for release.
+static int lastNumberOverlappingPairs;
+static BulletSim* staticSim;
+
+static void InitCheckOverlappingPairs(BulletSim* pSim)
+{
+	staticSim = pSim;
+	lastNumberOverlappingPairs = staticSim->getDynamicsWorld()->getPairCache()->getNumOverlappingPairs();
+}
+static void CheckOverlappingPairs(char* pReason)
+{
+	int thisOverlapping = staticSim->getDynamicsWorld()->getPairCache()->getNumOverlappingPairs();
+	if (thisOverlapping != lastNumberOverlappingPairs)
+	{
+		btBroadphasePairArray& pairArray = staticSim->getDynamicsWorld()->getPairCache()->getOverlappingPairArray();
+		int ii = thisOverlapping -1;
+		staticSim->getWorldData()->BSLog("Pair cache change. old=%d, new=%d, from=%s. Last added id0=%u, id1=%u",
+											lastNumberOverlappingPairs, thisOverlapping, pReason,
+											((btCollisionObject*)pairArray[ii].m_pProxy0->m_clientObject)->getUserPointer(),
+											((btCollisionObject*)pairArray[ii].m_pProxy1->m_clientObject)->getUserPointer());
+		lastNumberOverlappingPairs = thisOverlapping;
+	}
+}
+void __cdecl StaticBSLog(const char* msg, ...)
+{
+	if (staticSim->getWorldData()->debugLogCallback != NULL) {
+		va_list args;
+		va_start(args, msg);
+		staticSim->getWorldData()->BSLog2(msg, args);
+		va_end(args);
+	}
+}
+// END DEBUG DEBUG DEBUG =========================================================================================
 
 /**
  * Initializes the physical simulation.
@@ -117,7 +158,6 @@ EXTERN_C DLL_EXPORT void ResetConstraintSolver(BulletSim* sim)
 {
 	sim->getDynamicsWorld()->getConstraintSolver()->reset();
 }
-
 
 /**
  * Steps the simulation forward a given amount of time and retrieves any physics updates.
@@ -726,6 +766,9 @@ EXTERN_C DLL_EXPORT btTypedConstraint* Create6DofSpringConstraint2(BulletSim* si
 
 		constrain = new btGeneric6DofSpringConstraint(*rb1, *rb2, frame1t, frame2t, useLinearReferenceFrameA);
 
+		sim->getWorldData()->BSLog("Create6DofSpringConstraint2 ++++++++++++");
+		DumpConstraint2(sim, constrain);
+
 		constrain->calculateTransforms();
 		sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
 
@@ -1153,6 +1196,391 @@ EXTERN_C DLL_EXPORT bool SetBreakingImpulseThreshold2(btTypedConstraint* constra
 	return ret;
 }
 
+EXTERN_C DLL_EXPORT bool ConstraintSetAxis2(btTypedConstraint* constrain, Vector3 axisA, Vector3 axisB)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "SetConstraintAxis2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case POINT2POINT_CONSTRAINT_TYPE:
+			break;
+		case HINGE_CONSTRAINT_TYPE:
+		{
+			btHingeConstraint* cc = (btHingeConstraint*)constrain;
+			btVector3 hingeAxis = axisA.GetBtVector3();
+			cc->setAxis(hingeAxis);
+			ret = true;
+			break;
+		}
+		case CONETWIST_CONSTRAINT_TYPE:
+			break;
+		case D6_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
+			cc->setAxis(axisA.GetBtVector3(), axisB.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case SLIDER_CONSTRAINT_TYPE:
+			break;
+		case CONTACT_CONSTRAINT_TYPE:
+			break;
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setAxis(axisA.GetBtVector3(), axisB.GetBtVector3());
+			ret = true;
+			break;
+		}
+		case GEAR_CONSTRAINT_TYPE:
+			break;
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define HINGE_NOT_SPECIFIED (-1.0)
+EXTERN_C DLL_EXPORT bool ConstraintHingeSetLimit2(btTypedConstraint* constrain, float low, float high, float softness, float bias, float relaxation)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintHingeSetLimits2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case HINGE_CONSTRAINT_TYPE:
+		{
+			btHingeConstraint* cc = (btHingeConstraint*)constrain;
+			if (softness == HINGE_NOT_SPECIFIED)
+				cc->setLimit(low, high);
+			else if (bias == HINGE_NOT_SPECIFIED)
+				cc->setLimit(low, high, softness);
+			else if (relaxation == HINGE_NOT_SPECIFIED)
+				cc->setLimit(low, high, softness, bias);
+			else
+				cc->setLimit(low, high, softness, bias, relaxation);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringEnable2(btTypedConstraint* constrain, int index, bool onOff)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringEnable2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->enableSpring(index, onOff);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringSetEquilibriumPoint2(btTypedConstraint* constrain, int index, float eqPoint)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringEnable2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			if (index == CONSTRAINT_NOT_SPECIFIED)
+			{
+				cc->setEquilibriumPoint();
+			}
+			else
+			{
+				if (eqPoint == CONSTRAINT_NOT_SPECIFIEDF)
+				{
+					cc->setEquilibriumPoint(index);
+				}
+				else
+				{
+					cc->setEquilibriumPoint(index, eqPoint);
+				}
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringSetStiffness2(btTypedConstraint* constrain, int index, float stiffness)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringSetStiffness2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setStiffness(index, stiffness);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSpringSetDamping2(btTypedConstraint* constrain, int index, float damping)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSpringSetDamping2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case D6_SPRING_CONSTRAINT_TYPE:
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			cc->setDamping(index, damping);
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define SLIDER_LOWER_LIMIT 0
+#define SLIDER_UPPER_LIMIT 1
+#define SLIDER_LINEAR 2
+#define SLIDER_ANGULAR 3
+EXTERN_C DLL_EXPORT bool ConstraintSliderSetLimits2(btTypedConstraint* constrain, int upperLower, int linAng, float val)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSlider2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (upperLower)
+			{
+				case SLIDER_LOWER_LIMIT:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setLowerLinLimit(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setLowerAngLimit(val);
+							break;
+					}
+					break;
+				case SLIDER_UPPER_LIMIT:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setUpperLinLimit(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setUpperAngLimit(val);
+							break;
+					}
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define SLIDER_SET_SOFTNESS 4
+#define SLIDER_SET_RESTITUTION 5
+#define SLIDER_SET_DAMPING 6
+#define SLIDER_SET_DIRECTION 7
+#define SLIDER_SET_LIMIT 8
+#define SLIDER_SET_ORTHO 9
+EXTERN_C DLL_EXPORT bool ConstraintSliderSet2(btTypedConstraint* constrain, int softRestDamp, int dirLimOrtho, int linAng, float val)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSliderSet2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (softRestDamp)
+			{
+				case SLIDER_SET_SOFTNESS:
+					switch (dirLimOrtho)
+					{
+						case SLIDER_SET_DIRECTION:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setSoftnessDirLin(val); break;
+								case SLIDER_ANGULAR: cc->setSoftnessDirAng(val); break;
+							}
+							break;
+						case SLIDER_SET_LIMIT:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setSoftnessLimLin(val); break;
+								case SLIDER_ANGULAR: cc->setSoftnessLimAng(val); break;
+							}
+							break;
+						case SLIDER_SET_ORTHO:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setSoftnessOrthoLin(val); break;
+								case SLIDER_ANGULAR: cc->setSoftnessOrthoAng(val); break;
+							}
+							break;
+					}
+					break;
+				case SLIDER_SET_RESTITUTION:
+					switch (dirLimOrtho)
+					{
+						case SLIDER_SET_DIRECTION:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setRestitutionDirLin(val); break;
+								case SLIDER_ANGULAR: cc->setRestitutionDirAng(val); break;
+							}
+							break;
+						case SLIDER_SET_LIMIT:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setRestitutionLimLin(val); break;
+								case SLIDER_ANGULAR: cc->setRestitutionLimAng(val); break;
+							}
+							break;
+						case SLIDER_SET_ORTHO:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setRestitutionOrthoLin(val); break;
+								case SLIDER_ANGULAR: cc->setRestitutionOrthoAng(val); break;
+							}
+							break;
+					}
+					break;
+				case SLIDER_SET_DAMPING:
+					switch (dirLimOrtho)
+					{
+						case SLIDER_SET_DIRECTION:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setDampingDirLin(val); break;
+								case SLIDER_ANGULAR: cc->setDampingDirAng(val); break;
+							}
+							break;
+						case SLIDER_SET_LIMIT:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setDampingLimLin(val); break;
+								case SLIDER_ANGULAR: cc->setDampingLimAng(val); break;
+							}
+							break;
+						case SLIDER_SET_ORTHO:
+							switch (linAng)
+							{
+								case SLIDER_LINEAR: cc->setDampingOrthoLin(val); break;
+								case SLIDER_ANGULAR: cc->setDampingOrthoAng(val); break;
+							}
+							break;
+					}
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+EXTERN_C DLL_EXPORT bool ConstraintSliderMotorEnable2(btTypedConstraint* constrain, int linAng, float numericTrueFalse)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSliderMotorEnable2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (linAng)
+			{
+				case SLIDER_LINEAR:
+					cc->setPoweredLinMotor(numericTrueFalse == 0.0 ? false : true);
+					break;
+				case SLIDER_ANGULAR:
+					cc->setPoweredAngMotor(numericTrueFalse == 0.0 ? false : true);
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
+#define SLIDER_MOTOR_VELOCITY 10
+#define SLIDER_MAX_MOTOR_FORCE 11
+EXTERN_C DLL_EXPORT bool ConstraintSliderMotor2(btTypedConstraint* constrain, int forceVel, int linAng, float val)
+{
+	bool ret = false;
+	bsDebug_AssertIsKnownConstraint(constrain, "ConstraintSlider2: unknown constraint");
+	switch (constrain->getConstraintType())
+	{
+		case SLIDER_CONSTRAINT_TYPE:
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			switch (forceVel)
+			{
+				case SLIDER_MOTOR_VELOCITY:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setTargetLinMotorVelocity(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setTargetAngMotorVelocity(val);
+							break;
+					}
+					break;
+				case SLIDER_MAX_MOTOR_FORCE:
+					switch (linAng)
+					{
+						case SLIDER_LINEAR:
+							cc->setMaxLinMotorForce(val);
+							break;
+						case SLIDER_ANGULAR:
+							cc->setMaxAngMotorForce(val);
+							break;
+					}
+					break;
+			}
+			ret = true;
+			break;
+		}
+		default:
+			break;
+	}
+	return ret;
+}
+
 EXTERN_C DLL_EXPORT bool CalculateTransforms2(btTypedConstraint* constrain)
 {
 	bool ret = false;
@@ -1354,9 +1782,9 @@ Each of the constraint types have many specialized methods specific to their typ
 			enableSpring(int index, bool onOff)
 			setStiffness(int index, btScalar stiffness)
 			setDamping(int index, btScalar damping)
-			setEquilibriumPorint();
-			setEquilibriumPorint(int index);
-			setEquilibriumPorint(int index, btScalar val);
+			setEquilibriumPoint();
+			setEquilibriumPoint(int index);
+			setEquilibriumPoint(int index, btScalar val);
 			setAxis(btVector3& axis1, btVector3& axis2)
 		GEAR_CONSTRAINT_TYPE:
 */
@@ -1443,11 +1871,32 @@ EXTERN_C DLL_EXPORT bool RemoveObjectFromWorld2(BulletSim* sim, btCollisionObjec
 	return true;
 }
 
+EXTERN_C DLL_EXPORT bool ClearCollisionProxyCache2(BulletSim* sim, btCollisionObject* obj)
+{
+	bsDebug_AssertIsKnownCollisionObject(obj, "RemoveObjectFromWorld2: unknown collisionObject");
+	bsDebug_AssertCollisionObjectIsInWorld(sim, obj, "RemoveObjectToWorld2: collisionObject not in world");
+	btRigidBody* rb = btRigidBody::upcast(obj);
+	if (rb && rb->getBroadphaseHandle())
+	{
+		// A cheap way of clearing the collision proxy cache is to remove and add the object
+		short collisionGroup = obj->getBroadphaseHandle()->m_collisionFilterGroup;
+		short collisionMask = obj->getBroadphaseHandle()->m_collisionFilterMask;
+		sim->getDynamicsWorld()->removeCollisionObject(obj);
+		sim->getDynamicsWorld()->addCollisionObject(obj, collisionGroup, collisionMask);
+		// sim->getDynamicsWorld()->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(rb->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
+		// sim->getDynamicsWorld()->getBroadphase()->destroyProxy(rb->getBroadphaseHandle(), sim->getDynamicsWorld()->getDispatcher());
+		// rb->setBroadphaseHandle(0);
+	}
+	return true;
+}
+
 EXTERN_C DLL_EXPORT bool AddConstraintToWorld2(BulletSim* sim, btTypedConstraint* constrain, bool disableCollisionsBetweenLinkedBodies)
 {
 	bsDebug_AssertIsKnownConstraint(constrain, "AddConstraintToWorld2: unknown constraint");
 	bsDebug_AssertConstraintIsNotInWorld(sim, constrain, "AddConstraintToWorld2: constraint already in world");
 	sim->getDynamicsWorld()->addConstraint(constrain, disableCollisionsBetweenLinkedBodies);
+	sim->getWorldData()->BSLog("AddConstraintToWorld2 ++++++++++++");
+	DumpConstraint2(sim, constrain);
 	return true;
 }
 
@@ -1455,6 +1904,8 @@ EXTERN_C DLL_EXPORT bool RemoveConstraintFromWorld2(BulletSim* sim, btTypedConst
 {
 	bsDebug_AssertIsKnownConstraint(constrain, "RemoveConstraintToWorld2: unknown constraint");
 	bsDebug_AssertConstraintIsInWorld(sim, constrain, "RemoveConstraintToWorld2: constraint not in world");
+	sim->getWorldData()->BSLog("RemoveConstraintFromWorld2 ++++++++++++");
+	DumpConstraint2(sim, constrain);
 	sim->getDynamicsWorld()->removeConstraint(constrain);
 	return true;
 }
@@ -2247,10 +2698,16 @@ EXTERN_C DLL_EXPORT bool SetCollisionGroupMask2(btCollisionObject* obj, unsigned
 	// If the object is not in the world, there won't be a proxy.
 	if (proxy)
 	{
+		// staticSim->getWorldData()->BSLog("SetCollisionGroupMask. ogroup=%x, omask=%x, ngroup=%x, nmask=%x",
+		// 				(int)proxy->m_collisionFilterGroup, (int)proxy->m_collisionFilterMask, group, mask);
 		proxy->m_collisionFilterGroup = (short)group;
 		proxy->m_collisionFilterMask = (short)mask;
 		ret = true;
 	}
+	// else
+	// {
+	// 	staticSim->getWorldData()->BSLog("SetCollisionGroupMask did not find a proxy");
+	// }
 	return ret;
 }
 
@@ -2463,6 +2920,43 @@ EXTERN_C DLL_EXPORT void DumpCollisionShape2(BulletSim* sim, btCollisionShape* s
 		);
 }
 
+EXTERN_C DLL_EXPORT void DumpFrameInfo(BulletSim* sim, char* type, btTransform& frameInA, btTransform& frameInB)
+{
+	btVector3 frameInALoc = frameInA.getOrigin();
+	btQuaternion frameInARot = frameInA.getRotation();
+	btVector3  frameInBLoc = frameInB.getOrigin();
+	btQuaternion frameInBRot = frameInB.getRotation();
+	sim->getWorldData()->BSLog("DumpConstraint: %s: frameInALoc=<%f,%f,%f>, frameInARot=<%f,%f,%f,%f>", type,
+				frameInALoc.getX(), frameInALoc.getY(), frameInALoc.getZ(),
+				frameInARot.getX(), frameInARot.getY(), frameInARot.getZ(), frameInARot.getW() );
+	sim->getWorldData()->BSLog("DumpConstraint: %s: frameInBLoc=<%f,%f,%f>, frameInBRot=<%f,%f,%f,%f>", type,
+				frameInBLoc.getX(), frameInBLoc.getY(), frameInBLoc.getZ(),
+				frameInBRot.getX(), frameInBRot.getY(), frameInBRot.getZ(), frameInBRot.getW() );
+}
+
+// Several of the constraints are based on the 6Dof constraint.
+// Print common info.
+EXTERN_C DLL_EXPORT void Dump6DofInfo(BulletSim* sim, char* type, btGeneric6DofConstraint* constrain)
+{
+	btTransform frameInA = constrain->getFrameOffsetA();
+	btTransform frameInB = constrain->getFrameOffsetB();
+	DumpFrameInfo(sim, type, frameInA, frameInB);
+
+	btVector3 linLower, linUpper;
+	btVector3 angLower, angUpper;
+	constrain->getLinearLowerLimit(linLower);
+	constrain->getLinearUpperLimit(linUpper);
+	constrain->getAngularLowerLimit(angLower);
+	constrain->getAngularUpperLimit(angUpper);
+	sim->getWorldData()->BSLog("DumpConstraint: %s: linLow=<%f,%f,%f>, linUp=<%f,%f,%f>", type,
+				linLower.getX(), linLower.getY(), linLower.getZ(),
+				linUpper.getX(), linUpper.getY(), linUpper.getZ() );
+	sim->getWorldData()->BSLog("DumpConstraint: %s: angLow=<%f,%f,%f>, angUp=<%f,%f,%f>,appliedImpulse=%f", type,
+				angLower.getX(), angLower.getY(), angLower.getZ(),
+				angUpper.getX(), angUpper.getY(), angUpper.getZ(),
+				constrain->getAppliedImpulse() );
+}
+
 // Outputs constraint information
 EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* constrain)
 {
@@ -2473,20 +2967,92 @@ EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* cons
 		if (constrain->getConstraintType() == D6_CONSTRAINT_TYPE)
 		{
 			btGeneric6DofConstraint* cc = (btGeneric6DofConstraint*)constrain;
-			btVector3 angLower;
-			btVector3 angUpper;
-			cc->getAngularLowerLimit(angLower);
-			cc->getAngularUpperLimit(angUpper);
-			sim->getWorldData()->BSLog("DumpConstraint: 6DOF: angLow=<%f,%f,%f>, angUp=<%f,%f,%f>,appliedImpulse=%f",
-						angLower.getX(), angLower.getY(), angLower.getZ(),
-						angUpper.getX(), angUpper.getY(), angUpper.getZ(),
-						cc->getAppliedImpulse() );
+			Dump6DofInfo(sim, "6DOF", cc);
+		}
+		if (constrain->getConstraintType() == D6_SPRING_CONSTRAINT_TYPE)
+		{
+			btGeneric6DofSpringConstraint* cc = (btGeneric6DofSpringConstraint*)constrain;
+			Dump6DofInfo(sim, "Spring", cc);
+		}
+		if (constrain->getConstraintType() == HINGE_CONSTRAINT_TYPE)
+		{
+			btHinge2Constraint* cc = (btHinge2Constraint*)constrain;
+			Dump6DofInfo(sim, "Hinge", cc);
+			btVector3 anchor1, anchor2, axis1, axis2;
+			anchor1 = cc->getAnchor();
+			anchor2 = cc->getAnchor2();
+			axis1 = cc->getAxis1();
+			axis2 = cc->getAxis2();
+			sim->getWorldData()->BSLog("DumpConstraint: Hinge: anchor1=<%f,%f,%f>, anchor2=<%f,%f,%f>, axis1=<%f,%f,%f>, axis2=<%f,%f,%f>",
+						anchor1.getX(), anchor1.getY(), anchor1.getZ(),
+						anchor2.getX(), anchor2.getY(), anchor2.getZ(),
+						axis1.getX(), axis1.getY(), axis1.getZ(),
+						axis2.getX(), axis2.getY(), axis2.getZ() );
+			float angle1, angle2;
+			angle1 = cc->getAngle1();
+			angle2 = cc->getAngle2();
+			sim->getWorldData()->BSLog("DumpConstraint: Hinge: angle1=%f, angle2==%f", angle1, angle2);
+		}
+		if (constrain->getConstraintType() == SLIDER_CONSTRAINT_TYPE)
+		{
+			btSliderConstraint* cc = (btSliderConstraint*)constrain;
+			btTransform frameInA = cc->getFrameOffsetA();
+		    btTransform frameInB = cc->getFrameOffsetB();
+			DumpFrameInfo(sim, "Slider", frameInA, frameInB);
+
+		    btScalar lowerLinLimit = cc->getLowerLinLimit();
+		    btScalar upperLinLimit = cc->getUpperLinLimit();
+		    btScalar lowerAngLimit = cc->getLowerAngLimit();
+		    btScalar upperAngLimit = cc->getUpperAngLimit();
+			bool useLinearReferenceFrameA = cc->getUseLinearReferenceFrameA();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: lowLinLim=%f, upperLinLim=%f, lowAngLim=%f, upperAngLim=%f, useRefFrameA=%d", 
+						lowerLinLimit, lowerLinLimit, upperAngLimit, upperAngLimit, useLinearReferenceFrameA );
+
+			btScalar softnessDirLin = cc->getSoftnessDirLin();
+			btScalar restitutionDirLin = cc->getRestitutionDirLin();
+			btScalar dampingDirLin = cc->getDampingDirLin();
+			btScalar softnessDirAng = cc->getSoftnessDirAng();
+			btScalar restitutionDirAng = cc->getRestitutionDirAng();
+			btScalar dampingDirAng = cc->getDampingDirAng();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: DirLin: soft=%f, rest=%f, damp=%f. DirAng: soft=%f, rest=%f, damp=%f",
+										softnessDirLin, restitutionDirLin, dampingDirLin,
+										softnessDirAng, restitutionDirAng, dampingDirAng);
+			btScalar softnessLimLin = cc->getSoftnessLimLin();
+			btScalar restitutionLimLin = cc->getRestitutionLimLin();
+			btScalar dampingLimLin = cc->getDampingLimLin();
+			btScalar softnessLimAng = cc->getSoftnessLimAng();
+			btScalar restitutionLimAng = cc->getRestitutionLimAng();
+			btScalar dampingLimAng = cc->getDampingLimAng();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: LimLin: soft=%f, rest=%f, damp=%f. LimAng: soft=%f, rest=%f, damp=%f",
+										softnessLimLin, restitutionLimLin, dampingLimLin,
+										softnessLimAng, restitutionLimAng, dampingLimAng);
+			btScalar softnessOrthoLin = cc->getSoftnessOrthoLin();
+			btScalar restitutionOrthoLin = cc->getRestitutionOrthoLin();
+			btScalar dampingOrthoLin = cc->getDampingOrthoLin();
+			btScalar softnessOrthoAng = cc->getSoftnessOrthoAng();
+			btScalar restitutionOrthoAng = cc->getRestitutionOrthoAng();
+			btScalar dampingOrthoAng = cc->getDampingOrthoAng();
+			sim->getWorldData()->BSLog("DumpConstraint: Slider: OrthoLin: soft=%f, rest=%f, damp=%f. OrthoAng: soft=%f, rest=%f, damp=%f",
+										softnessOrthoLin, restitutionOrthoLin, dampingOrthoLin,
+										softnessOrthoAng, restitutionOrthoAng, dampingOrthoAng );
+		}
+		if (constrain->getConstraintType() == CONETWIST_CONSTRAINT_TYPE)
+		{
+			btConeTwistConstraint* cc = (btConeTwistConstraint*)constrain;
+			btTransform frameInA = cc->getAFrame();
+		    btTransform frameInB = cc->getBFrame();
+			DumpFrameInfo(sim, "ConeTwist", frameInA, frameInB);
 		}
 }
 
+extern float gDeactivationTime;
 EXTERN_C DLL_EXPORT void DumpAllInfo2(BulletSim* sim)
 {
 	btDynamicsWorld* world = sim->getDynamicsWorld();
+
+	sim->getWorldData()->BSLog("gDisableDeactivation=%d, gDeactivationTime=%f, splitIslands=%d",
+		gDisableDeactivation, gDeactivationTime, ((btDiscreteDynamicsWorld*)world)->getSimulationIslandManager()->getSplitIslands());
+
 	btCollisionObjectArray& collisionObjects = world->getCollisionObjectArray();
 	int numCollisionObjects = collisionObjects.size();
 	for (int ii=0; ii < numCollisionObjects; ii++)
@@ -2544,7 +3110,21 @@ EXTERN_C DLL_EXPORT void DumpActivationInfo2(BulletSim* sim)
 	sim->getWorldData()->BSLog("num DISABLE_DEACTIVATION = %d", activeStates[DISABLE_DEACTIVATION]);
 	sim->getWorldData()->BSLog("  num DISABLE_SIMULATION = %d", activeStates[DISABLE_SIMULATION]);
 	sim->getWorldData()->BSLog("    num overlappingPairs = %d", world->getPairCache()->getNumOverlappingPairs());
+
+	/* Code for displaying some of the info in the overlapping pairs cache
+	btBroadphasePairArray& pairArray = world->getPairCache()->getOverlappingPairArray();
+	int numPairs = pairArray.size();
+
+	for (int ii=0; ii < numPairs; ii += 10000)
+	{
+		sim->getWorldData()->BSLog("pairArray[%d], id0=%u, id1=%u", ii,
+					((btCollisionObject*)pairArray[ii].m_pProxy0->m_clientObject)->getUserPointer(),
+					((btCollisionObject*)pairArray[ii].m_pProxy1->m_clientObject)->getUserPointer());
+	}
+	*/
+
 }
+
 
 // Version of log printer that takes the simulator as a parameter.
 // Used for statistics logging from Bullet.

@@ -98,16 +98,30 @@ namespace BulletXNA.BulletCollision
             CollisionObject planeObj = m_isSwapped ? body0 : body1;
 
             ConvexShape convexShape = convexObj.GetCollisionShape() as ConvexShape;
+            if (convexShape == null)
+            {
+                convexShape = new BoxShape(IndexedVector3.One*0.5f);
+                body0.SetCollisionShape(convexShape);
+            }
+
             StaticPlaneShape planeShape = planeObj.GetCollisionShape() as StaticPlaneShape;
 
+            if (planeShape == null)
+                planeShape = new StaticPlaneShape(IndexedVector3.Up,9f);
+
             bool hasCollision = false;
+            if (convexShape == null || planeShape == null)
+            {
+                //resultOut = null;
+                return;
+            }
 	        IndexedVector3 planeNormal = planeShape.GetPlaneNormal();
 	        float planeConstant = planeShape.GetPlaneConstant();
 	        IndexedMatrix planeInConvex;
 	        planeInConvex= convexObj.GetWorldTransform().Inverse() * planeObj.GetWorldTransform();
             IndexedMatrix convexInPlaneTrans;
 	        convexInPlaneTrans= planeObj.GetWorldTransform().Inverse() * convexObj.GetWorldTransform();
-
+            
 	        IndexedVector3 vtx = convexShape.LocalGetSupportingVertex(planeInConvex._basis*-planeNormal);
 	        IndexedVector3 vtxInPlane = convexInPlaneTrans * vtx;
 	        float distance = (planeNormal.Dot(vtxInPlane) - planeConstant);

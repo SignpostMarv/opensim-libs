@@ -167,6 +167,10 @@ namespace BulletXNA.BulletCollision
                 m_elements[i].m_sz += m_elements[j].m_sz; 
 			}
 #else
+            if (m_elements.Count < i)
+                return;
+            if (m_elements.Count < j)
+                return;
             m_elements.GetRawArray()[i].m_id = j;
             m_elements.GetRawArray()[j].m_sz += m_elements[i].m_sz;
 
@@ -178,22 +182,30 @@ namespace BulletXNA.BulletCollision
             //btAssert(x < m_N);
             //btAssert(x >= 0);
             Element[] rawElements = m_elements.GetRawArray();
-            while (x != rawElements[x].m_id)
+            try
             {
-                //not really a reason not to use path compression, and it flattens the trees/improves find performance dramatically
+                while ( x < rawElements.Length && x != rawElements[x].m_id)
+                {
+                    //not really a reason not to use path compression, and it flattens the trees/improves find performance dramatically
 
 #if USE_PATH_COMPRESSION
-                //m_elements[x].m_id = m_elements[m_elements[x].m_id].m_id;
-                Element elementPtr = rawElements[rawElements[x].m_id];
-                rawElements[x].m_id = elementPtr.m_id;
-                x = elementPtr.m_id;
+                    //m_elements[x].m_id = m_elements[m_elements[x].m_id].m_id;
+                    Element elementPtr = rawElements[rawElements[x].m_id];
+                    rawElements[x].m_id = elementPtr.m_id;
+                    x = elementPtr.m_id;
 #else
             x = rawElements[x].m_id;
 #endif
-                //btAssert(x < m_N);
-                //btAssert(x >= 0);
+                    //btAssert(x < m_N);
+                    //btAssert(x >= 0);
 
+                }
             }
+            catch (IndexOutOfRangeException)
+            {
+            }
+            catch (Exception)
+            { }
             return x;
         }
         private ObjectArray<Element> m_elements;

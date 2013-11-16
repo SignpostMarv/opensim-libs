@@ -9,7 +9,7 @@ For Visual Studio 2010, the steps are:
 1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
 1a) If you are adventurous, you can fetch the latest v2.* from svn
     (http://code.google.com/p/bullet/source/checkout).
-    As of this writing (Mar 28, 2012), Bullet development is mostly doing
+    As of this writing (August 16, 2013), Bullet development is mostly doing
     bug fixes on the v2 branch and new development is happening
     on a new v3 branch.  When Bullet advances to v3, BulletSim
     will probably not build or link and will require rework.
@@ -31,9 +31,11 @@ For Visual Studio 2010, the steps are:
     While this does built BulletSim, make sure the Framework is
     set to 3.5 which is the version guaranteed to work with OpenSim.
 5) cd into "BulletSim/"
-6) Open and build with BulletSim.sln
+6) Open and build with BulletSim.sln or BulletSim-2010.sln
 7) Copy "BulletSim/Release/BulletSim.dll" into the
-    OpenSimulator "bin/" directory
+    OpenSimulator "bin/lib32" directory
+7b) Copy "BulletSim/x64/Release/BulletSim.dll" into the
+    OpenSimulator "bin/lib64" directory
 
 For Linux/Mac OSX (tested on Ubuntu and Lion)
 1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
@@ -53,9 +55,9 @@ For Linux/Mac OSX (tested on Ubuntu and Lion)
 				cmake .. -G "Unix Makefiles" \
 				        -DBUILD_EXTRAS=on \
 				        -DBUILD_DEMOS=off \
+				        -DBUILD_SHARED_LIBS=off \
 				        -DINSTALL_LIBS=on \
 				        -DINSTALL_EXTRA_LIBS=on \
-				        -DBUILD_SHARED_LIBS=off \
 				        -DCMAKE_BUILD_TYPE=Release
 				make -j4
     (for 64bit systems, you must also add the cmake flag -DCMAKE_CXX_FLAGS="-fPIC" )
