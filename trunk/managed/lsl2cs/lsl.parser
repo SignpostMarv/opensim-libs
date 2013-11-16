@@ -153,11 +153,11 @@
         kids.Add(cs);
     }
 
-    public StateEvent(string name, ArgumentDeclarationList dal, CompoundStatement cs)
+    public StateEvent(string name, ArgumentDeclarationList adl, CompoundStatement cs)
     {
         m_name = name;
-        if (0 < dal.kids.Count)
-            kids.Add(dal);
+        if (0 < adl.kids.Count)
+            kids.Add(adl);
         kids.Add(cs);
     }
 
@@ -172,7 +172,12 @@
     }
 }
 
-%symbol VoidArgStateEvent: StateEvent
+%symbol IntArgStateEvent : StateEvent
+{
+    public IntArgStateEvent(string name, IntArgumentDeclarationList iadl, CompoundStatement cs) : base(name, iadl, cs) {}
+}
+
+%symbol VoidArgStateEvent : StateEvent
 {
     public VoidArgStateEvent(string name, CompoundStatement cs) : base(name, cs) {}
 }
@@ -191,6 +196,11 @@
 
         kids.Add(d);
     }
+}
+
+%symbol IntArgumentDeclarationList : ArgumentDeclarationList
+{
+    public IntArgumentDeclarationList(IntDeclaration d) : base(d) {}
 }
 
 %symbol Declaration
@@ -221,6 +231,11 @@
     }
 }
 
+%symbol IntDeclaration : Declaration
+{
+    public IntDeclaration(string type, string id) : base(type, id) {}
+}
+
 %symbol Typename
 {
     public string yytext;
@@ -239,6 +254,11 @@
     {
         yytext = text;
     }
+}
+
+%symbol IntArgEvent : Event
+{
+    public IntArgEvent(string text) : base(text) {}
 }
 
 %symbol VoidArgEvent : Event
@@ -942,12 +962,18 @@ State
 StateBody
     : StateEvent:se %StateBody(se)
     | StateBody:sb StateEvent:se %StateBody(sb, se)
+    | IntArgStateEvent:se %StateBody(se)
+    | StateBody:sb IntArgStateEvent:se %StateBody(sb, se)
     | VoidArgStateEvent:se %StateBody(se)
     | StateBody:sb VoidArgStateEvent:se %StateBody(sb, se)
     ;
 
 StateEvent
-    : Event:e LEFT_PAREN ArgumentDeclarationList:dal RIGHT_PAREN CompoundStatement:cs %StateEvent(e.yytext, dal, cs)
+    : Event:e LEFT_PAREN ArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %StateEvent(e.yytext, adl, cs)
+    ;
+
+IntArgStateEvent
+    : IntArgEvent:e LEFT_PAREN IntArgumentDeclarationList:iadl RIGHT_PAREN CompoundStatement:cs %IntArgStateEvent(e.yytext, iadl, cs)
     ;
 
 VoidArgStateEvent
@@ -957,7 +983,15 @@ VoidArgStateEvent
 ArgumentDeclarationList
     :
     | Declaration:da %ArgumentDeclarationList(da)
-    | ArgumentDeclarationList:dal COMMA Declaration:da %ArgumentDeclarationList(dal, da)
+    | ArgumentDeclarationList:adl COMMA Declaration:da %ArgumentDeclarationList(adl, da)
+    ;
+
+IntArgumentDeclarationList
+    : IntDeclaration:id %IntArgumentDeclarationList(id)
+    ;
+
+IntDeclaration
+    : INTEGER_TYPE:it IDENT:id %IntDeclaration(it.yytext, id.yytext)
     ;
 
 Declaration
@@ -1160,10 +1194,6 @@ Event
     : AT_ROT_TARGET_EVENT:e %Event(e.yytext)
     | AT_TARGET_EVENT:e %Event(e.yytext)
     | ATTACH_EVENT:e %Event(e.yytext)
-    | CHANGED_EVENT:e %Event(e.yytext)
-    | COLLISION_EVENT:e %Event(e.yytext)
-    | COLLISION_END_EVENT:e %Event(e.yytext)
-    | COLLISION_START_EVENT:e %Event(e.yytext)
     | CONTROL_EVENT:e %Event(e.yytext)
     | DATASERVER_EVENT:e %Event(e.yytext)
     | EMAIL_EVENT:e %Event(e.yytext)
@@ -1176,14 +1206,21 @@ Event
     | MONEY_EVENT:e %Event(e.yytext)
     | NO_SENSOR_EVENT:e %Event(e.yytext)
     | OBJECT_REZ_EVENT:e %Event(e.yytext)
-    | ON_REZ_EVENT:e %Event(e.yytext)
     | REMOTE_DATA_EVENT:e %Event(e.yytext)
-    | RUN_TIME_PERMISSIONS_EVENT:e %Event(e.yytext)
-    | SENSOR_EVENT:e %Event(e.yytext)
-    | TOUCH_EVENT:e %Event(e.yytext)
-    | TOUCH_END_EVENT:e %Event(e.yytext)
-    | TOUCH_START_EVENT:e %Event(e.yytext)
     | HTTP_REQUEST_EVENT:e %Event(e.yytext)
+    ;
+
+IntArgEvent
+    : CHANGED_EVENT:e %IntArgEvent(e.yytext)
+    | COLLISION_EVENT:e %IntArgEvent(e.yytext)
+    | COLLISION_END_EVENT:e %IntArgEvent(e.yytext)
+    | COLLISION_START_EVENT:e %IntArgEvent(e.yytext)
+    | ON_REZ_EVENT:e %IntArgEvent(e.yytext)
+    | RUN_TIME_PERMISSIONS_EVENT:e %IntArgEvent(e.yytext)
+    | SENSOR_EVENT:e %IntArgEvent(e.yytext)
+    | TOUCH_EVENT:e %IntArgEvent(e.yytext)
+    | TOUCH_END_EVENT:e %IntArgEvent(e.yytext)
+    | TOUCH_START_EVENT:e %IntArgEvent(e.yytext)
     ;
 
 VoidArgEvent
