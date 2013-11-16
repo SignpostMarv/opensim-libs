@@ -172,9 +172,9 @@
     }
 }
 
-%symbol StateEntryStateEvent: StateEvent
+%symbol VoidArgStateEvent: StateEvent
 {
-    public StateEntryStateEvent(string name, CompoundStatement cs) : base(name, cs) {}
+    public VoidArgStateEvent(string name, CompoundStatement cs) : base(name, cs) {}
 }
 
 %symbol ArgumentDeclarationList
@@ -241,9 +241,9 @@
     }
 }
 
-%symbol EntryEvent : Event
+%symbol VoidArgEvent : Event
 {
-    public EntryEvent(string text) : base(text) {}
+    public VoidArgEvent(string text) : base(text) {}
 }
 
 %symbol CompoundStatement
@@ -942,16 +942,16 @@ State
 StateBody
     : StateEvent:se %StateBody(se)
     | StateBody:sb StateEvent:se %StateBody(sb, se)
-    | StateEntryStateEvent:se %StateBody(se)
-    | StateBody:sb StateEntryStateEvent:se %StateBody(sb, se)
+    | VoidArgStateEvent:se %StateBody(se)
+    | StateBody:sb VoidArgStateEvent:se %StateBody(sb, se)
     ;
 
 StateEvent
     : Event:e LEFT_PAREN ArgumentDeclarationList:dal RIGHT_PAREN CompoundStatement:cs %StateEvent(e.yytext, dal, cs)
     ;
 
-StateEntryStateEvent
-    : EntryEvent:e LEFT_PAREN RIGHT_PAREN CompoundStatement:cs %StateEntryStateEvent(e.yytext, cs  )
+VoidArgStateEvent
+    : VoidArgEvent:e LEFT_PAREN RIGHT_PAREN CompoundStatement:cs %VoidArgStateEvent(e.yytext, cs)
     ;
 
 ArgumentDeclarationList
@@ -1174,24 +1174,24 @@ Event
     | LINK_MESSAGE_EVENT:e %Event(e.yytext)
     | LISTEN_EVENT:e %Event(e.yytext)
     | MONEY_EVENT:e %Event(e.yytext)
-    | MOVING_END_EVENT:e %Event(e.yytext)
-    | MOVING_START_EVENT:e %Event(e.yytext)
     | NO_SENSOR_EVENT:e %Event(e.yytext)
-    | NOT_AT_ROT_TARGET_EVENT:e %Event(e.yytext)
-    | NOT_AT_TARGET_EVENT:e %Event(e.yytext)
     | OBJECT_REZ_EVENT:e %Event(e.yytext)
     | ON_REZ_EVENT:e %Event(e.yytext)
     | REMOTE_DATA_EVENT:e %Event(e.yytext)
     | RUN_TIME_PERMISSIONS_EVENT:e %Event(e.yytext)
     | SENSOR_EVENT:e %Event(e.yytext)
-    | STATE_EXIT_EVENT:e %Event(e.yytext)
-    | TIMER_EVENT:e %Event(e.yytext)
     | TOUCH_EVENT:e %Event(e.yytext)
     | TOUCH_END_EVENT:e %Event(e.yytext)
     | TOUCH_START_EVENT:e %Event(e.yytext)
     | HTTP_REQUEST_EVENT:e %Event(e.yytext)
     ;
 
-EntryEvent
-    : STATE_ENTRY_EVENT:e %EntryEvent(e.yytext)
+VoidArgEvent
+    : STATE_ENTRY_EVENT:e %VoidArgEvent(e.yytext)
+    | STATE_EXIT_EVENT:e %VoidArgEvent(e.yytext)
+    | MOVING_END_EVENT:e %VoidArgEvent(e.yytext)
+    | MOVING_START_EVENT:e %VoidArgEvent(e.yytext)
+    | NOT_AT_ROT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
+    | NOT_AT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
+    | TIMER_EVENT:e %VoidArgEvent(e.yytext)
     ;
