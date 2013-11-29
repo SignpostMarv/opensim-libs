@@ -172,14 +172,19 @@
     }
 }
 
-%symbol IntArgStateEvent : StateEvent
-{
-    public IntArgStateEvent(string name, IntArgumentDeclarationList iadl, CompoundStatement cs) : base(name, iadl, cs) {}
-}
-
 %symbol VoidArgStateEvent : StateEvent
 {
     public VoidArgStateEvent(string name, CompoundStatement cs) : base(name, cs) {}
+}
+
+%symbol IntArgStateEvent : StateEvent
+{
+    public IntArgStateEvent(string name, IntArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
+}
+
+%symbol VectorArgStateEvent : StateEvent
+{
+    public VectorArgStateEvent(string name, VectorArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
 }
 
 %symbol ArgumentDeclarationList
@@ -201,6 +206,11 @@
 %symbol IntArgumentDeclarationList : ArgumentDeclarationList
 {
     public IntArgumentDeclarationList(IntDeclaration d) : base(d) {}
+}
+
+%symbol VectorArgumentDeclarationList : ArgumentDeclarationList
+{
+    public VectorArgumentDeclarationList(VectorDeclaration d) : base(d) {}
 }
 
 %symbol Declaration
@@ -236,6 +246,11 @@
     public IntDeclaration(string type, string id) : base(type, id) {}
 }
 
+%symbol VectorDeclaration : Declaration
+{
+    public VectorDeclaration(string type, string id) : base(type, id) {}
+}
+
 %symbol Typename
 {
     public string yytext;
@@ -256,14 +271,19 @@
     }
 }
 
+%symbol VoidArgEvent : Event
+{
+    public VoidArgEvent(string text) : base(text) {}
+}
+
 %symbol IntArgEvent : Event
 {
     public IntArgEvent(string text) : base(text) {}
 }
 
-%symbol VoidArgEvent : Event
+%symbol VectorArgEvent : Event
 {
-    public VoidArgEvent(string text) : base(text) {}
+    public VectorArgEvent(string text) : base(text) {}
 }
 
 %symbol CompoundStatement
@@ -962,22 +982,28 @@ State
 StateBody
     : StateEvent:se %StateBody(se)
     | StateBody:sb StateEvent:se %StateBody(sb, se)
-    | IntArgStateEvent:se %StateBody(se)
-    | StateBody:sb IntArgStateEvent:se %StateBody(sb, se)
     | VoidArgStateEvent:se %StateBody(se)
     | StateBody:sb VoidArgStateEvent:se %StateBody(sb, se)
+    | IntArgStateEvent:se %StateBody(se)
+    | StateBody:sb IntArgStateEvent:se %StateBody(sb, se)
+    | VectorArgStateEvent:se %StateBody(se)
+    | StateBody:sb VectorArgStateEvent:se %StateBody(sb, se)
     ;
 
 StateEvent
     : Event:e LEFT_PAREN ArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %StateEvent(e.yytext, adl, cs)
     ;
 
-IntArgStateEvent
-    : IntArgEvent:e LEFT_PAREN IntArgumentDeclarationList:iadl RIGHT_PAREN CompoundStatement:cs %IntArgStateEvent(e.yytext, iadl, cs)
-    ;
-
 VoidArgStateEvent
     : VoidArgEvent:e LEFT_PAREN RIGHT_PAREN CompoundStatement:cs %VoidArgStateEvent(e.yytext, cs)
+    ;
+
+IntArgStateEvent
+    : IntArgEvent:e LEFT_PAREN IntArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %IntArgStateEvent(e.yytext, adl, cs)
+    ;
+
+VectorArgStateEvent
+    : VectorArgEvent:e LEFT_PAREN VectorArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %VectorArgStateEvent(e.yytext, adl, cs)
     ;
 
 ArgumentDeclarationList
@@ -990,12 +1016,20 @@ IntArgumentDeclarationList
     : IntDeclaration:id %IntArgumentDeclarationList(id)
     ;
 
-IntDeclaration
-    : INTEGER_TYPE:it IDENT:id %IntDeclaration(it.yytext, id.yytext)
+VectorArgumentDeclarationList
+    : VectorDeclaration:id %VectorArgumentDeclarationList(id)
     ;
 
 Declaration
     : Typename:t IDENT:id %Declaration(t.yytext, id.yytext)
+    ;
+
+IntDeclaration
+    : INTEGER_TYPE:t IDENT:id %IntDeclaration(t.yytext, id.yytext)
+    ;
+
+VectorDeclaration
+    : VECTOR_TYPE:t IDENT:id %VectorDeclaration(t.yytext, id.yytext)
     ;
 
 CompoundStatement
@@ -1198,15 +1232,23 @@ Event
     | DATASERVER_EVENT:e %Event(e.yytext)
     | EMAIL_EVENT:e %Event(e.yytext)
     | HTTP_RESPONSE_EVENT:e %Event(e.yytext)
-    | LAND_COLLISION_EVENT:e %Event(e.yytext)
-    | LAND_COLLISION_END_EVENT:e %Event(e.yytext)
-    | LAND_COLLISION_START_EVENT:e %Event(e.yytext)
     | LINK_MESSAGE_EVENT:e %Event(e.yytext)
     | LISTEN_EVENT:e %Event(e.yytext)
     | MONEY_EVENT:e %Event(e.yytext)
     | OBJECT_REZ_EVENT:e %Event(e.yytext)
     | REMOTE_DATA_EVENT:e %Event(e.yytext)
     | HTTP_REQUEST_EVENT:e %Event(e.yytext)
+    ;
+
+VoidArgEvent
+    : STATE_ENTRY_EVENT:e %VoidArgEvent(e.yytext)
+    | STATE_EXIT_EVENT:e %VoidArgEvent(e.yytext)
+    | MOVING_END_EVENT:e %VoidArgEvent(e.yytext)
+    | MOVING_START_EVENT:e %VoidArgEvent(e.yytext)
+    | NO_SENSOR_EVENT:e %VoidArgEvent(e.yytext)
+    | NOT_AT_ROT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
+    | NOT_AT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
+    | TIMER_EVENT:e %VoidArgEvent(e.yytext)
     ;
 
 IntArgEvent
@@ -1222,13 +1264,8 @@ IntArgEvent
     | TOUCH_START_EVENT:e %IntArgEvent(e.yytext)
     ;
 
-VoidArgEvent
-    : STATE_ENTRY_EVENT:e %VoidArgEvent(e.yytext)
-    | STATE_EXIT_EVENT:e %VoidArgEvent(e.yytext)
-    | MOVING_END_EVENT:e %VoidArgEvent(e.yytext)
-    | MOVING_START_EVENT:e %VoidArgEvent(e.yytext)
-    | NO_SENSOR_EVENT:e %VoidArgEvent(e.yytext)
-    | NOT_AT_ROT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
-    | NOT_AT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
-    | TIMER_EVENT:e %VoidArgEvent(e.yytext)
+VectorArgEvent
+    : LAND_COLLISION_EVENT:e %VectorArgEvent(e.yytext)
+    | LAND_COLLISION_END_EVENT:e %VectorArgEvent(e.yytext)
+    | LAND_COLLISION_START_EVENT:e %VectorArgEvent(e.yytext)
     ;
