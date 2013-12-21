@@ -192,11 +192,29 @@
     public VectorArgStateEvent(string name, VectorArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
 }
 
+%symbol IntRotRotArgStateEvent : StateEvent
+{
+    public IntRotRotArgStateEvent(string name, IntRotRotArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
+}
+
 %symbol ArgumentDeclarationList
 {
     public ArgumentDeclarationList(Declaration d)
     {
         kids.Add(d);
+    }
+
+    public ArgumentDeclarationList(Declaration d, Declaration d2)
+    {
+        kids.Add(d);
+        kids.Add(d2);
+    }
+
+    public ArgumentDeclarationList(Declaration d, Declaration d2, Declaration d3)
+    {
+        kids.Add(d);
+        kids.Add(d2);
+        kids.Add(d3);
     }
 
     public ArgumentDeclarationList(ArgumentDeclarationList adl, Declaration d)
@@ -221,6 +239,11 @@
 %symbol VectorArgumentDeclarationList : ArgumentDeclarationList
 {
     public VectorArgumentDeclarationList(VectorDeclaration d) : base(d) {}
+}
+
+%symbol IntRotRotArgumentDeclarationList : ArgumentDeclarationList
+{
+    public IntRotRotArgumentDeclarationList(Declaration d1, Declaration d2, Declaration d3) : base(d1, d2, d3) {}
 }
 
 %symbol Declaration
@@ -266,6 +289,11 @@
     public VectorDeclaration(string type, string id) : base(type, id) {}
 }
 
+%symbol RotDeclaration : Declaration
+{
+    public RotDeclaration(string type, string id) : base(type, id) {}
+}
+
 %symbol Typename
 {
     public string yytext;
@@ -304,6 +332,11 @@
 %symbol VectorArgEvent : Event
 {
     public VectorArgEvent(string text) : base(text) {}
+}
+
+%symbol IntRotRotArgEvent : Event
+{
+    public IntRotRotArgEvent(string text) : base(text) {}
 }
 
 %symbol CompoundStatement
@@ -1010,6 +1043,8 @@ StateBody
     | StateBody:sb IntArgStateEvent:se %StateBody(sb, se)
     | VectorArgStateEvent:se %StateBody(se)
     | StateBody:sb VectorArgStateEvent:se %StateBody(sb, se)
+    | IntRotRotArgStateEvent:se %StateBody(se)
+    | StateBody:sb IntRotRotArgStateEvent:se %StateBody(sb, se)
     ;
 
 StateEvent
@@ -1032,6 +1067,10 @@ VectorArgStateEvent
     : VectorArgEvent:e LEFT_PAREN VectorArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %VectorArgStateEvent(e.yytext, adl, cs)
     ;
 
+IntRotRotArgStateEvent
+    : IntRotRotArgEvent:e LEFT_PAREN IntRotRotArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %IntRotRotArgStateEvent(e.yytext, adl, cs)
+    ;
+
 ArgumentDeclarationList
     :
     | Declaration:da %ArgumentDeclarationList(da)
@@ -1050,6 +1089,10 @@ VectorArgumentDeclarationList
     : VectorDeclaration:id %VectorArgumentDeclarationList(id)
     ;
 
+IntRotRotArgumentDeclarationList
+    : IntDeclaration:da1 COMMA RotDeclaration:da2 COMMA RotDeclaration:da3 %IntRotRotArgumentDeclarationList(da1, da2, da3)
+    ;
+
 Declaration
     : Typename:t IDENT:id %Declaration(t.yytext, id.yytext)
     ;
@@ -1064,6 +1107,10 @@ IntDeclaration
 
 VectorDeclaration
     : VECTOR_TYPE:t IDENT:id %VectorDeclaration(t.yytext, id.yytext)
+    ;
+
+RotDeclaration
+    : ROTATION_TYPE:t IDENT:id %RotDeclaration(t.yytext, id.yytext)
     ;
 
 CompoundStatement
@@ -1306,6 +1353,6 @@ VectorArgEvent
     | LAND_COLLISION_START_EVENT:e %VectorArgEvent(e.yytext)
     ;
 
-IntRotRotEvent
-    : AT_ROT_TARGET_EVENT:e %Event(e.yytext)
+IntRotRotArgEvent
+    : AT_ROT_TARGET_EVENT:e %IntRotRotArgEvent(e.yytext)
     ;
