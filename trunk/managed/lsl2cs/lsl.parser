@@ -243,7 +243,7 @@
 
 %symbol VectorArgumentDeclarationList : ArgumentDeclarationList
 {
-    public VectorArgumentDeclarationList(VectorDeclaration d) : base(d) {}
+    public VectorArgumentDeclarationList(VecDeclaration d) : base(d) {}
 }
 
 %symbol IntRotRotArgumentDeclarationList : ArgumentDeclarationList
@@ -294,9 +294,9 @@
     public IntDeclaration(string type, string id) : base(type, id) {}
 }
 
-%symbol VectorDeclaration : Declaration
+%symbol VecDeclaration : Declaration
 {
-    public VectorDeclaration(string type, string id) : base(type, id) {}
+    public VecDeclaration(string type, string id) : base(type, id) {}
 }
 
 %symbol RotDeclaration : Declaration
@@ -1107,7 +1107,7 @@ IntArgumentDeclarationList
     ;
 
 VectorArgumentDeclarationList
-    : VectorDeclaration:id %VectorArgumentDeclarationList(id)
+    : VecDeclaration:id %VectorArgumentDeclarationList(id)
     ;
 
 IntRotRotArgumentDeclarationList
@@ -1115,7 +1115,7 @@ IntRotRotArgumentDeclarationList
     ;
 
 IntVecVecArgumentDeclarationList
-    : IntDeclaration:da1 COMMA VectorDeclaration:da2 COMMA VectorDeclaration:da3 %IntVecVecArgumentDeclarationList(da1, da2, da3)
+    : IntDeclaration:da1 COMMA VecDeclaration:da2 COMMA VecDeclaration:da3 %IntVecVecArgumentDeclarationList(da1, da2, da3)
     ;
 
 Declaration
@@ -1130,8 +1130,8 @@ IntDeclaration
     : INTEGER_TYPE:t IDENT:id %IntDeclaration(t.yytext, id.yytext)
     ;
 
-VectorDeclaration
-    : VECTOR_TYPE:t IDENT:id %VectorDeclaration(t.yytext, id.yytext)
+VecDeclaration
+    : VECTOR_TYPE:t IDENT:id %VecDeclaration(t.yytext, id.yytext)
     ;
 
 RotDeclaration
