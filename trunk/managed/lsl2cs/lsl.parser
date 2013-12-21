@@ -177,6 +177,11 @@
     public VoidArgStateEvent(string name, CompoundStatement cs) : base(name, cs) {}
 }
 
+%symbol KeyArgStateEvent : StateEvent
+{
+    public KeyArgStateEvent(string name, KeyArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
+}
+
 %symbol IntArgStateEvent : StateEvent
 {
     public IntArgStateEvent(string name, IntArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
@@ -201,6 +206,11 @@
 
         kids.Add(d);
     }
+}
+
+%symbol KeyArgumentDeclarationList : ArgumentDeclarationList
+{
+    public KeyArgumentDeclarationList(KeyDeclaration d) : base(d) {}
 }
 
 %symbol IntArgumentDeclarationList : ArgumentDeclarationList
@@ -241,6 +251,11 @@
     }
 }
 
+%symbol KeyDeclaration : Declaration
+{
+    public KeyDeclaration(string type, string id) : base(type, id) {}
+}
+
 %symbol IntDeclaration : Declaration
 {
     public IntDeclaration(string type, string id) : base(type, id) {}
@@ -274,6 +289,11 @@
 %symbol VoidArgEvent : Event
 {
     public VoidArgEvent(string text) : base(text) {}
+}
+
+%symbol KeyArgEvent : Event
+{
+    public KeyArgEvent(string text) : base(text) {}
 }
 
 %symbol IntArgEvent : Event
@@ -984,6 +1004,8 @@ StateBody
     | StateBody:sb StateEvent:se %StateBody(sb, se)
     | VoidArgStateEvent:se %StateBody(se)
     | StateBody:sb VoidArgStateEvent:se %StateBody(sb, se)
+    | KeyArgStateEvent:se %StateBody(se)
+    | StateBody:sb KeyArgStateEvent:se %StateBody(sb, se)
     | IntArgStateEvent:se %StateBody(se)
     | StateBody:sb IntArgStateEvent:se %StateBody(sb, se)
     | VectorArgStateEvent:se %StateBody(se)
@@ -996,6 +1018,10 @@ StateEvent
 
 VoidArgStateEvent
     : VoidArgEvent:e LEFT_PAREN RIGHT_PAREN CompoundStatement:cs %VoidArgStateEvent(e.yytext, cs)
+    ;
+
+KeyArgStateEvent
+    : KeyArgEvent:e LEFT_PAREN KeyArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %KeyArgStateEvent(e.yytext, adl, cs)
     ;
 
 IntArgStateEvent
@@ -1012,6 +1038,10 @@ ArgumentDeclarationList
     | ArgumentDeclarationList:adl COMMA Declaration:da %ArgumentDeclarationList(adl, da)
     ;
 
+KeyArgumentDeclarationList
+    : KeyDeclaration:id %KeyArgumentDeclarationList(id)
+    ;
+
 IntArgumentDeclarationList
     : IntDeclaration:id %IntArgumentDeclarationList(id)
     ;
@@ -1022,6 +1052,10 @@ VectorArgumentDeclarationList
 
 Declaration
     : Typename:t IDENT:id %Declaration(t.yytext, id.yytext)
+    ;
+
+KeyDeclaration
+    : KEY_TYPE:t IDENT:id %KeyDeclaration(t.yytext, id.yytext)
     ;
 
 IntDeclaration
@@ -1225,9 +1259,7 @@ Typename
     ;
 
 Event
-    : AT_ROT_TARGET_EVENT:e %Event(e.yytext)
-    | AT_TARGET_EVENT:e %Event(e.yytext)
-    | ATTACH_EVENT:e %Event(e.yytext)
+    : AT_TARGET_EVENT:e %Event(e.yytext)
     | CONTROL_EVENT:e %Event(e.yytext)
     | DATASERVER_EVENT:e %Event(e.yytext)
     | EMAIL_EVENT:e %Event(e.yytext)
@@ -1235,7 +1267,6 @@ Event
     | LINK_MESSAGE_EVENT:e %Event(e.yytext)
     | LISTEN_EVENT:e %Event(e.yytext)
     | MONEY_EVENT:e %Event(e.yytext)
-    | OBJECT_REZ_EVENT:e %Event(e.yytext)
     | REMOTE_DATA_EVENT:e %Event(e.yytext)
     | HTTP_REQUEST_EVENT:e %Event(e.yytext)
     ;
@@ -1249,6 +1280,11 @@ VoidArgEvent
     | NOT_AT_ROT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
     | NOT_AT_TARGET_EVENT:e %VoidArgEvent(e.yytext)
     | TIMER_EVENT:e %VoidArgEvent(e.yytext)
+    ;
+
+KeyArgEvent
+    : ATTACH_EVENT:e %KeyArgEvent(e.yytext)
+    | OBJECT_REZ_EVENT:e %KeyArgEvent(e.yytext)
     ;
 
 IntArgEvent
@@ -1268,4 +1304,8 @@ VectorArgEvent
     : LAND_COLLISION_EVENT:e %VectorArgEvent(e.yytext)
     | LAND_COLLISION_END_EVENT:e %VectorArgEvent(e.yytext)
     | LAND_COLLISION_START_EVENT:e %VectorArgEvent(e.yytext)
+    ;
+
+IntRotRotEvent
+    : AT_ROT_TARGET_EVENT:e %Event(e.yytext)
     ;
