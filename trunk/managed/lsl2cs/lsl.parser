@@ -197,6 +197,11 @@
     public IntRotRotArgStateEvent(string name, IntRotRotArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
 }
 
+%symbol IntVecVecArgStateEvent : StateEvent
+{
+    public IntVecVecArgStateEvent(string name, IntVecVecArgumentDeclarationList adl, CompoundStatement cs) : base(name, adl, cs) {}
+}
+
 %symbol ArgumentDeclarationList
 {
     public ArgumentDeclarationList(Declaration d)
@@ -244,6 +249,11 @@
 %symbol IntRotRotArgumentDeclarationList : ArgumentDeclarationList
 {
     public IntRotRotArgumentDeclarationList(Declaration d1, Declaration d2, Declaration d3) : base(d1, d2, d3) {}
+}
+
+%symbol IntVecVecArgumentDeclarationList : ArgumentDeclarationList
+{
+    public IntVecVecArgumentDeclarationList(Declaration d1, Declaration d2, Declaration d3) : base(d1, d2, d3) {}
 }
 
 %symbol Declaration
@@ -337,6 +347,11 @@
 %symbol IntRotRotArgEvent : Event
 {
     public IntRotRotArgEvent(string text) : base(text) {}
+}
+
+%symbol IntVecVecArgEvent : Event
+{
+    public IntVecVecArgEvent(string text) : base(text) {}
 }
 
 %symbol CompoundStatement
@@ -1045,6 +1060,8 @@ StateBody
     | StateBody:sb VectorArgStateEvent:se %StateBody(sb, se)
     | IntRotRotArgStateEvent:se %StateBody(se)
     | StateBody:sb IntRotRotArgStateEvent:se %StateBody(sb, se)
+    | IntVecVecArgStateEvent:se %StateBody(se)
+    | StateBody:sb IntVecVecArgStateEvent:se %StateBody(sb, se)
     ;
 
 StateEvent
@@ -1071,6 +1088,10 @@ IntRotRotArgStateEvent
     : IntRotRotArgEvent:e LEFT_PAREN IntRotRotArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %IntRotRotArgStateEvent(e.yytext, adl, cs)
     ;
 
+IntVecVecArgStateEvent
+    : IntVecVecArgEvent:e LEFT_PAREN IntVecVecArgumentDeclarationList:adl RIGHT_PAREN CompoundStatement:cs %IntVecVecArgStateEvent(e.yytext, adl, cs)
+    ;
+
 ArgumentDeclarationList
     :
     | Declaration:da %ArgumentDeclarationList(da)
@@ -1091,6 +1112,10 @@ VectorArgumentDeclarationList
 
 IntRotRotArgumentDeclarationList
     : IntDeclaration:da1 COMMA RotDeclaration:da2 COMMA RotDeclaration:da3 %IntRotRotArgumentDeclarationList(da1, da2, da3)
+    ;
+
+IntVecVecArgumentDeclarationList
+    : IntDeclaration:da1 COMMA VectorDeclaration:da2 COMMA VectorDeclaration:da3 %IntVecVecArgumentDeclarationList(da1, da2, da3)
     ;
 
 Declaration
@@ -1306,8 +1331,7 @@ Typename
     ;
 
 Event
-    : AT_TARGET_EVENT:e %Event(e.yytext)
-    | CONTROL_EVENT:e %Event(e.yytext)
+    : CONTROL_EVENT:e %Event(e.yytext)
     | DATASERVER_EVENT:e %Event(e.yytext)
     | EMAIL_EVENT:e %Event(e.yytext)
     | HTTP_RESPONSE_EVENT:e %Event(e.yytext)
@@ -1355,4 +1379,8 @@ VectorArgEvent
 
 IntRotRotArgEvent
     : AT_ROT_TARGET_EVENT:e %IntRotRotArgEvent(e.yytext)
+    ;
+
+IntVecVecArgEvent
+    : AT_TARGET_EVENT:e %IntVecVecArgEvent(e.yytext)
     ;
