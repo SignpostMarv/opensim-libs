@@ -27,7 +27,7 @@ Files and Directories:
     Tools/
         Contains the source code for the lexer generator and parser
         generator. Download CSTools.zip from
-        http://cis.paisley.ac.uk/crow-ci0/
+        http://cis.uws.ac.uk/crow-ci0/
     tests/
         Contains a bunch of files I use for testing. The .lsl files contain
         LSL source while the .cs files are the expected generated code.
@@ -53,5 +53,5 @@ Files and Directories:
 The compiler tools are used with permission from Malcolm Crowe. The original
 source can be downloaded[1] from his website[2].
 
-[1] http://cis.paisley.ac.uk/crow-ci0/CSTools47.zip
-[2] http://cis.paisley.ac.uk/crow-ci0/
+[1] http://cis.uws.ac.uk/malcolm.crowe/CSTools.zip
+[2] http://cis.uws.ac.uk/crow-ci0/
