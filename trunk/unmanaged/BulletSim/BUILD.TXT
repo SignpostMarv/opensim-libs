@@ -6,7 +6,7 @@ environment only builds the C# code.
 
 For Visual Studio 2010, the steps are:
 
-1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
+1) Download Bullet v2.82 (http://code.google.com/p/bullet/downloads/)
 1a) If you are adventurous, you can fetch the latest v2.* from svn
     (http://code.google.com/p/bullet/source/checkout).
     As of this writing (August 16, 2013), Bullet development is mostly doing
@@ -15,9 +15,9 @@ For Visual Studio 2010, the steps are:
     will probably not build or link and will require rework.
     In the mean time, any of the v2.79+ versions should work.
 2) Unpack the tgz or zip into the BulletSim directory (so there is a new
-    directory "BulletSim/bullet-2.81/")
+    directory "BulletSim/bullet-2.82/")
 3) Apply all the patches for bullet:
-	cd bullet-2.81 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
+	cd bullet-2.82 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
 4) cd into the bullet directory and build using your preferred method
     For Visual Studio 2008, open "msvc/2008/0BulletSolution.sln"
     Build a "Release" version.
@@ -38,18 +38,18 @@ For Visual Studio 2010, the steps are:
     OpenSimulator "bin/lib64" directory
 
 For Linux/Mac OSX (tested on Ubuntu and Lion)
-1) Download Bullet v2.81 (http://code.google.com/p/bullet/downloads/)
+1) Download Bullet v2.82 (http://code.google.com/p/bullet/downloads/)
 1b) As noted above, you can also fetch the latest Subversion
     version of the version 2 Bullet.
 2) Unpack the tgz or zip into the BulletSim directory somewhere
 3) Apply all patches for bullet:
-	cd bullet-2.81 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
+	cd bullet-2.82 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
 4) Follow the Bullet build instructions 
     (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation),
     create the directory "bullet-build" and cd into that directory.
-	Here is a bash script that builds bullet-2.81:
+	Here is a bash script that builds bullet-2.82:
 				#! /bin/bash
-				cd bullet-2.81
+				cd bullet-2.82
 				mkdir -p bullet-build
 				cd bullet-build
 				cmake .. -G "Unix Makefiles" \
@@ -71,6 +71,6 @@ For Linux/Mac OSX (tested on Ubuntu and Lion)
    On Mac OSX, copy "libBulletSim.dylib" into the OpenSimulator "bin/lib32" directory
 
 
-This was developed with Bullet v2.81. If you use a different version, you will
+This was developed with Bullet v2.82. If you use a different version, you will
 need to change the include and library directories for the BulletSim compilation.
 

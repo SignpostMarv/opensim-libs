@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.81\src&quot;;&quot;.\bullet-2.81\Extras\ConvexDecomposition&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.82\src&quot;;&quot;.\bullet-2.82\Extras\ConvexDecomposition&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -65,7 +65,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision_debug.lib BulletDynamics_debug.lib LinearMath_debug.lib ConvexDecomposition_debug.lib $(NOINHERIT)"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.81\lib&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.82\lib&quot;"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
@@ -119,7 +119,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.81\src&quot;;&quot;.\bullet-2.81\Extras\ConvexDecomposition&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.82\src&quot;;&quot;.\bullet-2.82\Extras\ConvexDecomposition&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
@@ -139,7 +139,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision_vs2010_x64_debug.lib BulletDynamics_vs2010_x64_debug.lib LinearMath_vs2010_x64_debug.lib ConvexDecomposition_vs2010_x64_debug.lib $(NOINHERIT)"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.81\lib&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.82\lib&quot;"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="17"
@@ -192,7 +192,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.81\src&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.82\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -212,7 +212,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision.lib BulletDynamics.lib LinearMath.lib $(NOINHERIT)"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.81\lib&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.82\lib&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -265,7 +265,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;.\bullet-2.81\src&quot;"
+				AdditionalIncludeDirectories="&quot;.\bullet-2.82\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -285,7 +285,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="BulletCollision_vs2010_x64_release.lib BulletDynamics_vs2010_x64_release.lib LinearMath_vs2010_x64_release.lib $(NOINHERIT)"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;.\bullet-2.81\lib&quot;"
+				AdditionalLibraryDirectories="&quot;.\bullet-2.82\lib&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="17"
 			/>

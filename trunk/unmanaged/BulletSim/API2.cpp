@@ -91,6 +91,7 @@ static void CheckOverlappingPairs(char* pReason)
 		lastNumberOverlappingPairs = thisOverlapping;
 	}
 }
+/*
 void __cdecl StaticBSLog(const char* msg, ...)
 {
 	if (staticSim->getWorldData()->debugLogCallback != NULL) {
@@ -100,6 +101,7 @@ void __cdecl StaticBSLog(const char* msg, ...)
 		va_end(args);
 	}
 }
+*/
 // END DEBUG DEBUG DEBUG =========================================================================================
 
 /**

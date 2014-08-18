@@ -192,7 +192,16 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	}
 
 	// setting to false means the islands are not reordered and split up for individual processing
-	dynamicsWorld->getSimulationIslandManager()->setSplitIslands(m_worldData.params->shouldSplitSimulationIslands != ParamFalse);
+	if (m_worldData.params->shouldSplitSimulationIslands != ParamFalse)
+	{
+		dynamicsWorld->getSimulationIslandManager()->setSplitIslands(true);
+		m_worldData.BSLog("initPhysics2: setting setSplitIslands => true");
+	}
+	else
+	{
+		dynamicsWorld->getSimulationIslandManager()->setSplitIslands(false);
+		m_worldData.BSLog("initPhysics2: setting setSplitIslands => false");
+	}
 
 	if (m_worldData.params->useSingleSidedMeshes != ParamFalse)
 	{
