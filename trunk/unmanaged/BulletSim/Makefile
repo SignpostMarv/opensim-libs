@@ -1,7 +1,9 @@
 # Build BulletSim
 
-IDIR = /usr/local/include/bullet
-LDIR = /usr/local/lib
+# IDIR = /usr/local/include/bullet
+# LDIR = /usr/local/lib
+IDIR = ./include
+LDIR = ./lib
 
 # the Bullet libraries are linked statically so we don't have to also distribute the shared binaries
 BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/libLinearMath.a $(LDIR)/libHACD.a
@@ -10,7 +12,7 @@ BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/li
 CC = g++
 LD = g++
 UNAME := $(shell uname)
-UNAMEPROCESSOR := $(shell uname --processor)
+UNAMEPROCESSOR := $(shell uname -m)
 
 # Kludge for building libBulletSim.so with different library dependencies
 #    As of 20130424, 64bit Ubuntu needs to wrap memcpy so it doesn't pull in glibc 2.14.
@@ -28,8 +30,8 @@ LFLAGS = $(WRAPMEMCPY) -shared -Wl,-soname,$(TARGET) -o $(TARGET)
 endif
 ifeq ($(UNAME), Darwin)
 TARGET = libBulletSim.dylib
-CFLAGS = -arch i386 -I$(IDIR) -fPIC -g
-LFLAGS = -arch i386 -dynamiclib -Wl -o $(TARGET)
+CFLAGS = -m64 -I$(IDIR) -fPIC -g
+LFLAGS = -m64 -dynamiclib -Wl -o $(TARGET)
 endif
 
 BASEFILES = API2.cpp BulletSim.cpp
