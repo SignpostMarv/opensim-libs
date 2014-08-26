@@ -18,8 +18,7 @@ if [[ "$UNAME" == "Darwin" ]] ; then
             -DBUILD_SHARED_LIBS=off \
             -DINSTALL_LIBS=on \
             -DINSTALL_EXTRA_LIBS=on \
-            -DCMAKE_OSX_ARCHITECTURES='ppc;i386;x86_64' \
-            -DCMAKE_CXX_FLAGS="-fPIC" \
+            -DCMAKE_CXX_FLAGS="-fPIC -fno-common -stdlib=libstdc++" \
             -DCMAKE_BUILD_TYPE=Release
 else
     if [[ "$MACH" == "x86_64" ]] ; then
