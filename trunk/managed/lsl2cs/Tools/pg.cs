@@ -561,7 +561,7 @@ public class ParserGenerate : SymbolsGen
 		{
 			m_lexer.yytext = "Null";
 			a.m_sym = (new CSymbol(this)).Resolve();
-			NewConstructor(ref a.m_sym,",\""+m_prod.m_lhs.yytext+"\"){}");
+			NewConstructor(ref a.m_sym,", "+m_prod.m_lhs.m_yynum+"){}");
 			return;
 		}
 		if (str.Length==0)
