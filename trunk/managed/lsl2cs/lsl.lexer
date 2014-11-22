@@ -103,6 +103,7 @@
 "touch_start"           %TOUCH_START_EVENT
 "touch_end"             %TOUCH_END_EVENT
 "http_request"          %HTTP_REQUEST_EVENT
+"transaction_result"    %TRANSACTION_RESULT_EVENT
 
 // others
 [a-zA-Z_][0-9a-zA-Z_]*  %IDENT

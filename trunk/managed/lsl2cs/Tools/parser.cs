@@ -544,27 +544,51 @@ namespace Tools
 			}
 			if (t.m_next!=null && t.m_A!=syms.EOFSymbol)
 			{
-				if (red==null) 
-					pi.m_parsetable[t.m_ps.m_state] = t.m_next;
-				else 
-					switch (t.m_A.ShiftPrecedence(red.m_prod,t.m_ps))			// 4.5h
-					{		
-						case Precedence.PrecType.left :
-							pi.m_parsetable[t.m_ps.m_state] = t.m_next; break;
-						case Precedence.PrecType.right :
-							pi.m_parsetable[t.m_ps.m_state] = red; break;
-					}
-			} 
-			else if (red!=null)
-				pi.m_parsetable[t.m_ps.m_state] = red;
+                if (red == null)
+                    pi.m_parsetable[t.m_ps.m_state] = t.m_next;
+                else
+                {
+                    int p = Precedence.Check(t.m_A, red.m_prod, 0); // 4.7m
+                    if (p > 0)
+                    {
+                        pi.m_parsetable[t.m_ps.m_state] = t.m_next;
+                        t.m_reduce.Remove(red.m_prod);
+                    }
+                    else if (p < 0)
+                    {
+                        pi.m_parsetable[t.m_ps.m_state] = red;
+                        t.m_next = null;
+                    }
+                    else
+                        switch (t.m_A.ShiftPrecedence(red.m_prod, t.m_ps))			// 4.5h
+                        {
+                            case Precedence.PrecType.left:
+                                pi.m_parsetable[t.m_ps.m_state] = t.m_next;
+                                t.m_reduce.Remove(red.m_prod);
+                                break;
+                            case Precedence.PrecType.right:
+                                pi.m_parsetable[t.m_ps.m_state] = red;
+                                t.m_next = null;
+                                break;
+                        }
+                }
+			}
+            else if (red != null)
+                pi.m_parsetable[t.m_ps.m_state] = red;
 		}
 		public void Print0()
 		{
 			Console.Write("    "+m_A.yytext);
-			if (m_next!=null)
-				Console.Write("  shift "+m_next.m_next.m_state);
+            int actions = 0;
+            if (m_next != null)
+            {
+                Console.Write("  shift " + m_next.m_next.m_state);
+                actions++;
+            }
 			foreach (Production p in m_reduce.Keys)
 				Console.Write("  reduce ("+p.m_pno+")");
+            if (actions + m_reduce.Keys.Count > 1)
+                Console.Write(": conflict");
 			Console.WriteLine();
 		}
 		public void Print(SymbolSet x,string s)
@@ -1735,11 +1759,11 @@ namespace Tools
 		}
 	}
 
-	public class Null : TOKEN  // fake up something that will evaluate to null but have the right yyname
+	public class Null : SYMBOL  // fake up something that will evaluate to null but have the right yyname
 	{
-		public Null(Lexer yyl,string proxy):base(yyl) { yytext=proxy; }
-		public Null(Parser yyp,string proxy):base(yyp) { yytext=proxy; }
-		public override string yyname { get { return yytext; }}
+        int num;
+        public Null(Parser yyp, int proxy) : base(yyp) { num = proxy; }
+        public override int yynum { get { return num; } }
 	}
 	// Support for runtime object creation
 

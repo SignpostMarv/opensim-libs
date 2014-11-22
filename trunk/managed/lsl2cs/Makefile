@@ -1,20 +1,17 @@
 CC="gmcs"
 
-all: output.exe Tools.dll
+all: lsl.parser.cs
 
 Tools.dll: Tools/lg.cs
 	(cd Tools; make)
 	cp Tools/Tools.dll Tools/lg.exe Tools/pg.exe .
 
-output.exe: CSCodeGenerator.cs LSL2CSCodeTransformer.cs CSReservedWords.cs lsl.lexer.cs lsl.parser.cs output.cs
-	$(CC) -debug+ -r:Tools.dll output.cs lsl.lexer.cs lsl.parser.cs CSCodeGenerator.cs LSL2CSCodeTransformer.cs CSReservedWords.cs
-
-lsl.lexer.cs: lsl.lexer Tools.dll
+lsl.lexer.cs: Tools.dll
 	mono lg.exe lsl.lexer
 
-lsl.parser.cs: lsl.lexer lsl.parser Tools.dll
+lsl.parser.cs: lsl.lexer.cs
 	mono pg.exe -C lsl.parser
 
 clean:
 	(cd Tools; make clean)
-	rm lg.exe pg.exe Tools.dll lsl.lexer.cs lsl.parser.cs output.exe*
+	rm lg.exe pg.exe Tools.dll lsl.lexer.cs lsl.parser.cs

@@ -1365,6 +1365,7 @@ Event
     | MONEY_EVENT:e %Event(e.yytext)
     | REMOTE_DATA_EVENT:e %Event(e.yytext)
     | HTTP_REQUEST_EVENT:e %Event(e.yytext)
+    | TRANSACTION_RESULT_EVENT:e %Event(e.yytext)
     ;
 
 VoidArgEvent
