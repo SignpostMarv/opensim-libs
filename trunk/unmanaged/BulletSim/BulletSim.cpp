@@ -292,7 +292,9 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 	if (m_worldData.dynamicsWorld)
 	{
 		// The simulation calls the SimMotionState to put object updates into updatesThisFrame.
+		// m_worldData.BSLog("Before step");
 		numSimSteps = m_worldData.dynamicsWorld->stepSimulation(timeStep, maxSubSteps, fixedTimeStep);
+		// m_worldData.BSLog("After step. Steps=%d,updates=%d", numSimSteps, m_worldData.updatesThisFrame.size());
 
 		if (m_dumpStatsCount != 0)
 		{
@@ -327,6 +329,7 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 		// Put all of the colliders this frame into m_collidersThisFrameArray
 		m_collidersThisFrame.clear();
 		m_collisionsThisFrame = 0;
+		// m_worldData.BSLog("Checking collision manifolds");
 		int numManifolds = m_worldData.dynamicsWorld->getDispatcher()->getNumManifolds();
 		for (int j = 0; j < numManifolds; j++)
 		{
@@ -349,6 +352,7 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 			if (m_collisionsThisFrame >= m_maxCollisionsPerFrame) 
 				break;
 		}
+		// m_worldData.BSLog("Checked manifolds. Collisions=%d", m_collisionsThisFrame);
 
 		// Any ghost objects must be relieved of their collisions.
 		WorldData::SpecialCollisionObjectMapType::iterator it = m_worldData.specialCollisionObjects.begin();
@@ -364,6 +368,7 @@ int BulletSim::PhysicsStep2(btScalar timeStep, int maxSubSteps, btScalar fixedTi
 				RecordGhostCollisions(obj);
 			}
 		}
+		// m_worldData.BSLog("Ghost collisions checked. Total collisions=%d", m_collisionsThisFrame);
 
 		*collidersCount = m_collisionsThisFrame;
 	}
@@ -560,10 +565,18 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 		// Offset this child hull by its calculated centroid
 		btVector3 centroid = btVector3((btScalar)hulls[ii+1], (btScalar)hulls[ii+2], (btScalar)hulls[ii+3]);
 		childTrans.setOrigin(centroid);
-
+		// m_worldData.BSLog("CreateHullShape2: %d Centroid = <%f,%f,%f>", i, centroid.getX(), &centroid.getY(), &centroid.getZ());	// DEBUG DEBUG
 		// Create the child hull and add it to our compound shape
 		btScalar* hullVertices = (btScalar*)&hulls[ii+4];
 		btConvexHullShape* convexShape = new btConvexHullShape(hullVertices, vertexCount, sizeof(Vector3));
+		// for (int j = 0; j < vertexCount; j += 3)	// DEBUG DEBUG
+		// {	// DEBUG DEBUG
+		// 	m_worldData.BSLog("CreateHullShape2: %d %d <%f,%f,%f>", i, j, 	// DEBUG DEBUG
+		// 		hullVertices[j] + 0,	// DEBUG DEBUG
+		// 		hullVertices[j] + 1,	// DEBUG DEBUG
+		// 		hullVertices[j] + 2	// DEBUG DEBUG
+		// 		);	// DEBUG DEBUG
+		// }	// DEBUG DEBUG
 		convexShape->setMargin(m_worldData.params->collisionMargin);
 		compoundShape->addChildShape(childTrans, convexShape);
 
