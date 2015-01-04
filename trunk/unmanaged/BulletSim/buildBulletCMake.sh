@@ -12,13 +12,17 @@ mkdir -p bullet-build
 cd bullet-build
 
 if [[ "$UNAME" == "Darwin" ]] ; then
-    cmake .. -G "Xcode" \
+    cmake .. -G "Unix Makefiles" \
             -DBUILD_EXTRAS=on \
             -DBUILD_DEMOS=off \
             -DBUILD_SHARED_LIBS=off \
-            -DINSTALL_LIBS=on \
-            -DINSTALL_EXTRA_LIBS=on \
-            -DCMAKE_CXX_FLAGS="-fPIC -fno-common -stdlib=libstdc++" \
+            -DINSTALL_LIBS=off \
+            -DINSTALL_EXTRA_LIBS=off \
+            -DCMAKE_OSX_ARCHITECTURES="i386" \
+            -DCMAKE_CXX_FLAGS="-m32 -arch i386 -std=c++11 -stdlib=libstdc++ -mmacosx-version-min=10.6" \
+            -DCMAKE_C_FLAGS="-m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6" \
+            -DCMAKE_EXE_LINKER_FLAGS="-m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6" \
+            -DCMAKE_VERBOSE_MAKEFILE="on" \
             -DCMAKE_BUILD_TYPE=Release
 else
     if [[ "$MACH" == "x86_64" ]] ; then
@@ -45,7 +49,7 @@ make -j4
 
 # make install
 
-# As an alternative, move the .a files in to a local directory
+# As an alternative to installation, move the .a files in to a local directory
 #    Good as it doesn't require admin privilages
 cd "$STARTDIR"
 mkdir -p lib

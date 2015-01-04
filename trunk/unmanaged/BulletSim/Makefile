@@ -23,15 +23,22 @@ else
 WRAPMEMCPY =
 endif
 
+# Linux build.
 ifeq ($(UNAME), Linux)
 TARGET = libBulletSim.so
 CFLAGS = -I$(IDIR) -fPIC -g
 LFLAGS = $(WRAPMEMCPY) -shared -Wl,-soname,$(TARGET) -o $(TARGET)
 endif
+
+# OSX build. Builds 32bit dylib on 64bit system. (Need 32bit because Mono is 32bit only).
 ifeq ($(UNAME), Darwin)
 TARGET = libBulletSim.dylib
-CFLAGS = -m64 -I$(IDIR) -fPIC -g
-LFLAGS = -m64 -dynamiclib -Wl -o $(TARGET)
+CC = clang
+LD = clang
+#CFLAGS = -m32 -I$(IDIR) -fPIC -g
+#LFLAGS = -m32 -dynamiclib -Wl -o $(TARGET)
+CFLAGS = -m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6 -I$(IDIR) -g 
+LFLAGS = -v -m32 -arch i386 -std=c++11 -stdlib=libstdc++ -mmacosx-version-min=10.6 -dynamic -o $(TARGET)
 endif
 
 BASEFILES = API2.cpp BulletSim.cpp
