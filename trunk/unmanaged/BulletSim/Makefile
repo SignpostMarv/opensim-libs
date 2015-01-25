@@ -33,12 +33,14 @@ endif
 # OSX build. Builds 32bit dylib on 64bit system. (Need 32bit because Mono is 32bit only).
 ifeq ($(UNAME), Darwin)
 TARGET = libBulletSim.dylib
-CC = clang
-LD = clang
+# CC = clang
+# LD = clang
 #CFLAGS = -m32 -I$(IDIR) -fPIC -g
 #LFLAGS = -m32 -dynamiclib -Wl -o $(TARGET)
-CFLAGS = -m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6 -I$(IDIR) -g 
-LFLAGS = -v -m32 -arch i386 -std=c++11 -stdlib=libstdc++ -mmacosx-version-min=10.6 -dynamic -o $(TARGET)
+#CFLAGS = -m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6 -I$(IDIR) -g 
+#LFLAGS = -v -m32 -arch i386 -std=c++11 -stdlib=libstdc++ -mmacosx-version-min=10.6 -dynamic -o $(TARGET)
+CFLAGS = -m32 -arch i386 -I$(IDIR) -g 
+LFLAGS = -v -dynamiclib -m32 -arch i386 -o $(TARGET)
 endif
 
 BASEFILES = API2.cpp BulletSim.cpp

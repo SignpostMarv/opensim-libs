@@ -19,9 +19,9 @@ if [[ "$UNAME" == "Darwin" ]] ; then
             -DINSTALL_LIBS=off \
             -DINSTALL_EXTRA_LIBS=off \
             -DCMAKE_OSX_ARCHITECTURES="i386" \
-            -DCMAKE_CXX_FLAGS="-m32 -arch i386 -std=c++11 -stdlib=libstdc++ -mmacosx-version-min=10.6" \
-            -DCMAKE_C_FLAGS="-m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6" \
-            -DCMAKE_EXE_LINKER_FLAGS="-m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6" \
+            -DCMAKE_CXX_FLAGS="-m32 -arch i386 -mmacosx-version-min=10.6" \
+            -DCMAKE_C_FLAGS="-m32 -arch i386 -mmacosx-version-min=10.6" \
+            -DCMAKE_EXE_LINKER_FLAGS="-m32 -arch i386 -mmacosx-version-min=10.6" \
             -DCMAKE_VERBOSE_MAKEFILE="on" \
             -DCMAKE_BUILD_TYPE=Release
 else
@@ -60,9 +60,20 @@ cd "$STARTDIR"
 mkdir -p include
 cd "${BULLET}/src"
 cp *.h ../../include
-for file in $(find . -name \*.h) ; do xxxx="../../include/$(dirname $file)" ; mkdir -p "$xxxx"; cp "$file" "$xxxx" ; done
+for file in $(find . -name \*.h) ; do
+    xxxx="../../include/$(dirname $file)" 
+    mkdir -p "$xxxx"
+    cp "$file" "$xxxx"
+done
+
 cd ../Extras
-for file in $(find . -name \*.h) ; do xxxx="../../include/$(dirname $file)" ; mkdir -p "$xxxx"; cp "$file" "$xxxx" ; done
-for file in $(find . -name \*.inl) ; do xxxx="../../include/$(dirname $file)" ; mkdir -p "$xxxx"; cp "$file" "$xxxx" ; done
-
-
+for file in $(find . -name \*.h) ; do
+    xxxx="../../include/$(dirname $file)"
+    mkdir -p "$xxxx"
+    cp "$file" "$xxxx"
+done
+for file in $(find . -name \*.inl) ; do
+    xxxx="../../include/$(dirname $file)"
+    mkdir -p "$xxxx"
+    cp "$file" "$xxxx"
+done
