@@ -228,8 +228,12 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateHullShape2(BulletSim* sim,
 }
 
 EXTERN_C DLL_EXPORT btCollisionShape* BuildHullShapeFromMesh2(BulletSim* sim, btCollisionShape* mesh, HACDParams* parms) {
+	btCollisionShape* shape;
 	bsDebug_AssertIsKnownCollisionShape(mesh, "BuildHullShapeFromMesh2: unknown shape passed for conversion");
-	btCollisionShape* shape = sim->BuildHullShapeFromMesh2(mesh, parms);
+	if (parms->whichHACD)
+		shape = sim->BuildVHACDHullShapeFromMesh2(mesh, parms);
+	else
+		shape = sim->BuildHullShapeFromMesh2(mesh, parms);
 	bsDebug_RememberCollisionShape(shape);
 	return shape;
 }
@@ -2922,7 +2926,7 @@ EXTERN_C DLL_EXPORT void DumpCollisionShape2(BulletSim* sim, btCollisionShape* s
 		);
 }
 
-EXTERN_C DLL_EXPORT void DumpFrameInfo(BulletSim* sim, char* type, btTransform& frameInA, btTransform& frameInB)
+EXTERN_C DLL_EXPORT void DumpFrameInfo(BulletSim* sim, const char* type, btTransform& frameInA, btTransform& frameInB)
 {
 	btVector3 frameInALoc = frameInA.getOrigin();
 	btQuaternion frameInARot = frameInA.getRotation();
@@ -2938,7 +2942,7 @@ EXTERN_C DLL_EXPORT void DumpFrameInfo(BulletSim* sim, char* type, btTransform& 
 
 // Several of the constraints are based on the 6Dof constraint.
 // Print common info.
-EXTERN_C DLL_EXPORT void Dump6DofInfo(BulletSim* sim, char* type, btGeneric6DofConstraint* constrain)
+EXTERN_C DLL_EXPORT void Dump6DofInfo(BulletSim* sim, const char* type, btGeneric6DofConstraint* constrain)
 {
 	btTransform frameInA = constrain->getFrameOffsetA();
 	btTransform frameInB = constrain->getFrameOffsetB();

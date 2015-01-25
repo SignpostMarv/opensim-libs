@@ -354,6 +354,21 @@ struct HACDParams
 	float addNeighboursDistPoints;	// false
 	float addFacesPoints;			// false
 	float shouldAdjustCollisionMargin;	// false
+	// VHACD
+	float whichHACD;				// zero if Bullet HACD, non-zero says VHACD
+	// http://kmamou.blogspot.ca/2014/12/v-hacd-20-parameters-description.html
+	float vHACDresolution;			// max number of voxels generated during voxelization stage
+	float vHACDdepth;				// max number of clipping stages
+	float vHACDconcavity;			// maximum concavity
+	float vHACDplaneDownsampling;	// granularity of search for best clipping plane
+	float vHACDconvexHullDownsampling;	// precision of hull gen process
+	float vHACDalpha;				// bias toward clipping along symmetry planes
+	float vHACDbeta;				// bias toward clipping along revolution axis
+	float vHACDgamma;				// max concavity when merging
+	float vHACDpca;					// on/off normalizing mesh before decomp
+	float vHACDmode;				// 0:voxel based, 1: tetrahedron based
+	float vHACDmaxNumVerticesPerCH;	// max triangles per convex hull
+	float vHACDminVolumePerCH;		// sampling of generated convex hulls
 };
 
 #define CONSTRAINT_NOT_SPECIFIED (-1)

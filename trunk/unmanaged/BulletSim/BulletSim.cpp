@@ -35,12 +35,14 @@
 #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
 #include "BulletCollision/Gimpact/btGImpactShape.h"
 
+#if defined(USEBULLETHACD)
 #if defined(__linux__) || defined(__APPLE__) 
 #include "HACD/hacdHACD.h"
 #elif defined(_WIN32) || defined(_WIN64)
 #include "../extras/HACD/hacdHACD.h"
 #else
 #error "Platform type not understood."
+#endif
 #endif
 
 // Linkages to debugging dump routines
@@ -597,6 +599,7 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 // Returns the created collision shape or NULL if couldn't create
 btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms)
 {
+#if defined(USEBULLETHACD)
 	// Get the triangle mesh data out of the passed mesh shape
 	int shapeType = mesh->getShapeType();
 	if (shapeType != TRIANGLE_MESH_SHAPE_PROXYTYPE)
@@ -748,8 +751,22 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 	}
 
 	return compoundShape;
+#else
+	return NULL;
+#endif
 }
 
+btCollisionShape* BulletSim::BuildVHACDHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms)
+{
+#if defined(USEVHACD)
+	return NULL;
+#else
+	return NULL;
+#endif
+}
+
+// Return a btConvexHullShape constructed from the passed btCollisonShape.
+// Used to create the separate hulls if using the C# HACD algorithm.
 btCollisionShape* BulletSim::BuildConvexHullShapeFromMesh2(btCollisionShape* mesh)
 {
 	btConvexHullShape* hullShape = new btConvexHullShape();

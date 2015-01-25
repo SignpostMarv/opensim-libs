@@ -50,6 +50,12 @@
 #define ROTATION_TOLERANCE 0.01f
 #define ANGULARVELOCITY_TOLERANCE 0.01f
 
+// If defined, use the HACD included with the Bullet distribution
+#define USEBULLETHACD 1
+
+// If defined, use the external VHACD library
+// #define USEVHACD 1
+
 // TODO: find a way to build this
 static char BulletSimVersionString[] = "v0002";
 
@@ -296,6 +302,7 @@ public:
 	btCollisionShape* CreateGImpactShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
 	btCollisionShape* CreateHullShape2(int hullCount, float* hulls );
 	btCollisionShape* BuildHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms);
+	btCollisionShape* BuildVHACDHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms);
 	btCollisionShape* BuildConvexHullShapeFromMesh2(btCollisionShape* mesh);
 	btCollisionShape* CreateConvexHullShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
 
