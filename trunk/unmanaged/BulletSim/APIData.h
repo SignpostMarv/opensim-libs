@@ -291,6 +291,13 @@ struct EntityProperties
 	Vector3 Acceleration;
 	Vector3 AngularVelocity;
 
+	EntityProperties()
+	{
+		ID = 0;
+		Position = btVector3();
+		Rotation = btQuaternion();
+	}
+
 	EntityProperties(IDTYPE id, const btTransform& startTransform)
 	{
 		ID = id;
@@ -364,11 +371,14 @@ struct HACDParams
 	float vHACDconvexHullDownsampling;	// precision of hull gen process
 	float vHACDalpha;				// bias toward clipping along symmetry planes
 	float vHACDbeta;				// bias toward clipping along revolution axis
+	float vHACDdelta;				// bias toward clipping within local convex shape
 	float vHACDgamma;				// max concavity when merging
 	float vHACDpca;					// on/off normalizing mesh before decomp
 	float vHACDmode;				// 0:voxel based, 1: tetrahedron based
 	float vHACDmaxNumVerticesPerCH;	// max triangles per convex hull
 	float vHACDminVolumePerCH;		// sampling of generated convex hulls
+	float vHACDconvexHullApprox;	// approximate hulls to accelerate computation
+	float vHACDoclAcceleration;		// use OpenCL
 };
 
 #define CONSTRAINT_NOT_SPECIFIED (-1)

@@ -45,6 +45,11 @@
 #endif
 #endif
 
+#if defined(USEVHACD)
+#include "VHACD.h"
+using namespace VHACD;
+#endif
+
 // Linkages to debugging dump routines
 extern "C" void DumpPhysicsStatistics2(BulletSim* sim);
 extern "C" void DumpActivationInfo2(BulletSim* sim);
@@ -691,25 +696,29 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 		myHACD.GetCH(hul, pointsCH, trianglesCH);
 
 		// Average the location of all the vertices to create a centriod for the hull.
+		btAlignedObjectArray<btVector3> vertices;
 		btVector3 centroid;
 		centroid.setValue(0,0,0);
-		for (int ii=0; ii < nPoints; ii++)
+		for (int ii=0; ii < nTriangles; ii++)
 		{
-			btVector3 vertex(pointsCH[ii].X(), pointsCH[ii].Y(), pointsCH[ii].Z());
-			// vertex *= localScaling;
-			centroid += vertex;
+			long tri = trianglesCH[ii].X();
+			btVector3 corner1(pointsCH[tri].X(), pointsCH[tri].Y(), pointsCH[tri].Z() );
+			vertices.push_back(corner1);
+			centroid += corner1;
+			tri = trianglesCH[ii].Y();
+			btVector3 corner2(pointsCH[tri].X(), pointsCH[tri].Y(), pointsCH[tri].Z() );
+			vertices.push_back(corner2);
+			centroid += corner2;
+			tri = trianglesCH[ii].Z();
+			btVector3 corner3(pointsCH[tri].X(), pointsCH[tri].Y(), pointsCH[tri].Z() );
+			vertices.push_back(corner3);
+			centroid += corner3;
 		}
-		centroid *= 1.f/((float)(nPoints));
+		centroid *= 1.f/((float)(nTriangles * 3));
 
-		// Copy out the hull vertices into Bullet data structure.
-		btAlignedObjectArray<btVector3> vertices;
-		//const unsigned int *src = result.mHullIndices;
-		for (int ii=0; ii < nPoints; ii++)
+		for (int ii=0; ii < vertices.size(); ii++)
 		{
-			btVector3 vertex(pointsCH[ii].X(), pointsCH[ii].Y(), pointsCH[ii].Z());
-			// vertex *= localScaling;
-			vertex -= centroid;
-			vertices.push_back(vertex);
+			vertices[ii] -= centroid;
 		}
 
 		delete [] pointsCH;
@@ -756,10 +765,204 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 #endif
 }
 
+#if defined(USEVHACD)
+// Instance that is called by VHACD to report hulling progress
+class VHACDProgressLog : public IVHACD::IUserCallback
+{
+	WorldData* m_WorldData;
+public:
+	VHACDProgressLog(WorldData* wd) {m_WorldData = wd; }
+	~VHACDProgressLog() {}
+	void Update(const double          overallProgress,
+                const double          stageProgress,
+                const double          operationProgress,
+                const char * const    stage,
+                const char * const    operation) 
+	 {
+		 m_WorldData->BSLog("VHACD: progress=%f, stageProg=%f, opProgress=%f, state=%s, op=%s",
+			 overallProgress, stageProgress, operationProgress, stage, operation);
+	 }
+};
+#endif
+
 btCollisionShape* BulletSim::BuildVHACDHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms)
 {
 #if defined(USEVHACD)
-	return NULL;
+
+	int* triangles;	// array of indesex
+	float* points;	// array of coordinates
+
+	// copy the mesh into the structures
+	btStridingMeshInterface* meshInfo = ((btTriangleMeshShape*)mesh)->getMeshInterface();
+
+	const unsigned char* vertexBase;	// base of the vertice array
+	int numVerts;						// the num of vertices
+	PHY_ScalarType vertexType;			// the data type representing the vertices
+	int vertexStride;					// bytes between each vertex
+	const unsigned char* indexBase;		// base of the index array
+	int indexStride;					// bytes between the index values
+	int numFaces;						// the number of triangles specified by the indexes
+	PHY_ScalarType indicesType;			// the data type of the indexes
+	meshInfo->getLockedReadOnlyVertexIndexBase(&vertexBase, numVerts, vertexType, vertexStride, &indexBase, indexStride, numFaces, indicesType);
+
+	if (vertexType != PHY_FLOAT || indicesType != PHY_INTEGER)
+	{
+		// If an odd data structure, we cannot hullify
+		m_worldData.BSLog("VHACD: triangle mesh not of right types");	// DEBUG DEBUG
+		return NULL;
+	}
+
+	// Create pointers to the vertices and indices as the PHY types that they are
+	float* tVertex = (float*)vertexBase;
+	int tVertexStride = vertexStride / sizeof(float);
+	int* tIndices = (int*) indexBase;
+	int tIndicesStride = indexStride / sizeof(int);
+	m_worldData.BSLog("VHACD: nVertices=%d, nIndices=%d", numVerts, numFaces*3);	// DEBUG DEBUG
+
+	// Copy the vertices/indices into the HACD data structures
+	points = new float[numVerts * 3];
+	triangles = new int[numFaces * 3];
+
+	int pp = 0;
+	for (int ii=0; ii < (numVerts * tVertexStride); ii += tVertexStride)
+	{
+		points[pp+0] = tVertex[ii+0];
+		points[pp+1] = tVertex[ii+1];
+		points[pp+2] = tVertex[ii+2];
+		pp += 3;
+	}
+	pp = 0;
+	for(int ii=0; ii < (numFaces * tIndicesStride); ii += tIndicesStride ) 
+	{
+		triangles[pp+0] = tIndices[ii+0];
+		triangles[pp+1] = tIndices[ii+1];
+		triangles[pp+2] = tIndices[ii+2];
+		pp += 3;
+	}
+
+	meshInfo->unLockReadOnlyVertexBase(0);
+	m_worldData.BSLog("VHACD: structures copied");	// DEBUG DEBUG
+
+	IVHACD::Parameters vParams;
+	vParams.m_resolution              = (unsigned int)parms->vHACDresolution;
+    vParams.m_depth                   = (int)parms->vHACDdepth;
+    vParams.m_concavity               = (double)parms->vHACDconcavity;
+    vParams.m_planeDownsampling       = (int)parms->vHACDplaneDownsampling;
+    vParams.m_convexhullDownsampling  = (int)parms->vHACDconvexHullDownsampling;
+    vParams.m_alpha                   = (double)parms->vHACDalpha;
+    vParams.m_beta                    = (double)parms->vHACDbeta;
+	vParams.m_delta                   = (double)parms->vHACDdelta;
+    vParams.m_gamma                   = (double)parms->vHACDgamma;
+    vParams.m_pca                     = (int)parms->vHACDpca;
+    vParams.m_mode                    = (int)parms->vHACDmode;
+    vParams.m_maxNumVerticesPerCH     = (unsigned int)parms->vHACDmaxNumVerticesPerCH;
+    vParams.m_minVolumePerCH          = (double)parms->vHACDminVolumePerCH;
+	vParams.m_callback                = new VHACDProgressLog(&m_worldData);
+    // vParams.m_logger                  =
+    vParams.m_convexhullApproximation = (parms->vHACDconvexHullApprox == ParamTrue);
+    vParams.m_oclAcceleration         = (parms->vHACDoclAcceleration == ParamTrue);
+
+	IVHACD* interfaceVHACD = CreateVHACD();
+
+	bool res = interfaceVHACD->Compute(points, 1, numFaces * 3, triangles, 3, numVerts, vParams);
+
+	unsigned int nConvexHulls = interfaceVHACD->GetNConvexHulls();
+	m_worldData.BSLog("VHACD: After compute. nHulls=%d", nConvexHulls);	// DEBUG DEBUG
+
+	// Create the compound shape all the hulls will be added to
+	btCompoundShape* compoundShape = new btCompoundShape(true);
+	compoundShape->setMargin(m_worldData.params->collisionMargin);
+
+	// Convert each of the built hulls into btConvexHullShape objects and add to the compoundShape
+	IVHACD::ConvexHull ch;
+	for (unsigned int hul = 0; hul < nConvexHulls; hul++)
+	{
+		interfaceVHACD->GetConvexHull(hul, ch);
+		size_t nPoints = ch.m_nPoints;
+		size_t nTriangles = ch.m_nTriangles;
+		m_worldData.BSLog("VHACD: Add hull %d. nPoints=%d, nTriangles=%d", hul, nPoints, nTriangles);	// DEBUG DEBUG
+
+		// Average the location of all the vertices to create a centriod for the hull.
+		btAlignedObjectArray<btVector3> vertices;
+		vertices.reserve(nTriangles);
+		btVector3 centroid;
+		centroid.setValue(0,0,0);
+
+		/*
+		int pp = 0;
+		for (int ii=0; ii < nPoints; ii++)
+		{
+			btVector3 vertex(ch.m_points[pp + 0], ch.m_points[pp + 1], ch.m_points[pp + 2] );
+			vertices.push_back(vertex);
+			centroid += vertex;
+			pp += 3;
+			m_worldData.BSLog("VHACD: Hull %d, vertex %d:<%f,%f,%f>", hul, ii, vertex.getX(), vertex.getY(), vertex.getZ());	// DEBUG DEBUG
+		}
+		// centroid *= 1.f/((float)(nPoints));
+
+		// Move the vertices to have the common centroid
+		for (int ii=0; ii < nPoints; ii++)
+		{
+			vertices[ii] -= centroid;
+		}
+		*/
+
+		for (int ii=0; ii < nTriangles; ii++)
+		{
+			int tri = ch.m_triangles[ii] * 3;
+			btVector3 vertex(ch.m_points[tri+0], ch.m_points[tri+1], ch.m_points[tri+2]);
+			vertices.push_back(vertex);
+		}
+
+		btConvexHullShape* convexShape;
+		// Optionally compress the hull a little bit to account for the collision margin.
+		if (parms->shouldAdjustCollisionMargin == ParamTrue)
+		{
+			float collisionMargin = 0.01f;
+			
+			btAlignedObjectArray<btVector3> planeEquations;
+			btGeometryUtil::getPlaneEquationsFromVertices(vertices, planeEquations);
+
+			btAlignedObjectArray<btVector3> shiftedPlaneEquations;
+			for (int p=0; p<planeEquations.size(); p++)
+			{
+				btVector3 plane = planeEquations[p];
+				plane[3] += collisionMargin;
+				shiftedPlaneEquations.push_back(plane);
+			}
+			btAlignedObjectArray<btVector3> shiftedVertices;
+			btGeometryUtil::getVerticesFromPlaneEquations(shiftedPlaneEquations,shiftedVertices);
+			
+			convexShape = new btConvexHullShape(shiftedVertices[0], shiftedVertices.size(), sizeof(btVector3));
+		}
+		else
+		{
+			convexShape = new btConvexHullShape(vertices[0], vertices.size(), sizeof(btVector3));
+		}
+		convexShape->setMargin(m_worldData.params->collisionMargin);
+
+		// Add the hull shape to the compound shape
+		btTransform childTrans;
+		childTrans.setIdentity();
+		childTrans.setOrigin(centroid);
+		m_worldData.BSLog("HACD: Add child shape %d", hul);	// DEBUG DEBUG
+		compoundShape->addChildShape(childTrans, convexShape);
+	}
+
+	// The params structure doesn't have a destructor to get rid of logging and progress callbacks
+	if (vParams.m_callback)
+	{
+		delete vParams.m_callback;
+		vParams.m_callback = 0;
+	}
+
+	delete [] points;
+	delete [] triangles;
+
+	interfaceVHACD->Clean();
+	interfaceVHACD->Release();
+
+	return compoundShape;
 #else
 	return NULL;
 #endif
