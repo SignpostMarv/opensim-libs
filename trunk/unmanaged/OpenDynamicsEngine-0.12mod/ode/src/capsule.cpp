@@ -215,9 +215,9 @@ int dCollideCapsuleBox (dxGeom *o1, dxGeom *o2, int flags,
   //  than pl and pb are equal -> unknown normal
   // use vector to center of box as normal
 #ifdef dSINGLE
-  dReal mindist = REAL(1e-9);
+  dReal mindist = REAL(1e-6);
 #else
-  dReal mindist = REAL(1e-18);
+  dReal mindist = REAL(1e-15);
 #endif
   if (dCalcPointsDistance3(pl, pb)<mindist) {
     dVector3 normal; // pb-c (vector from center of box to pb)
