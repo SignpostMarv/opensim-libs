@@ -1,0 +1,4 @@
+
+	This version is named as to be ODE release r1755
+but examination of CHANGELOG and other files shows its really a revison around r1645 to r1650
+its version from configure.in is 0.11.1 while r1755 is a advanced 0.12
