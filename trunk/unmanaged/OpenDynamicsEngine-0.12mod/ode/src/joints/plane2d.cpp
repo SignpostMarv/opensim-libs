@@ -75,10 +75,18 @@ dxJointPlane2D::getInfo1( dxJoint::Info1 *info )
 
     if ( motor_x.fmax > 0 )
         row_motor_x = info->m ++;
+    else
+        row_motor_x = 0;
+
     if ( motor_y.fmax > 0 )
         row_motor_y = info->m ++;
+    else
+        row_motor_y = 0;
+
     if ( motor_angle.fmax > 0 )
         row_motor_angle = info->m ++;
+    else
+        row_motor_angle = 0;
 }
 
 
@@ -145,7 +153,7 @@ dJointType
 dxJointPlane2D::type() const
 {
     return dJointTypePlane2D;
-};
+}
 
 
 size_t
