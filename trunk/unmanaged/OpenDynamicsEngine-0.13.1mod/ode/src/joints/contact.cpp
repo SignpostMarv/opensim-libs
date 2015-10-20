@@ -41,7 +41,9 @@ void
 dxJointContact::getSureMaxInfo( SureMaxInfo* info )
 {
   // ...as the actual m is very likely to hit the maximum
-  info->max_m = (contact.surface.mode&dContactRolling)?6:3; 
+  //info->max_m = (contact.surface.mode&dContactRolling)?6:3; 
+    // roll not in use for opensim
+    info->max_m = 3;
 }
 
 
@@ -51,7 +53,7 @@ dxJointContact::getInfo1( dxJoint::Info1 *info )
     // make sure mu's >= 0, then calculate number of constraint rows and number
     // of unbounded rows.
     int m = 1, nub = 0;
-    int roll = (contact.surface.mode&dContactRolling)!=0;
+//    int roll = (contact.surface.mode&dContactRolling)!=0;
     
     if ( contact.surface.mu < 0 ) contact.surface.mu = 0;
 
@@ -63,6 +65,8 @@ dxJointContact::getInfo1( dxJoint::Info1 *info )
         if ( contact.surface.mu2 > 0 ) m++;
         if ( contact.surface.mu  == dInfinity ) nub ++;
         if ( contact.surface.mu2 == dInfinity ) nub ++;
+    // roll not in use for opensim
+/*
         if (roll) {
           if ( contact.surface.rho < 0 ) contact.surface.rho = 0;
           else m++;
@@ -75,16 +79,19 @@ dxJointContact::getInfo1( dxJoint::Info1 *info )
           if ( contact.surface.rho2 == dInfinity ) nub++;
           if ( contact.surface.rhoN == dInfinity ) nub++;
         }
+*/
     }
     else
     {
         if ( contact.surface.mu > 0 ) m += 2;
         if ( contact.surface.mu == dInfinity ) nub += 2;
+/*
         if (roll) {
           if ( contact.surface.rho < 0 ) contact.surface.rho = 0;
           else m+=3;
           if ( contact.surface.rho == dInfinity ) nub += 3;
         }
+*/
     }
 
     the_m = m;
@@ -296,7 +303,7 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
     } else {
         rollRow = rowFriction2;
     } 
-
+/*
     // Handle rolling/spinning friction
     if (contact.surface.mode&dContactRolling) {
         dReal rho[3];
@@ -336,6 +343,7 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
             }
         }
     }
+*/
 }
 
 dJointType

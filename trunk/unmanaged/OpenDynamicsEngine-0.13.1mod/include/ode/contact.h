@@ -47,8 +47,10 @@ enum {
   dContactApprox0   = 0x0000,
   dContactApprox1_1 = 0x1000,
   dContactApprox1_2 = 0x2000,
-  dContactApprox1_N = 0x4000,   /**< For rolling friction */
-  dContactApprox1   = 0x7000
+  dContactApprox1   = 0x3000    // compatibilty with current os engines
+
+//  dContactApprox1_N = 0x4000,   /**< For rolling friction */
+//  dContactApprox1   = 0x7000
 };
 
 
@@ -59,9 +61,10 @@ typedef struct dSurfaceParameters {
 
   /* only defined if the corresponding flag is set in mode */
   dReal mu2;
-  dReal rho;                    /**< Rolling friction */
-  dReal rho2;
-  dReal rhoN;                   /**< Spinning friction */
+  // coment out for compatibility with current os engined
+//  dReal rho;                    /**< Rolling friction */
+//  dReal rho2;
+//  dReal rhoN;                   /**< Spinning friction */
   dReal bounce;                 /**< Coefficient of restitution */
   dReal bounce_vel;             /**< Bouncing threshold */
   dReal soft_erp;

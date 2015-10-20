@@ -66,7 +66,8 @@
 // during the solution. depending on the situation, this can help a lot
 // or hardly at all, but it doesn't seem to hurt.
 
-#define CONSTRAINTS_REORDERING_METHOD REORDERING_METHOD__RANDOMLY
+// opensim don't reorder
+//#define CONSTRAINTS_REORDERING_METHOD REORDERING_METHOD__RANDOMLY
 
 
 #if !defined(CONSTRAINTS_REORDERING_METHOD)

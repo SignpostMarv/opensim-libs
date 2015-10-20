@@ -260,8 +260,8 @@ enum {
   dParamLoStop = start, \
   dParamHiStop, \
   dParamVel, \
-  dParamLoVel, \
-  dParamHiVel, \
+/*  dParamLoVel,  */ \
+/*  dParamHiVel,  */ \
   dParamFMax, \
   dParamFudgeFactor, \
   dParamBounce, \
@@ -287,8 +287,8 @@ enum {
   dParamLoStop ## x = start, \
   dParamHiStop ## x, \
   dParamVel ## x, \
-  dParamLoVel ## x, \
-  dParamHiVel ## x, \
+/*  dParamLoVel ## x,  */ \
+/*  dParamHiVel ## x,  */ \
   dParamFMax ## x, \
   dParamFudgeFactor ## x, \
   dParamBounce ## x, \
