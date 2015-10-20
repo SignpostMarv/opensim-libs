@@ -1,5 +1,0 @@
-SUBDIRS = src
-
-EXTRA_DIST = \
-	BSD-LICENSE \
-	README
