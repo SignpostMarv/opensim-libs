@@ -25,7 +25,13 @@ optionally you can produce a Debug version, selecting DebugDLL. Result will be a
 to bin/lib32 or bin/lib64 opensim folder acording to platform.
 C++ debug does have a large impact on performance. You should only use it for testing. 
 
+== On Linux ==
+if you dont see the file ./configure you need to do
+./bootstrap
+to create it. Check it so see its dependencies on several linux tools.
+
 (could not test following adapted from justin instructions bellow)
+
 == On Linux 32-bit ==
 ./configure --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x --disable-threading-intf 
 make
