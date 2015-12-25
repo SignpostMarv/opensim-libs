@@ -137,7 +137,7 @@ struct sTrimeshCapsuleColliderData
 
     void SetupInitialContext(dxTriMesh *TriMesh, dxGeom *Capsule, int flags, int skip);
     int TestCollisionForSingleTriangle(int ctContacts0, int Triint, dVector3 dv[3], 
-        uint8 flags, bool &bOutFinishSearching);
+        uint8 flags, bool &bOutFinishSearching, bool singleSide);
 
 #if OPTIMIZE_CONTACTS
     void _OptimizeLocalContacts();
@@ -150,7 +150,7 @@ struct sTrimeshCapsuleColliderData
     BOOL _cldTestSeparatingAxesOfCapsule(const dVector3 &v0, const dVector3 &v1, 
         const dVector3 &v2, uint8 flags);
     void _cldTestOneTriangleVSCapsule(const dVector3 &v0, const dVector3 &v1, 
-        const dVector3 &v2, uint8 flags);
+        const dVector3 &v2, uint8 flags, bool singleside);
 
     sLocalContactData   *m_gLocalContacts;
     unsigned int		m_ctContacts;
@@ -737,7 +737,7 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
 // test one mesh triangle on intersection with capsule
 void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
     const dVector3 &v0, const dVector3 &v1, const dVector3 &v2,
-    uint8 flags)
+    uint8 flags, bool singleSide)
 {
     // calculate edges
     SUBTRACT(v1,v0,m_vE0);
@@ -767,25 +767,37 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
     dReal fDistanceCapsuleCenterToPlane = POINTDISTANCE(plTrianglePlane,m_vCapsulePosition);
 
     // Capsule must be over positive side of triangle
-    if (fDistanceCapsuleCenterToPlane < 0 /* && !bDoubleSided*/) 
+    if (fDistanceCapsuleCenterToPlane < 0  && singleSide) 
     {
         // if not don't generate contacts
         return;
     }
 
     dVector3 vPnt0;
-    SET	(vPnt0,v0);
     dVector3 vPnt1;
-    SET	(vPnt1,v1);
     dVector3 vPnt2;
-    SET	(vPnt2,v2);
 
     if (fDistanceCapsuleCenterToPlane < 0 )
     {
         SET	(vPnt0,v0);
         SET	(vPnt1,v2);
         SET	(vPnt2,v1);
+
+        m_vN[0] = -m_vN[0];
+        m_vN[1] = -m_vN[1];
+        m_vN[2] = -m_vN[2];
+
+        SUBTRACT(v2,v0,m_vE0);
+        SUBTRACT(v1,v2,m_vE1);
+        SUBTRACT(v0,v1,m_vE2);       
     }
+    else
+    {
+        SET	(vPnt0,v0);
+        SET	(vPnt1,v1);
+        SET	(vPnt2,v2);
+    }
+
 
     // do intersection test and find best separating axis
     if (!_cldTestSeparatingAxesOfCapsule(vPnt0, vPnt1, vPnt2, flags))
@@ -830,6 +842,7 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
 
     dVector4 plPlane;
     dVector3 _minus_vN;
+
     _minus_vN[0] = -m_vN[0];
     _minus_vN[1] = -m_vN[1];
     _minus_vN[2] = -m_vN[2];
@@ -892,6 +905,7 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
 
     // Cached contacts's data
     // contact 0
+
     dIASSERT(m_ctContacts < (m_iFlags & NUMC_MASK)); // Do not call function if there is no room to store result
     m_gLocalContacts[m_ctContacts].fDepth = fDepth0;
     SET(m_gLocalContacts[m_ctContacts].vNormal,m_vNormal);
@@ -951,10 +965,10 @@ void sTrimeshCapsuleColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom
 }
 
 int sTrimeshCapsuleColliderData::TestCollisionForSingleTriangle(int ctContacts0, 
-                                                                int Triint, dVector3 dv[3], uint8 flags, bool &bOutFinishSearching)
+         int Triint, dVector3 dv[3], uint8 flags, bool &bOutFinishSearching, bool singleSide)
 {
     // test this triangle
-    _cldTestOneTriangleVSCapsule(dv[0],dv[1],dv[2], flags);
+    _cldTestOneTriangleVSCapsule(dv[0],dv[1],dv[2], flags, singleSide);
 
     // fill-in tri index for generated contacts
     for (; ctContacts0 < (int)m_ctContacts; ctContacts0++)
@@ -1043,12 +1057,24 @@ int dCollideCCTL(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int s
     dIASSERT ((flags & NUMC_MASK) >= 1);
 
     int nContactCount = 0;
+    bool singleSide = true;
 
     dxTriMesh *TriMesh = (dxTriMesh*)o1;
     dxGeom *Capsule = o2;
 
     sTrimeshCapsuleColliderData cData;
     cData.SetupInitialContext(TriMesh, Capsule, flags, skip);
+
+    int cntr = 0;
+    dReal size = REAL(1.5) * cData.m_fCapsuleSize;
+    if(size < o1->aabb[1] - o1->aabb[0])
+        cntr++;
+    if(size < o1->aabb[3] - o1->aabb[2])
+        cntr++;
+    if(size < o1->aabb[5] - o1->aabb[4])
+        cntr++;
+    if(cntr >= 2)
+        singleSide = false;
 
     const unsigned uiTLSKind = TriMesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == Capsule->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method
@@ -1092,7 +1118,7 @@ int dCollideCCTL(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int s
                 uint8 flags = UseFlags ? UseFlags[Triint] : (uint8)dxTriMeshData::kUseAll;
 
                 bool bFinishSearching;
-                ctContacts0 = cData.TestCollisionForSingleTriangle(ctContacts0, Triint, dv, flags, bFinishSearching);
+                ctContacts0 = cData.TestCollisionForSingleTriangle(ctContacts0, Triint, dv, flags, bFinishSearching, singleSide);
 
                 if (bFinishSearching) 
                 {
