@@ -82,7 +82,7 @@
 
 // dVector3
 // a=b
-#define SET(a,b) dCopyVector3(a, b)
+#define SET(r,a) dCopyVector3(r, a)
 
 
 // dMatrix3
@@ -145,8 +145,7 @@ struct sTrimeshCapsuleColliderData
     int	_ProcessLocalContacts(dContactGeom *contact, dxTriMesh *TriMesh, dxGeom *Capsule);
 
     static BOOL _cldClipEdgeToPlane(dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector4& plPlane);
-    BOOL _cldTestAxis(const dVector3 &v0, const dVector3 &v1, const dVector3 &v2, 
-        dVector3 vAxis, int iAxis, BOOL bNoFlip = FALSE);
+    BOOL _cldTestAxis(dVector3 vAxis, int iAxis, BOOL bNoFlip = FALSE);
     BOOL _cldTestSeparatingAxesOfCapsule(const dVector3 &v0, const dVector3 &v1, 
         const dVector3 &v2, uint8 flags);
     void _cldTestOneTriangleVSCapsule(const dVector3 &v0, const dVector3 &v1, 
@@ -157,13 +156,14 @@ struct sTrimeshCapsuleColliderData
 
     // capsule data
     // real time data
-    dMatrix3  m_mCapsuleRotation;
+    dMatrix3   m_mCapsuleRotation;
     dVector3   m_vCapsulePosition;
     dVector3   m_vCapsuleAxis;
+    dVector3   m_vSizeOnAxis;
     // static data
-    dReal      m_vCapsuleRadius;
+    dReal      m_fCapsuleRadius;
+    dReal      m_fCapCilinderSize;
     dReal      m_fCapsuleSize;
-
     // mesh data
     // dMatrix4  mHullDstPl;
     dMatrix3   m_mTriMeshRot;
@@ -325,18 +325,19 @@ BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlane(
         // do nothing
         return FALSE;
         // if both points in front of the plane
-    } else if ( fDistance0 > 0 && fDistance1 > 0 ) 
+    } else if ( fDistance0 >= 0 && fDistance1 >= 0 ) 
     {
         // accept them
         return TRUE;
         // if we have edge/plane intersection
-    } else if ((fDistance0 > 0 && fDistance1 < 0) || ( fDistance0 < 0 && fDistance1 > 0)) 
+    } else 
     {
         // find intersection point of edge and plane
         dVector3 vIntersectionPoint;
-        vIntersectionPoint[0]= vEpnt0[0]-(vEpnt0[0]-vEpnt1[0])*fDistance0/(fDistance0-fDistance1);
-        vIntersectionPoint[1]= vEpnt0[1]-(vEpnt0[1]-vEpnt1[1])*fDistance0/(fDistance0-fDistance1);
-        vIntersectionPoint[2]= vEpnt0[2]-(vEpnt0[2]-vEpnt1[2])*fDistance0/(fDistance0-fDistance1);
+        dReal diffFactor = fDistance0/(fDistance0-fDistance1);
+        vIntersectionPoint[0]= vEpnt0[0]-(vEpnt0[0]-vEpnt1[0])*diffFactor;
+        vIntersectionPoint[1]= vEpnt0[1]-(vEpnt0[1]-vEpnt1[1])*diffFactor;
+        vIntersectionPoint[2]= vEpnt0[2]-(vEpnt0[2]-vEpnt1[2])*diffFactor;
 
         // clamp correct edge to intersection point
         if ( fDistance0 < 0 ) 
@@ -352,19 +353,16 @@ BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlane(
 }
 
 BOOL sTrimeshCapsuleColliderData::_cldTestAxis(
-    const dVector3 &/*v0*/,
-    const dVector3 &/*v1*/,
-    const dVector3 &/*v2*/, 
     dVector3 vAxis, 
     int iAxis,
     BOOL bNoFlip/* = FALSE*/) 
 {
 
     // calculate length of separating axis vector
-    dReal fL = LENGTHOF(vAxis);
+    dReal fL = _length2OfVector3(vAxis);
     // if not long enough
     // TODO : dReal epsilon please
-    if ( fL < REAL(1e-5) ) 
+    if ( fL < REAL(1e-6) ) 
     {
         // do nothing
         //iLastOutAxis = 0;
@@ -375,7 +373,7 @@ BOOL sTrimeshCapsuleColliderData::_cldTestAxis(
     dNormalize3(vAxis);
 
     // project capsule on vAxis
-    dReal frc = dFabs(dCalcVectorDot3(m_vCapsuleAxis,vAxis))*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius) + m_vCapsuleRadius;
+    dReal frc = dFabs(dCalcVectorDot3(m_vSizeOnAxis,vAxis)) + m_fCapsuleRadius;
 
     // project triangle on vAxis
     dReal afv[3];
@@ -467,14 +465,14 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
 {
     // calculate caps centers in absolute space
     dVector3 vCp0;
-    vCp0[0] = m_vCapsulePosition[0] + m_vCapsuleAxis[0]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCp0[1] = m_vCapsulePosition[1] + m_vCapsuleAxis[1]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCp0[2] = m_vCapsulePosition[2] + m_vCapsuleAxis[2]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
+    vCp0[0] = m_vCapsulePosition[0] + m_vSizeOnAxis[0];
+    vCp0[1] = m_vCapsulePosition[1] + m_vSizeOnAxis[1];
+    vCp0[2] = m_vCapsulePosition[2] + m_vSizeOnAxis[2];
 
     dVector3 vCp1;
-    vCp1[0] = m_vCapsulePosition[0] - m_vCapsuleAxis[0]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCp1[1] = m_vCapsulePosition[1] - m_vCapsuleAxis[1]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCp1[2] = m_vCapsulePosition[2] - m_vCapsuleAxis[2]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
+    vCp1[0] = m_vCapsulePosition[0] - m_vSizeOnAxis[0];
+    vCp1[1] = m_vCapsulePosition[1] - m_vSizeOnAxis[1];
+    vCp1[2] = m_vCapsulePosition[2] - m_vSizeOnAxis[2];
 
     // reset best axis
     m_iBestAxis = 0;
@@ -486,15 +484,16 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
     // Epsilon value for checking axis vector length 
     const dReal fEpsilon = 1e-6f;
 
-    // Translate triangle to Cc cord.
-    SUBTRACT(v0, m_vCapsulePosition, m_vV0);
-    SUBTRACT(v1, m_vCapsulePosition, m_vV1);
-    SUBTRACT(v2, m_vCapsulePosition, m_vV2);
-
     // We begin to test for 19 separating axis now
     // I wonder does it help if we employ the method like ISA-GJK???
     // Or at least we should do experiment and find what axis will
     // be most likely to be separating axis to check it first.
+
+    // Translate triangle to Cc cord.
+    // used in _cldTestAxis
+    SUBTRACT(v0, m_vCapsulePosition, m_vV0);
+    SUBTRACT(v1, m_vCapsulePosition, m_vV1);
+    SUBTRACT(v2, m_vCapsulePosition, m_vV2);
 
     // Original
     // axis m_vN
@@ -502,7 +501,7 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
     vAxis[0] = - m_vN[0];
     vAxis[1] = - m_vN[1];
     vAxis[2] = - m_vN[2];
-    if (!_cldTestAxis(v0, v1, v2, vAxis, 1, TRUE)) 
+    if (!_cldTestAxis(vAxis, 1, TRUE)) 
     { 
         return FALSE; 
     }
@@ -511,36 +510,24 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
     {
         // axis CxE0 - Edge 0
         dCalcVectorCross3(vAxis,m_vCapsuleAxis,m_vE0);
-        //vAxis = dCalcVectorCross3( m_vCapsuleAxis cross vE0 );
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 2)) { 
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 2))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge1)
     {
         // axis CxE1 - Edge 1
         dCalcVectorCross3(vAxis,m_vCapsuleAxis,m_vE1);
-        //vAxis = ( m_vCapsuleAxis cross m_vE1 );
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 3)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 3))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge2)
     {
         // axis CxE2 - Edge 2
-        //vAxis = ( m_vCapsuleAxis cross m_vE2 );
         dCalcVectorCross3(vAxis,m_vCapsuleAxis,m_vE2);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 4)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 4))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge0)
@@ -548,36 +535,24 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // first capsule point
         // axis ((Cp0-V0) x E0) x E0
         _CalculateAxis(vCp0,v0,m_vE0,m_vE0,vAxis);
-        //	vAxis = ( ( vCp0-v0) cross vE0 ) cross vE0;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 5)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 5))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge1)
     {
         // axis ((Cp0-V1) x E1) x E1
         _CalculateAxis(vCp0,v1,m_vE1,m_vE1,vAxis);
-        //vAxis = ( ( vCp0-v1) cross vE1 ) cross vE1;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 6)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 6))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge2)
     {
         // axis ((Cp0-V2) x E2) x E2
         _CalculateAxis(vCp0,v2,m_vE2,m_vE2,vAxis);
-        //vAxis = ( ( vCp0-v2) cross vE2 ) cross vE2;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 7)) {
+        if (!_cldTestAxis(vAxis, 7))
                 return FALSE;
-            }
-        }
     }
 
     if (flags & dxTriMeshData::kEdge0)
@@ -585,36 +560,24 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // second capsule point
         // axis ((Cp1-V0) x E0) x E0
         _CalculateAxis(vCp1,v0,m_vE0,m_vE0,vAxis);
-        //vAxis = ( ( vCp1-v0 ) cross vE0 ) cross vE0;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 8)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 8))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge1)
     {
         // axis ((Cp1-V1) x E1) x E1
         _CalculateAxis(vCp1,v1,m_vE1,m_vE1,vAxis);
-        //vAxis = ( ( vCp1-v1 ) cross vE1 ) cross vE1;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 9)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 9))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kEdge2)
     {
         // axis ((Cp1-V2) x E2) x E2
         _CalculateAxis(vCp1,v2,m_vE2,m_vE2,vAxis);
-        //vAxis = ( ( vCp1-v2 ) cross vE2 ) cross vE2;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 10)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 10))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert0)
@@ -622,12 +585,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // first vertex on triangle
         // axis ((V0-Cp0) x C) x C
         _CalculateAxis(v0,vCp0,m_vCapsuleAxis,m_vCapsuleAxis,vAxis);
-        //vAxis = ( ( v0-vCp0 ) cross m_vCapsuleAxis ) cross m_vCapsuleAxis;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 11)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 11))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert1)
@@ -635,12 +594,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // second vertex on triangle
         // axis ((V1-Cp0) x C) x C
         _CalculateAxis(v1,vCp0,m_vCapsuleAxis,m_vCapsuleAxis,vAxis);	
-        //vAxis = ( ( v1-vCp0 ) cross vCapsuleAxis ) cross vCapsuleAxis;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 12)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 12))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert2)
@@ -648,12 +603,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // third vertex on triangle
         // axis ((V2-Cp0) x C) x C
         _CalculateAxis(v2,vCp0,m_vCapsuleAxis,m_vCapsuleAxis,vAxis);
-        //vAxis = ( ( v2-vCp0 ) cross vCapsuleAxis ) cross vCapsuleAxis;
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 13)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 13))
+            return FALSE;
     }
 
     // Test as separating axes direction vectors between each triangle
@@ -664,11 +615,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // first triangle vertex and first capsule point
         //vAxis = v0 - vCp0;
         SUBTRACT(v0,vCp0,vAxis);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 14)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 14))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert1)
@@ -676,11 +624,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // second triangle vertex and first capsule point
         //vAxis = v1 - vCp0;
         SUBTRACT(v1,vCp0,vAxis);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 15)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 15))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert2)
@@ -688,11 +633,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // third triangle vertex and first capsule point
         //vAxis = v2 - vCp0;
         SUBTRACT(v2,vCp0,vAxis);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 16)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 16))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert0)
@@ -700,11 +642,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // first triangle vertex and second capsule point
         //vAxis = v0 - vCp1;
         SUBTRACT(v0,vCp1,vAxis);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 17)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 17))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert1)
@@ -712,11 +651,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // second triangle vertex and second capsule point
         //vAxis = v1 - vCp1;
         SUBTRACT(v1,vCp1,vAxis);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 18)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 18))
+            return FALSE;
     }
 
     if (flags & dxTriMeshData::kVert2)
@@ -724,11 +660,8 @@ BOOL sTrimeshCapsuleColliderData::_cldTestSeparatingAxesOfCapsule(
         // third triangle vertex and second capsule point
         //vAxis = v2 - vCp1;
         SUBTRACT(v2,vCp1,vAxis);
-        if (_length2OfVector3( vAxis ) > fEpsilon) {
-            if (!_cldTestAxis(v0, v1, v2, vAxis, 19)) {
-                return FALSE;
-            }
-        }
+        if (!_cldTestAxis(vAxis, 19))
+            return FALSE;
     }
 
     return TRUE;
@@ -773,12 +706,18 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
         return;
     }
 
+    if (fDistanceCapsuleCenterToPlane > m_fCapsuleSize)
+        return;
+
     dVector3 vPnt0;
     dVector3 vPnt1;
     dVector3 vPnt2;
 
     if (fDistanceCapsuleCenterToPlane < 0 )
     {
+        if (fDistanceCapsuleCenterToPlane < -m_fCapsuleSize)
+            return;
+
         SET	(vPnt0,v0);
         SET	(vPnt1,v2);
         SET	(vPnt2,v1);
@@ -789,7 +728,8 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
 
         SUBTRACT(v2,v0,m_vE0);
         SUBTRACT(v1,v2,m_vE1);
-        SUBTRACT(v0,v1,m_vE2);       
+        SUBTRACT(v0,v1,m_vE2);
+        flags = dxTriMeshData::kUseAll;
     }
     else
     {
@@ -817,27 +757,25 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
 
     // calculate caps centers in absolute space
     dVector3 vCposTrans;
-    vCposTrans[0] = m_vCapsulePosition[0] + m_vNormal[0]*m_vCapsuleRadius;
-    vCposTrans[1] = m_vCapsulePosition[1] + m_vNormal[1]*m_vCapsuleRadius;
-    vCposTrans[2] = m_vCapsulePosition[2] + m_vNormal[2]*m_vCapsuleRadius;
-
-    dVector3 vCEdgePoint0;
-    vCEdgePoint0[0]  = vCposTrans[0] + m_vCapsuleAxis[0]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCEdgePoint0[1]  = vCposTrans[1] + m_vCapsuleAxis[1]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCEdgePoint0[2]  = vCposTrans[2] + m_vCapsuleAxis[2]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-
-    dVector3 vCEdgePoint1;
-    vCEdgePoint1[0] = vCposTrans[0] - m_vCapsuleAxis[0]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCEdgePoint1[1] = vCposTrans[1] - m_vCapsuleAxis[1]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
-    vCEdgePoint1[2] = vCposTrans[2] - m_vCapsuleAxis[2]*(m_fCapsuleSize*REAL(0.5)-m_vCapsuleRadius);
+    vCposTrans[0] = m_vCapsulePosition[0] + m_vNormal[0]*m_fCapsuleRadius;
+    vCposTrans[1] = m_vCapsulePosition[1] + m_vNormal[1]*m_fCapsuleRadius;
+    vCposTrans[2] = m_vCapsulePosition[2] + m_vNormal[2]*m_fCapsuleRadius;
 
     // transform capsule edge points into triangle space
+    dVector3 vCEdgePoint0;
+    vCEdgePoint0[0]  = vCposTrans[0] + m_vSizeOnAxis[0];
     vCEdgePoint0[0] -= vPnt0[0];
+    vCEdgePoint0[1]  = vCposTrans[1] + m_vSizeOnAxis[1];
     vCEdgePoint0[1] -= vPnt0[1];
+    vCEdgePoint0[2]  = vCposTrans[2] + m_vSizeOnAxis[2];
     vCEdgePoint0[2] -= vPnt0[2];
 
+    dVector3 vCEdgePoint1;
+    vCEdgePoint1[0] = vCposTrans[0] - m_vSizeOnAxis[0];
     vCEdgePoint1[0] -= vPnt0[0];
+    vCEdgePoint1[1] = vCposTrans[1] - m_vSizeOnAxis[1];
     vCEdgePoint1[1] -= vPnt0[1];
+    vCEdgePoint1[2] = vCposTrans[2] - m_vSizeOnAxis[2];
     vCEdgePoint1[2] -= vPnt0[2];
 
     dVector4 plPlane;
@@ -855,7 +793,7 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
         return; 
     }
 
-    // plane with edge 0
+    // plane edge 0
     dVector3 vTemp;
     dCalcVectorCross3(vTemp,m_vN,m_vE0);
     CONSTRUCTPLANE(plPlane, vTemp, REAL(1e-5));
@@ -863,14 +801,14 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
     { 
         return; 
     }
-
+    // plane with edge 1
     dCalcVectorCross3(vTemp,m_vN,m_vE1);
     CONSTRUCTPLANE(plPlane, vTemp, -(dCalcVectorDot3(m_vE0,vTemp)-REAL(1e-5)));
     if (!_cldClipEdgeToPlane( vCEdgePoint0, vCEdgePoint1, plPlane )) 
     { 
         return; 
     }
-
+    // plane with edge 2
     dCalcVectorCross3(vTemp,m_vN,m_vE2);
     CONSTRUCTPLANE(plPlane, vTemp, REAL(1e-5));
     if (!_cldClipEdgeToPlane( vCEdgePoint0, vCEdgePoint1, plPlane )) { 
@@ -937,8 +875,13 @@ void sTrimeshCapsuleColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom
     m_vCapsuleAxis[2] = m_mCapsuleRotation[2*4 + nCAPSULE_AXIS];
 
     // Get size of Capsule
-    dGeomCapsuleGetParams(Capsule, &m_vCapsuleRadius, &m_fCapsuleSize);
-    m_fCapsuleSize += 2*m_vCapsuleRadius;
+    dGeomCapsuleGetParams(Capsule, &m_fCapsuleRadius, &m_fCapCilinderSize);
+    m_fCapCilinderSize *= REAL(0.5);
+    m_fCapsuleSize = m_fCapCilinderSize + m_fCapsuleRadius;
+ 
+    m_vSizeOnAxis[0] = m_vCapsuleAxis[0] * m_fCapCilinderSize;
+    m_vSizeOnAxis[1] = m_vCapsuleAxis[1] * m_fCapCilinderSize;
+    m_vSizeOnAxis[2] = m_vCapsuleAxis[2] * m_fCapCilinderSize;
 
     const dMatrix3* pTriRot = (const dMatrix3*)dGeomGetRotation(TriMesh);
     memcpy(m_mTriMeshRot, pTriRot, sizeof(dMatrix3));
@@ -994,7 +937,7 @@ static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider,
     const dVector3 &vCapsulePosition = cData.m_vCapsulePosition;
 
     Point cCenter(/*(float)*/ vCapsulePosition[0], /*(float)*/ vCapsulePosition[1], /*(float)*/ vCapsulePosition[2]);
-    Point cExtents(/*(float)*/ cData.m_vCapsuleRadius, /*(float)*/ cData.m_vCapsuleRadius,/*(float)*/ cData.m_fCapsuleSize/2);
+    Point cExtents(/*(float)*/ cData.m_fCapsuleRadius, /*(float)*/ cData.m_fCapsuleRadius,/*(float)*/ cData.m_fCapsuleSize);
 
     Matrix3x3 obbRot;
 
@@ -1065,16 +1008,21 @@ int dCollideCCTL(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int s
     sTrimeshCapsuleColliderData cData;
     cData.SetupInitialContext(TriMesh, Capsule, flags, skip);
 
+    uint8 meshflags = TriMesh->Data->meshFlags;
+
     int cntr = 0;
-    dReal size = REAL(1.5) * cData.m_fCapsuleSize;
-    if(size < o1->aabb[1] - o1->aabb[0])
-        cntr++;
-    if(size < o1->aabb[3] - o1->aabb[2])
-        cntr++;
-    if(size < o1->aabb[5] - o1->aabb[4])
-        cntr++;
-    if(cntr >= 2)
-        singleSide = false;
+    if ((meshflags & dxTriMeshData::closedSurface) == 0)
+    {
+        dReal size = REAL(1.5) * cData.m_fCapsuleRadius;
+        if(size < o1->aabb[1] - o1->aabb[0])
+            cntr++;
+        if(size < o1->aabb[3] - o1->aabb[2])
+            cntr++;
+        if(size < o1->aabb[5] - o1->aabb[4])
+            cntr++;
+        if(cntr >= 1)
+            singleSide = false;
+    }
 
     const unsigned uiTLSKind = TriMesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == Capsule->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method
