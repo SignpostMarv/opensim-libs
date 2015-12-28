@@ -197,12 +197,7 @@ inline TrimeshCollidersCache *GetTrimeshCollidersCache(unsigned uiTLSKind)
     return &g_ccTrimeshCollidersCache;
 }
 
-
 #endif // dTLS_ENABLED
-
-
-
-
 
 struct dxTriMeshData  : public dBase 
 {
@@ -215,8 +210,13 @@ struct dxTriMeshData  : public dBase
         kVert0 = 0x8,
         kVert1 = 0x10,
         kVert2 = 0x20,
+        kUseAll = 0x3F
+    };
 
-        kUseAll = 0xFF
+    enum MeshFlags
+    {
+        convex = 0x01,
+        closedSurface = 0x02
     };
 
     /* Setup the UseFlags array */
@@ -227,6 +227,8 @@ struct dxTriMeshData  : public dBase
 #if dTRIMESH_OPCODE
     Model BVTree;
     MeshInterface Mesh;
+
+    uint8 meshFlags;
 
     dxTriMeshData();
     ~dxTriMeshData();
@@ -243,6 +245,7 @@ struct dxTriMeshData  : public dBase
     // data for use in collision resolution
     const void* Normals;
     uint8* UseFlags;
+  
 #endif  // dTRIMESH_OPCODE
 
 #if dTRIMESH_GIMPACT

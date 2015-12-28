@@ -268,6 +268,11 @@ void dxTriMeshData::Preprocess()
     UseFlags = new uint8[numTris];
     memset(UseFlags, 0, sizeof(uint8) * numTris);
 
+    meshFlags = dxTriMeshData::convex | dxTriMeshData::closedSurface;
+
+    uint8 notconvex = ~dxTriMeshData::convex;
+    uint8 notclosed = ~dxTriMeshData::closedSurface;
+
     EdgeRecord* records = new EdgeRecord[numEdges];
 
     // Make a list of every edge in the mesh
@@ -314,13 +319,18 @@ void dxTriMeshData::Preprocess()
 
             float dot = triNorm.Dot((oppositeVert2 - oppositeVert1).Normalize());
 
+            static const float kConvexThresh = 0.0000153f; // for the entire mesh topology
+            if (dot >= kConvexThresh)
+                meshFlags &= notconvex;
+
             // We let the dot threshold for concavity get slightly negative to allow for rounding errors
-            static const float kConcaveThresh = -0.000001f;
+            static const float kConcaveThresh = -0.00001f;
 
             // This is a concave edge, leave it for the next pass
             if (dot >= kConcaveThresh)
                 rec1->Concave = true;
-            // If this is a convex edge, mark its vertices and edge as used
+
+            // If this is a convex edge, mark its vertices and edge as to use
             else
                 UseFlags[rec1->TriIdx] |= rec1->Vert1Flags | rec1->Vert2Flags | rec1->EdgeFlags;
 
@@ -331,6 +341,7 @@ void dxTriMeshData::Preprocess()
         else
         {
             UseFlags[rec1->TriIdx] |= rec1->Vert1Flags | rec1->Vert2Flags | rec1->EdgeFlags;
+            meshFlags &= notclosed;
         }
     }
 
@@ -358,6 +369,9 @@ void dxTriMeshData::Preprocess()
     }
 
     delete [] records;
+
+    if((meshFlags & dxTriMeshData::closedSurface) == 0)
+        meshFlags &= notconvex;
 
 #endif // dTRIMESH_ENABLED
 
