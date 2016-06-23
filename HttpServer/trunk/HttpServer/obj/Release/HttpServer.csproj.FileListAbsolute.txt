@@ -28,3 +28,9 @@ C:\Users\crista\dev\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpSer
 C:\Users\crista\dev\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\ResolveAssemblyReference.cache
 C:\Users\crista\dev\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.dll
 C:\Users\crista\dev\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb
+F:\dev\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.xml
+F:\dev\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.dll
+F:\dev\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.pdb
+F:\dev\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer.csprojResolveAssemblyReference.cache
+F:\dev\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.dll
+F:\dev\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb
