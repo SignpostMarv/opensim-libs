@@ -318,6 +318,11 @@ namespace HttpServer
 		}
             catch { } // Best effort, ignore fails
 		}
+
+        public Socket GetSocket ()
+        {
+            return Socket;
+        }
 	}
 
     /// <summary>

@@ -501,18 +501,20 @@ namespace HttpServer
             if (offset + size > buffer.Length)
                 throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
 
-            if (Stream != null && Stream.CanWrite)
-            {
-                try
-                {
-                    Stream.Write(buffer, offset, size);
-                } 
-                catch (IOException)
-                {
+            if (Stream is ReusableSocketNetworkStream) {
                        
-                }
-            }
+                // HttpServer.ReusableSocketNetworkStream.Write() = System.Net.Sockets.NetworkStream.Write()
 
+                Socket socket = ((ReusableSocketNetworkStream) Stream).GetSocket ();
+                while (size > 0) {
+                    int rc = socket.Send (buffer, offset, size, SocketFlags.None);
+                    if (rc <= 0) throw new IOException ("socket send failed rc=" + rc);
+                    offset += rc;
+                    size -= rc;
+                }
+            } else {
+                Stream.Write (buffer, offset, size);
+            }
         }
 
         /// <summary>
