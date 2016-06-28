@@ -497,22 +497,34 @@ namespace HttpServer
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public void Send(byte[] buffer, int offset, int size)
         {
+            // add some trivial checks required by opensim until another fix is possible
+            // this are needed because opensim doesn't have access to stream state
+            // and in its current state it will try to send to closed streams.
+            if(Stream == null || !Stream.CanWrite)
+                return;
             
             if (offset + size > buffer.Length)
                 throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
 
-            if (Stream is ReusableSocketNetworkStream) {
+            if (Stream is ReusableSocketNetworkStream)
+            {
                        
                 // HttpServer.ReusableSocketNetworkStream.Write() = System.Net.Sockets.NetworkStream.Write()
 
                 Socket socket = ((ReusableSocketNetworkStream) Stream).GetSocket ();
-                while (size > 0) {
+                // add some trivial checks requered by corrent opensim
+                if(socket == null || !socket.Connected)
+                    return;
+                while (size > 0)
+                {
                     int rc = socket.Send (buffer, offset, size, SocketFlags.None);
                     if (rc <= 0) throw new IOException ("socket send failed rc=" + rc);
                     offset += rc;
                     size -= rc;
                 }
-            } else {
+            }
+            else
+            {
                 Stream.Write (buffer, offset, size);
             }
         }

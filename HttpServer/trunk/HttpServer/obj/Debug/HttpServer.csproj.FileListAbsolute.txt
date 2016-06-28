@@ -10,3 +10,8 @@ I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\ResolveAssembl
 I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.dll
 I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.pdb
 I:\opensimlibs\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim.xml
+C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim.xml
+C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim.dll
+C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim.pdb
+C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.dll
+C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.pdb
