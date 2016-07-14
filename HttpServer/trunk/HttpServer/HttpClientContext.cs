@@ -443,6 +443,10 @@ namespace HttpServer
             {
                 requestsInServiceIDs.Remove(requestID);
                 doclose = doclose && requestsInServiceIDs.Count == 0;
+                if(requestsInServiceIDs.Count > 1)
+                {
+
+                }
             }
 
             if(doclose)

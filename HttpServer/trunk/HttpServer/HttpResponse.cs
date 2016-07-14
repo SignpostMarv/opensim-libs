@@ -73,7 +73,7 @@ namespace HttpServer
 
 			Status = HttpStatusCode.OK;
 			_context = context;
-			Connection = request.Connection;
+			m_Connetion = request.Connection;
             requestID = request.ID;
 		}
 
@@ -90,8 +90,14 @@ namespace HttpServer
 			Status = HttpStatusCode.OK;
 			_context = context;
 			_httpVersion = httpVersion;
-			Connection = connectionType;
+			m_Connetion = connectionType;
 		}
+        private ConnectionType m_Connetion;
+        public ConnectionType Connection
+        {
+            get {return m_Connetion; }
+            set {return;}
+        }
 
 		internal bool ContentTypeChangedByCode
 		{
@@ -132,11 +138,6 @@ namespace HttpServer
             get { return _httpVersion; }
             set { _httpVersion = value; }
         }
-
-		/// <summary>
-		/// Kind of connection
-		/// </summary>
-		public ConnectionType Connection { get; set; }
 
 		/// <summary>
 		/// Encoding to use when sending stuff to the client.
