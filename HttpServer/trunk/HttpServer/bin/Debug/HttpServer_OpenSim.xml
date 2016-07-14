@@ -1940,15 +1940,7 @@
             <param name="stream">Network/SSL stream.</param>
             <returns>A context.</returns>
         </member>
-        <member name="M:HttpServer.HttpContextFactory.CreateNewContext(System.Boolean,System.Net.IPEndPoint,System.IO.Stream,System.Net.Sockets.Socket)">
-            <summary>
-            Create a new context.
-            </summary>
-            <param name="isSecured">true if HTTPS is used.</param>
-            <param name="endPoint">Remote client</param>
-            <param name="stream">Network stream, <see cref="T:HttpServer.HttpClientContext"/> uses <see cref="T:HttpServer.ReusableSocketNetworkStream"/>.</param>
-            <returns>A new context (always).</returns>
-        </member>
+        <!-- Badly formed XML comment ignored for member "M:HttpServer.HttpContextFactory.CreateNewContext(System.Boolean,System.Net.IPEndPoint,System.IO.Stream,System.Net.Sockets.Socket)" -->
         <member name="M:HttpServer.HttpContextFactory.CreateSecureContext(System.Net.Sockets.Socket,System.Security.Cryptography.X509Certificates.X509Certificate,System.Security.Authentication.SslProtocols)">
             <summary>
             Create a secure <see cref="T:HttpServer.IHttpClientContext"/>.
@@ -1978,106 +1970,6 @@
             <summary>
             Server is shutting down so shut down the factory
             </summary>
-        </member>
-        <member name="T:HttpServer.ReusableSocketNetworkStream">
-            <summary>
-            Custom network stream to mark sockets as reusable when disposing the stream.
-            </summary>
-        </member>
-        <member name="M:HttpServer.ReusableSocketNetworkStream.#ctor(System.Net.Sockets.Socket)">
-            <summary>
-                                Creates a new instance of the <see cref="T:System.Net.Sockets.NetworkStream" /> class for the specified <see cref="T:System.Net.Sockets.Socket" />.
-            </summary>
-            <param name="socket">
-                                The <see cref="T:System.Net.Sockets.Socket" /> that the <see cref="T:System.Net.Sockets.NetworkStream" /> will use to send and receive data. 
-                            </param>
-            <exception cref="T:System.ArgumentNullException">
-                                The <paramref name="socket" /> parameter is null. 
-                            </exception>
-            <exception cref="T:System.IO.IOException">
-                                The <paramref name="socket" /> parameter is not connected.
-                                -or- 
-                                The <see cref="P:System.Net.Sockets.Socket.SocketType" /> property of the <paramref name="socket" /> parameter is not <see cref="F:System.Net.Sockets.SocketType.Stream" />.
-                                -or- 
-                                The <paramref name="socket" /> parameter is in a nonblocking state. 
-                            </exception>
-        </member>
-        <member name="M:HttpServer.ReusableSocketNetworkStream.#ctor(System.Net.Sockets.Socket,System.Boolean)">
-            <summary>
-                                Initializes a new instance of the <see cref="T:System.Net.Sockets.NetworkStream" /> class for the specified <see cref="T:System.Net.Sockets.Socket" /> with the specified <see cref="T:System.Net.Sockets.Socket" /> ownership.
-            </summary>
-            <param name="socket">
-                                The <see cref="T:System.Net.Sockets.Socket" /> that the <see cref="T:System.Net.Sockets.NetworkStream" /> will use to send and receive data. 
-                            </param>
-            <param name="ownsSocket">
-                                Set to true to indicate that the <see cref="T:System.Net.Sockets.NetworkStream" /> will take ownership of the <see cref="T:System.Net.Sockets.Socket" />; otherwise, false. 
-                            </param>
-            <exception cref="T:System.ArgumentNullException">
-                                The <paramref name="socket" /> parameter is null. 
-                            </exception>
-            <exception cref="T:System.IO.IOException">
-                                The <paramref name="socket" /> parameter is not connected.
-                                -or- 
-                                the value of the <see cref="P:System.Net.Sockets.Socket.SocketType" /> property of the <paramref name="socket" /> parameter is not <see cref="F:System.Net.Sockets.SocketType.Stream" />.
-                                -or- 
-                                the <paramref name="socket" /> parameter is in a nonblocking state. 
-                            </exception>
-        </member>
-        <member name="M:HttpServer.ReusableSocketNetworkStream.#ctor(System.Net.Sockets.Socket,System.IO.FileAccess)">
-            <summary>
-                                Creates a new instance of the <see cref="T:System.Net.Sockets.NetworkStream" /> class for the specified <see cref="T:System.Net.Sockets.Socket" /> with the specified access rights.
-            </summary>
-            <param name="socket">
-                                The <see cref="T:System.Net.Sockets.Socket" /> that the <see cref="T:System.Net.Sockets.NetworkStream" /> will use to send and receive data. 
-                            </param>
-            <param name="access">
-                                A bitwise combination of the <see cref="T:System.IO.FileAccess" /> values that specify the type of access given to the <see cref="T:System.Net.Sockets.NetworkStream" /> over the provided <see cref="T:System.Net.Sockets.Socket" />. 
-                            </param>
-            <exception cref="T:System.ArgumentNullException">
-                                The <paramref name="socket" /> parameter is null. 
-                            </exception>
-            <exception cref="T:System.IO.IOException">
-                                The <paramref name="socket" /> parameter is not connected.
-                                -or- 
-                                the <see cref="P:System.Net.Sockets.Socket.SocketType" /> property of the <paramref name="socket" /> parameter is not <see cref="F:System.Net.Sockets.SocketType.Stream" />.
-                                -or- 
-                                the <paramref name="socket" /> parameter is in a nonblocking state. 
-                            </exception>
-        </member>
-        <member name="M:HttpServer.ReusableSocketNetworkStream.#ctor(System.Net.Sockets.Socket,System.IO.FileAccess,System.Boolean)">
-            <summary>
-                                Creates a new instance of the <see cref="T:System.Net.Sockets.NetworkStream" /> class for the specified <see cref="T:System.Net.Sockets.Socket" /> with the specified access rights and the specified <see cref="T:System.Net.Sockets.Socket" /> ownership.
-            </summary>
-            <param name="socket">
-                                The <see cref="T:System.Net.Sockets.Socket" /> that the <see cref="T:System.Net.Sockets.NetworkStream" /> will use to send and receive data. 
-                            </param>
-            <param name="access">
-                                A bitwise combination of the <see cref="T:System.IO.FileAccess" /> values that specifies the type of access given to the <see cref="T:System.Net.Sockets.NetworkStream" /> over the provided <see cref="T:System.Net.Sockets.Socket" />. 
-                            </param>
-            <param name="ownsSocket">
-                                Set to true to indicate that the <see cref="T:System.Net.Sockets.NetworkStream" /> will take ownership of the <see cref="T:System.Net.Sockets.Socket" />; otherwise, false. 
-                            </param>
-            <exception cref="T:System.ArgumentNullException">
-                                The <paramref name="socket" /> parameter is null. 
-                            </exception>
-            <exception cref="T:System.IO.IOException">
-                                The <paramref name="socket" /> parameter is not connected.
-                                -or- 
-                                The <see cref="P:System.Net.Sockets.Socket.SocketType" /> property of the <paramref name="socket" /> parameter is not <see cref="F:System.Net.Sockets.SocketType.Stream" />.
-                                -or- 
-                                The <paramref name="socket" /> parameter is in a nonblocking state. 
-                            </exception>
-        </member>
-        <member name="M:HttpServer.ReusableSocketNetworkStream.Close">
-            <summary>
-            Closes the current stream and releases any resources (such as sockets and file handles) associated with the current stream.
-            </summary>
-        </member>
-        <member name="M:HttpServer.ReusableSocketNetworkStream.Dispose(System.Boolean)">
-            <summary>
-            Releases the unmanaged resources used by the <see cref="T:System.Net.Sockets.NetworkStream"/> and optionally releases the managed resources.
-            </summary>
-            <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
         </member>
         <member name="T:HttpServer.IHttpContextFactory">
             <summary>

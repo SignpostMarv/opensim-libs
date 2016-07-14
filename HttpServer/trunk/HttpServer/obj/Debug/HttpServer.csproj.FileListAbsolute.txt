@@ -15,3 +15,4 @@ C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim
 C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Debug\HttpServer_OpenSim.pdb
 C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.dll
 C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer_OpenSim.pdb
+C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Debug\HttpServer.csprojResolveAssemblyReference.cache

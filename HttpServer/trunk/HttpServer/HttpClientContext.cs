@@ -258,26 +258,20 @@ namespace HttpServer
             // disconnect may not throw any exceptions
             try
             {
-                //_sock.Disconnect(true);
                 if (error == SocketError.Success)
                 {
-                    if (Stream is ReusableSocketNetworkStream)
-                        ((NetworkStream)Stream).Flush();
+                    Stream.Flush();
                     if (_currentRequest.Connection == ConnectionType.Close)
                         _sock = null;
-                    
                 }
-                if (error == SocketError.TimedOut)
+                try
                 {
-                    try
-                    {
-                        if (Stream != null)
-                            Stream.Close();
-                        _sock = null;
-                    }
-                    catch {} // Best Try
+                    if (Stream != null)
+                        Stream.Close();
+                   _sock = null;
                 }
-                //Stream.Close();
+                catch {} // Best Try
+
                 Disconnected(this, new DisconnectedEventArgs(error));
             }
             catch (Exception err)
@@ -505,7 +499,7 @@ namespace HttpServer
             
             if (offset + size > buffer.Length)
                 throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
-
+/*
             if (Stream is ReusableSocketNetworkStream)
             {
                        
@@ -524,6 +518,7 @@ namespace HttpServer
                 }
             }
             else
+*/
             {
                 Stream.Write (buffer, offset, size);
             }
