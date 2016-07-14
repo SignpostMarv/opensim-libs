@@ -16,6 +16,7 @@ namespace HttpServer
         /// Chars used to split an URL path into multiple parts.
         /// </summary>
         public static readonly char[] UriSplitters = new[] {'/'};
+        public static uint baseID = 0;
 
         private readonly NameValueCollection _headers = new NameValueCollection();
         private readonly HttpParam _param = new HttpParam(HttpInput.Empty, HttpInput.Empty);
@@ -29,6 +30,14 @@ namespace HttpServer
         private HttpInput _queryString = HttpInput.Empty;
         private Uri _uri = HttpHelper.EmptyUri;
         private string _uriPath;
+        
+
+        public HttpRequest()
+        {
+            ID = baseID++;
+        }
+
+        public uint ID {get; private set;}
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="HttpRequest"/> is secure.
@@ -422,7 +431,7 @@ namespace HttpServer
             _connection = ConnectionType.Close;
             IsAjax = false;
             _form.Clear();
-        }
+          }
 
         #endregion
     }

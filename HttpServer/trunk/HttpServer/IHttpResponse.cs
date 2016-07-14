@@ -33,6 +33,7 @@ namespace HttpServer
             /// </summary>
             Stream Body { get; set; }
 
+            uint requestID {get;}
 
             /// <summary>
             /// Defines the version of the HTTP Response for applications where it's required

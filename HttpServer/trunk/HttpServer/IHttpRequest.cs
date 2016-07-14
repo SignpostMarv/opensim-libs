@@ -16,6 +16,7 @@ namespace HttpServer
         /// </summary>
         string[] AcceptTypes { get; }
 
+        uint ID {get; }
         /// <summary>
         /// Gets or sets body stream.
         /// </summary>

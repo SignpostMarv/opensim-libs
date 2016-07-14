@@ -54,6 +54,7 @@ namespace HttpServer
 		private bool _contentTypeChangedByCode;
 		private Encoding _encoding = Encoding.UTF8;
 		private int _keepAlive = 20;
+        public uint requestID {get; private set;}
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="IHttpResponse"/> class.
@@ -73,6 +74,7 @@ namespace HttpServer
 			Status = HttpStatusCode.OK;
 			_context = context;
 			Connection = request.Connection;
+            requestID = request.ID;
 		}
 
 		/// <summary>
@@ -280,16 +282,13 @@ namespace HttpServer
 				_context.Send(buffer, 0, bytesRead);
 				bytesRead = Body.Read(buffer, 0, 4196);
 			}
-
-
-		    if (Connection == ConnectionType.Close && !_context.EndWhenDone)
-		    {
-		        Body.Close();
-		        Body.Dispose();
-		        _context.Disconnect(SocketError.Success);
+           
+		    if (Connection == ConnectionType.Close)
+		    {   
+                Body.Close();
 		    }
-
 		    Sent = true;
+            _context.ReqResponseSent(requestID, Connection);
 		}
 
 		/// <summary>
@@ -309,8 +308,9 @@ namespace HttpServer
 			if (!HeadersSent)
 				throw new InvalidOperationException("Send headers, and remember to specify ContentLength first.");
 
-			Sent = true;
 			_context.Send(buffer, offset, count);
+			Sent = true;
+           _context.ReqResponseSent(requestID, Connection);
 		}
 
 		/// <summary>
@@ -328,8 +328,9 @@ namespace HttpServer
 			if (!HeadersSent)
 				throw new InvalidOperationException("Send headers, and remember to specify ContentLength first.");
 
-			Sent = true;
 			_context.Send(buffer);
+			Sent = true;
+            _context.ReqResponseSent(requestID, Connection);
 		}
 
 		/// <summary>

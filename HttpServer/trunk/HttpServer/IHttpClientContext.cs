@@ -89,6 +89,9 @@ namespace HttpServer
         event EventHandler<RequestEventArgs> RequestReceived;
 
         HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing();
+
+        void ReqResponseSent(uint requestID, ConnectionType connection);
+        
     }
     public class HTTPNetworkContext
     {

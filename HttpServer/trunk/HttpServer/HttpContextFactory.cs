@@ -86,7 +86,7 @@ namespace HttpServer
 		/// </summary>
 		/// <param name="isSecured">true if HTTPS is used.</param>
 		/// <param name="endPoint">Remote client</param>
-		/// <param name="stream">Network stream, <see cref="HttpClientContext"/>
+		/// <param name="stream">Network stream, <see cref="HttpClientContext"/></param>
 		/// <returns>A new context (always).</returns>
     	protected virtual HttpClientContext CreateNewContext(bool isSecured, IPEndPoint endPoint, Stream stream, Socket sock)
     	{
@@ -129,6 +129,7 @@ namespace HttpServer
         /// </returns>
         public IHttpClientContext CreateSecureContext(Socket socket, X509Certificate certificate, SslProtocols protocol)
         {
+            socket.NoDelay = true;
 			var networkStream = new NetworkStream(socket, true);
             var remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
 
@@ -168,6 +169,7 @@ namespace HttpServer
         /// </returns>
         public IHttpClientContext CreateContext(Socket socket)
         {
+            socket.NoDelay = true;
 			var networkStream = new NetworkStream(socket, true);
             var remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
             return CreateContext(false, remoteEndPoint, networkStream, socket);

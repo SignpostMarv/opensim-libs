@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -23,6 +24,7 @@ namespace HttpServer
         private readonly IHttpRequestParser _parser;
         private readonly int _bufferSize;
         private IHttpRequest _currentRequest;
+        private HashSet<uint> requestsInServiceIDs;
         private Socket _sock;
 
         public bool Available = true;
@@ -41,6 +43,8 @@ namespace HttpServer
         public bool FirstRequestLineReceived;
         public bool FullRequestReceived;
         public bool FullRequestProcessed;
+
+        private bool gotResponseClose = false;
         
         public bool StopMonitoring;
 		/// <summary>
@@ -91,7 +95,7 @@ namespace HttpServer
             _stream = stream;
             _sock = sock;
             _buffer = new byte[bufferSize];
-
+            requestsInServiceIDs = new HashSet<uint>();
         }
 
         public bool EndWhenDone
@@ -174,11 +178,12 @@ namespace HttpServer
 				return;
             if (StreamPassedOff)
                 return;
-            _sock = null;
             
         	Stream.Dispose();
         	Stream = null;
+            _sock = null;
         	_currentRequest.Clear();
+            requestsInServiceIDs.Clear();
         	_bytesLeft = 0;
             
             FirstRequestLineReceived = false;
@@ -188,6 +193,7 @@ namespace HttpServer
             StopMonitoring = false;
             MonitorKeepaliveMS = 0;
             TriggerKeepalive = false;
+            gotResponseClose = false;
 
         	Cleaned(this, EventArgs.Empty);
         	_parser.Clear();
@@ -259,11 +265,8 @@ namespace HttpServer
             try
             {
                 if (error == SocketError.Success)
-                {
                     Stream.Flush();
-                    if (_currentRequest.Connection == ConnectionType.Close)
-                        _sock = null;
-                }
+
                 try
                 {
                     if (Stream != null)
@@ -401,17 +404,49 @@ namespace HttpServer
             _currentRequest.SetCookies(cookies);
 
             _currentRequest.Body.Seek(0, SeekOrigin.Begin);
-            RequestReceived(this, new RequestEventArgs(_currentRequest));
             
+            int nreqs;
+            lock(requestsInServiceIDs)
+            {
+                nreqs = requestsInServiceIDs.Count;
+                requestsInServiceIDs.Add(_currentRequest.ID);
+            }
+
+            RequestReceived(this, new RequestEventArgs(_currentRequest));
+
+           _currentRequest = new HttpRequest();
+
+            int nreqsnow;
+            lock(requestsInServiceIDs)
+            {
+                nreqsnow = requestsInServiceIDs.Count;
+            }
+            if(nreqs != nreqsnow)
+            {
+                 // request was not done by us
+            }
+
             FullRequestReceived = true;
 
-            if (_currentRequest.Connection == ConnectionType.Close)
-                _sock = null;
-            else
+            if (_currentRequest.Connection != ConnectionType.Close)
                 TriggerKeepalive = true;
 
-            if (!StreamPassedOff)
-			    _currentRequest.Clear();
+        }
+
+        public void ReqResponseSent(uint requestID, ConnectionType ctype )
+        {
+            if(ctype == ConnectionType.Close)    
+                gotResponseClose = true;
+ 
+            bool doclose = gotResponseClose;
+            lock(requestsInServiceIDs)
+            {
+                requestsInServiceIDs.Remove(requestID);
+                doclose = doclose && requestsInServiceIDs.Count == 0;
+            }
+
+            if(doclose)
+                Disconnect(SocketError.Success);
         }
 
         /// <summary>
