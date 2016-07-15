@@ -1946,7 +1946,7 @@
             </summary>
             <param name="isSecured">true if HTTPS is used.</param>
             <param name="endPoint">Remote client</param>
-            <param name="stream">Network stream, <see cref="T:HttpServer.HttpClientContext"/> uses <see cref="!:ReusableSocketNetworkStream"/>.</param>
+            <param name="stream">Network stream, <see cref="T:HttpServer.HttpClientContext"/></param>
             <returns>A new context (always).</returns>
         </member>
         <member name="M:HttpServer.HttpContextFactory.CreateSecureContext(System.Net.Sockets.Socket,System.Security.Cryptography.X509Certificates.X509Certificate,System.Security.Authentication.SslProtocols)">
@@ -3136,11 +3136,6 @@
             <summary>
             Defines the version of the HTTP Response for applications where it's required
             for this to be forced.
-            </summary>
-        </member>
-        <member name="P:HttpServer.HttpResponse.Connection">
-            <summary>
-            Kind of connection
             </summary>
         </member>
         <member name="P:HttpServer.HttpResponse.Encoding">
