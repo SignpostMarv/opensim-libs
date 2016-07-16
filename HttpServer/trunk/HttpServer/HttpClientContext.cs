@@ -111,7 +111,7 @@ namespace HttpServer
 
         public bool CanSend()
         {
-            if(Available)
+            if(Available || contextID < 0)
                 return false;
 
             if(Stream == null || _sock == null || !_sock.Connected)
@@ -202,7 +202,7 @@ namespace HttpServer
             if (StreamPassedOff)
                 return;
             
-        	Stream.Dispose();
+        	Stream.Close();
         	Stream = null;
             _sock = null;
         	_currentRequest.Clear();
@@ -622,32 +622,8 @@ namespace HttpServer
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool unmanaged)
-        {
-            if (unmanaged)
-            {
-                if (Stream != null)
-                {
-                    try
-                    {
-                        if (Stream.CanWrite)
-                            Stream.Flush();
-
-                        Cleanup();
-
-                    }
-                    catch (IOException)
-                    {
-
-                    }
-                }
-               
-            }
-            
+            if(contextID >= 0 || Stream != null)
+                Cleanup();           
         }
 
         ~HttpClientContext()
