@@ -18,6 +18,8 @@ namespace HttpServer
     /// TODO: Maybe this class should be broken up into HttpClientChannel and HttpClientContext?
     public class HttpClientContext : IHttpClientContext ,IDisposable
     {
+        static private int basecontextID;
+
         private readonly byte[] _buffer;
         private int _bytesLeft;
         private ILogWriter _log;
@@ -45,6 +47,8 @@ namespace HttpServer
         public bool FullRequestProcessed;
 
         private bool gotResponseClose = false;
+
+        public int contextID {get; private set; }
         
         public bool StopMonitoring;
 		/// <summary>
@@ -96,6 +100,13 @@ namespace HttpServer
             _sock = sock;
             _buffer = new byte[bufferSize];
             requestsInServiceIDs = new HashSet<uint>();
+
+            basecontextID++;
+            if(basecontextID < 0)
+                basecontextID = 1;
+
+            contextID = basecontextID;
+
         }
 
         public bool EndWhenDone
@@ -194,6 +205,8 @@ namespace HttpServer
             MonitorKeepaliveMS = 0;
             TriggerKeepalive = false;
             gotResponseClose = false;
+
+            contextID = -100;
 
         	Cleaned(this, EventArgs.Empty);
         	_parser.Clear();

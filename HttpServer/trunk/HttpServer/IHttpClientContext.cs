@@ -20,6 +20,8 @@ namespace HttpServer
         /// </summary>
         bool IsSecured { get; }
 
+        int contextID {get;}
+
         /// <summary>
         /// Disconnect from client
         /// </summary>
