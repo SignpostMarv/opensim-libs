@@ -225,6 +225,7 @@ namespace HttpServer
 	        }
             set
             {
+// disable. We cant reuse because we have no control on external references.
                 if (_context != null)
                 {
                     _context.EndWhenDone = !value;

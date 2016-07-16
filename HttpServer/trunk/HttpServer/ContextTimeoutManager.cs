@@ -142,10 +142,8 @@ namespace HttpServer
                                 context.Disconnect(disconnectError);
                             }
                         }
-
                     }
                 }
-
             }
             catch (NullReferenceException)
             {

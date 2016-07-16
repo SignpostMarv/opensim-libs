@@ -103,17 +103,19 @@ namespace HttpServer
             var imp = (HttpClientContext) sender;
             if(imp.contextID < 0)
                 return;
-
+/*
             if (!imp.EndWhenDone)
             {
                 imp.Cleanup();
+                imp.Available = true;
                 lock (_contextQueue)
                     _contextQueue.Enqueue(imp);
             }
             else
             {
+*/
                 imp.Close();
-            }
+//            }
         }
 
 

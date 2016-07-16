@@ -22,6 +22,8 @@ namespace HttpServer
 
         int contextID {get;}
 
+        bool CanSend();
+
         /// <summary>
         /// Disconnect from client
         /// </summary>

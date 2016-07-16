@@ -109,10 +109,22 @@ namespace HttpServer
 
         }
 
+        public bool CanSend()
+        {
+            if(Available)
+                return false;
+
+            if(Stream == null || _sock == null || !_sock.Connected)
+                return false;
+            
+            return true;
+        }
+
         public bool EndWhenDone
         {
             get { return _endWhenDone; }
-            set { _endWhenDone = value;}
+//            set { _endWhenDone = value;}
+            set { _endWhenDone = true;} // force it to true
         }
 
         /// <summary>
@@ -551,7 +563,7 @@ namespace HttpServer
             // add some trivial checks required by opensim until another fix is possible
             // this are needed because opensim doesn't have access to stream state
             // and in its current state it will try to send to closed streams.
-            if(Stream == null || !Stream.CanWrite)
+            if(Stream == null || _sock == null || !_sock.Connected)
                 return false;
             
             lock(sendLock) // can't have overlaps here
@@ -561,7 +573,7 @@ namespace HttpServer
                     throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");          
                 try
                 {
-                    Stream.Write (buffer, offset, size);
+                    Stream.Write(buffer, offset, size);
                 }
                 catch(IOException e)
                 {
