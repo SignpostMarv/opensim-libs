@@ -101,7 +101,8 @@ namespace HttpServer
         private void OnFreeContext(object sender, DisconnectedEventArgs e)
         {
             var imp = (HttpClientContext) sender;
-            imp.Cleanup();
+            if(imp.contextID < 0)
+                return;
 
             if (!imp.EndWhenDone)
             {
@@ -110,7 +111,6 @@ namespace HttpServer
             }
             else
             {
-               
                 imp.Close();
             }
         }

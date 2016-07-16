@@ -29,114 +29,104 @@ using System.Threading;
 
 namespace HttpServer
 {
-    /// <summary>
-    /// A thread-safe lockless queue that supports multiple readers and 
-    /// multiple writers
-    /// </summary>
-    public sealed class LocklessQueue<T>
+    public class LocklessQueue<T>
     {
-        /// <summary>
-        /// Provides a node container for data in a singly linked list
-        /// </summary>
         private sealed class SingleLinkNode
         {
-            /// <summary>Pointer to the next node in list</summary>
             public SingleLinkNode Next;
-            /// <summary>The data contained by the node</summary>
             public T Item;
-
-            /// <summary>
-            /// Constructor
-            /// </summary>
-            public SingleLinkNode() { }
-
-            /// <summary>
-            /// Constructor
-            /// </summary>
-            public SingleLinkNode(T item)
-            {
-                this.Item = item;
-            }
         }
 
-        /// <summary>Queue head</summary>
         SingleLinkNode head;
-        /// <summary>Queue tail</summary>
         SingleLinkNode tail;
-        /// <summary>Queue item count</summary>
         int count;
 
-        /// <summary>Gets the current number of items in the queue. Since this
-        /// is a lockless collection this value should be treated as a close
-        /// estimate</summary>
-        public int Count { get { return count; } }
+        public virtual int Count { get { return count; } }
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
         public LocklessQueue()
         {
-            count = 0;
-            head = tail = new SingleLinkNode();
+            Init();
         }
 
-        /// <summary>
-        /// Enqueue an item
-        /// </summary>
-        /// <param name="item">Item to enqeue</param>
         public void Enqueue(T item)
         {
-            SingleLinkNode newNode = new SingleLinkNode { Item = item };
+            SingleLinkNode oldTail = null;
+            SingleLinkNode oldTailNext;
 
-            while (true)
+            SingleLinkNode newNode = new SingleLinkNode();
+            newNode.Item = item;
+
+            bool newNodeWasAdded = false;
+
+            while (!newNodeWasAdded)
             {
-                SingleLinkNode oldTail = tail;
-                SingleLinkNode oldTailNext = oldTail.Next;
+                oldTail = tail;
+                oldTailNext = oldTail.Next;
 
                 if (tail == oldTail)
                 {
-                    if (oldTailNext != null)
-                    {
+                    if (oldTailNext == null)
+                        newNodeWasAdded = CAS(ref tail.Next, null, newNode);
+                    else
                         CAS(ref tail, oldTail, oldTailNext);
-                    }
-                    else if (CAS(ref tail.Next, null, newNode))
-                    {
-                        CAS(ref tail, oldTail, newNode);
-                        Interlocked.Increment(ref count);
-                        return;
-                    }
                 }
             }
+
+            CAS(ref tail, oldTail, newNode);
+            Interlocked.Increment(ref count);
         }
 
-        /// <summary>
-        /// Try to dequeue an item
-        /// </summary>
-        /// <param name="item">Dequeued item if the dequeue was successful</param>
-        /// <returns>True if an item was successfully deqeued, otherwise false</returns>
-        public bool TryDequeue(out T item)
+        public virtual bool TryDequeue(out T item)
         {
-            while (true)
+            item = default(T);
+            SingleLinkNode oldHead = null;
+            bool haveAdvancedHead = false;
+
+            while (!haveAdvancedHead)
             {
-                SingleLinkNode oldHead = head;
+                oldHead = head;
+                SingleLinkNode oldTail = tail;
                 SingleLinkNode oldHeadNext = oldHead.Next;
 
                 if (oldHead == head)
                 {
-                    if (oldHeadNext == null)
+                    if (oldHead == oldTail)
                     {
-                        item = default(T);
-                        count = 0;
-                        return false;
+                        if (oldHeadNext == null)
+                            return false;
+
+                        CAS(ref tail, oldTail, oldHeadNext);
                     }
-                    if (CAS(ref head, oldHead, oldHeadNext))
+                    else
                     {
-                        item = oldHeadNext.Item;
-                        Interlocked.Decrement(ref count);
-                        return true;
+                        item = oldHeadNext.Item;                       
+                        haveAdvancedHead = CAS(ref head, oldHead, oldHeadNext);
+                        if (haveAdvancedHead)
+                        {
+                            oldHeadNext.Item = default(T);
+                            oldHead.Next = null;
+                        }
                     }
                 }
             }
+
+            Interlocked.Decrement(ref count);
+            return true;
+        }
+
+        public void Clear()
+        {
+            // ugly
+            T item;
+            while(count > 0)
+                TryDequeue(out item);
+            Init();
+        }
+
+        private void Init()
+        {
+            count = 0;
+            head = tail = new SingleLinkNode();
         }
 
         private static bool CAS(ref SingleLinkNode location, SingleLinkNode comparand, SingleLinkNode newValue)

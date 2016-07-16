@@ -277,16 +277,18 @@ namespace HttpServer
             // disconnect may not throw any exceptions
             try
             {
-                if (error == SocketError.Success)
-                    Stream.Flush();
-
                 try
                 {
                     if (Stream != null)
+                    {
+                        if (error == SocketError.Success)
+                            Stream.Flush();
                         Stream.Close();
+                        Stream = null;
+                    }
                    _sock = null;
                 }
-                catch {} // Best Try
+                catch {}
 
                 Disconnected(this, new DisconnectedEventArgs(error));
             }
@@ -572,13 +574,13 @@ namespace HttpServer
                     //}
                     ok = false;
                     throw e; // let it still be visible
-            }
+                }
 
-            if(!ok)     
-                Disconnect(SocketError.NoRecovery);
-
-            return ok;
-            }
+                if(!ok)     
+                    Disconnect(SocketError.NoRecovery);
+                
+                return ok;
+             }
         }
 
         /// <summary>

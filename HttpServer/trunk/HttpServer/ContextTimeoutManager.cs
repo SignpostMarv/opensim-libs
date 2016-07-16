@@ -139,9 +139,7 @@ namespace HttpServer
                         {
                             if (!stopMonitoring)
                             {
-
                                 context.Disconnect(disconnectError);
-                                context.Cleanup();
                             }
                         }
 
