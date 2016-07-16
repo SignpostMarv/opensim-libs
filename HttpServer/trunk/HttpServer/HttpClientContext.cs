@@ -513,11 +513,11 @@ namespace HttpServer
         /// </summary>
         /// <param name="buffer">buffer to send</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public void Send(byte[] buffer)
+        public bool Send(byte[] buffer)
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
-            Send(buffer, 0, buffer.Length);
+            return Send(buffer, 0, buffer.Length);
         }
 
         /// <summary>
@@ -528,38 +528,43 @@ namespace HttpServer
         /// <param name="size">number of bytes to send</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public void Send(byte[] buffer, int offset, int size)
+
+        private object sendLock = new object();
+
+        public bool Send(byte[] buffer, int offset, int size)
         {
             // add some trivial checks required by opensim until another fix is possible
             // this are needed because opensim doesn't have access to stream state
             // and in its current state it will try to send to closed streams.
             if(Stream == null || !Stream.CanWrite)
-                return;
+                return false;
             
-            if (offset + size > buffer.Length)
-                throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
-/*
-            if (Stream is ReusableSocketNetworkStream)
+            lock(sendLock) // can't have overlaps here
             {
-                       
-                // HttpServer.ReusableSocketNetworkStream.Write() = System.Net.Sockets.NetworkStream.Write()
-
-                Socket socket = ((ReusableSocketNetworkStream) Stream).GetSocket ();
-                // add some trivial checks requered by corrent opensim
-                if(socket == null || !socket.Connected)
-                    return;
-                while (size > 0)
+                bool fail = false;
+                if (offset + size > buffer.Length)
+                    throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");          
+                try
                 {
-                    int rc = socket.Send (buffer, offset, size, SocketFlags.None);
-                    if (rc <= 0) throw new IOException ("socket send failed rc=" + rc);
-                    offset += rc;
-                    size -= rc;
+                    Stream.Write (buffer, offset, size);
                 }
+                catch(IOException e)
+                {
+                    // code to handle recoverable errors
+
+                    //var socketExept = e.InnerException as SocketException;
+                    //if (socketExept != null)
+                    //{
+                        //var errcode = socketExept.ErrorCode;
+                    //}
+                    fail = true;
+                    throw e; // let it still be visible
             }
-            else
-*/
-            {
-                Stream.Write (buffer, offset, size);
+
+            if(fail)     
+                Disconnect(SocketError.NoRecovery);
+
+            return fail;
             }
         }
 

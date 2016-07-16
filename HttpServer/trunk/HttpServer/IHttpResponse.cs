@@ -135,7 +135,7 @@ namespace HttpServer
             /// <seealso cref="IHttpResponse.SendHeaders"/>
             /// <remarks>This method can be used if you want to send body contents without caching them first. This
             /// is recommended for larger files to keep the memory usage low.</remarks>
-            void SendBody(byte[] buffer, int offset, int count);
+            bool SendBody(byte[] buffer, int offset, int count);
 
             /// <summary>
             /// Make sure that you have specified ContentLength and sent the headers first.
@@ -147,7 +147,7 @@ namespace HttpServer
             /// <seealso cref="IHttpResponse.SendHeaders"/>
             /// <remarks>This method can be used if you want to send body contents without caching them first. This
             /// is recommended for larger files to keep the memory usage low.</remarks>
-            void SendBody(byte[] buffer);
+            bool SendBody(byte[] buffer);
 
             /// <summary>
             /// Send headers to the client.
@@ -156,7 +156,7 @@ namespace HttpServer
             /// <seealso cref="IHttpResponse.AddHeader"/>
             /// <seealso cref="IHttpResponse.Send"/>
             /// <seealso cref="IHttpResponse.SendBody(byte[])"/>
-            void SendHeaders();
+            bool SendHeaders();
 
             /// <summary>
             /// Redirect client to somewhere else using the 302 status code.

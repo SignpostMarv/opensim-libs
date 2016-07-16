@@ -264,9 +264,14 @@ namespace HttpServer
 		public void Send()
 		{
 			if (!HeadersSent)
-				SendHeaders();
+				if(!SendHeaders())
+                {
+                    Body.Close();
+                    return;
+                }
 			if (Sent)
 				throw new InvalidOperationException("Everything have already been sent.");
+
 			if (Body.Length == 0)
 			{
 				if (Connection == ConnectionType.Close)
@@ -280,7 +285,11 @@ namespace HttpServer
 			int bytesRead = Body.Read(buffer, 0, 4196);
 			while (bytesRead > 0)
 			{
-				_context.Send(buffer, 0, bytesRead);
+				if(!_context.Send(buffer, 0, bytesRead))
+                {
+                    Body.Close();
+                    return;
+                }
 				bytesRead = Body.Read(buffer, 0, 4196);
 			}
            
@@ -304,14 +313,16 @@ namespace HttpServer
 		/// <seealso cref="SendHeaders"/>
 		/// <remarks>This method can be used if you want to send body contents without caching them first. This
 		/// is recommended for larger files to keep the memory usage low.</remarks>
-		public void SendBody(byte[] buffer, int offset, int count)
+		public bool SendBody(byte[] buffer, int offset, int count)
 		{
 			if (!HeadersSent)
 				throw new InvalidOperationException("Send headers, and remember to specify ContentLength first.");
 
-			_context.Send(buffer, offset, count);
+			bool sent = _context.Send(buffer, offset, count);
 			Sent = true;
-           _context.ReqResponseSent(requestID, Connection);
+            if(sent)
+               _context.ReqResponseSent(requestID, Connection);
+            return sent;
 		}
 
 		/// <summary>
@@ -324,14 +335,16 @@ namespace HttpServer
 		/// <seealso cref="SendHeaders"/>
 		/// <remarks>This method can be used if you want to send body contents without caching them first. This
 		/// is recommended for larger files to keep the memory usage low.</remarks>
-		public void SendBody(byte[] buffer)
+		public bool SendBody(byte[] buffer)
 		{
 			if (!HeadersSent)
 				throw new InvalidOperationException("Send headers, and remember to specify ContentLength first.");
 
-			_context.Send(buffer);
+			bool sent = _context.Send(buffer);
+            if(sent)
+                _context.ReqResponseSent(requestID, Connection);
 			Sent = true;
-            _context.ReqResponseSent(requestID, Connection);
+            return sent;
 		}
 
 		/// <summary>
@@ -341,7 +354,7 @@ namespace HttpServer
 		/// <seealso cref="AddHeader"/>
 		/// <seealso cref="Send"/>
 		/// <seealso cref="SendBody(byte[])"/>
-		public void SendHeaders()
+		public bool SendHeaders()
 		{
 			if (HeadersSent)
 				throw new InvalidOperationException("Header have already been sent.");
@@ -389,7 +402,7 @@ namespace HttpServer
 
 			sb.Append("\r\n");
 
-			_context.Send(Encoding.GetBytes(sb.ToString()));
+			return _context.Send(Encoding.GetBytes(sb.ToString()));
 		}
 
 		/// <summary>
