@@ -106,6 +106,7 @@ namespace HttpServer
 
             if (!imp.EndWhenDone)
             {
+                imp.Cleanup();
                 lock (_contextQueue)
                     _contextQueue.Enqueue(imp);
             }
