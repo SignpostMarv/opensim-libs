@@ -554,7 +554,7 @@ namespace HttpServer
             
             lock(sendLock) // can't have overlaps here
             {
-                bool fail = false;
+                bool ok = true;
                 if (offset + size > buffer.Length)
                     throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");          
                 try
@@ -570,14 +570,14 @@ namespace HttpServer
                     //{
                         //var errcode = socketExept.ErrorCode;
                     //}
-                    fail = true;
+                    ok = false;
                     throw e; // let it still be visible
             }
 
-            if(fail)     
+            if(!ok)     
                 Disconnect(SocketError.NoRecovery);
 
-            return fail;
+            return ok;
             }
         }
 
