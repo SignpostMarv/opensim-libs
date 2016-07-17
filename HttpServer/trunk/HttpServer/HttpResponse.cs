@@ -264,12 +264,15 @@ namespace HttpServer
 		/// <exception cref="InvalidOperationException">If content have already been sent.</exception>
 		public void Send()
 		{
+            _context.ReqResponseAboutToSend(requestID);
+
 			if (!HeadersSent)
 				if(!SendHeaders())
                 {
                     Body.Close();
                     return;
                 }
+
 			if (Sent)
 				throw new InvalidOperationException("Everything have already been sent.");
 
@@ -277,13 +280,14 @@ namespace HttpServer
 			{
 				if (Connection == ConnectionType.Close)
 					_context.Disconnect(SocketError.Success);
+                Body.Close();
 				return;
 			}
 
 			Body.Flush();
 			Body.Seek(0, SeekOrigin.Begin);
-			var buffer = new byte[4196];
-			int bytesRead = Body.Read(buffer, 0, 4196);
+			var buffer = new byte[8192];
+			int bytesRead = Body.Read(buffer, 0, 8192);
 			while (bytesRead > 0)
 			{
 				if(!_context.Send(buffer, 0, bytesRead))
@@ -291,7 +295,7 @@ namespace HttpServer
                     Body.Close();
                     return;
                 }
-				bytesRead = Body.Read(buffer, 0, 4196);
+				bytesRead = Body.Read(buffer, 0, 8192);
 			}
            
 		    if (Connection == ConnectionType.Close)

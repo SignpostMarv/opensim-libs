@@ -39,7 +39,7 @@ namespace HttpServer
         public int TimeoutRequestReceived = 180000; // 180 seconds
 
         // The difference between this and request received is on POST more time is needed before we get the full request.
-        public int TimeoutFullRequestProcessed = 1200000; // 20 minutes
+        public int TimeoutFullRequestProcessed = 600000; // 10 minutes
         public int TimeoutKeepAlive = 400000; // 400 seconds before keepalive timeout
 
         public bool FirstRequestLineReceived;
@@ -47,9 +47,15 @@ namespace HttpServer
         public bool FullRequestProcessed;
 
         private bool gotResponseClose = false;
+        private bool isSendingResponse = false;
 
         public int contextID {get; private set; }
         
+        public bool IsSending()
+        {
+            return isSendingResponse;
+        }
+
         public bool StopMonitoring;
 		/// <summary>
 		/// This context have been cleaned, which means that it can be reused.
@@ -218,6 +224,7 @@ namespace HttpServer
             MonitorKeepaliveMS = 0;
             TriggerKeepalive = false;
             gotResponseClose = false;
+            isSendingResponse = false;
 
             contextID = -100;
 
@@ -461,6 +468,10 @@ namespace HttpServer
 //                TriggerKeepalive = true;
 
         }
+        public void ReqResponseAboutToSend(uint requestID)
+        {
+            isSendingResponse = true;
+        }
 
         public void ReqResponseSent(uint requestID, ConnectionType ctype )
         {
@@ -482,6 +493,7 @@ namespace HttpServer
                 }
             }
 
+            isSendingResponse = false;
             if(doclose)
                 Disconnect(SocketError.Success);
         }
@@ -579,7 +591,11 @@ namespace HttpServer
                     throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");          
                 try
                 {
-                    Stream.Write(buffer, offset, size);
+                    // we are supposed to block so do block
+                    if(_sock.Poll(30000000,SelectMode.SelectWrite))
+                        Stream.Write(buffer, offset, size);
+                    else
+                        ok = false;
                 }
                 catch(IOException e)
                 {

@@ -23,6 +23,7 @@ namespace HttpServer
         int contextID {get;}
 
         bool CanSend();
+        bool IsSending();
 
         /// <summary>
         /// Disconnect from client
@@ -94,6 +95,7 @@ namespace HttpServer
 
         HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing();
 
+        void ReqResponseAboutToSend(uint requestID);
         void ReqResponseSent(uint requestID, ConnectionType connection);
         
     }
