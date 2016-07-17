@@ -592,7 +592,7 @@ namespace HttpServer
                 try
                 {
                     // we are supposed to block so do block
-                    if(_sock.Poll(30000000,SelectMode.SelectWrite))
+                    if(_sock.Poll(30000000,SelectMode.SelectWrite) && Stream != null && _sock != null )
                         Stream.Write(buffer, offset, size);
                     else
                         ok = false;
@@ -610,7 +610,7 @@ namespace HttpServer
                     throw e; // let it still be visible
                 }
 
-                if(!ok)     
+                if(!ok && Stream != null)     
                     Disconnect(SocketError.NoRecovery);
                 
                 return ok;
