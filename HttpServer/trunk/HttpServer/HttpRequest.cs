@@ -29,12 +29,13 @@ namespace HttpServer
         private string _method = string.Empty;
         private HttpInput _queryString = HttpInput.Empty;
         private Uri _uri = HttpHelper.EmptyUri;
-        private string _uriPath;
-        
+        private string _uriPath; 
+        public readonly IHttpClientContext _context;     
 
-        public HttpRequest()
+        public HttpRequest(IHttpClientContext pContext)
         {
             ID = baseID++;
+            _context = pContext;
         }
 
         public uint ID {get; private set;}
@@ -44,6 +45,7 @@ namespace HttpServer
         /// </summary>
         public bool Secure { get; internal set; }
 
+        public IHttpClientContext Context { get { return _context; }}
         /// <summary>
         /// Path and query (will be merged with the host header) and put in Uri
         /// </summary>
@@ -243,7 +245,7 @@ namespace HttpServer
         {
             // this method was mainly created for testing.
             // dont use it that much...
-            var request = new HttpRequest();
+            var request = new HttpRequest(Context);
             request.Method = _method;
             if (AcceptTypes != null)
             {

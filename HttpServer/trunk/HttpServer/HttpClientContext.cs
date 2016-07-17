@@ -99,7 +99,7 @@ namespace HttpServer
             _parser.RequestLineReceived += OnRequestLine;
             _parser.HeaderReceived += OnHeaderReceived;
             _parser.BodyBytesReceived += OnBodyBytesReceived;
-            _currentRequest = new HttpRequest();
+            _currentRequest = new HttpRequest( this );
             Available = false;
             IsSecured = secured;
             _stream = stream;
@@ -452,7 +452,7 @@ namespace HttpServer
             // for now pipeline requests need to be serialized by opensim
             RequestReceived(this, new RequestEventArgs(_currentRequest));
 
-           _currentRequest = new HttpRequest();
+           _currentRequest = new HttpRequest(this);
 
             int nreqsnow;
             lock(requestsInServiceIDs)

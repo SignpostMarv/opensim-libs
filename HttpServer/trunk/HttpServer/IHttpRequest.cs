@@ -32,6 +32,7 @@ namespace HttpServer
         /// </summary>
         ConnectionType Connection { get; set; }
 
+        IHttpClientContext Context { get; } 
         /// <summary>
         /// Gets or sets number of bytes in the body.
         /// </summary>
