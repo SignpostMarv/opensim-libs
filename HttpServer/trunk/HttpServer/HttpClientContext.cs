@@ -30,7 +30,7 @@ namespace HttpServer
         private Socket _sock;
 
         public bool Available = true;
-        private bool _endWhenDone = false;
+        private bool _endWhenDone = true;
         public bool StreamPassedOff = false;
         public int MonitorStartMS = 0;
         public int MonitorKeepaliveMS = 0;
@@ -197,6 +197,7 @@ namespace HttpServer
         /// </remarks>
         public virtual void Cleanup()
         {
+
         	if (Stream == null) 
 				return;
             if (StreamPassedOff)
@@ -464,6 +465,10 @@ namespace HttpServer
         {
             if(ctype == ConnectionType.Close)    
                 gotResponseClose = true;
+            else
+            {
+            
+            }
  
             bool doclose = gotResponseClose;
             lock(requestsInServiceIDs)

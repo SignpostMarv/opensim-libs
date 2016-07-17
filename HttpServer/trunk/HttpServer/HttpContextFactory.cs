@@ -16,6 +16,7 @@ namespace HttpServer
     {
         private readonly int _bufferSize;
         private readonly Queue<HttpClientContext> _contextQueue = new Queue<HttpClientContext>();
+        private readonly Dictionary<int,HttpClientContext> _activeContexts = new Dictionary<int,HttpClientContext>();
         private readonly IRequestParserFactory _factory;
         private readonly ILogWriter _logWriter;
         private readonly ContextTimeoutManager _contextTimeoutManager;
@@ -76,6 +77,8 @@ namespace HttpServer
 			context.RemotePort = endPoint.Port.ToString();
 			context.RemoteAddress = endPoint.Address.ToString();
 			_contextTimeoutManager.StartMonitoringContext(context);
+            lock(_activeContexts)
+                _activeContexts[context.contextID] = context;
             context.Start();
 
             return context;
@@ -103,6 +106,13 @@ namespace HttpServer
             var imp = (HttpClientContext) sender;
             if(imp.contextID < 0)
                 return;
+
+            lock(_activeContexts)
+            {
+                if(_activeContexts.ContainsKey(imp.contextID))
+                    _activeContexts.Remove(imp.contextID);
+            }
+
 /*
             if (!imp.EndWhenDone)
             {
