@@ -214,7 +214,7 @@ namespace HttpServer
             FullRequestReceived = false;
             FullRequestProcessed = false;
             MonitorStartMS = 0;
-            StopMonitoring = false;
+            StopMonitoring = true;
             MonitorKeepaliveMS = 0;
             TriggerKeepalive = false;
             gotResponseClose = false;
@@ -432,6 +432,8 @@ namespace HttpServer
             _currentRequest.SetCookies(cookies);
 
             _currentRequest.Body.Seek(0, SeekOrigin.Begin);
+
+            FullRequestReceived = true;
             
             int nreqs;
             lock(requestsInServiceIDs)
@@ -440,6 +442,7 @@ namespace HttpServer
                 requestsInServiceIDs.Add(_currentRequest.ID);
             }
 
+            // for now pipeline requests need to be serialized by opensim
             RequestReceived(this, new RequestEventArgs(_currentRequest));
 
            _currentRequest = new HttpRequest();
@@ -454,10 +457,8 @@ namespace HttpServer
                  // request was not done by us
             }
 
-            FullRequestReceived = true;
-
-            if (_currentRequest.Connection != ConnectionType.Close)
-                TriggerKeepalive = true;
+//            if (_currentRequest.Connection != ConnectionType.Close)
+//                TriggerKeepalive = true;
 
         }
 
