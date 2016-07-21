@@ -371,21 +371,24 @@ namespace HttpServer.Parser
 
 		int GetLineBreakSize(byte[] buffer, int offset)
 		{
-			if (buffer[offset] != '\r' && buffer[offset] != '\n')
+			if (buffer[offset] == '\r')
+            {
+                if(buffer.Length > offset + 1 && buffer[offset + 1] == '\n')
+				    return 2;
+                else
+                    throw new BadRequestException("Got invalid linefeed.");
+            }
+			else if (buffer[offset] == '\n')
+            {
+                if(buffer.Length == offset + 1)
+				    return 1;   // linux line feed
+                if(buffer[offset + 1] != '\r')
+   				    return 1;   // linux line feed
+                else
+                    return 2;   // win line feed
+            }
+            else
 				return 0;
-
-			// linux line feed
-			if (buffer[offset] == '\n' && (buffer.Length == offset + 1 || buffer[offset + 1] != '\r'))
-				return 1;
-
-			// win line feed
-			if (buffer[offset] == '\r' && buffer.Length > offset + 1 && buffer[offset + 1] == '\n')
-				return 2;
-
-			if (buffer[offset] == '\n' && buffer.Length > offset + 1 && buffer[offset + 1] == '\r')
-				return 2;
-
-			throw new BadRequestException("Got invalid linefeed.");
 		}
 
         /// <summary>

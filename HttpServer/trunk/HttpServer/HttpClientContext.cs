@@ -164,6 +164,8 @@ namespace HttpServer
             _currentRequest.Method = e.HttpMethod;
             _currentRequest.HttpVersion = e.HttpVersion;
             _currentRequest.UriPath = e.UriPath;
+            _currentRequest.AddHeader("remote_addr", RemoteAddress);
+            _currentRequest.AddHeader("remote_port", RemotePort);
             FirstRequestLineReceived = true;
         }
 
@@ -436,8 +438,7 @@ namespace HttpServer
 
         private void OnRequestCompleted(object source, EventArgs args)
         {
-            _currentRequest.AddHeader("remote_addr", RemoteAddress);
-            _currentRequest.AddHeader("remote_port", RemotePort);
+
 
             // load cookies if they exist
             RequestCookies cookies = _currentRequest.Headers["cookie"] != null
