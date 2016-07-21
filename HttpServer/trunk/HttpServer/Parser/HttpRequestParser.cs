@@ -170,11 +170,7 @@ namespace HttpServer.Parser
             // add body bytes
             if (CurrentState == RequestParserState.Body)
             {
-				// copy all remaining bytes to the beginning of the buffer.
-				//Buffer.BlockCopy(buffer, offset + bytesUsed, buffer, 0, count - bytesUsed);
-
-
-                return AddToBody(buffer, 0, count);
+                return AddToBody(buffer, offset, count);
             }
 
 #if DEBUG
@@ -198,7 +194,6 @@ namespace HttpServer.Parser
             // </summary>
             int handledBytes = 0;
 
-
             for (int currentPos = offset; currentPos < endOfBufferPos; ++currentPos)
             {
                 var ch = (char) buffer[currentPos];
@@ -210,7 +205,7 @@ namespace HttpServer.Parser
                 switch (CurrentState)
                 {
                     case RequestParserState.FirstLine:
-                        if (currentPos > 4196)
+                        if (currentPos == 8191)
                         {
                             _log.Write(this, LogPrio.Warning, "HTTP Request is too large.");
                             throw new BadRequestException("Too large request line.");
@@ -320,7 +315,7 @@ namespace HttpServer.Parser
                                 _log.Write(this, LogPrio.Warning, "Missing header value for '" + _curHeaderName);
                                 throw new BadRequestException("Missing header value for '" + _curHeaderName);
                             }
-                            if (currentPos - startPos > 4096)
+                            if (currentPos - startPos > 8190)
                             {
                                 _log.Write(this, LogPrio.Warning, "Too large header value on line " + currentLine);
                                 throw new BadRequestException("Too large header value on line " + currentLine);

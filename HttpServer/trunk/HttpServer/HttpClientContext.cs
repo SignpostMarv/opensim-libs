@@ -84,13 +84,15 @@ namespace HttpServer
             Check.NotEmpty(remoteEndPoint.Address.ToString(), "remoteEndPoint.Address");
             Check.Require(stream, "stream");
             Check.Require(parserFactory, "parser");
-            Check.Min(4096, bufferSize, "bufferSize");
+//            Check.Min(4096, bufferSize, "bufferSize");
             Check.Require(sock, "socket");
 
             if (!stream.CanWrite || !stream.CanRead)
                 throw new ArgumentException("Stream must be writable and readable.");
 
-            _bufferSize = bufferSize;
+//            _bufferSize = bufferSize;
+
+            _bufferSize = 8192;
 			RemoteAddress = remoteEndPoint.Address.ToString();
 			RemotePort = remoteEndPoint.Port.ToString();
             _log = NullLogWriter.Instance;
@@ -112,7 +114,6 @@ namespace HttpServer
                 basecontextID = 1;
 
             contextID = basecontextID;
-
         }
 
         public bool CanSend()
@@ -360,21 +361,27 @@ namespace HttpServer
 					return; // "Connection: Close" in effect.
 
                 // try again to see if we can parse another message (check parser to see if it is looking for a new message)
-                int oldOffset = offset;
-                while (_parser.CurrentState == RequestParserState.FirstLine && offset != 0 && _bytesLeft - offset > 0)
+                int nextOffset;
+                int nextBytesleft = _bytesLeft - offset;
+//                while (_parser.CurrentState == RequestParserState.FirstLine && offset != 0 && _bytesLeft - offset > 0)
+                while (offset != 0 && nextBytesleft > 0)
                 {
 #if DEBUG
-                    temp = Encoding.ASCII.GetString(_buffer, offset, _bytesLeft - offset);
+                    temp = Encoding.ASCII.GetString(_buffer, offset, nextBytesleft);
                     LogWriter.Write(this, LogPrio.Trace, "Processing: " + temp);
 #endif
-                    offset = _parser.Parse(_buffer, offset, _bytesLeft - offset);
+
+                    nextOffset = _parser.Parse(_buffer, offset, nextBytesleft);
+
 					if (Stream == null)
 						return; // "Connection: Close" in effect.
-				}
 
-                // need to be able to move prev bytes, so restore offset.
-                if (offset == 0)
-                    offset = oldOffset;
+                    if(nextOffset == 0)
+                        break;
+
+                    offset = nextOffset;
+                    nextBytesleft = _bytesLeft - offset;
+				}
 
                 // copy unused bytes to the beginning of the array
                 if (offset > 0 && _bytesLeft > offset)
