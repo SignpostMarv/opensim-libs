@@ -438,8 +438,6 @@ namespace HttpServer
 
         private void OnRequestCompleted(object source, EventArgs args)
         {
-
-
             // load cookies if they exist
             RequestCookies cookies = _currentRequest.Headers["cookie"] != null
                 ? new RequestCookies(_currentRequest.Headers["cookie"])
