@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Warp3D", "Warp3D.csproj", "{6E48530B-16AB-4861-9CED-97334739D675}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		64Bit CPU's|Any CPU = 64Bit CPU's|Any CPU
+		64Bit CPU's|x64 = 64Bit CPU's|x64
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Original|Any CPU = Original|Any CPU
+		Original|x64 = Original|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Slixel Tester|Any CPU = Slixel Tester|Any CPU
+		Slixel Tester|x64 = Slixel Tester|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6E48530B-16AB-4861-9CED-97334739D675}.64Bit CPU's|Any CPU.ActiveCfg = 64Bit CPU's|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.64Bit CPU's|Any CPU.Build.0 = 64Bit CPU's|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.64Bit CPU's|x64.ActiveCfg = 64Bit CPU's|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.64Bit CPU's|x64.Build.0 = 64Bit CPU's|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Debug|x64.ActiveCfg = Debug|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Debug|x64.Build.0 = Debug|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Original|Any CPU.ActiveCfg = Original|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Original|Any CPU.Build.0 = Original|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Original|x64.ActiveCfg = Original|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Original|x64.Build.0 = Original|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Release|x64.ActiveCfg = Release|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Release|x64.Build.0 = Release|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Slixel Tester|Any CPU.ActiveCfg = Slixel Tester|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Slixel Tester|Any CPU.Build.0 = Slixel Tester|Any CPU
+		{6E48530B-16AB-4861-9CED-97334739D675}.Slixel Tester|x64.ActiveCfg = Slixel Tester|x64
+		{6E48530B-16AB-4861-9CED-97334739D675}.Slixel Tester|x64.Build.0 = Slixel Tester|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
