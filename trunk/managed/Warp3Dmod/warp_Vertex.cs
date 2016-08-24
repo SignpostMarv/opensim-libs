@@ -83,14 +83,14 @@ namespace Warp3D
 
             if(camera.isOrthographic)
             {
-			    x=(int)(pos2.x * camera.screenscale / camera.orthoViewWidth + (camera.screenwidth>>1));
-			    y=(int)(-pos2.y * camera.screenscale / camera.orthoViewHeight + (camera.screenheight>>1));
+			    x=(int)(pos2.x * camera.EfectiveFovFactX + (camera.screenwidth >> 1));
+			    y=(int)(-pos2.y * camera.EfectiveFovFactY + (camera.screenheight >> 1));
             }
             else
             {
-			    float fact=camera.screenscale/camera.fovfact/((pos2.z>0.1)?pos2.z:0.1f);
-			    x=(int)(pos2.x*fact+(camera.screenwidth>>1));
-			    y=(int)(-pos2.y*fact+(camera.screenheight>>1));
+			    float fact = camera.EfectiveFovFactX / ((pos2.z > 0.1) ? pos2.z : 0.1f);
+			    x=(int)(pos2.x * fact + (camera.screenwidth >> 1));
+			    y=(int)(-pos2.y * fact + (camera.screenheight >> 1));
             }
 
 			z=(int)(65536f*pos2.z);

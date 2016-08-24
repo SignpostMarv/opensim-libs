@@ -23,9 +23,12 @@ namespace Warp3D
 		public int screenheight;
 		public int screenscale;
         
-        public bool isOrthographic;
-   		public float orthoViewWidth;
-		public float orthoViewHeight;
+        internal bool isOrthographic;
+   		private float orthoViewWidth;
+		private float orthoViewHeight;
+
+        internal float EfectiveFovFactX;
+        internal float EfectiveFovFactY;
 
 		public warp_Camera()
 		{
@@ -85,7 +88,22 @@ namespace Warp3D
 		public void setFov(float fov)
 		{
 			fovfact=(float)Math.Tan(warp_Math.deg2rad(fov)/2);
+            isOrthographic = false;
 		}
+
+        public void setOrthographic(bool doOrtho, float orthoWitdh, float orthoHeight)
+        {
+            if(doOrtho && orthoWitdh != 0f && orthoHeight != 0f)
+            {
+                orthoViewWidth = orthoWitdh;
+                orthoViewHeight = orthoHeight;
+                isOrthographic = true;
+            }
+            else
+            {
+                isOrthographic = false;
+            }      
+        }
 
 		public void roll(float angle)
 		{
@@ -122,6 +140,16 @@ namespace Warp3D
 			screenwidth=w;
 			screenheight=h;
 			screenscale=(w<h)?w:h;
+
+            if(isOrthographic)
+            {
+                EfectiveFovFactX = screenscale / orthoViewWidth;
+                EfectiveFovFactY = screenscale / orthoViewHeight;
+            }
+            else
+            {
+                EfectiveFovFactX = screenscale/fovfact;
+            }      
 		}
 
 		public void shift(float dx, float dy, float dz)
