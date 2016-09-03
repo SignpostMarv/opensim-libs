@@ -225,7 +225,7 @@ namespace HttpServer
             }
 
             // First we check that we got at least one line within context.TimeoutFirstLine milliseconds
-            if (!context.FullRequestProcessed && !context.EndWhenDone)
+            if (!context.FullRequestProcessed)
             {
                 if (EnvironmentTickCountAdd(context.TimeoutFullRequestProcessed, context.MonitorStartMS) <= EnvironmentTickCount())
                 {

@@ -30,7 +30,6 @@ namespace HttpServer
         private Socket _sock;
 
         public bool Available = true;
-        private bool _endWhenDone = true;
         public bool StreamPassedOff = false;
         public int MonitorStartMS = 0;
         public int MonitorKeepaliveMS = 0;
@@ -57,10 +56,6 @@ namespace HttpServer
         }
 
         public bool StopMonitoring;
-		/// <summary>
-		/// This context have been cleaned, which means that it can be reused.
-		/// </summary>
-    	public event EventHandler Cleaned = delegate { };
 
 		/// <summary>
 		/// Context have been started (a new client have connected)
@@ -125,13 +120,6 @@ namespace HttpServer
                 return false;
             
             return true;
-        }
-
-        public bool EndWhenDone
-        {
-            get { return _endWhenDone; }
-//            set { _endWhenDone = value;}
-            set { _endWhenDone = true;} // force it to true
         }
 
         /// <summary>
@@ -230,8 +218,6 @@ namespace HttpServer
             isSendingResponse = false;
 
             contextID = -100;
-
-        	Cleaned(this, EventArgs.Empty);
         	_parser.Clear();
         }
 
@@ -637,14 +623,13 @@ namespace HttpServer
         
         public HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing()
         {
-            _endWhenDone = true;
             StreamPassedOff = true;
             _parser.RequestCompleted -= OnRequestCompleted;
             _parser.RequestLineReceived -= OnRequestLine;
             _parser.HeaderReceived -= OnHeaderReceived;
             _parser.BodyBytesReceived -= OnBodyBytesReceived;
             _parser.Clear();
-            
+           
             return new HTTPNetworkContext() { Socket = _sock ,Stream = _stream as NetworkStream};
         }
 

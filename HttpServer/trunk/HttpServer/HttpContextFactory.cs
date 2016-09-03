@@ -15,7 +15,6 @@ namespace HttpServer
     public class HttpContextFactory : IHttpContextFactory
     {
         private readonly int _bufferSize;
-        private readonly Queue<HttpClientContext> _contextQueue = new Queue<HttpClientContext>();
         private readonly Dictionary<int,HttpClientContext> _activeContexts = new Dictionary<int,HttpClientContext>();
         private readonly IRequestParserFactory _factory;
         private readonly ILogWriter _logWriter;
@@ -50,27 +49,10 @@ namespace HttpServer
         protected HttpClientContext CreateContext(bool isSecured, IPEndPoint endPoint, Stream stream, Socket sock)
         {
         	HttpClientContext context;
-            lock (_contextQueue)
-            {
-                if (_contextQueue.Count > 0)
-                {
-                    context = _contextQueue.Dequeue();
-                    if (!context.Available)
-                    {
-                        context = CreateNewContext(isSecured, endPoint, stream, sock);
-                        context.Disconnected += OnFreeContext;
-                        context.RequestReceived += OnRequestReceived;
-                        context.EndWhenDone = true;
-                        
-                    }
-                }
-                else
-                {
-                    context = CreateNewContext(isSecured, endPoint, stream, sock);
-                    context.Disconnected += OnFreeContext;
-                    context.RequestReceived += OnRequestReceived;
-                }
-            }
+
+            context = CreateNewContext(isSecured, endPoint, stream, sock);
+            context.Disconnected += OnFreeContext;
+            context.RequestReceived += OnRequestReceived;
 
         	context.Stream = stream;
 			context.IsSecured = isSecured;
@@ -80,7 +62,6 @@ namespace HttpServer
             lock(_activeContexts)
                 _activeContexts[context.contextID] = context;
             context.Start();
-
             return context;
         }
 
@@ -113,19 +94,7 @@ namespace HttpServer
                     _activeContexts.Remove(imp.contextID);
             }
 
-/*
-            if (!imp.EndWhenDone)
-            {
-                imp.Cleanup();
-                imp.Available = true;
-                lock (_contextQueue)
-                    _contextQueue.Enqueue(imp);
-            }
-            else
-            {
-*/
-                imp.Close();
-//            }
+            imp.Close();
         }
 
 

@@ -213,27 +213,6 @@ namespace HttpServer
 			get { return _cookies; }
 		}
 
-	    public bool ReuseContext
-	    {
-	        get
-	        {
-	            if (_context != null)
-	            {
-	                return !_context.EndWhenDone;
-	            }
-	            return true;
-	        }
-            set
-            {
-// disable. We cant reuse because we have no control on external references.
-                if (_context != null)
-                {
-                    _context.EndWhenDone = !value;
-                }
-            }
-	    }
-
-
 		/// <summary>
 		/// Add another header to the document.
 		/// </summary>
