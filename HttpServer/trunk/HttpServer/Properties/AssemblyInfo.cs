@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("HttpServer")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Opensim HttpServer")]
+[assembly: AssemblyDescription("Gauffin Telecom AB HttpServer modified for OpenSim")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Gauffin Telecom AB")]
+[assembly: AssemblyCompany("Gauffin Telecom AB, OpenSimulator")]
 [assembly: AssemblyProduct("HttpServer")]
-[assembly: AssemblyCopyright("Copyright © Gauffin Telecom AB 2008")]
+[assembly: AssemblyCopyright("Copyright © Gauffin Telecom AB 2008, OpenSimulator")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
