@@ -57,6 +57,7 @@ namespace HttpServer
 
         public bool StopMonitoring;
 
+
 		/// <summary>
 		/// Context have been started (a new client have connected)
 		/// </summary>
@@ -79,13 +80,10 @@ namespace HttpServer
             Check.NotEmpty(remoteEndPoint.Address.ToString(), "remoteEndPoint.Address");
             Check.Require(stream, "stream");
             Check.Require(parserFactory, "parser");
-//            Check.Min(4096, bufferSize, "bufferSize");
             Check.Require(sock, "socket");
 
             if (!stream.CanWrite || !stream.CanRead)
                 throw new ArgumentException("Stream must be writable and readable.");
-
-//            _bufferSize = bufferSize;
 
             _bufferSize = 8192;
 			RemoteAddress = remoteEndPoint.Address.ToString();
@@ -141,7 +139,11 @@ namespace HttpServer
         {
             if (string.Compare(e.Name, "expect", true) == 0 && e.Value.Contains("100-continue"))
             {
-                Respond("HTTP/1.0", HttpStatusCode.Continue, "Please continue mate.");
+                lock(requestsInServiceIDs)
+                {
+                    if(requestsInServiceIDs.Count == 0)
+                        Respond("HTTP/1.1", HttpStatusCode.Continue, "Please continue mate.");
+                }
             }
 
             _currentRequest.AddHeader(e.Name, e.Value);
@@ -164,7 +166,16 @@ namespace HttpServer
         /// Must be specified before the context is being used.
         /// </remarks>
         protected IHttpRequest CurrentRequest
-        { get { return _currentRequest; } set { _currentRequest = value; } }
+        {
+            get
+            {
+                return _currentRequest;
+            }
+            set
+            {
+                _currentRequest = value;
+            }
+        }
 
         /// <summary>
         /// Start reading content.
@@ -376,8 +387,9 @@ namespace HttpServer
 					Buffer.BlockCopy(_buffer, offset, _buffer, 0, _bytesLeft - offset);
 
                 _bytesLeft -= offset;
-                if (Stream != null && Stream.CanRead && !StreamPassedOff)
-					Stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
+                if (Stream != null && Stream.CanRead)
+                    if(!StreamPassedOff)
+					    Stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
 				else
 				{
 					_log.Write(this, LogPrio.Warning, "Could not read any more from the socket.");
@@ -455,11 +467,8 @@ namespace HttpServer
             {
                  // request was not done by us
             }
-
-//            if (_currentRequest.Connection != ConnectionType.Close)
-//                TriggerKeepalive = true;
-
         }
+
         public void ReqResponseAboutToSend(uint requestID)
         {
             isSendingResponse = true;

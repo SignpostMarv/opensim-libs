@@ -93,7 +93,6 @@ namespace HttpServer
                 if(_activeContexts.ContainsKey(imp.contextID))
                     _activeContexts.Remove(imp.contextID);
             }
-
             imp.Close();
         }
 
@@ -131,6 +130,10 @@ namespace HttpServer
             {
                 if (UseTraceLogs)
                     _logWriter.Write(this, LogPrio.Trace, err.Message);
+            }
+            finally
+            {
+                sslStream.Close();
             }
 
             return null;
