@@ -119,21 +119,16 @@ namespace HttpServer
             {
                 //TODO: this may fail
                 sslStream.AuthenticateAsServer(certificate, false, protocol, false);
-                return CreateContext(true, remoteEndPoint, sslStream, socket);
             }
-            catch (IOException err)
+            catch (Exception e)
             {
                 if (UseTraceLogs)
-                    _logWriter.Write(this, LogPrio.Trace, err.Message);
-            }
-            catch (ObjectDisposedException err)
-            {
-                if (UseTraceLogs)
-                    _logWriter.Write(this, LogPrio.Trace, err.Message);
+                    _logWriter.Write(this, LogPrio.Trace, e.Message);
+                sslStream.Close();
+                return null;
             }
 
-            sslStream.Close();
-            return null;
+            return CreateContext(true, remoteEndPoint, sslStream, socket);
         }
 
 		

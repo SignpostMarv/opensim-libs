@@ -323,7 +323,8 @@ namespace HttpServer
             try
             {
                 int bytesRead = 0;
-
+                if(Stream == null)
+                    return;
                 try
                 {
                     bytesRead = Stream.EndRead(ar);
