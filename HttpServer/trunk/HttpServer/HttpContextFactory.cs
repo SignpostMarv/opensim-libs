@@ -131,11 +131,8 @@ namespace HttpServer
                 if (UseTraceLogs)
                     _logWriter.Write(this, LogPrio.Trace, err.Message);
             }
-            finally
-            {
-                sslStream.Close();
-            }
 
+            sslStream.Close();
             return null;
         }
 
