@@ -277,7 +277,7 @@ namespace HttpServer
 				bytesRead = Body.Read(buffer, 0, 8192);
 			}
            
-		    if (Connection == ConnectionType.Close)
+//		    if (Connection == ConnectionType.Close)
 		    {   
                 Body.Close();
 		    }
