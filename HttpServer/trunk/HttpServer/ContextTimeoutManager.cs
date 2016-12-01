@@ -38,102 +38,69 @@ namespace HttpServer
     /// <summary>
     /// Timeout Manager.   Checks for dead clients.  Clients with open connections that are not doing anything.   Closes sessions opened with keepalive.
     /// </summary>
-    public sealed class ContextTimeoutManager
+    public static class ContextTimeoutManager
     {
         /// <summary>
         /// Use a Thread or a Timer to monitor the ugly
         /// </summary>
-        public enum MonitorType
+        private static Thread m_internalThread = null;
+        private static readonly LocklessQueue<HttpClientContext> m_contexts = new LocklessQueue<HttpClientContext>();
+        private static bool m_shuttingDown;
+        private static int m_monitorMS = 1000;
+
+        static ContextTimeoutManager()
         {
-            Thread,
-            Timer
-        }
-        
-        private MonitorType _monitoringType;
-
-        private Timer _internalTimer = null;
-
-        private Thread _internalThread = null;
-
-        private readonly LocklessQueue<HttpClientContext> _contexts;
-
-        private bool _shuttingDown;
-
-        private int _monitorMS = 1000;
-
-        public ContextTimeoutManager(MonitorType pMonitorType)
-        {
-            _contexts = new LocklessQueue<HttpClientContext>();
-            _monitoringType = pMonitorType;
-            switch (pMonitorType)
-            {
-                case MonitorType.Thread:
-                    _internalThread = new Thread(ThreadRunProcess);
-                    _internalThread.Priority = ThreadPriority.Lowest;
-                    _internalThread.IsBackground = true;
-                    _internalThread.CurrentCulture = new CultureInfo("en-US", false);
-                    _internalThread.Name = "HttpServer Internal Zombie Timeout Checker";
-                    _internalThread.Start();
-                    break;
-                case MonitorType.Timer:
-                    _internalTimer = new Timer(TimerCallbackCheck, null, _monitorMS, _monitorMS);
-                    
-                    break;
-            }
         }
 
-        
-        public ContextTimeoutManager(MonitorType pMonitorType, int pMonitorMs) : this(pMonitorType)
+        public static void StartMonitoring()
         {
-            _monitorMS = pMonitorMs;
-        }
-        
-
-        public void StopMonitoring()
-        {
-            _shuttingDown = true;
-            switch (_monitoringType)
-            {
-                case MonitorType.Timer:
-                    _internalTimer.Dispose();
-                    break;
-                case MonitorType.Thread:
-                    _internalThread.Join();
-                    break;
-            }
+            if(m_internalThread != null)
+                return;
+            m_internalThread = new Thread(ThreadRunProcess);
+            m_internalThread.Priority = ThreadPriority.Normal;
+            m_internalThread.IsBackground = true;
+            m_internalThread.CurrentCulture = new CultureInfo("en-US", false);
+            m_internalThread.Name = "HttpServer Timeout Checker";
+            m_internalThread.Start();
         }
 
-        private void TimerCallbackCheck(object o)
+        public static void StopMonitoring()
+        {
+            m_shuttingDown = true;
+            m_internalThread.Join();
+        }
+
+        private static void TimerCallbackCheck(object o)
         {
             ProcessContextTimeouts();
         }
 
-        private void ThreadRunProcess(object o)
+        private static void ThreadRunProcess(object o)
         {
-            while (!_shuttingDown)
+            while (!m_shuttingDown)
             {
                 ProcessContextTimeouts();
-                Thread.Sleep(_monitorMS);
+                Thread.Sleep(m_monitorMS);
             }
         }
 
         /// <summary>
         /// Causes the watcher to immediately check the connections. 
         /// </summary>
-        public void ProcessContextTimeouts()
+        public static void ProcessContextTimeouts()
         {
             try
             {
-                for (int i = 0; i < _contexts.Count; i++)
+                for (int i = 0; i < m_contexts.Count; i++)
                 {
                     HttpClientContext context = null;
-                    if (_contexts.TryDequeue(out context))
+                    if (m_contexts.TryDequeue(out context))
                     {
                         SocketError disconnectError = SocketError.InProgress;
                         bool stopMonitoring;
                         if (!ContextTimedOut(context, out disconnectError, out stopMonitoring))
                         {
-                            _contexts.Enqueue(context);
+                            m_contexts.Enqueue(context);
                         }
                         else
                         {
@@ -159,7 +126,7 @@ namespace HttpServer
             }
         }
 
-        private bool ContextTimedOut(HttpClientContext context, out SocketError disconnectError, out bool stopMonitoring)
+        private static bool ContextTimedOut(HttpClientContext context, out SocketError disconnectError, out bool stopMonitoring)
         {
             stopMonitoring = false;
             disconnectError = SocketError.InProgress;
@@ -259,10 +226,10 @@ namespace HttpServer
             return false;
         }
 
-        public void StartMonitoringContext(HttpClientContext context)
+        public static void StartMonitoringContext(HttpClientContext context)
         {
             context.MonitorStartMS = EnvironmentTickCount();
-            _contexts.Enqueue(context);
+            m_contexts.Enqueue(context);
         }
 
         /// <summary>

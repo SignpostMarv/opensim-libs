@@ -40,6 +40,7 @@ namespace HttpServer
         // The difference between this and request received is on POST more time is needed before we get the full request.
         public int TimeoutFullRequestProcessed = 600000; // 10 minutes
         public int TimeoutKeepAlive = 400000; // 400 seconds before keepalive timeout
+//        public int TimeoutKeepAlive = 120000; // 400 seconds before keepalive timeout
 
         public bool FirstRequestLineReceived;
         public bool FullRequestReceived;
@@ -437,6 +438,7 @@ namespace HttpServer
 
         private void OnRequestCompleted(object source, EventArgs args)
         {
+            MonitorKeepaliveMS = 0;
             // load cookies if they exist
             RequestCookies cookies = _currentRequest.Headers["cookie"] != null
                 ? new RequestCookies(_currentRequest.Headers["cookie"])
@@ -498,6 +500,10 @@ namespace HttpServer
             isSendingResponse = false;
             if(doclose)
                 Disconnect(SocketError.Success);
+            else
+            {
+                TriggerKeepalive = true;
+            }
         }
 
         /// <summary>

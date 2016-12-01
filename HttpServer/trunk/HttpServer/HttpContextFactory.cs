@@ -18,7 +18,6 @@ namespace HttpServer
         private readonly Dictionary<int,HttpClientContext> _activeContexts = new Dictionary<int,HttpClientContext>();
         private readonly IRequestParserFactory _factory;
         private readonly ILogWriter _logWriter;
-        private readonly ContextTimeoutManager _contextTimeoutManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpContextFactory"/> class.
@@ -31,7 +30,7 @@ namespace HttpServer
             _logWriter = writer;
             _bufferSize = bufferSize;
             _factory = factory;
-            _contextTimeoutManager = new ContextTimeoutManager(ContextTimeoutManager.MonitorType.Thread);
+            ContextTimeoutManager.StartMonitoring();
         }
 
         ///<summary>
@@ -58,7 +57,7 @@ namespace HttpServer
 			context.IsSecured = isSecured;
 			context.RemotePort = endPoint.Port.ToString();
 			context.RemoteAddress = endPoint.Address.ToString();
-			_contextTimeoutManager.StartMonitoringContext(context);
+			ContextTimeoutManager.StartMonitoringContext(context);
             lock(_activeContexts)
                 _activeContexts[context.contextID] = context;
             context.Start();
@@ -159,7 +158,7 @@ namespace HttpServer
         /// </summary>
         public void Shutdown()
         {
-            _contextTimeoutManager.StopMonitoring();
+            ContextTimeoutManager.StopMonitoring();
         }
     }
 
