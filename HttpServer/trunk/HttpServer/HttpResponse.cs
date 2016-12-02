@@ -53,7 +53,7 @@ namespace HttpServer
 		private string _contentType;
 		private bool _contentTypeChangedByCode;
 		private Encoding _encoding = Encoding.UTF8;
-		private int _keepAlive = 20;
+		private int _keepAlive = 200;
         public uint requestID {get; private set;}
 
 		/// <summary>
@@ -156,7 +156,14 @@ namespace HttpServer
 		public int KeepAlive
 		{
 			get { return _keepAlive; }
-			set { _keepAlive = value; }
+			set
+            {
+                if(value > 400)
+                    _keepAlive = 400;
+                else if ( value <= 0)
+                    _keepAlive = 0;
+                else
+                    _keepAlive = value; }
 		}
 
 		/// <summary>
@@ -243,23 +250,31 @@ namespace HttpServer
 		/// <exception cref="InvalidOperationException">If content have already been sent.</exception>
 		public void Send()
 		{
+			if (Sent)
+				throw new InvalidOperationException("Everything have already been sent.");
+
             _context.ReqResponseAboutToSend(requestID);
+            if(_keepAlive > 0)
+                _context.TimeoutKeepAlive = _keepAlive * 1000;
+            if(_context.MAXRequests == 0)
+                Connection = ConnectionType.Close;
 
 			if (!HeadersSent)
+            {
 				if(!SendHeaders())
                 {
                     Body.Close();
+                    Sent = true;
                     return;
                 }
-
-			if (Sent)
-				throw new InvalidOperationException("Everything have already been sent.");
+            }
 
 			if (Body.Length == 0)
 			{
 				if (Connection == ConnectionType.Close)
 					_context.Disconnect(SocketError.Success);
                 Body.Close();
+                Sent = true;
 				return;
 			}
 
@@ -277,10 +292,9 @@ namespace HttpServer
 				bytesRead = Body.Read(buffer, 0, 8192);
 			}
            
-//		    if (Connection == ConnectionType.Close)
-		    {   
-                Body.Close();
-		    }
+
+            Body.Close();
+
 		    Sent = true;
             _context.ReqResponseSent(requestID, Connection);
 		}
@@ -354,9 +368,9 @@ namespace HttpServer
 			if (_headers["Server"] == null)
 				_headers["Server"] = "Tiny WebServer";
 
-			if (Connection == ConnectionType.KeepAlive)
+			if (Connection == ConnectionType.KeepAlive && _keepAlive > 0 && _context.MAXRequests > 0)
 			{
-				_headers["Keep-Alive"] = "timeout=" + _keepAlive + ", max=" + _keepAlive*20;
+				_headers["Keep-Alive"] = "timeout=" + _keepAlive + ", max=" + _context.MAXRequests;
 				_headers["Connection"] = "Keep-Alive";
 			}
 			else

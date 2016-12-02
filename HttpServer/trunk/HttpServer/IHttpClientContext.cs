@@ -21,6 +21,8 @@ namespace HttpServer
         bool IsSecured { get; }
 
         int contextID {get;}
+        int TimeoutKeepAlive {get; set; }
+        int MAXRequests{get; set; }
 
         bool CanSend();
         bool IsSending();

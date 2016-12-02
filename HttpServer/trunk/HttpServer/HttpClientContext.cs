@@ -18,6 +18,9 @@ namespace HttpServer
     /// TODO: Maybe this class should be broken up into HttpClientChannel and HttpClientContext?
     public class HttpClientContext : IHttpClientContext ,IDisposable
     {
+        const int MAXREQUESTS = 51;
+        const int MAXKEEPALIVE = 400000;
+
         static private int basecontextID;
 
         private readonly byte[] _buffer;
@@ -39,8 +42,10 @@ namespace HttpServer
 
         // The difference between this and request received is on POST more time is needed before we get the full request.
         public int TimeoutFullRequestProcessed = 600000; // 10 minutes
-        public int TimeoutKeepAlive = 400000; // 400 seconds before keepalive timeout
+        public int m_TimeoutKeepAlive = MAXKEEPALIVE; // 400 seconds before keepalive timeout
 //        public int TimeoutKeepAlive = 120000; // 400 seconds before keepalive timeout
+
+        public int m_MAXRequests = MAXREQUESTS;
 
         public bool FirstRequestLineReceived;
         public bool FullRequestReceived;
@@ -50,6 +55,30 @@ namespace HttpServer
         private bool isSendingResponse = false;
 
         public int contextID {get; private set; }
+        public int TimeoutKeepAlive
+        {
+            get { return m_TimeoutKeepAlive; }
+            set
+            {
+                if( value > MAXKEEPALIVE)
+                    m_TimeoutKeepAlive = MAXKEEPALIVE;
+                else
+                    m_TimeoutKeepAlive = value;
+            }
+        }
+
+        public int MAXRequests
+        {
+            get { return m_MAXRequests; }
+            set
+            {
+                if(value > MAXREQUESTS)
+                    m_MAXRequests = MAXREQUESTS;
+                else if(value <= 0)
+                    m_MAXRequests = 0;
+                else
+                m_MAXRequests = value; }
+        }
         
         public bool IsSending()
         {
@@ -454,6 +483,8 @@ namespace HttpServer
             {
                 nreqs = requestsInServiceIDs.Count;
                 requestsInServiceIDs.Add(_currentRequest.ID);
+                if(m_MAXRequests > 0)
+                    m_MAXRequests--;
             }
 
             // for now pipeline requests need to be serialized by opensim
