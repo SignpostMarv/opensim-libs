@@ -9,6 +9,12 @@ namespace HttpServer
     /// </summary>
     public interface IHttpClientContext
     {
+
+        /// <summary>
+        /// Get SSL commonName of remote peer
+        /// </summary>
+        string SSLCommonName { get; }
+
         /// <summary>
         /// Using SSL or other encryption method.
         /// </summary>

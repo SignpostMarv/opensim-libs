@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -22,6 +23,7 @@ namespace HttpServer
         private ILogWriter _logWriter = NullLogWriter.Instance;
         private int _pendingAccepts;
         private bool _shutdown;
+        protected RemoteCertificateValidationCallback _clientCallback = null;
 
         /// <summary>
         /// Listen for regular HTTP connections
@@ -79,6 +81,11 @@ namespace HttpServer
         }
 
 
+        public RemoteCertificateValidationCallback CertificateValidationCallback
+        {
+            set {_clientCallback = value; }
+        }
+
         /// <summary>
         /// Gives you a change to receive log entries for all internals of the HTTP library.
         /// </summary>
@@ -133,7 +140,7 @@ namespace HttpServer
                 _logWriter.Write(this, LogPrio.Debug, "Accepted connection from: " + socket.RemoteEndPoint);
 
                 if (_certificate != null)
-                    _factory.CreateSecureContext(socket, _certificate, _sslProtocol);
+                    _factory.CreateSecureContext(socket, _certificate, _sslProtocol, _clientCallback);
                 else
                     _factory.CreateContext(socket);
             }

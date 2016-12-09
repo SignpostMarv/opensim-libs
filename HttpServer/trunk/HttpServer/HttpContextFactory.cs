@@ -107,17 +107,27 @@ namespace HttpServer
         /// <returns>
         /// A created <see cref="IHttpClientContext"/>.
         /// </returns>
-        public IHttpClientContext CreateSecureContext(Socket socket, X509Certificate certificate, SslProtocols protocol)
+        public IHttpClientContext CreateSecureContext(Socket socket, X509Certificate certificate,
+             SslProtocols protocol, RemoteCertificateValidationCallback _clientCallback = null)
         {
             socket.NoDelay = true;
 			var networkStream = new NetworkStream(socket, true);
             var remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
 
-            var sslStream = new SslStream(networkStream, false);
+            SslStream sslStream = null;
             try
             {
-                //TODO: this may fail
-                sslStream.AuthenticateAsServer(certificate, false, protocol, false);
+                if(_clientCallback == null)
+                {
+                    sslStream = new SslStream(networkStream, false);                   
+                    sslStream.AuthenticateAsServer(certificate, false, protocol, false);
+                }
+                else
+                {
+                    sslStream = new SslStream(networkStream, false,
+                            new RemoteCertificateValidationCallback(_clientCallback));                  
+                    sslStream.AuthenticateAsServer(certificate, true, protocol, false);
+                }
             }
             catch (Exception e)
             {
@@ -181,7 +191,8 @@ namespace HttpServer
         /// <param name="certificate">HTTPS certificate to use.</param>
         /// <param name="protocol">Kind of HTTPS protocol. Usually TLS or SSL.</param>
         /// <returns>A created <see cref="IHttpClientContext"/>.</returns>
-        IHttpClientContext CreateSecureContext(Socket socket, X509Certificate certificate, SslProtocols protocol);
+        IHttpClientContext CreateSecureContext(Socket socket, X509Certificate certificate,
+             SslProtocols protocol, RemoteCertificateValidationCallback _clientCallback = null);
 
         /// <summary>
         /// A request have been received from one of the contexts.

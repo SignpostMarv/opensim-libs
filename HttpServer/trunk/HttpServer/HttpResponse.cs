@@ -271,10 +271,9 @@ namespace HttpServer
 
 			if (Body.Length == 0)
 			{
-				if (Connection == ConnectionType.Close)
-					_context.Disconnect(SocketError.Success);
                 Body.Close();
                 Sent = true;
+                _context.ReqResponseSent(requestID, Connection);
 				return;
 			}
 
@@ -294,7 +293,6 @@ namespace HttpServer
            
 
             Body.Close();
-
 		    Sent = true;
             _context.ReqResponseSent(requestID, Connection);
 		}
