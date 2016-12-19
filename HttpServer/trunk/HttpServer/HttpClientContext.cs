@@ -534,7 +534,7 @@ namespace HttpServer
                 gotResponseClose = true;
             else
             {
-            
+                // breakpoint
             }
  
             bool doclose = gotResponseClose;
@@ -656,7 +656,8 @@ namespace HttpServer
                     else
                         ok = false;
                 }
-                catch(IOException e)
+//                catch(IOException e)
+                catch
                 {
                     // code to handle recoverable errors
 
@@ -666,7 +667,7 @@ namespace HttpServer
                         //var errcode = socketExept.ErrorCode;
                     //}
                     ok = false;
-                    throw e; // let it still be visible
+//                    throw e; // let it still be visible
                 }
 
                 if(!ok && Stream != null)     
