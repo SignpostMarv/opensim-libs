@@ -271,7 +271,6 @@ namespace HttpServer
                     foreach (string value in values)
                         request.AddHeader(key, value);
             }
-            Clear();
             return request;
         }
 
@@ -421,9 +420,9 @@ namespace HttpServer
         /// </summary>
         public void Clear()
         {
-            //return;
-            _body.Dispose();
-            _body = new MemoryStream();
+            if(_body != null && _body.CanRead)
+                _body.Dispose();
+            _body = null;
             _contentLength = 0;
             _method = string.Empty;
             _uri = HttpHelper.EmptyUri;
