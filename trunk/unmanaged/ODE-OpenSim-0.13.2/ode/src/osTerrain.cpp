@@ -600,13 +600,13 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                                            int skip )
 {
 	dContactGeom *pContact = 0;
-   
+/*   
     double tstart = getClockTicksMs();
     double t1;
     double t2;
     double t3;
     double t4;
-
+*/
     dxPlane myplane(0,0,0,0,0);
     dxPlane* sliding_plane = &myplane;
     dReal triplane[4];
@@ -957,7 +957,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
     dIASSERT (numTri != 0);
 
 
-    t1 = getClockTicksMs() - tstart;
+//    t1 = getClockTicksMs() - tstart;
 
     unsigned int numPlanes = 0;
     int numPlaneContacts;
@@ -1071,7 +1071,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         }
     }
 
-    t2 = getClockTicksMs() - tstart;
+//    t2 = getClockTicksMs() - tstart;
 
     // pass2: VS triangle vertices
     if (needFurtherPasses)
@@ -1145,7 +1145,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
             }
         }
     }
-    t3 = getClockTicksMs() - tstart;
+//    t3 = getClockTicksMs() - tstart;
     return numTerrainContacts;
 }
 
@@ -1719,6 +1719,8 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 	int nMinY;
 	int nMaxY;
 
+    int numMaxTerrainContacts;
+
     // if ((flags & NUMC_MASK) == 0) -- An assertion check is made on entry
 	//	{ flags = (flags & ~NUMC_MASK) | 1; dIASSERT((1 & ~NUMC_MASK) == 0); }
 
@@ -1768,7 +1770,7 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 
     dContactGeom *pContact;
 
-    int numMaxTerrainContacts = (flags & NUMC_MASK);
+    numMaxTerrainContacts = (flags & NUMC_MASK);
 
     if(o2->type == dSphereClass)
     {
