@@ -1748,11 +1748,11 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 
     if ( o2minx > tdata->m_fWidth //MinX
          ||  o2miny > tdata->m_fDepth)//MinY
-       goto dCollideOSTerrainExit;
+       return 0;
 
     if ( o2maxx < 0 //MaxX
          ||  o2maxy < 0)//MaxY
-       goto dCollideOSTerrainExit;
+       return 0;
 
 	// To narrow scope of following variables
 	nMinX = (int)dFloor(dNextAfter(o2minx, -dInfinity));
@@ -1764,7 +1764,6 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 	nMinY = dMAX( nMinY, 0 );
 	nMaxY = (int)dCeil(dNextAfter(o2maxy, dInfinity));
 	nMaxY = dMIN( nMaxY, tdata->m_nDepthSamples - 1 );
-
     dIASSERT ((nMinX < nMaxX) && (nMinY < nMaxY));
 
     dContactGeom *pContact;
