@@ -380,8 +380,11 @@ void dxOSTerrain::computeAABB()
     aabb[2] = final_posr->pos[1] - d->m_fHalfDepth;
     aabb[3] = final_posr->pos[1] + d->m_fHalfDepth;
 
-    aabb[4] = final_posr->pos[2] + (d->m_fMinHeight - d->m_fThickness);
-    aabb[5] = final_posr->pos[2] + d->m_fMaxHeight;
+//    aabb[4] = final_posr->pos[2] + (d->m_fMinHeight - d->m_fThickness);
+//    aabb[5] = final_posr->pos[2] + d->m_fMaxHeight;
+
+    aabb[4] = d->m_fMinHeight - d->m_fThickness;
+    aabb[5] = d->m_fMaxHeight;
 }
 
 
@@ -620,7 +623,6 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
     dReal offsetX;
     dReal offsetY;
-    dReal offsetZ;
     
     if (tempHeightBufferSizeX < numX || tempHeightBufferSizeY < numY)
     {
@@ -630,7 +632,6 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
     offsetX = final_posr->pos[0] - m_p_data->m_fHalfWidth;
     offsetY = final_posr->pos[1] - m_p_data->m_fHalfDepth;
-    offsetZ = final_posr->pos[2];
 
     dReal Xpos;
     dReal Ypos = minY + offsetY;
@@ -648,7 +649,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
         for ( x = minX ; x < maxX + 1; x++)
         {
-            const dReal h = m_p_data->GetHeightSafe(x, y) + offsetZ;
+            const dReal h = m_p_data->GetHeightSafe(x, y);
             OSTerrainRow->vertex[0] = Xpos;
             OSTerrainRow->vertex[1] = Ypos;
             OSTerrainRow->vertex[2] = h;
@@ -679,7 +680,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         // meshs aren't all centered around position
         dReal Xpos = (o2->aabb[1] + o2->aabb[0]) * 0.5;
         dReal Ypos = (o2->aabb[3] + o2->aabb[2]) * 0.5;
-        const dReal h = m_p_data->GetHeight(Xpos - offsetX, Ypos - offsetY) + offsetZ;
+        const dReal h = m_p_data->GetHeight(Xpos - offsetX, Ypos - offsetY);
 
         pContact = CONTACT(contact,0);
 
@@ -1205,17 +1206,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
     dReal radius;
     dReal radiussq;
     dVector3 center;
-    dReal Vz = 0;
-    /*
-    if (o2->body != NULL)
-    {
-    Vz = o2->body->lvel[2] * 0.02;
-    }
-    */
 
     dReal offsetX = final_posr->pos[0] - m_p_data->m_fHalfWidth;
     dReal offsetY = final_posr->pos[1] - m_p_data->m_fHalfDepth;
-    dReal offsetZ = final_posr->pos[2];
 
     dxSphere *sphere = (dxSphere*)o2;
     radius = sphere->radius;
@@ -1223,16 +1216,15 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
     center[1] = sphere->final_posr->pos[1];
     center[2] = sphere->final_posr->pos[2];
 
+    const dReal minO2Height = center[2] - radius;
 
-    const dReal minO2Height = center[2] - radius + Vz;
-
-    dReal h = m_p_data->GetHeight(center[0] - offsetX, center[1] - offsetY) + offsetZ;
+    dReal h = m_p_data->GetHeight(center[0] - offsetX, center[1] - offsetY);
 
     dContactGeom *pContact = 0;
 
     dReal tf = m_p_data->m_fMaxHeight - m_p_data->m_fMinHeight;
 
-    if (h > center[2] + Vz || tf < REAL(.05))
+    if (h > center[2] || tf < REAL(.05))
     {
         pContact = CONTACT(contact, 0);
 
@@ -1274,6 +1266,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
     dVector3 dist;
     dVector3 tdist;
+    dVector3 pdist;
     dVector3 normA;
     dVector3 normB;
 
@@ -1307,7 +1300,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
     bool isCCollide;
     bool isDCollide;
     bool isAorDCollide;
-    bool doSideEdges;
+
     bool topColide = false;
     bool botColide = false;
     bool lastHtopColide;
@@ -1332,7 +1325,6 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
     dReal tdistStartX = center[0] - minX - offsetX;
     tdist[1] = center[1] - minY - offsetY;
 
-    dVector3 pdist;
 
     i=0;
     for (x = minX; x <= maxX; x++)
@@ -1356,11 +1348,11 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
         tdist[0] = tdistStartX;
 
         // First A
-        BHeight = m_p_data->GetHeightSafe(minX, y) + offsetZ;
+        BHeight = m_p_data->GetHeightSafe(minX, y);
         isBCollide = BHeight > minO2Height;
 
         // First C
-        DHeight = m_p_data->GetHeightSafe(minX, y + 1) + offsetZ;
+        DHeight = m_p_data->GetHeightSafe(minX, y + 1);
         isDCollide = DHeight > minO2Height;
 
         topColide = true;
@@ -1375,10 +1367,10 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             CHeight = DHeight;
             isCCollide = isDCollide;
 
-            BHeight = m_p_data->GetHeightSafe(x, y) + offsetZ;
+            BHeight = m_p_data->GetHeightSafe(x, y);
             isBCollide = BHeight > minO2Height;
 
-            DHeight = m_p_data->GetHeightSafe(x, y + 1) + offsetZ;
+            DHeight = m_p_data->GetHeightSafe(x, y + 1);
             isDCollide = DHeight > minO2Height;
 
             lastHtopColide = topColide;
@@ -1392,56 +1384,113 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             {
                 tdist[2] = center[2] - AHeight;
 
-                if (isAorDCollide || isCCollide)
+                if(dFabs(CHeight - BHeight) < REAL(0.01) )
                 {
-                    dz1 = CHeight - DHeight;
-                    dz2 = AHeight - CHeight;
-                    dV3CrossTerrain(normA, dz1, dz2);
-
-                    k = dV3Dot(tdist, normA);
-                    depth = radius - k;
-                    if (depth > dEpsilon)
+                    if(dFabs(DHeight - AHeight) < REAL(0.01) )
                     {
-                        px = tdist[0] - radius*normA[0];
-
-                        if (px > REAL(0.0) && px < REAL(1.0))
+                        // near horizontal flat
+                        if (tdist[0] >= REAL(0.0) && tdist[0] < REAL(1.0) &&
+                            tdist[1] >= REAL(0.0) && tdist[1] < REAL(1.0))
                         {
-                            py = tdist[1] - radius*normA[1];
-
-                            if(py > px && py > REAL(0.0) && py < REAL(1.0))
+                            depth = radius - tdist[2];
+                            if (depth > dEpsilon)
                             {
-                                dist[0] = tdist[0] - px;
-                                dist[1] = tdist[1] - py;
-                                dist[2] = k;
+                                dist[0] = 0;
+                                dist[1] = 0;
+                                dist[2] = tdist[2];
                                 dOSTerrainAddSphereContact(ContactBuffer, skip, dist, depth, numTerrainContacts);
-                                topColide = true;
                                 curVtopCollide[VtopColliedPtr] = true;
+                                topColide = true;
+                                botColide = true;
+                            }
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        dz1 = CHeight - DHeight;
+                        dz2 = AHeight - CHeight;
+                        dV3CrossTerrain(normA, dz1, dz2);
+
+                        k = dV3Dot(tdist, normA);
+                        depth = radius - k;
+                        if (depth > dEpsilon)
+                        {
+                            px = tdist[0] - radius*normA[0];
+
+                            if (px >= REAL(0.0) && px < REAL(1.0))
+                            {
+                                py = tdist[1] - radius*normA[1];
+
+                                if(py >= REAL(0.0) && py < REAL(1.0))
+                                {
+                                    dist[0] = tdist[0] - px;
+                                    dist[1] = tdist[1] - py;
+                                    dist[2] = k;
+                                    dOSTerrainAddSphereContact(ContactBuffer, skip, dist, depth, numTerrainContacts);
+                                    curVtopCollide[VtopColliedPtr] = true;
+                                    topColide = true;
+                                    botColide = true;
+                                    if(normA[2] > REAL(0.9))
+                                        continue;
+                                }
                             }
                         }
                     }
                 }
-
-                if (isAorDCollide || isBCollide)
+                else
                 {
-                    dz1 = AHeight - BHeight;
-                    dz2 = BHeight - DHeight;
-                    dV3CrossTerrain(normB, dz1, dz2);
-
-                    k = dV3Dot(tdist, normB);
-                    depth = radius - k;
-                    if (depth > dEpsilon)
+                    if (isAorDCollide || isCCollide)
                     {
-                        px = tdist[0] - radius*normB[0];
-                        if (px > REAL(0.0) && px < REAL(1.0))
+                        dz1 = CHeight - DHeight;
+                        dz2 = AHeight - CHeight;
+                        dV3CrossTerrain(normA, dz1, dz2);
+
+                        k = dV3Dot(tdist, normA);
+                        depth = radius - k;
+                        if (depth > dEpsilon)
                         {
-                            py = tdist[1] - radius*normB[1];
-                            if (px > py && py > REAL(0.0) && py < REAL(1.0))
+                            px = tdist[0] - radius*normA[0];
+
+                            if (px >= REAL(0.0) && px < REAL(1.0))
                             {
-                                dist[0] = tdist[0] - px;
-                                dist[1] = tdist[1] - py;
-                                dist[2] = k;
-                                dOSTerrainAddSphereContact(ContactBuffer, skip, dist, depth, numTerrainContacts);
-                                botColide = true;
+                                py = tdist[1] - radius*normA[1];
+
+                                if(py > px && py >= REAL(0.0) && py < REAL(1.0))
+                                {
+                                    dist[0] = tdist[0] - px;
+                                    dist[1] = tdist[1] - py;
+                                    dist[2] = k;
+                                    dOSTerrainAddSphereContact(ContactBuffer, skip, dist, depth, numTerrainContacts);
+                                    topColide = true;
+                                    curVtopCollide[VtopColliedPtr] = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (isAorDCollide || isBCollide)
+                    {
+                        dz1 = AHeight - BHeight;
+                        dz2 = BHeight - DHeight;
+                        dV3CrossTerrain(normB, dz1, dz2);
+
+                        k = dV3Dot(tdist, normB);
+                        depth = radius - k;
+                        if (depth > dEpsilon)
+                        {
+                            px = tdist[0] - radius*normB[0];
+                            if (px >= REAL(0.0) && px < REAL(1.0))
+                            {
+                                py = tdist[1] - radius*normB[1];
+                                if (px > py && py >= REAL(0.0) && py < REAL(1.0))
+                                {
+                                    dist[0] = tdist[0] - px;
+                                    dist[1] = tdist[1] - py;
+                                    dist[2] = k;
+                                    dOSTerrainAddSphereContact(ContactBuffer, skip, dist, depth, numTerrainContacts);
+                                    botColide = true;
+                                }
                             }
                         }
                     }
@@ -1668,11 +1717,14 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
     // if ((flags & NUMC_MASK) == 0) -- An assertion check is made on entry
 	//	{ flags = (flags & ~NUMC_MASK) | 1; dIASSERT((1 & ~NUMC_MASK) == 0); }
 
-    int numMaxTerrainContacts = (flags & NUMC_MASK);
-
     dxOSTerrain *terrain = (dxOSTerrain*) o1;
     dxOSTerrainData *tdata = terrain->m_p_data;
 
+    if(o2->aabb[4] > tdata-> m_fMaxHeight)
+        return 0;
+
+
+    int numTerrainContacts = 0;
 
     //
     // Collide
@@ -1697,7 +1749,6 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
          ||  o2maxy < 0)//MaxY
        goto dCollideOSTerrainExit;
 
-
 	// To narrow scope of following variables
 	int nMinX = (int)dFloor(dNextAfter(o2minx, -dInfinity));
 	int nMaxX = (int)dCeil(dNextAfter(o2maxx, dInfinity));
@@ -1711,10 +1762,9 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 	nMaxY = dMIN( nMaxY, tdata->m_nDepthSamples - 1 );
     dIASSERT ((nMinX < nMaxX) && (nMinY < nMaxY));
 
-
     dContactGeom *pContact;
 
-    int numTerrainContacts = 0;
+    int numMaxTerrainContacts = (flags & NUMC_MASK);
 
     if(o2->type == dSphereClass)
     {
@@ -1723,7 +1773,6 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 			flags,CONTACT(contact,numTerrainContacts*skip),skip	);
     }
     else    
-
     {
 	    numTerrainContacts = terrain->dCollideOSTerrainZone(
 			nMinX,nMaxX,nMinY,nMaxY,o2,numMaxTerrainContacts - numTerrainContacts,
