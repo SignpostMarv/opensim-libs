@@ -20,7 +20,7 @@
 #include "collision_kernel.h"
 #include "collision_std.h"
 #include "collision_util.h"
-#include "OSTerrain.h"
+#include "osTerrain.h"
 #include "ode/timer.h"
 
 #if dTRIMESH_ENABLED
@@ -1713,6 +1713,11 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
     dIASSERT((flags & NUMC_MASK) >= 1);
 
     int i;
+	int nMinX;
+	int nMaxX;
+	
+	int nMinY;
+	int nMaxY;
 
     // if ((flags & NUMC_MASK) == 0) -- An assertion check is made on entry
 	//	{ flags = (flags & ~NUMC_MASK) | 1; dIASSERT((1 & ~NUMC_MASK) == 0); }
@@ -1750,16 +1755,16 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
        goto dCollideOSTerrainExit;
 
 	// To narrow scope of following variables
-	int nMinX = (int)dFloor(dNextAfter(o2minx, -dInfinity));
-	int nMaxX = (int)dCeil(dNextAfter(o2maxx, dInfinity));
-	
-	int nMinY = (int)dFloor(dNextAfter(o2miny, -dInfinity));
-	int nMaxY = (int)dCeil(dNextAfter(o2maxy, dInfinity));
-
+	nMinX = (int)dFloor(dNextAfter(o2minx, -dInfinity));
     nMinX = dMAX( nMinX, 0 );
+	nMaxX = (int)dCeil(dNextAfter(o2maxx, dInfinity));
 	nMaxX = dMIN( nMaxX, tdata->m_nWidthSamples - 1 );
+	
+	nMinY = (int)dFloor(dNextAfter(o2miny, -dInfinity));
 	nMinY = dMAX( nMinY, 0 );
+	nMaxY = (int)dCeil(dNextAfter(o2maxy, dInfinity));
 	nMaxY = dMIN( nMaxY, tdata->m_nDepthSamples - 1 );
+
     dIASSERT ((nMinX < nMaxX) && (nMinY < nMaxY));
 
     dContactGeom *pContact;

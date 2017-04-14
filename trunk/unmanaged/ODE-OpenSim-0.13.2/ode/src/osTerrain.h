@@ -58,7 +58,7 @@ struct dxOSTerrainData
     bool IsOnOSTerrain2  ( const OSTerrainVertex * const CellCorner, 
         const dReal * const pos,  const bool isABC) const;
 
-    int dxOSTerrainData::GetTriIndex(int x, int y, bool second);
+    int GetTriIndex(int x, int y, bool second);
 
     dReal GetHeight(int x, int z);
     dReal GetHeightSafe(int x, int z);
