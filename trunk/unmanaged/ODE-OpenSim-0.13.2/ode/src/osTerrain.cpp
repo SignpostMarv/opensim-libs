@@ -1205,6 +1205,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
     dReal radius;
     dReal radiussq;
+
+    dReal depth;
+
     dVector3 center;
 
     dReal offsetX = final_posr->pos[0] - m_p_data->m_fHalfWidth;
@@ -1226,17 +1229,19 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
     if (h > center[2] || tf < REAL(.05))
     {
-        pContact = CONTACT(contact, 0);
+        depth = h - minO2Height;
+        if(depth < dEpsilon)
+            return 0;
 
+        pContact = CONTACT(contact, 0);
+    
+        pContact->depth = depth;
         pContact->pos[0] = center[0];
         pContact->pos[1] = center[1];
         pContact->pos[2] = minO2Height;
         pContact->normal[0] = 0;
         pContact->normal[1] = 0;
         pContact->normal[2] = -1;
-
-        pContact->depth = h - minO2Height;
-
         pContact->side1 = -1;
         pContact->side2 = -1;
 
@@ -1311,7 +1316,6 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
     dReal dz1;
     dReal dz2;
-    dReal depth;
 
     dReal AHeight;
     dReal BHeight;
@@ -1324,7 +1328,6 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
     dReal tdistStartX = center[0] - minX - offsetX;
     tdist[1] = center[1] - minY - offsetY;
-
 
     i=0;
     for (x = minX; x <= maxX; x++)

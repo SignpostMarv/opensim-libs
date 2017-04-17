@@ -38,7 +38,7 @@ make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so	 (possible name is not ..so.1.1.1 )
 
 == On Linux 64-bit ==
-./configure --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x
+./configure --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x --disable-threading-intf 
 make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib64/libode-x86_64.so (possible name is not ..so.1.1.1 )
 

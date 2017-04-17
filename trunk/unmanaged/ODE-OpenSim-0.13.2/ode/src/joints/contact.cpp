@@ -165,44 +165,46 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
     if ( contact.surface.mode & dContactSoftCFM )
         info->cfm[rowNormal] = contact.surface.soft_cfm;
 
-
     dReal motionN = 0;
     if ( contact.surface.mode & dContactMotionN )
         motionN = contact.surface.motionN;
 
-    const dReal pushout = k * depth + motionN;
-    info->c[rowNormal] = pushout;
+    dReal pushout = k * depth + motionN;
 
     // note: this cap should not limit bounce velocity
     const dReal maxvel = world->contactp.max_vel;
-    if ( info->c[rowNormal] > maxvel )
-        info->c[rowNormal] = maxvel;
+    if ( pushout > maxvel )
+        pushout = maxvel;
+
+    info->cPos[rowNormal] = pushout;
+    info->c[rowNormal] = pushout;
 
     // deal with bounce
     if ( contact.surface.mode & dContactBounce )
     {
         // calculate outgoing velocity (-ve for incoming contact)
-        dReal outgoing = dCalcVectorDot3( info->J1l, node[0].body->lvel )
+        dReal outgoing = -dCalcVectorDot3( info->J1l, node[0].body->lvel )
             + dCalcVectorDot3( info->J1a, node[0].body->avel );
         if ( b1 )
         {
-            outgoing += dCalcVectorDot3( info->J2l, node[1].body->lvel )
+            outgoing -= dCalcVectorDot3( info->J2l, node[1].body->lvel )
                 + dCalcVectorDot3( info->J2a, node[1].body->avel );
         }
-        outgoing -= motionN;
+        outgoing += motionN;
         // only apply bounce if the outgoing velocity is greater than the
         // threshold, and if the resulting c[rowNormal] exceeds what we already have.
         if ( contact.surface.bounce_vel >= 0 &&
-            ( -outgoing ) > contact.surface.bounce_vel )
+            (outgoing ) > contact.surface.bounce_vel )
         {
-            const dReal newc = - contact.surface.bounce * outgoing + motionN;
-            if ( newc > info->c[rowNormal] ) info->c[rowNormal] = newc;
+            const dReal newc = contact.surface.bounce * outgoing + motionN;
+//            if ( newc > info->c[rowNormal] ) info->c[rowNormal] = newc;
+            info->c[rowNormal] += newc;
         }
     }
 
     // set LCP limits for normal
-    info->lo[0] = 0;
-    info->hi[0] = dInfinity;
+    info->lo[rowNormal] = 0;
+    info->hi[rowNormal] = dInfinity;
 
     if ( the_m == 1 ) // no friction, there is nothing else to do
         return;

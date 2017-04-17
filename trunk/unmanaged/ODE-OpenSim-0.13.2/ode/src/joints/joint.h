@@ -96,7 +96,7 @@ struct dxJoint : public dObject
         // right hand sides of the equation J*v = c + cfm * lambda. cfm is the
         // "constraint force mixing" vector. c is set to zero on entry, cfm is
         // set to a constant value (typically very small or zero) value on entry.
-        dReal *c, *cfm;
+        dReal *c, *cPos, *cfm;
 
         // lo and hi limits for variables (set to -/+ infinity on entry).
         dReal *lo, *hi;
