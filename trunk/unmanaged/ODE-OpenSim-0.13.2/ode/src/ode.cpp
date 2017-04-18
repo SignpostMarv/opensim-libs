@@ -2256,10 +2256,6 @@ REGISTER_EXTENSION( ODE_THR_builtin_impl )
 #endif // #if dBUILTIN_THREADING_IMPL_ENABLED
 #endif // #if !dTHREADING_INTF_DISABLED
 
-REGISTER_EXTENSION(ODE_OPENSIM)
-
-dODE_VERSION
-" "
 //**********************************
 // EXTENSION LIST END
 
@@ -2269,6 +2265,10 @@ dODE_VERSION
 #else
 "ODE_double_precision"
 #endif // dDOUBLE
+" "
+REGISTER_EXTENSION(ODE_OPENSIM)
+
+dODE_VERSION
 
 ; // END
 
