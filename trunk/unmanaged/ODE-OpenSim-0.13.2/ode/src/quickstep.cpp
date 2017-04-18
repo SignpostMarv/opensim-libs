@@ -1064,6 +1064,7 @@ void dxQuickStepIsland_Stage1(dxQuickStepperStage1CallContext *stage1CallContext
 
     unsigned int nb = callContext->m_islandBodiesCount;
     dReal *cforceMID = memarena->AllocateArray<dReal>((size_t)nb*6);
+    dSetZero(cforceMID,(size_t)nb*6);
 
     dxQuickStepperLocalContext *localContext = (dxQuickStepperLocalContext *)memarena->AllocateBlock(sizeof(dxQuickStepperLocalContext));
     localContext->Initialize(invI, jointinfos, nj, m, mfb, mindex, findex, J, cfm, lo, hi, jb, rhs, m_rhsPos, Jcopy, cforceMID);
@@ -1812,7 +1813,6 @@ void dxQuickStepIsland_Stage4LCP_MTfcComputation_cold(dxQuickStepperStage4CallCo
     const dxQuickStepperLocalContext *localContext = stage4CallContext->m_localContext;
     
     dReal *fc = stage4CallContext->m_cforce;
-    dReal *fcMID = localContext->m_cforceMID;
     unsigned int nb = callContext->m_islandBodiesCount;
     const unsigned int step_size = dxQUICKSTEPISLAND_STAGE4LCP_FC_STEP;
     unsigned int nb_steps = (nb + (step_size - 1)) / step_size;
@@ -1822,7 +1822,6 @@ void dxQuickStepIsland_Stage4LCP_MTfcComputation_cold(dxQuickStepperStage4CallCo
         unsigned int bi = bi_step * step_size;
         unsigned int bicnt = dMIN(step_size, nb - bi);
         dSetZero(fc + (size_t)bi * 6, (size_t)bicnt * 6);
-        dSetZero(fcMID + (size_t)bi * 6, (size_t)bicnt * 6);
     }
 }
 
