@@ -40,6 +40,7 @@
 #include "util.h"
 #include "odetls.h"
 
+
 // misc defines
 #define ALLOCA dALLOCA16
 
@@ -2257,6 +2258,8 @@ REGISTER_EXTENSION( ODE_THR_builtin_impl )
 
 REGISTER_EXTENSION(ODE_OPENSIM)
 
+dODE_VERSION
+" "
 //**********************************
 // EXTENSION LIST END
 
