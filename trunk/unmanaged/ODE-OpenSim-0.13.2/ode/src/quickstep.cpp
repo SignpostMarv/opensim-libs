@@ -487,8 +487,8 @@ static void dxQuickStepIsland_Stage4LCP_LinksArraysZeroing(dxQuickStepperStage4C
 static void dxQuickStepIsland_Stage4LCP_DependencyMapForNewOrderRebuilding(dxQuickStepperStage4CallContext *stage4CallContext);
 static void dxQuickStepIsland_Stage4LCP_DependencyMapFromSavedLevelsReconstruction(dxQuickStepperStage4CallContext *stage4CallContext);
 static void dxQuickStepIsland_Stage4LCP_MTIteration(dxQuickStepperStage4CallContext *stage4CallContext, unsigned int initiallyKnownToBeCompletedLevel);
-static void dxQuickStepIsland_Stage4LCP_STIteration(dxQuickStepperStage4CallContext *stage4CallContext, bool dopos);
-static void dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *stage4CallContext, unsigned int i, bool dopos);
+static dReal dxQuickStepIsland_Stage4LCP_STIteration(dxQuickStepperStage4CallContext *stage4CallContext, bool dopos);
+static dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *stage4CallContext, unsigned int i, bool dopos);
 static void dxQuickStepIsland_Stage4MID(dxQuickStepperStage4CallContext *stage4CallContext);
 static void dxQuickStepIsland_Stage4b(dxQuickStepperStage4CallContext *stage4CallContext);
 static void dxQuickStepIsland_Stage5(dxQuickStepperStage5CallContext *stage5CallContext);
@@ -1482,7 +1482,8 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
                     stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
                     dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, iteration);
                 }
-                dxQuickStepIsland_Stage4LCP_STIteration(stage4CallContext,true);
+                if(dxQuickStepIsland_Stage4LCP_STIteration(stage4CallContext,true) < REAL(0.0001))
+                    break;
             }
             dxQuickStepIsland_Stage4MID(stage4CallContext);
             for (unsigned int iteration=0; iteration < num_iterations; iteration++) {
@@ -1490,7 +1491,8 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
                     stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
                     dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, iteration);
                 }
-                dxQuickStepIsland_Stage4LCP_STIteration(stage4CallContext,false);
+                if(dxQuickStepIsland_Stage4LCP_STIteration(stage4CallContext,false) < REAL(0.0001))
+                    break;
             }
 
             dxQuickStepIsland_Stage4b(stage4CallContext);
@@ -2421,13 +2423,14 @@ void dxQuickStepIsland_Stage4LCP_MTIteration(dxQuickStepperStage4CallContext *st
 }
 
 static 
-void dxQuickStepIsland_Stage4LCP_STIteration(dxQuickStepperStage4CallContext *stage4CallContext,bool isPos)
+dReal dxQuickStepIsland_Stage4LCP_STIteration(dxQuickStepperStage4CallContext *stage4CallContext,bool isPos)
 {
     const dxQuickStepperLocalContext *localContext = stage4CallContext->m_localContext;
-
+    dReal error = 0;
     unsigned int m = localContext->m_m;
     for (unsigned int i = 0; i != m; ++i)
-        dxQuickStepIsland_Stage4LCP_IterationStep(stage4CallContext, i, isPos);
+        error += dxQuickStepIsland_Stage4LCP_IterationStep(stage4CallContext, i, isPos);
+    return error;
 }
 
 //***************************************************************************
@@ -2444,7 +2447,7 @@ void dxQuickStepIsland_Stage4LCP_STIteration(dxQuickStepperStage4CallContext *st
 // b, lo and hi are modified on exit
 
 static 
-void dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *stage4CallContext, unsigned int i, bool doPos)
+dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *stage4CallContext, unsigned int i, bool doPos)
 {
     const dxQuickStepperLocalContext *localContext = stage4CallContext->m_localContext;
 
@@ -2461,7 +2464,7 @@ void dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *
     {
         rhs = localContext->m_rhsPos;
         if(rhs[index] == 0)
-            return;
+            return 0;
     }
     else
         rhs = localContext->m_rhs;
@@ -2477,6 +2480,7 @@ void dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *
 
     dReal *lambda = stage4CallContext->m_lambda;
     dReal old_lambda = lambda[index];
+    dReal new_lambda = old_lambda;
     size_t index_offset = (size_t)index*12;
 
     {
@@ -2523,7 +2527,7 @@ void dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *
         // compute lambda and clamp it to [lo,hi].
         // @@@ potential optimization: does SSE have clamping instructions
         //     to save test+jump penalties here?
-        dReal new_lambda = old_lambda + delta;
+        new_lambda = old_lambda + delta;
         if (new_lambda < lo_act) {
             delta = lo_act-old_lambda;
             lambda[index] = lo_act;
@@ -2563,6 +2567,7 @@ void dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext *
             fc_ptr2[5] += delta * iMJ_ptr[11];
         }
     }
+    return dFabs(lambda[index] - old_lambda);
 }
 
 static inline 
