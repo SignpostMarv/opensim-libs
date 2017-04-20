@@ -177,7 +177,6 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
         pushout = maxvel;
 
     info->cPos[rowNormal] = pushout;
-    info->c[rowNormal] = pushout;
 
     // deal with bounce
     if ( contact.surface.mode & dContactBounce )
@@ -190,17 +189,15 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
             outgoing -= dCalcVectorDot3( info->J2l, node[1].body->lvel )
                 + dCalcVectorDot3( info->J2a, node[1].body->avel );
         }
-        outgoing += motionN;
-        // only apply bounce if the outgoing velocity is greater than the
-        // threshold, and if the resulting c[rowNormal] exceeds what we already have.
         if ( contact.surface.bounce_vel >= 0 &&
             (outgoing ) > contact.surface.bounce_vel )
         {
-            const dReal newc = contact.surface.bounce * outgoing + motionN;
-//            if ( newc > info->c[rowNormal] ) info->c[rowNormal] = newc;
-            info->c[rowNormal] += newc;
+            const dReal newc = contact.surface.bounce * outgoing * REAL(0.95);
+            pushout += newc;
         }
     }
+
+    info->c[rowNormal] = pushout;
 
     // set LCP limits for normal
     info->lo[rowNormal] = 0;

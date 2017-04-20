@@ -2946,21 +2946,25 @@ void dxQuickStepIsland_Stage6c(dxQuickStepperStage6CallContext *stage6CallContex
 {
     const dxStepperProcessingCallContext *callContext = stage6CallContext->m_stepperCallContext;
     const dxQuickStepperLocalContext *localContext = stage6CallContext->m_localContext;
-
     {
-        dxBody * const *body = callContext->m_islandBodiesStart;
-        unsigned int nb = callContext->m_islandBodiesCount;
+        unsigned int m = localContext->m_m;    
         const dReal *cforceMID = localContext->m_cforceMID;
-        dReal stepsize = callContext->m_stepSize;
-        // add stepsize * cforce to the body velocity
-        const dReal *cforceMIDcurr = cforceMID;
-        dxBody *const *const bodyend = body + nb;
-        for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforceMIDcurr+=6, bodycurr++)
+        if(m >0 && cforceMID != NULL)
         {
-            dxBody *b = *bodycurr;
-            for (unsigned int j=0; j<3; j++) {
-                b->lvel[j] -= stepsize * cforceMIDcurr[j];
-                b->avel[j] -= stepsize * cforceMIDcurr[3+j];
+            dxBody * const *body = callContext->m_islandBodiesStart;
+            unsigned int nb = callContext->m_islandBodiesCount;
+            const dReal *cforceMID = localContext->m_cforceMID;
+            dReal stepsize = callContext->m_stepSize;
+            const dReal *cforceMIDcurr = cforceMID;
+            dxBody *const *const bodyend = body + nb;
+            for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforceMIDcurr+=6, bodycurr++)
+            {
+                dxBody *b = *bodycurr;
+                for (unsigned int j=0; j<3; j++)
+                {
+                    b->lvel[j] -= stepsize * cforceMIDcurr[j];
+                    b->avel[j] -= stepsize * cforceMIDcurr[3+j];
+                }
             }
         }
     }
