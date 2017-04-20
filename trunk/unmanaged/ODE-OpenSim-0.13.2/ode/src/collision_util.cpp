@@ -41,28 +41,51 @@ int dCollideSpheres (dVector3 p1, dReal r1,
     // printf ("d=%.2f  (%.2f %.2f %.2f) (%.2f %.2f %.2f) r1=%.2f r2=%.2f\n",
     //	  d,p1[0],p1[1],p1[2],p2[0],p2[1],p2[2],r1,r2);
 
-    dReal d = dCalcPointsDistance3(p1,p2);
-    if (d > (r1 + r2)) return 0;
-    if (d <= 0) {
+    dReal dx = p1[0] - p2[0];
+    dReal d = dx * dx;
+
+    dReal dy = p1[1] - p2[1];
+    d += dy * dy;
+
+    dReal dz = p1[2] - p2[2];
+    d += dz * dz;
+
+    dReal rsum = r1 + r2;
+    if( d < dEpsilon)
+    {
         c->pos[0] = p1[0];
         c->pos[1] = p1[1];
         c->pos[2] = p1[2];
         c->normal[0] = 1;
         c->normal[1] = 0;
         c->normal[2] = 0;
-        c->depth = r1 + r2;
+        c->depth = rsum;
+        return 1;
     }
-    else {
-        dReal d1 = dRecip (d);
-        c->normal[0] = (p1[0]-p2[0])*d1;
-        c->normal[1] = (p1[1]-p2[1])*d1;
-        c->normal[2] = (p1[2]-p2[2])*d1;
-        dReal k = REAL(0.5) * (r2 - r1 - d);
-        c->pos[0] = p1[0] + c->normal[0]*k;
-        c->pos[1] = p1[1] + c->normal[1]*k;
-        c->pos[2] = p1[2] + c->normal[2]*k;
-        c->depth = r1 + r2 - d;
-    }
+
+    if (d > rsum * rsum)
+        return 0;
+
+    d = dSqrt(d);
+    c->depth = rsum - d;
+    
+    dReal k = REAL(0.5) * (r2 - r1 - d);
+
+    d = dRecip(d);
+    dx *= d;
+    c->normal[0] = dx;
+    dx *= k;
+    c->pos[0] = p1[0] + dx;
+
+    dy *= d;
+    c->normal[1] = dy;
+    dy *= k;
+    c->pos[1] = p1[1] + dy;
+
+    dz *= d; 
+    c->normal[2] = dz;
+    dz *= k;
+    c->pos[2] = p1[2] + dz;
     return 1;
 }
 
