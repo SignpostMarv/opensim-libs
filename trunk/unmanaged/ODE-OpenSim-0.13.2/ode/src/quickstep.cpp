@@ -354,14 +354,13 @@ struct dxQuickStepperStage5CallContext
 struct dxQuickStepperStage4CallContext
 {
     void Initialize(const dxStepperProcessingCallContext *callContext, const dxQuickStepperLocalContext *localContext, 
-        dReal *lambda, dReal *cforce, dReal *iMJ, dReal *Ad, IndexError *order, dReal *last_lambda, atomicord32 *bi_links_or_mi_levels, atomicord32 *mi_links)
+        dReal *lambda, dReal *cforce, dReal *iMJ, IndexError *order, dReal *last_lambda, atomicord32 *bi_links_or_mi_levels, atomicord32 *mi_links)
     {
         m_stepperCallContext = callContext;
         m_localContext = localContext;
         m_lambda = lambda;
         m_cforce = cforce;
         m_iMJ = iMJ;
-        m_Ad = Ad;
         m_order = order;
         m_last_lambda = last_lambda;
         m_bi_links_or_mi_levels = bi_links_or_mi_levels;
@@ -424,7 +423,6 @@ struct dxQuickStepperStage4CallContext
     dReal                           *m_lambda;
     dReal                           *m_cforce;
     dReal                           *m_iMJ;
-    dReal                           *m_Ad;
     IndexError                      *m_order;
     dReal                           *m_last_lambda;
     atomicord32                     *m_bi_links_or_mi_levels;
@@ -1031,7 +1029,8 @@ void dxQuickStepIsland_Stage1(dxQuickStepperStage1CallContext *stage1CallContext
     int *jb = NULL, *findex = NULL;
 
     // if there are constraints, compute the constraint force
-    if (m > 0) {
+    if (m > 0)
+    {
         mindex = memarena->AllocateArray<unsigned int>(2 * (size_t)(nj + 1));
         {
             unsigned int *mcurr = mindex;
@@ -1073,7 +1072,8 @@ void dxQuickStepIsland_Stage1(dxQuickStepperStage1CallContext *stage1CallContext
     dxQuickStepperStage3CallContext *stage3CallContext = (dxQuickStepperStage3CallContext*)memarena->AllocateBlock(sizeof(dxQuickStepperStage3CallContext));
     stage3CallContext->Initialize(callContext, localContext, stage1MemarenaState);
 
-    if (m > 0) {
+    if (m > 0)
+    {
 //        unsigned int nb = callContext->m_islandBodiesCount;
         // create a constraint equation right hand side vector `rhs', a constraint
         // force mixing vector `cfm', and LCP low and high bound vectors, and an
@@ -1438,8 +1438,7 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
 
         unsigned int nb = callContext->m_islandBodiesCount;
         dReal *cforce = memarena->AllocateArray<dReal>((size_t)nb*6);
-        dReal *iMJ = memarena->AllocateArray<dReal>((size_t)m*12);
-        dReal *Ad = memarena->AllocateArray<dReal>(m);
+        dReal *iMJ = memarena->AllocateArray<dReal>((size_t)m*12);       
         // order to solve constraint rows in
         IndexError *order = memarena->AllocateArray<IndexError>(m);
         dReal *last_lambda = NULL;
@@ -1462,7 +1461,7 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
 //        dIASSERT(singleThreadedExecution);
 //#endif
         dxQuickStepperStage4CallContext *stage4CallContext = (dxQuickStepperStage4CallContext *)memarena->AllocateBlock(sizeof(dxQuickStepperStage4CallContext));
-        stage4CallContext->Initialize(callContext, localContext, lambda, cforce, iMJ, Ad, order, last_lambda, bi_links_or_mi_levels, mi_links);
+        stage4CallContext->Initialize(callContext, localContext, lambda, cforce, iMJ, order, last_lambda, bi_links_or_mi_levels, mi_links);
 
 //        if (singleThreadedExecution)
         {
@@ -1477,20 +1476,27 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
             dxWorld *world = callContext->m_world;
             const unsigned int num_iterations = world->qs.num_iterations;
 
-            for (unsigned int iteration=0; iteration < num_iterations; iteration++) {
-                if (IsSORConstraintsReorderRequiredForIteration(iteration)) {
-                    stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
-                    dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, iteration);
+            if (IsSORConstraintsReorderRequiredForIteration(0)) {
+                stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
+                    dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, 0);
                 }
+
+            for (unsigned int iteration=0; iteration < num_iterations; iteration++) {
+//                if (IsSORConstraintsReorderRequiredForIteration(iteration)) {
+//                    stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
+//                    dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, iteration);
+//                }
                 if(dxQuickStepIsland_Stage4LCP_STIteration(stage4CallContext,true) < REAL(0.0001))
                     break;
             }
+
             dxQuickStepIsland_Stage4MID(stage4CallContext);
+
             for (unsigned int iteration=0; iteration < num_iterations; iteration++) {
-                if (IsSORConstraintsReorderRequiredForIteration(iteration)) {
-                    stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
-                    dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, iteration);
-                }
+//                if (IsSORConstraintsReorderRequiredForIteration(iteration)) {
+//                    stage4CallContext->ResetSOR_ConstraintsReorderVariables(0);
+//                    dxQuickStepIsland_Stage4LCP_ConstraintsShuffling(stage4CallContext, iteration);
+//                }
                 if(dxQuickStepIsland_Stage4LCP_STIteration(stage4CallContext,false) < REAL(0.0001))
                     break;
             }
@@ -1891,7 +1897,6 @@ void dxQuickStepIsland_Stage4LCP_AdComputation(dxQuickStepperStage4CallContext *
     const dReal sor_w = qs->w;		// SOR over-relaxation parameter
 
     dReal *iMJ = stage4CallContext->m_iMJ;
-    dReal *Ad = stage4CallContext->m_Ad;
 
     const unsigned int step_size = dxQUICKSTEPISLAND_STAGE4LCP_AD_STEP;
     unsigned int m_steps = (m + (step_size - 1)) / step_size;
@@ -1916,12 +1921,27 @@ void dxQuickStepIsland_Stage4LCP_AdComputation(dxQuickStepperStage4CallContext *
             }
 
             dReal cfm_i = cfm[mi];
-            dReal Ad_i = sor_w / (sum + cfm_i);
 
-            // NOTE: This may seem unnecessary but it's indeed an optimization 
-            // to move multiplication by Ad[i] and cfm[i] out of iteration loop.
+            if(sum < REAL(100.0) * cfm_i)
+                cfm_i = sum * REAL(0.01);
 
-            // scale J and b by Ad
+            dReal Ad_i;
+            if(cfm_i > dEpsilon)
+            {
+                Ad_i = sor_w / (sum + cfm_i);
+                // scale cfm, J and b by Ad
+                cfm[mi] = cfm_i * Ad_i;
+            }
+            else
+            {
+                Ad_i = sor_w / sum;
+                cfm[mi] = REAL(0.0);
+            }
+/*
+            dReal Ad_i;
+            Ad_i = sor_w / sum;
+            cfm[mi] = cfm_i * Ad_i;
+*/
             unsigned int l = lend;
             do {
                 J_ptr[l - 1] *= Ad_i;
@@ -1930,8 +1950,6 @@ void dxQuickStepIsland_Stage4LCP_AdComputation(dxQuickStepperStage4CallContext *
 
             rhs[mi] *= Ad_i;
             rhsPos[mi] *= Ad_i;
-            // scale Ad by CFM. N.B. this should be done last since it is used above
-            Ad[mi] = Ad_i * cfm_i;
 
             if (++mi == miend) {
                 break;
@@ -2468,7 +2486,6 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
     }
     else
         rhs = localContext->m_rhs;
-
     {
         int *jb = localContext->m_jb;
         int b1 = jb[(size_t)index*2];
@@ -2484,8 +2501,8 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
     size_t index_offset = (size_t)index*12;
 
     {
-        dReal *Ad = stage4CallContext->m_Ad;
-        delta = rhs[index] - old_lambda*Ad[index];
+        const dReal *cfm = localContext->m_cfm;
+        delta = rhs[index] - old_lambda * cfm[index];
 
         dReal *J = localContext->m_J;
         const dReal *J_ptr = J + index_offset;
@@ -2615,21 +2632,29 @@ void dxQuickStepIsland_Stage4MID(dxQuickStepperStage4CallContext *stage4CallCont
     const dxQuickStepperLocalContext *localContext = stage4CallContext->m_localContext;
 
     unsigned int m = localContext->m_m;
-    dxBody * const *body = callContext->m_islandBodiesStart;
-    unsigned int nb = callContext->m_islandBodiesCount;
-    dReal invstepsize = dRecip(callContext->m_stepSize);
-    dReal *cforce = stage4CallContext->m_cforce;
-    dReal *cforcecurr = cforce;
     dReal *cforceMID = localContext->m_cforceMID;
-    dReal *cforceMIDcurr = cforceMID;
-    dxBody *const *const bodyend = body + nb;
-    
-    for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforcecurr += 6, cforceMIDcurr += 6, bodycurr++)
+    if(m > 0 && cforceMID != NULL)
     {
-        for (unsigned int j=0; j<6; j++)
+        dxBody * const *body = callContext->m_islandBodiesStart;
+        unsigned int nb = callContext->m_islandBodiesCount;
+        dReal stepsize = callContext->m_stepSize;
+        dReal *cforce = stage4CallContext->m_cforce;
+        dReal *cforcecurr = cforce;
+        dReal *cforceMIDcurr = cforceMID;
+        dxBody *const *const bodyend = body + nb;
+    
+        for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforcecurr += 6, cforceMIDcurr += 6, bodycurr++)
         {
-            cforceMIDcurr[j] = cforcecurr[j];
+            for (unsigned int j=0; j<6; j++)
+            {
+                cforceMIDcurr[j] = stepsize * cforcecurr[j];
+            }
         }
+/*
+        dSetZero(cforce,(size_t)nb * 6);
+        dReal *lambda = stage4CallContext->m_lambda;
+        dSetZero(lambda,(size_t)m);
+*/
     }
 }
 
@@ -2652,14 +2677,17 @@ void dxQuickStepIsland_Stage4b(dxQuickStepperStage4CallContext *stage4CallContex
     if (ThrsafeExchange(&stage4CallContext->m_cf_4b, 1) == 0) {
         dxBody * const *body = callContext->m_islandBodiesStart;
         unsigned int nb = callContext->m_islandBodiesCount;
-        const dReal *cforce = stage4CallContext->m_cforce;
-        dReal stepsize = callContext->m_stepSize;
         // add stepsize * cforce to the body velocity
+        dReal stepsize = callContext->m_stepSize;
+        const dReal *cforce = stage4CallContext->m_cforce;
         const dReal *cforcecurr = cforce;
+
         dxBody *const *const bodyend = body + nb;
-        for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforcecurr+=6, bodycurr++) {
+        for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforcecurr+=6, bodycurr++)
+        {
             dxBody *b = *bodycurr;
-            for (unsigned int j=0; j<3; j++) {
+            for (unsigned int j=0; j<3; j++)
+            {
                 b->lvel[j] += stepsize * cforcecurr[j];
                 b->avel[j] += stepsize * cforcecurr[3+j];
             }
@@ -2958,18 +2986,20 @@ void dxQuickStepIsland_Stage6c(dxQuickStepperStage6CallContext *stage6CallContex
         {
             dxBody * const *body = callContext->m_islandBodiesStart;
             unsigned int nb = callContext->m_islandBodiesCount;
-            const dReal *cforceMID = localContext->m_cforceMID;
             dReal stepsize = callContext->m_stepSize;
-            const dReal *cforceMIDcurr = cforceMID;
+            dReal *cforceMID = localContext->m_cforceMID;
+            dReal *cforceMIDcurr = cforceMID;
             dxBody *const *const bodyend = body + nb;
             for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforceMIDcurr+=6, bodycurr++)
             {
                 dxBody *b = *bodycurr;
                 for (unsigned int j=0; j<3; j++)
                 {
-                    b->lvel[j] -= stepsize * cforceMIDcurr[j];
-                    b->avel[j] -= stepsize * cforceMIDcurr[3+j];
+                    b->lvel[j] -= cforceMIDcurr[j];
                 }
+                dReal *cforceMIDavel = cforceMIDcurr + 3;
+                for (unsigned int j=0; j<3; j++)
+                   b->avel[j] -= cforceMIDavel[j];
             }
         }
     }
@@ -3042,7 +3072,6 @@ size_t dxEstimateQuickStepMemoryRequirements (dxBody * const *body,
                     sub3_res1 += dEFFICIENT_SIZE(sizeof(dReal) * m); // for lambda
                     sub3_res1 += dEFFICIENT_SIZE(sizeof(dReal) * 6 * nb); // for cforce
                     sub3_res1 += dEFFICIENT_SIZE(sizeof(dReal) * 12 * m); // for iMJ
-                    sub3_res1 += dEFFICIENT_SIZE(sizeof(dReal) * m); // for Ad
                     sub3_res1 += dEFFICIENT_SIZE(sizeof(IndexError) * m); // for order
 #if CONSTRAINTS_REORDERING_METHOD == REORDERING_METHOD__BY_ERROR
                     sub3_res1 += dEFFICIENT_SIZE(sizeof(dReal) * m); // for last_lambda

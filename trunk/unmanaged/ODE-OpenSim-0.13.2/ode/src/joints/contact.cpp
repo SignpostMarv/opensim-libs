@@ -155,42 +155,39 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
     }
 
     // set right hand side and cfm value for normal
-    dReal erp = worldERP;
-    if ( contact.surface.mode & dContactSoftERP )
-        erp = contact.surface.soft_erp;
-    dReal k = worldFPS * erp;
+
+    info->cfm[rowNormal] = (contact.surface.mode & dContactSoftCFM) ? contact.surface.soft_cfm : REAL(0.0);
+
+    dReal motionN = (contact.surface.mode & dContactMotionN) ? contact.surface.motionN : REAL(0.0);
+
+    dReal erp = (contact.surface.mode & dContactSoftERP) ? contact.surface.soft_erp : worldERP;
+    erp *= worldFPS;
+
     dReal depth = contact.geom.depth - world->contactp.min_depth;
-    if ( depth < 0 ) depth = 0;
+    if ( depth < REAL(0.0) )
+        depth = REAL(0.0);
 
-    if ( contact.surface.mode & dContactSoftCFM )
-        info->cfm[rowNormal] = contact.surface.soft_cfm;
-
-    dReal motionN = 0;
-    if ( contact.surface.mode & dContactMotionN )
-        motionN = contact.surface.motionN;
-
-    dReal pushout = k * depth + motionN;
+    dReal pushout = erp * depth + motionN;
 
     // note: this cap should not limit bounce velocity
     const dReal maxvel = world->contactp.max_vel;
     if ( pushout > maxvel )
         pushout = maxvel;
 
-    info->cPos[rowNormal] = pushout;
+    info->cPos[rowNormal] = pushout * REAL(0.98);
 
     // deal with bounce
-    if ( contact.surface.mode & dContactBounce )
+    if ( contact.surface.mode & dContactBounce && contact.surface.bounce_vel >= 0)
     {
         // calculate outgoing velocity (-ve for incoming contact)
         dReal outgoing = -dCalcVectorDot3( info->J1l, node[0].body->lvel )
             + dCalcVectorDot3( info->J1a, node[0].body->avel );
-        if ( b1 )
+        if (b1)
         {
             outgoing -= dCalcVectorDot3( info->J2l, node[1].body->lvel )
                 + dCalcVectorDot3( info->J2a, node[1].body->avel );
         }
-        if ( contact.surface.bounce_vel >= 0 &&
-            (outgoing ) > contact.surface.bounce_vel )
+        if ( outgoing > contact.surface.bounce_vel )
         {
             const dReal newc = contact.surface.bounce * outgoing * REAL(0.95);
             pushout += newc;
@@ -229,7 +226,7 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
         info->J1l[s+2] = t1[2];
         dCalcVectorCross3( info->J1a + s, c1, t1 );
         
-        if ( node[1].body )
+        if (b1)
         {
             info->J2l[s+0] = -t1[0];
             info->J2l[s+1] = -t1[1];
@@ -271,7 +268,7 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
         info->J1l[s2+2] = t2[2];
         dCalcVectorCross3( info->J1a + s2, c1, t2 );
 
-        if ( node[1].body )
+        if (b1)
         {
             info->J2l[s2+0] = -t2[0];
             info->J2l[s2+1] = -t2[1];
