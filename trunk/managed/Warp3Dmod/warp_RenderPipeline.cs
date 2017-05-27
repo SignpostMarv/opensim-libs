@@ -258,9 +258,12 @@ namespace Warp3D
 			    screen.Dispose();
             screen = null;
 			zBuffer = null;
+            rasterizer.clean();
             rasterizer = null;
             opaqueQueue.Clear();
 		    transparentQueue.Clear();
+            opaqueQueue = null;
+		    transparentQueue = null;
 		}
 	}
 }

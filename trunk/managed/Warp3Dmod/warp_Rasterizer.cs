@@ -82,6 +82,13 @@ namespace Warp3D
 			useIdBuffer=pipeline.useId;
 		}
 
+		public void clean()
+		{
+			screen = null;
+			zBuffer = null;
+			idBuffer = null;
+		}
+
 		// Lightmap loader
 		public void loadLightmap(warp_Lightmap lm)
 		{

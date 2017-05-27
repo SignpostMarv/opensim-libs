@@ -61,6 +61,7 @@ namespace Warp3D
             cameraData.Clear();
             if(renderPipeline != null)
                 renderPipeline.Dispose();
+            renderPipeline = null;
             environment = null;
             defaultCamera = null;
             wobject = null;

@@ -46,11 +46,11 @@ namespace Warp3D
 
 		public warp_Material(String path)
 		{
-
-			FileStream fs = new FileStream(path,FileMode.Open);
-			BinaryReader br = new BinaryReader(fs);
-
-			importFromStream(br);
+            using(FileStream fs = new FileStream(path,FileMode.Open))
+            {
+                using(BinaryReader br = new BinaryReader(fs))
+                    importFromStream(br);
+            }
 		}
 
 		private void importFromStream(BinaryReader inStream)
@@ -84,8 +84,6 @@ namespace Warp3D
 
 			return result;
 		}
-
-
 
 		private void readTexture(BinaryReader inStream, bool textureId)
 		{

@@ -789,7 +789,6 @@ namespace Warp3D
 			try
 			{
 				_scene = new warp_Scene(width, height);
-
                 _plugins.Clear();
                 _models.Clear();
 			}
@@ -805,7 +804,8 @@ namespace Warp3D
 		public void Reset()
 		{
 			_scene = null;
-			System.GC.Collect();
+            _plugins.Clear();
+            _models.Clear();
 		}
 	}
 }

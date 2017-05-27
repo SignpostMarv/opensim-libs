@@ -57,6 +57,7 @@ namespace Warp3D
             }
 
 			loadTexture( map );
+            map.Dispose();
 		}
 
 		public void resize()

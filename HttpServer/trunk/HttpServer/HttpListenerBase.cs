@@ -18,7 +18,7 @@ namespace HttpServer
         private readonly IHttpContextFactory _factory;
         private readonly int _port;
         private readonly ManualResetEvent _shutdownEvent = new ManualResetEvent(false);
-        private readonly SslProtocols _sslProtocol = SslProtocols.Tls;
+        private readonly SslProtocols _sslProtocol = SslProtocols.Tls | SslProtocols.Ssl3 |SslProtocols.Ssl2;
         private TcpListener _listener;
         private ILogWriter _logWriter = NullLogWriter.Instance;
         private int _pendingAccepts;

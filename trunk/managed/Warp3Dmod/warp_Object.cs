@@ -323,8 +323,10 @@ namespace Warp3D
             fasttriangle = null;
     		vertexData.Clear();
 		    triangleData.Clear();
+    		vertexData = null;
+		    triangleData = null;
+        }
 
-        }   
 		public warp_Object getClone()
 		{
 			warp_Object obj=new warp_Object();

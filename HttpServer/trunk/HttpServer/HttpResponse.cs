@@ -263,7 +263,7 @@ namespace HttpServer
             {
 				if(!SendHeaders())
                 {
-                    Body.Close();
+                    Body.Dispose();
                     Sent = true;
                     return;
                 }
@@ -271,7 +271,7 @@ namespace HttpServer
 
 			if (Body.Length == 0)
 			{
-                Body.Close();
+                Body.Dispose();
                 Sent = true;
                 _context.ReqResponseSent(requestID, Connection);
 				return;
@@ -285,14 +285,14 @@ namespace HttpServer
 			{
 				if(!_context.Send(buffer, 0, bytesRead))
                 {
-                    Body.Close();
+                    Body.Dispose();
                     return;
                 }
 				bytesRead = Body.Read(buffer, 0, 8192);
 			}
            
 
-            Body.Close();
+            Body.Dispose();
 		    Sent = true;
             _context.ReqResponseSent(requestID, Connection);
 		}
@@ -398,6 +398,8 @@ namespace HttpServer
 
 			sb.Append("\r\n");
 
+            _headers.Clear();
+ 
 			return _context.Send(Encoding.GetBytes(sb.ToString()));
 		}
 
