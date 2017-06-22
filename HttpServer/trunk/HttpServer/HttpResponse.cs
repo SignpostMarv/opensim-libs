@@ -96,7 +96,13 @@ namespace HttpServer
         public ConnectionType Connection
         {
             get {return m_Connetion; }
-            set {return;}
+            set {
+                if (value != ConnectionType.Upgrade)
+                {
+                    return;
+                }
+                m_Connetion = value;
+            }
         }
 
 		internal bool ContentTypeChangedByCode
@@ -371,6 +377,10 @@ namespace HttpServer
 				_headers["Keep-Alive"] = "timeout=" + _keepAlive + ", max=" + _context.MAXRequests;
 				_headers["Connection"] = "Keep-Alive";
 			}
+            else if (Connection == ConnectionType.Upgrade)
+            {
+                _headers["Connection"] = "Upgrade";
+            }
 			else
 				_headers["Connection"] = "close";
 

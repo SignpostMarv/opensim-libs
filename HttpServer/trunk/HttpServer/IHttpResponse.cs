@@ -190,6 +190,11 @@ namespace HttpServer
         /// <summary>
         /// Connection is kept alive for X seconds (unless another request have been made)
         /// </summary>
-        KeepAlive
+        KeepAlive,
+
+        /// <summary>
+        /// Connection is upgraded
+        /// </summary>
+        Upgrade
     }
 }
