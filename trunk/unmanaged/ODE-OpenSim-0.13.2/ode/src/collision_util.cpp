@@ -316,21 +316,10 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     int region[3];
     dReal tanchor[3];
 
-    // Denormals are a problem, because we divide by v[i], and then 
-    // multiply that by 0. Alas, infinity times 0 is infinity (!)
-    // We also use v2[i], which is v[i] squared. Here's how the epsilons 
-    // are chosen:
-    // float epsilon = 1.175494e-038 (smallest non-denormal number)
-    // double epsilon = 2.225074e-308 (smallest non-denormal number)
-    // For single precision, choose an epsilon such that v[i] squared is 
-    // not a denormal; this is for performance.
-    // For double precision, choose an epsilon such that v[i] is not a 
-    // denormal; this is for correctness. (Jon Watte on mailinglist)
-
 #if defined( dSINGLE )
-    const dReal tanchor_eps = REAL(1e-19);
+    const dReal tanchor_eps = REAL(1e-6);
 #else
-    const dReal tanchor_eps = REAL(1e-307);
+    const dReal tanchor_eps = REAL(1e-15);
 #endif
 
     // find the region and tanchor values for p1
