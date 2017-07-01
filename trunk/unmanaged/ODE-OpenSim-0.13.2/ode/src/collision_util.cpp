@@ -287,22 +287,7 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     tmp[2] = p2[2] - p1[2];
     dMultiply1_331 (v,R,tmp);
 
-    // mirror the line so that v has all components >= 0
     dVector3 sign;
-    for (i=0; i<3; i++) {
-        if (v[i] < 0) {
-            s[i] = -s[i];
-            v[i] = -v[i];
-            sign[i] = -1;
-        }
-        else sign[i] = 1;
-    }
-
-    // compute v^2
-    dVector3 v2;
-    v2[0] = v[0]*v[0];
-    v2[1] = v[1]*v[1];
-    v2[2] = v[2]*v[2];
 
     // compute the half-sides of the box
     dReal h[3];
@@ -313,8 +298,12 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     // region is -1,0,+1 depending on which side of the box planes each
     // coordinate is on. tanchor is the next t value at which there is a
     // transition, or the last one if there are no more.
+
     int region[3];
+    dReal t = 0;
+    dReal dd2dt = 0;
     dReal tanchor[3];
+    dVector3 v2;
 
 #if defined( dSINGLE )
     const dReal tanchor_eps = REAL(1e-6);
@@ -322,55 +311,81 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     const dReal tanchor_eps = REAL(1e-15);
 #endif
 
+    // mirror the line so that v has all components >= 0
     // find the region and tanchor values for p1
-    for (i=0; i<3; i++) {
-        if (v[i] > tanchor_eps) {
-            if (s[i] < -h[i]) {
+    for (i = 0; i < 3; i++)
+    {
+        if (v[i] < 0)
+        {
+            v[i] = -v[i];
+            s[i] = -s[i];
+            sign[i] = -1;
+        }
+        else sign[i] = 1;
+
+        v2[i] = v[i] * v[i];
+
+        if (v[i] > tanchor_eps)
+        {
+            if (s[i] < -h[i])
+            {
                 region[i] = -1;
-                tanchor[i] = (-h[i]-s[i])/v[i];
+                tanchor[i] = (-h[i] - s[i]) / v[i];
+                dd2dt -= v2[i] * tanchor[i];
             }
-            else {
-                region[i] = (s[i] > h[i]);
-                tanchor[i] = (h[i]-s[i])/v[i];
+            else
+            {
+                tanchor[i] = (h[i] - s[i]) / v[i];
+                if(s[i] > h[i])
+                {
+                    region[i] = 1;
+                    dd2dt -= v2[i] * tanchor[i];
+                }
+                else
+                    region[i] = 0;
             }
         }
-        else {
+        else
+        {
             region[i] = 0;
             tanchor[i] = 2;		// this will never be a valid tanchor
         }
     }
-
     // compute d|d|^2/dt for t=0. if it's >= 0 then p1 is the closest point
-    dReal t=0;
-    dReal dd2dt = 0;
-    for (i=0; i<3; i++) dd2dt -= (region[i] ? v2[i] : 0) * tanchor[i];
-    if (dd2dt >= 0) goto got_answer;
+    if (dd2dt >= 0)
+        goto got_answer;
 
     do {
         // find the point on the line that is at the next clip plane boundary
-        dReal next_t = 1;
-        for (i=0; i<3; i++) {
-            if (tanchor[i] > t && tanchor[i] < 1 && tanchor[i] < next_t)
+        dReal next_t = 1.0;
+        for (i=0; i<3; i++)
+        {
+            if (tanchor[i] > t && tanchor[i] < next_t)
                 next_t = tanchor[i];
         }
 
         // compute d|d|^2/dt for the next t
         dReal next_dd2dt = 0;
-        for (i=0; i<3; i++) {
-            next_dd2dt += (region[i] ? v2[i] : 0) * (next_t - tanchor[i]);
+        for (i=0; i<3; i++)
+        {
+            if(region[i] != 0)
+                next_dd2dt += v2[i] * (next_t - tanchor[i]);
         }
 
         // if the sign of d|d|^2/dt has changed, solution = the crossover point
-        if (next_dd2dt >= 0) {
-            dReal m = (next_dd2dt-dd2dt)/(next_t - t);
-            t -= dd2dt/m;
+        if (next_dd2dt >= 0)
+        {
+            dReal m = (next_dd2dt - dd2dt) / (next_t - t);
+            t -= dd2dt / m;
             goto got_answer;
         }
 
         // advance to the next anchor point / region
-        for (i=0; i<3; i++) {
-            if (tanchor[i] == next_t) {
-                tanchor[i] = (h[i]-s[i])/v[i];
+        for (i=0; i<3; i++)
+        {
+            if (tanchor[i] == next_t)
+            {
+                tanchor[i] = (h[i] - s[i]) / v[i];
                 region[i]++;
             }
         }
@@ -381,18 +396,55 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     t = 1;
 
 got_answer:
+    float ftmp;
+    if(t >= (1 - tanchor_eps))
+    {
+        for (i=0; i<3; i++)
+        {
+            // compute closest point on the line
+            lret[i] = p2[i];
 
-    // compute closest point on the line
-    for (i=0; i<3; i++) lret[i] = p1[i] + t*tmp[i];	// note: tmp=p2-p1
+            ftmp = sign[i] * (s[i] + v[i]);
+            if (ftmp < -h[i])
+                ftmp = -h[i];
+            else if (ftmp > h[i])
+                ftmp = h[i];
+            tmp[i] = ftmp;
+        }
+    }
+    else if (t <= tanchor_eps)
+    {
+        for (i=0; i<3; i++)
+        {
+            lret[i] = p1[i];
+
+            ftmp = sign[i] * s[i];
+            if (ftmp < -h[i])
+                ftmp = -h[i];
+            else if (ftmp > h[i])
+                ftmp = h[i];
+            tmp[i] = ftmp;
+        }
+    }
+    else
+    {
+        for (i=0; i<3; i++)
+        {
+            lret[i] = p1[i] + t*tmp[i];
+
+            ftmp = sign[i] * (s[i] + t*v[i]);
+            if (ftmp < -h[i])
+                ftmp = -h[i];
+            else if (ftmp > h[i])
+                ftmp = h[i];
+            tmp[i] = ftmp;
+        }       
+    }
 
     // compute closest point on the box
-    for (i=0; i<3; i++) {
-        tmp[i] = sign[i] * (s[i] + t*v[i]);
-        if (tmp[i] < -h[i]) tmp[i] = -h[i];
-        else if (tmp[i] > h[i]) tmp[i] = h[i];
-    }
-    dMultiply0_331 (s,R,tmp);
-    for (i=0; i<3; i++) bret[i] = s[i] + c[i];
+    dMultiply0_331(s,R,tmp);
+    for (i=0; i<3; i++)
+        bret[i] = s[i] + c[i];
 }
 
 
