@@ -1919,7 +1919,7 @@ void dxQuickStepIsland_Stage4LCP_AdComputation(dxQuickStepperStage4CallContext *
                 for (unsigned int k=6; k<12; ++k) sum += iMJ_ptr[k] * J_ptr[k];
                 lend = 12;
             }
-
+/*
             dReal cfm_i = cfm[mi];
 
             if(sum < REAL(100.0) * cfm_i)
@@ -1937,11 +1937,10 @@ void dxQuickStepIsland_Stage4LCP_AdComputation(dxQuickStepperStage4CallContext *
                 Ad_i = sor_w / sum;
                 cfm[mi] = REAL(0.0);
             }
-/*
+*/
             dReal Ad_i;
             Ad_i = sor_w / sum;
-            cfm[mi] = cfm_i * Ad_i;
-*/
+
             unsigned int l = lend;
             do {
                 J_ptr[l - 1] *= Ad_i;
@@ -2472,9 +2471,6 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
     IndexError *order = stage4CallContext->m_order;
     unsigned int index = order[i].index;
 
-    dReal *fc_ptr1;
-    dReal *fc_ptr2;
-    dReal delta;
 
     dReal *rhs;
 
@@ -2486,23 +2482,24 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
     }
     else
         rhs = localContext->m_rhs;
-    {
-        int *jb = localContext->m_jb;
-        int b1 = jb[(size_t)index*2];
-        int b2 = jb[(size_t)index*2+1];
-        dReal *fc = stage4CallContext->m_cforce;
-        fc_ptr1 = fc + 6*(size_t)(unsigned)b1;
-        fc_ptr2 = (b2 != -1) ? fc + 6*(size_t)(unsigned)b2 : NULL;
-    }
+
+    int *jb = localContext->m_jb;
+    int b1 = jb[(size_t)index*2];
+    int b2 = jb[(size_t)index*2+1];
+    dReal *fc = stage4CallContext->m_cforce;
+    dReal *fc_ptr1 = fc + 6*(size_t)(unsigned)b1;
+    dReal *fc_ptr2 = NULL;
 
     dReal *lambda = stage4CallContext->m_lambda;
     dReal old_lambda = lambda[index];
-    dReal new_lambda = old_lambda;
+    dReal new_lambda;
     size_t index_offset = (size_t)index*12;
+    dReal delta;
 
     {
         const dReal *cfm = localContext->m_cfm;
-        delta = rhs[index] - old_lambda * cfm[index];
+  //      delta = rhs[index] - old_lambda * cfm[index];
+        delta = rhs[index];
 
         dReal *J = localContext->m_J;
         const dReal *J_ptr = J + index_offset;
@@ -2512,7 +2509,9 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
             fc_ptr1[4] * J_ptr[4] + fc_ptr1[5] * J_ptr[5];
         // @@@ potential optimization: handle 1-body constraints in a separate
         //     loop to avoid the cost of test & jump?
-        if (fc_ptr2) {
+        if (b2 != -1)
+        {
+            fc_ptr2 = fc + 6*(size_t)(unsigned)b2;
             delta -=fc_ptr2[0] * J_ptr[6] + fc_ptr2[1] * J_ptr[7] +
                 fc_ptr2[2] * J_ptr[8] + fc_ptr2[3] * J_ptr[9] +
                 fc_ptr2[4] * J_ptr[10] + fc_ptr2[5] * J_ptr[11];
@@ -2546,11 +2545,11 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
         //     to save test+jump penalties here?
         new_lambda = old_lambda + delta;
         if (new_lambda < lo_act) {
-            delta = lo_act-old_lambda;
+            delta = lo_act - old_lambda;
             lambda[index] = lo_act;
         }
         else if (new_lambda > hi_act) {
-            delta = hi_act-old_lambda;
+            delta = hi_act - old_lambda;
             lambda[index] = hi_act;
         }
         else {
@@ -2575,7 +2574,8 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
         fc_ptr1[5] += delta * iMJ_ptr[5];
         // @@@ potential optimization: handle 1-body constraints in a separate
         //     loop to avoid the cost of test & jump?
-        if (fc_ptr2) {
+        if (fc_ptr2)
+        {
             fc_ptr2[0] += delta * iMJ_ptr[6];
             fc_ptr2[1] += delta * iMJ_ptr[7];
             fc_ptr2[2] += delta * iMJ_ptr[8];

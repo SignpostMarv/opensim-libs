@@ -52,39 +52,44 @@ dxRay::dxRay (dSpaceID space, dReal _length) : dxGeom (space,1)
     length = _length;
 }
 
-
 void dxRay::computeAABB()
 {
-    dVector3 e;
-    e[0] = final_posr->pos[0] + final_posr->R[0*4+2]*length;
-    e[1] = final_posr->pos[1] + final_posr->R[1*4+2]*length;
-    e[2] = final_posr->pos[2] + final_posr->R[2*4+2]*length;
+    dReal *pos = final_posr->pos;
 
-    if (final_posr->pos[0] < e[0]){
-        aabb[0] = final_posr->pos[0];
-        aabb[1] = e[0];
+    dReal e = final_posr->R[2] * length;
+    if (e > 0)
+    {
+        aabb[0] = pos[0];
+        aabb[1] = pos[0] + e;
     }
-    else{
-        aabb[0] = e[0];
-        aabb[1] = final_posr->pos[0];
-    }
-
-    if (final_posr->pos[1] < e[1]){
-        aabb[2] = final_posr->pos[1];
-        aabb[3] = e[1];
-    }
-    else{
-        aabb[2] = e[1];
-        aabb[3] = final_posr->pos[1];
+    else
+    {
+        aabb[0] = pos[0] + e;
+        aabb[1] = pos[0];
     }
 
-    if (final_posr->pos[2] < e[2]){
-        aabb[4] = final_posr->pos[2];
-        aabb[5] = e[2];
+    e = final_posr->R[6] * length;
+    if (e > 0)
+    {
+        aabb[2] = pos[1];
+        aabb[3] = pos[1] + e;
     }
-    else{
-        aabb[4] = e[2];
-        aabb[5] = final_posr->pos[2];
+    else
+    {
+        aabb[2] = pos[1] + e;
+        aabb[3] = pos[1];
+    }
+
+    e = final_posr->R[10] * length;
+    if (e > 0)
+    {
+        aabb[4] = pos[2];
+        aabb[5] = pos[2] + e;
+    }
+    else
+    {
+        aabb[4] = pos[2] + e;
+        aabb[5] = pos[2];
     }
 }
 
@@ -117,7 +122,7 @@ void dGeomRaySet (dGeomID g, dReal px, dReal py, dReal pz,
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
     g->recomputePosr();
-    dReal* rot = g->final_posr->R;
+    dReal* R = g->final_posr->R;
     dReal* pos = g->final_posr->pos;
     dVector3 n;
     pos[0] = px;
@@ -128,9 +133,9 @@ void dGeomRaySet (dGeomID g, dReal px, dReal py, dReal pz,
     n[1] = dy;
     n[2] = dz;
     dNormalize3(n);
-    rot[0*4+2] = n[0];
-    rot[1*4+2] = n[1];
-    rot[2*4+2] = n[2];
+    R[2] = n[0];
+    R[6] = n[1];
+    R[10] = n[2];
     dGeomMoved (g);
 }
 
@@ -139,14 +144,15 @@ void dGeomRayGet (dGeomID g, dVector3 start, dVector3 dir)
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
     g->recomputePosr();
-    start[0] = g->final_posr->pos[0];
-    start[1] = g->final_posr->pos[1];
-    start[2] = g->final_posr->pos[2];
-    dir[0] = g->final_posr->R[0*4+2];
-    dir[1] = g->final_posr->R[1*4+2];
-    dir[2] = g->final_posr->R[2*4+2];
+    dReal* R = g->final_posr->R;
+    dReal* pos = g->final_posr->pos;
+    start[0] = pos[0];
+    start[1] = pos[1];
+    start[2] = pos[2];
+    dir[0] = R[2];
+    dir[1] = R[6];
+    dir[2] = R[10];
 }
-
 
 void dGeomRaySetParams (dxGeom *g, int FirstContact, int BackfaceCull)
 {
@@ -178,13 +184,11 @@ void dGeomRaySetBackfaceCull (dxGeom *g, int backfaceCull)
     }
 }
 
-
 int dGeomRayGetBackfaceCull (dxGeom *g)
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
     return ((g->gflags & RAY_BACKFACECULL) != 0);
 }
-
 
 // set/get first contact flag
 void dGeomRaySetFirstContact (dxGeom *g, int firstContact)
@@ -197,13 +201,11 @@ void dGeomRaySetFirstContact (dxGeom *g, int firstContact)
     }
 }
 
-
 int dGeomRayGetFirstContact (dxGeom *g)
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
     return ((g->gflags & RAY_FIRSTCONTACT) != 0);
 }
-
 
 void dGeomRaySetClosestHit (dxGeom *g, int closestHit)
 {
@@ -214,14 +216,11 @@ void dGeomRaySetClosestHit (dxGeom *g, int closestHit)
     else g->gflags &= ~RAY_CLOSEST_HIT;
 }
 
-
 int dGeomRayGetClosestHit (dxGeom *g)
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
     return ((g->gflags & RAY_CLOSEST_HIT) != 0);
 }
-
-
 
 // if mode==1 then use the sphere exit contact, not the entry contact
 
@@ -229,35 +228,56 @@ static int ray_sphere_helper (dxRay *ray, dVector3 sphere_pos, dReal radius,
                               dContactGeom *contact, int mode)
 {
     dVector3 q;
-    q[0] = ray->final_posr->pos[0] - sphere_pos[0];
-    q[1] = ray->final_posr->pos[1] - sphere_pos[1];
-    q[2] = ray->final_posr->pos[2] - sphere_pos[2];
-    dReal B = dCalcVectorDot3_14(q,ray->final_posr->R+2);
-    dReal C = dCalcVectorDot3(q,q) - radius*radius;
+    dReal* pos = ray->final_posr->pos;
+    dReal* R = ray->final_posr->R;
+
+    q[0] = pos[0] - sphere_pos[0];
+    q[1] = pos[1] - sphere_pos[1];
+    q[2] = pos[2] - sphere_pos[2];
+
+    dReal B = dCalcVectorDot3_14(q, R + 2);
+    dReal C = dCalcVectorLengthSquare3(q) - radius * radius;
     // note: if C <= 0 then the start of the ray is inside the sphere
-    dReal k = B*B - C;
-    if (k < 0) return 0;
+    dReal k = B * B - C;
+    if (k < 0)
+        return 0;
     k = dSqrt(k);
     dReal alpha;
-    if (mode && C >= 0) {
+    if (mode && C >= 0)
+    {
         alpha = -B + k;
-        if (alpha < 0) return 0;
+        if (alpha < 0)
+            return 0;
     }
-    else {
+    else
+    {
         alpha = -B - k;
-        if (alpha < 0) {
+        if (alpha < 0)
+        {
             alpha = -B + k;
-            if (alpha < 0) return 0;
+            if (alpha < 0)
+                return 0;
         }
     }
-    if (alpha > ray->length) return 0;
-    contact->pos[0] = ray->final_posr->pos[0] + alpha*ray->final_posr->R[0*4+2];
-    contact->pos[1] = ray->final_posr->pos[1] + alpha*ray->final_posr->R[1*4+2];
-    contact->pos[2] = ray->final_posr->pos[2] + alpha*ray->final_posr->R[2*4+2];
-    dReal nsign = (C < 0 || mode) ? REAL(-1.0) : REAL(1.0);
-    contact->normal[0] = nsign*(contact->pos[0] - sphere_pos[0]);
-    contact->normal[1] = nsign*(contact->pos[1] - sphere_pos[1]);
-    contact->normal[2] = nsign*(contact->pos[2] - sphere_pos[2]);
+    if (alpha > ray->length)
+        return 0;
+
+    contact->pos[0] = pos[0] + alpha * R[2];
+    contact->pos[1] = pos[1] + alpha * R[6];
+    contact->pos[2] = pos[2] + alpha * R[10];
+
+    if(C < 0 || mode)
+    {
+        contact->normal[0] = sphere_pos[0] - contact->pos[0];
+        contact->normal[1] = sphere_pos[1] - contact->pos[1];
+        contact->normal[2] = sphere_pos[2] - contact->pos[2];
+    }
+    else
+    {
+        contact->normal[0] = contact->pos[0] - sphere_pos[0];
+        contact->normal[1] = contact->pos[1] - sphere_pos[1];
+        contact->normal[2] = contact->pos[2] - sphere_pos[2];
+    }
     dNormalize3 (contact->normal);
     contact->depth = alpha;
     return 1;
@@ -300,23 +320,31 @@ int dCollideRayBox (dxGeom *o1, dxGeom *o2, int flags,
 
     int i;
 
+    dReal* pos = ray->final_posr->pos;
+    dReal* R = ray->final_posr->R;
+
+    dReal* boxpos = box->final_posr->pos;
+    dReal* boxR = box->final_posr->R;
+
     // compute the start and delta of the ray relative to the box.
     // we will do all subsequent computations in this box-relative coordinate
     // system. we have to do a translation and rotation for each point.
-    dVector3 tmp,s,v;
-    tmp[0] = ray->final_posr->pos[0] - box->final_posr->pos[0];
-    tmp[1] = ray->final_posr->pos[1] - box->final_posr->pos[1];
-    tmp[2] = ray->final_posr->pos[2] - box->final_posr->pos[2];
-    dMultiply1_331 (s,box->final_posr->R,tmp);
-    tmp[0] = ray->final_posr->R[0*4+2];
-    tmp[1] = ray->final_posr->R[1*4+2];
-    tmp[2] = ray->final_posr->R[2*4+2];
-    dMultiply1_331 (v,box->final_posr->R,tmp);
+    dVector3 tmp, s ,v;
+    tmp[0] = pos[0] - boxpos[0];
+    tmp[1] = pos[1] - boxpos[1];
+    tmp[2] = pos[2] - boxpos[2];
+    dMultiply1_331 (s, boxR, tmp);
+    tmp[0] = R[2];
+    tmp[1] = R[6];
+    tmp[2] = R[10];
+    dMultiply1_331 (v, boxR, tmp);
 
     // mirror the line so that v has all components >= 0
     dVector3 sign;
-    for (i=0; i<3; i++) {
-        if (v[i] < 0) {
+    for (i=0; i<3; i++)
+    {
+        if (v[i] < 0)
+        {
             s[i] = -s[i];
             v[i] = -v[i];
             sign[i] = 1;
@@ -326,9 +354,9 @@ int dCollideRayBox (dxGeom *o1, dxGeom *o2, int flags,
 
     // compute the half-sides of the box
     dReal h[3];
-    h[0] = REAL(0.5) * box->side[0];
-    h[1] = REAL(0.5) * box->side[1];
-    h[2] = REAL(0.5) * box->side[2];
+    h[0] = box->halfside[0];
+    h[1] = box->halfside[1];
+    h[2] = box->halfside[2];
 
     // do a few early exit tests
     if ((s[0] < -h[0] && v[0] <= 0) || s[0] >  h[0] ||
@@ -342,15 +370,19 @@ int dCollideRayBox (dxGeom *o1, dxGeom *o2, int flags,
     dReal lo = -dInfinity;
     dReal hi = dInfinity;
     int nlo = 0, nhi = 0;
-    for (i=0; i<3; i++) {
-        if (v[i] != 0) {
+    for (i=0; i<3; i++)
+    {
+        if (v[i] != 0)
+        {
             dReal k = (-h[i] - s[i])/v[i];
-            if (k > lo) {
+            if (k > lo)
+            {
                 lo = k;
                 nlo = i;
             }
             k = (h[i] - s[i])/v[i];
-            if (k < hi) {
+            if (k < hi)
+            {
                 hi = k;
                 nhi = i;
             }
@@ -358,24 +390,41 @@ int dCollideRayBox (dxGeom *o1, dxGeom *o2, int flags,
     }
 
     // check if the ray intersects
-    if (lo > hi) return 0;
+    if (lo > hi)
+        return 0;
     dReal alpha;
     int n;
-    if (lo >= 0) {
+    if (lo >= 0)
+    {
         alpha = lo;
         n = nlo;
     }
-    else {
+    else
+    {
         alpha = hi;
         n = nhi;
     }
-    if (alpha < 0 || alpha > ray->length) return 0;
-    contact->pos[0] = ray->final_posr->pos[0] + alpha*ray->final_posr->R[0*4+2];
-    contact->pos[1] = ray->final_posr->pos[1] + alpha*ray->final_posr->R[1*4+2];
-    contact->pos[2] = ray->final_posr->pos[2] + alpha*ray->final_posr->R[2*4+2];
-    contact->normal[0] = box->final_posr->R[0*4+n] * sign[n];
-    contact->normal[1] = box->final_posr->R[1*4+n] * sign[n];
-    contact->normal[2] = box->final_posr->R[2*4+n] * sign[n];
+
+    if (alpha < 0 || alpha > ray->length)
+        return 0;
+
+    contact->pos[0] = pos[0] + alpha * R[2];
+    contact->pos[1] = pos[1] + alpha * R[6];
+    contact->pos[2] = pos[2] + alpha * R[10];
+
+    if(sign[n] > 0)
+    {
+        contact->normal[0] = boxR[n];
+        contact->normal[1] = boxR[4 + n];
+        contact->normal[2] = boxR[8 + n];
+    }
+    else
+    {
+        contact->normal[0] = -boxR[n];
+        contact->normal[1] = -boxR[4 + n];
+        contact->normal[2] = -boxR[8 + n];
+    }
+
     contact->depth = alpha;
     return 1;
 }
@@ -397,91 +446,124 @@ int dCollideRayCapsule (dxGeom *o1, dxGeom *o2,
     contact->side1 = -1;
     contact->side2 = -1;
 
-    dReal lz2 = ccyl->lz * REAL(0.5);
+    const dReal radiusSQ = ccyl->radius * ccyl->radius;
+    const dReal lz2 = ccyl->lz * REAL(0.5);
+
+    dReal* pos = ray->final_posr->pos;
+    dReal* R = ray->final_posr->R;
+    dReal* cpos = ccyl->final_posr->pos;
+    dReal* cR = ccyl->final_posr->R;
 
     // compute some useful info
-    dVector3 cs,q,r;
+    dVector3 cs, q, r;
     dReal C,k;
-    cs[0] = ray->final_posr->pos[0] - ccyl->final_posr->pos[0];
-    cs[1] = ray->final_posr->pos[1] - ccyl->final_posr->pos[1];
-    cs[2] = ray->final_posr->pos[2] - ccyl->final_posr->pos[2];
-    k = dCalcVectorDot3_41(ccyl->final_posr->R+2,cs);	// position of ray start along ccyl axis
-    q[0] = k*ccyl->final_posr->R[0*4+2] - cs[0];
-    q[1] = k*ccyl->final_posr->R[1*4+2] - cs[1];
-    q[2] = k*ccyl->final_posr->R[2*4+2] - cs[2];
-    C = dCalcVectorDot3(q,q) - ccyl->radius*ccyl->radius;
+    cs[0] = pos[0] - cpos[0];
+    cs[1] = pos[1] - cpos[1];
+    cs[2] = pos[2] - cpos[2];
+    k = dCalcVectorDot3_41(cR + 2, cs);	// position of ray start along ccyl axis
+    q[0] = k * cR[2] - cs[0];
+    q[1] = k * cR[6] - cs[1];
+    q[2] = k * cR[10] - cs[2];
+    C = dCalcVectorLengthSquare3(q) - radiusSQ;
     // if C < 0 then ray start position within infinite extension of cylinder
 
     // see if ray start position is inside the capped cylinder
     int inside_ccyl = 0;
-    if (C < 0) {
-        if (k < -lz2) k = -lz2;
-        else if (k > lz2) k = lz2;
-        r[0] = ccyl->final_posr->pos[0] + k*ccyl->final_posr->R[0*4+2];
-        r[1] = ccyl->final_posr->pos[1] + k*ccyl->final_posr->R[1*4+2];
-        r[2] = ccyl->final_posr->pos[2] + k*ccyl->final_posr->R[2*4+2];
-        if ((ray->final_posr->pos[0]-r[0])*(ray->final_posr->pos[0]-r[0]) +
-            (ray->final_posr->pos[1]-r[1])*(ray->final_posr->pos[1]-r[1]) +
-            (ray->final_posr->pos[2]-r[2])*(ray->final_posr->pos[2]-r[2]) < ccyl->radius*ccyl->radius) {
-                inside_ccyl = 1;
-        }
+    if (C < 0)
+    {
+        if (k < -lz2)
+            k = -lz2;
+        else if (k > lz2)
+            k = lz2;
+
+        if (dCalcVectorLengthSquare3(cs[0] - k * cR[2],
+                                     cs[1] - k * cR[6],
+                                     cs[2] - k * cR[10])
+                                 < radiusSQ)
+            inside_ccyl = 1;
     }
 
     // compute ray collision with infinite cylinder, except for the case where
     // the ray is outside the capped cylinder but within the infinite cylinder
     // (it that case the ray can only hit endcaps)
-    if (!inside_ccyl && C < 0) {
+    if (!inside_ccyl && C < 0)
+    {
         // set k to cap position to check
-        if (k < 0) k = -lz2; else k = lz2;
+        if (k < 0)
+            k = -lz2;
+        else 
+            k = lz2;
     }
-    else {
-        dReal uv = dCalcVectorDot3_44(ccyl->final_posr->R+2,ray->final_posr->R+2);
-        r[0] = uv*ccyl->final_posr->R[0*4+2] - ray->final_posr->R[0*4+2];
-        r[1] = uv*ccyl->final_posr->R[1*4+2] - ray->final_posr->R[1*4+2];
-        r[2] = uv*ccyl->final_posr->R[2*4+2] - ray->final_posr->R[2*4+2];
-        dReal A = dCalcVectorDot3(r,r);
+    else
+    {
+        dReal uv = dCalcVectorDot3_44(cR + 2, R + 2);
+        r[0] = uv * cR[2] - R[2];
+        r[1] = uv * cR[6] - R[6];
+        r[2] = uv * cR[10] - R[10];
+        dReal A = dCalcVectorLengthSquare3(r);
         // A == 0 means that the ray and ccylinder axes are parallel
-        if (A == 0) { // There is a division by A below...
+        if (A == 0)
+        { // There is a division by A below...
             // set k to cap position to check
-            if (uv < 0) k = -lz2; else k = lz2;
+            if (uv < 0)
+                k = -lz2;
+            else
+                k = lz2;
         }
-        else {
-            dReal B = 2*dCalcVectorDot3(q,r);
-            k = B*B-4*A*C;
-            if (k < 0) {
+        else
+        {
+            dReal B = 2 * dCalcVectorDot3(q, r);
+            k = B * B - 4 * A * C;
+            if (k < 0)
+            {
                 // the ray does not intersect the infinite cylinder, but if the ray is
                 // inside and parallel to the cylinder axis it may intersect the end
                 // caps. set k to cap position to check.
-                if (!inside_ccyl) return 0;
-                if (uv < 0) k = -lz2; else k = lz2;
+                if (!inside_ccyl)
+                    return 0;
+                if (uv < 0)
+                    k = -lz2;
+                else
+                    k = lz2;
             }
-            else {
+            else
+            {
                 k = dSqrt(k);
-                A = dRecip (2*A);
-                dReal alpha = (-B-k)*A;
-                if (alpha < 0) {
-                    alpha = (-B+k)*A;
-                    if (alpha < 0) return 0;
+                A = dRecip (2 * A);
+                dReal alpha = (-B - k) * A;
+                if (alpha < 0)
+                {
+                    alpha = (-B + k) * A;
+                    if (alpha < 0)
+                        return 0;
                 }
-                if (alpha > ray->length) return 0;
+                if (alpha > ray->length)
+                    return 0;
 
                 // the ray intersects the infinite cylinder. check to see if the
                 // intersection point is between the caps
-                contact->pos[0] = ray->final_posr->pos[0] + alpha*ray->final_posr->R[0*4+2];
-                contact->pos[1] = ray->final_posr->pos[1] + alpha*ray->final_posr->R[1*4+2];
-                contact->pos[2] = ray->final_posr->pos[2] + alpha*ray->final_posr->R[2*4+2];
-                q[0] = contact->pos[0] - ccyl->final_posr->pos[0];
-                q[1] = contact->pos[1] - ccyl->final_posr->pos[1];
-                q[2] = contact->pos[2] - ccyl->final_posr->pos[2];
-                k = dCalcVectorDot3_14(q,ccyl->final_posr->R+2);
-                dReal nsign = inside_ccyl ? REAL(-1.0) : REAL(1.0);
-                if (k >= -lz2 && k <= lz2) {
-                    contact->normal[0] = nsign * (contact->pos[0] -
-                        (ccyl->final_posr->pos[0] + k*ccyl->final_posr->R[0*4+2]));
-                    contact->normal[1] = nsign * (contact->pos[1] -
-                        (ccyl->final_posr->pos[1] + k*ccyl->final_posr->R[1*4+2]));
-                    contact->normal[2] = nsign * (contact->pos[2] -
-                        (ccyl->final_posr->pos[2] + k*ccyl->final_posr->R[2*4+2]));
+                contact->pos[0] = pos[0] + alpha * R[2];
+                contact->pos[1] = pos[1] + alpha * R[6];
+                contact->pos[2] = pos[2] + alpha * R[10];
+                q[0] = contact->pos[0] - cpos[0];
+                q[1] = contact->pos[1] - cpos[1];
+                q[2] = contact->pos[2] - cpos[2];
+                k = dCalcVectorDot3_14(q, cR + 2);
+                if (k >= -lz2 && k <= lz2)
+                {
+                    if(inside_ccyl)
+                    {
+                        contact->normal[0] = k * cR[2] - q[0];
+                        contact->normal[1] = k * cR[6] - q[1];
+                        contact->normal[2] = k * cR[10] - q[2];
+                    }
+                    else
+                    {
+                        contact->normal[0] = q[0] - k * cR[2];
+                        contact->normal[1] = q[1] - k * cR[6];
+                        contact->normal[2] = q[2] - k * cR[10];
+                    }
+
                     dNormalize3 (contact->normal);
                     contact->depth = alpha;
                     return 1;
@@ -489,17 +571,20 @@ int dCollideRayCapsule (dxGeom *o1, dxGeom *o2,
 
                 // the infinite cylinder intersection point is not between the caps.
                 // set k to cap position to check.
-                if (k < 0) k = -lz2; else k = lz2;
+                if (k < 0)
+                    k = -lz2;
+                else
+                    k = lz2;
             }
         }
     }
 
     // check for ray intersection with the caps. k must indicate the cap
     // position to check
-    q[0] = ccyl->final_posr->pos[0] + k*ccyl->final_posr->R[0*4+2];
-    q[1] = ccyl->final_posr->pos[1] + k*ccyl->final_posr->R[1*4+2];
-    q[2] = ccyl->final_posr->pos[2] + k*ccyl->final_posr->R[2*4+2];
-    return ray_sphere_helper (ray,q,ccyl->radius,contact, inside_ccyl);
+    q[0] = cpos[0] + k * cR[2];
+    q[1] = cpos[1] + k * cR[6];
+    q[2] = cpos[2] + k * cR[10];
+    return ray_sphere_helper (ray, q, ccyl->radius, contact, inside_ccyl);
 }
 
 
@@ -514,19 +599,36 @@ int dCollideRayPlane (dxGeom *o1, dxGeom *o2, int flags,
     dxRay *ray = (dxRay*) o1;
     dxPlane *plane = (dxPlane*) o2;
 
-    dReal alpha = plane->p[3] - dCalcVectorDot3 (plane->p,ray->final_posr->pos);
+    dReal* pos = ray->final_posr->pos;
+    dReal* R = ray->final_posr->R;
+
+    dReal alpha = plane->p[3] - dCalcVectorDot3 (plane->p, pos);
     // note: if alpha > 0 the starting point is below the plane
     dReal nsign = (alpha > 0) ? REAL(-1.0) : REAL(1.0);
-    dReal k = dCalcVectorDot3_14(plane->p,ray->final_posr->R+2);
-    if (k==0) return 0;		// ray parallel to plane
+    dReal k = dCalcVectorDot3_14(plane->p, R + 2);
+    if (k==0)
+        return 0;		// ray parallel to plane
+
     alpha /= k;
-    if (alpha < 0 || alpha > ray->length) return 0;
-    contact->pos[0] = ray->final_posr->pos[0] + alpha*ray->final_posr->R[0*4+2];
-    contact->pos[1] = ray->final_posr->pos[1] + alpha*ray->final_posr->R[1*4+2];
-    contact->pos[2] = ray->final_posr->pos[2] + alpha*ray->final_posr->R[2*4+2];
-    contact->normal[0] = nsign*plane->p[0];
-    contact->normal[1] = nsign*plane->p[1];
-    contact->normal[2] = nsign*plane->p[2];
+    if (alpha < 0 || alpha > ray->length)
+        return 0;
+
+    contact->pos[0] = pos[0] + alpha * R[2];
+    contact->pos[1] = pos[1] + alpha * R[6];
+    contact->pos[2] = pos[2] + alpha * R[10];
+    if(nsign > 0)
+    {
+        contact->normal[0] = plane->p[0];
+        contact->normal[1] = plane->p[1];
+        contact->normal[2] = plane->p[2];
+    }
+    else
+    {
+        contact->normal[0] = -plane->p[0];
+        contact->normal[1] = -plane->p[1];
+        contact->normal[2] = -plane->p[2];
+    }
+
     contact->depth = alpha;
     contact->g1 = ray;
     contact->g2 = plane;

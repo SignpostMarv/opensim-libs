@@ -675,7 +675,7 @@ void dxStepBody (dxBody *b, dReal h)
     // damping
     if (b->flags & dxBodyLinearDamping) {
         const dReal lin_threshold = b->dampingp.linear_threshold;
-        const dReal lin_speed = dCalcVectorDot3( b->lvel, b->lvel );
+        const dReal lin_speed = dCalcVectorLengthSquare3(b->lvel);
         if ( lin_speed > lin_threshold) {
             const dReal k = 1 - b->dampingp.linear_scale;
             dScaleVector3(b->lvel, k);
@@ -683,7 +683,7 @@ void dxStepBody (dxBody *b, dReal h)
     }
     if (b->flags & dxBodyAngularDamping) {
         const dReal ang_threshold = b->dampingp.angular_threshold;
-        const dReal ang_speed = dCalcVectorDot3( b->avel, b->avel );
+        const dReal ang_speed = dCalcVectorLengthSquare3(b->avel);
         if ( ang_speed > ang_threshold) {
             const dReal k = 1 - b->dampingp.angular_scale;
             dScaleVector3(b->avel, k);

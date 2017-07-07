@@ -1508,7 +1508,7 @@ ODE_API int dBoxTouchesBox (const dVector3 _p1, const dMatrix3 R1,
 ODE_API int dBoxBox (const dVector3 p1, const dMatrix3 R1,
 	     const dVector3 side1, const dVector3 p2,
 	     const dMatrix3 R2, const dVector3 side2,
-	     dVector3 normal, dReal *depth, int *return_code,
+	     dVector3 normal, dReal *depth,
 	     int flags, dContactGeom *contact, int skip);
 
 ODE_API void dInfiniteAABB (dGeomID geom, dReal aabb[6]);

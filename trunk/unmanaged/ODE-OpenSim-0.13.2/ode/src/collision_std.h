@@ -108,7 +108,7 @@ struct dxSphere : public dxGeom {
 
 
 struct dxBox : public dxGeom {
-    dVector3 side;	// side lengths (x,y,z)
+    dVector3 halfside;	// side half lengths (x,y,z)
     dxBox (dSpaceID space, dReal lx, dReal ly, dReal lz);
     void computeAABB();
 };

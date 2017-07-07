@@ -203,11 +203,11 @@ int dCollideCapsuleBox (dxGeom *o1, dxGeom *o2, int flags,
     // copy out box center, rotation matrix, and side array
     dReal *c = o2->final_posr->pos;
     dReal *R = o2->final_posr->R;
-    const dReal *side = box->side;
+    const dReal *side = box->halfside;
 
     // get the closest point between the cylinder axis and the box
     dVector3 pl,pb;
-    dClosestLineBoxPoints (p1,p2,c,R,side,pl,pb);
+    dClosestLineBoxPoints(p1, p2, c, R, side, pl, pb);
 
     // if the capsule is penetrated further than radius 
     //  then pl and pb are equal (up to mindist) -> unknown normal
@@ -224,14 +224,13 @@ int dCollideCapsuleBox (dxGeom *o1, dxGeom *o2, int flags,
         // consider capsule as box
         dVector3 normal;
         dReal depth;
-        int code;
-        dReal radiusMul2 = radius * REAL(2.0);
-        const dVector3 capboxside = {radiusMul2, radiusMul2, cyl->lz + radiusMul2};
+        const dVector3 capboxside = {radius, radius, clen + radius};
         int num = dBoxBox (c, R, side, 
             pos, cR, capboxside,
-            normal, &depth, &code, flags, contact, skip);
+            normal, &depth, flags, contact, skip);
 
-        for (int i=0; i<num; i++) {
+        for (int i=0; i<num; i++)
+        {
             dContactGeom *currContact = CONTACT(contact,i*skip);
             currContact->normal[0] = normal[0];
             currContact->normal[1] = normal[1];
