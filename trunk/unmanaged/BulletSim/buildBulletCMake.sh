@@ -5,7 +5,7 @@ STARTDIR=$(pwd)
 
 UNAME=$(uname)
 MACH=$(uname -m)
-BULLET=bullet-2.82
+BULLET=bullet-2
 
 cd $BULLET
 mkdir -p bullet-build
@@ -27,20 +27,36 @@ if [[ "$UNAME" == "Darwin" ]] ; then
 else
     if [[ "$MACH" == "x86_64" ]] ; then
         cmake .. -G "Unix Makefiles" \
+                -DBUILD_BULLET2_DEMOS=off \
+                -DBUILD_BULLET3=on \
+                -DBUILD_CLSOCKET=off \
+                -DBUILD_CPU_DEMOS=off \
+                -DBUILD_ENET=off \
                 -DBUILD_EXTRAS=on \
                 -DBUILD_DEMOS=off \
+                -DBUILD_OPENGL_DEMOS=off \
+                -DBUILD_PYBULLET=off \
                 -DBUILD_SHARED_LIBS=off \
-                -DINSTALL_LIBS=on \
+                -DBUILD_UNIT_TESTS=off \
                 -DINSTALL_EXTRA_LIBS=on \
+                -DINSTALL_LIBS=on \
                 -DCMAKE_CXX_FLAGS="-fPIC" \
                 -DCMAKE_BUILD_TYPE=Release
     else
         cmake .. -G "Unix Makefiles" \
+                -DBUILD_BULLET2_DEMOS=off \
+                -DBUILD_BULLET3=on \
+                -DBUILD_CLSOCKET=off \
+                -DBUILD_CPU_DEMOS=off \
+                -DBUILD_ENET=off \
                 -DBUILD_EXTRAS=on \
                 -DBUILD_DEMOS=off \
+                -DBUILD_OPENGL_DEMOS=off \
+                -DBUILD_PYBULLET=off \
                 -DBUILD_SHARED_LIBS=off \
-                -DINSTALL_LIBS=on \
+                -DBUILD_UNIT_TESTS=off \
                 -DINSTALL_EXTRA_LIBS=on \
+                -DINSTALL_LIBS=on \
                 -DCMAKE_BUILD_TYPE=Release
     fi
 fi
@@ -53,8 +69,8 @@ make -j4
 #    Good as it doesn't require admin privilages
 cd "$STARTDIR"
 mkdir -p lib
-cd "${BULLET}/bullet-build"
-cp */*/*.a */*/*/*.a ../../lib
+cd "${BULLET}"
+cp */*/*.a */*/*/*.a ../lib
 
 cd "$STARTDIR"
 mkdir -p include

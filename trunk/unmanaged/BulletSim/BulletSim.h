@@ -275,14 +275,8 @@ private:
 	EntityProperties* m_updatesThisFrameArray;
 
 	// Used to expose colliders from Bullet to the BulletSim API
-	int m_maxCollisionsPerFrame;
-	int m_collisionsThisFrame;
 	CollisionDesc* m_collidersThisFrameArray;
-
 	std::set<COLLIDERKEYTYPE> m_collidersThisFrame;
-	void RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, 
-							const btVector3& contact, const btVector3& norm, const float penetration);
-	void RecordGhostCollisions(btPairCachingGhostObject* obj);
 
 public:
 
@@ -305,6 +299,13 @@ public:
 	btCollisionShape* BuildVHACDHullShapeFromMesh2(btCollisionShape* mesh, HACDParams* parms);
 	btCollisionShape* BuildConvexHullShapeFromMesh2(btCollisionShape* mesh);
 	btCollisionShape* CreateConvexHullShape2(int indicesCount, int* indices, int verticesCount, float* vertices);
+
+	// Collisions: called to add a collision record to the collisions for a simulation step
+	int maxCollisionsPerFrame;
+	int collisionsThisFrame;
+	void RecordCollision(const btCollisionObject* objA, const btCollisionObject* objB, 
+							const btVector3& contact, const btVector3& norm, const float penetration);
+	void RecordGhostCollisions(btPairCachingGhostObject* obj);
 
 	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
 	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);

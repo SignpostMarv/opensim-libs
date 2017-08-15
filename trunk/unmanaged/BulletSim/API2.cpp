@@ -2983,7 +2983,7 @@ EXTERN_C DLL_EXPORT void DumpConstraint2(BulletSim* sim, btTypedConstraint* cons
 		if (constrain->getConstraintType() == HINGE_CONSTRAINT_TYPE)
 		{
 			btHinge2Constraint* cc = (btHinge2Constraint*)constrain;
-			Dump6DofInfo(sim, "Hinge", cc);
+			// Dump6DofInfo(sim, "Hinge", cc);
 			btVector3 anchor1, anchor2, axis1, axis2;
 			anchor1 = cc->getAnchor();
 			anchor2 = cc->getAnchor2();

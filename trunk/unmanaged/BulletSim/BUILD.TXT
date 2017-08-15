@@ -1,76 +1,64 @@
-The OpenSimulator BulletSPlugin expects to use a "BulletSim.dll" which 
-provides the linkage to the Bullet physics engine. BulletSim.dll is
-written in C++ and is statically linked with the Bullet engine.
+The OpenSimulator BulletSPlugin expects to use a "BulletSim.dll" which provides the
+linkage to the Bullet physics engine.
+
+BulletSim.dll is written in C++ and is statically linked with the Bullet engine.
+
 BulletSim.dll must be compiled separately as the OpenSimulator build
 environment only builds the C# code.
 
-For Visual Studio 2010, the steps are:
+For Windows, the steps are:
 
-1) Download Bullet v2.82 (http://code.google.com/p/bullet/downloads/)
-1a) If you are adventurous, you can fetch the latest v2.* from svn
-    (http://code.google.com/p/bullet/source/checkout).
-    As of this writing (August 16, 2013), Bullet development is mostly doing
+1) Fetch the latest version from GitHub: https://github.com/bulletphysics/bullet3.
+        cd trunk/unmanaged/BulletSim
+        git clone https://github.com/bulletphysics/bullet3 bullet-2
+
+    As of this writing (August 7, 2017), Bullet development is mostly doing
     bug fixes on the v2 branch and new development is happening
     on a new v3 branch.  When Bullet advances to v3, BulletSim
     will probably not build or link and will require rework.
-    In the mean time, any of the v2.79+ versions should work.
-2) Unpack the tgz or zip into the BulletSim directory (so there is a new
-    directory "BulletSim/bullet-2.82/")
-3) Apply all the patches for bullet:
-	cd bullet-2.82 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
-4) cd into the bullet directory and build using your preferred method
-    For Visual Studio 2008, open "msvc/2008/0BulletSolution.sln"
-    Build a "Release" version.
-    To select, 32 or 64 bit versions, make sure the target system
-    is the desired architecture. Windows does not select which DLL
-    to run depending on the system type so you must put the correct
-    architectured version in "BulletSim.dll". BulletSim is distributed
-    with a 32 bit version named "lib32/BulletSim.dll" and a 64 bit version
-    named "lib64/BulletSim.dll".
-4b) There is a Solution file for VS2010 named Bullet-2010.sln.
-    While this does built BulletSim, make sure the Framework is
-    set to 3.5 which is the version guaranteed to work with OpenSim.
-5) cd into "BulletSim/"
-6) Open and build with BulletSim.sln or BulletSim-2010.sln
-7) Copy "BulletSim/Release/BulletSim.dll" into the
-    OpenSimulator "bin/lib32" directory
-7b) Copy "BulletSim/x64/Release/BulletSim.dll" into the
-    OpenSimulator "bin/lib64" directory
+    In the mean time, any of the v2.8+ versions should work.
 
-For Linux/Mac OSX (tested on Ubuntu and Lion)
-1) Download Bullet v2.82 (http://code.google.com/p/bullet/downloads/)
-1b) As noted above, you can also fetch the latest Subversion
-    version of the version 2 Bullet.
-2) Unpack the tgz or zip into the BulletSim directory somewhere
-3) Apply all patches for bullet:
-	cd bullet-2.82 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
-4) Follow the Bullet build instructions 
-    (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation),
-    create the directory "bullet-build" and cd into that directory.
-	Here is a bash script that builds bullet-2.82:
-				#! /bin/bash
-				cd bullet-2.82
-				mkdir -p bullet-build
-				cd bullet-build
-				cmake .. -G "Unix Makefiles" \
-				        -DBUILD_EXTRAS=on \
-				        -DBUILD_DEMOS=off \
-				        -DBUILD_SHARED_LIBS=off \
-				        -DINSTALL_LIBS=on \
-				        -DINSTALL_EXTRA_LIBS=on \
-				        -DCMAKE_BUILD_TYPE=Release
-				make -j4
+2) Apply all the patches for bullet:
+	cd bullet-2 ; for file in ../*.patch ; do cat $file | patch -p1 ; done
+
+3) Build Bullet
+3a) Windows:
+    The Bullet distribution has an instance of PreMake (https://premake.github.io/)
+    to build the Visual Studio project files. 
+    The script buildBulletVS.bat will call premake and generate the project files.
+    As of August 2017, premake version 4 worked but would only generate for VS2010 (v100).
+    I build the BulletSim libraries with VS2012 (v110) for downward compatibility.
+    I let VS2012 upgrade the VS2010 project files for VS2012.
+
+    Once the project files have been built, open
+    "bullet-2/build3/vs2010/0_Bullet3Solution.sln" with VS2012
+    and do a batch compile for a Release version for 'Win32' and 'x64'.
+
+3b) Linux and IOS:
+    (http://bulletphysics.org/mediawiki-1.5.8/index.php/Installation).
+    The script "buildBulletCMake.sh" has the appropriate cmake and compilation
+    commands for Linux and IOS.
     (for 64bit systems, you must also add the cmake flag -DCMAKE_CXX_FLAGS="-fPIC" )
-    (for Mac OSX systems, you must also add the cmake flag -DCMAKE_OSX_ARCHITECTURES=i386 as mono runs as a 32bit process on OSX)
-    This builds bullet static libraries and installs them into /usr/local/lib.
-    Finally, do "sudo make install" to install the include files and .a libraries.
-5) cd back to the BulletSim directory
-6) Do "make"
-7) On Linux, copy "libBulletSim.so" into the OpenSimulator "bin/lib32" or "bin/lib64"
-   directories depending on the architecture of your system.
-   On Mac OSX, copy "libBulletSim.dylib" into the OpenSimulator "bin/lib32" directory
+    (for Mac OSX systems, you must also add the cmake flag
+        -DCMAKE_OSX_ARCHITECTURES=i386 as mono runs as a 32bit process on OSX)
+    The script builds bullet static libraries and copies them into local directories.
+
+4) Build BulletSim
+4a) Windows:
+    Use VS2012 to open "BulletSim.sln". Build Release version for 'Win32'
+    and 'x64'. The resulting DLLs will be in "Release/BulletSim.dll"
+    and "x64/Release/BulletSim.dll". These files are copied to
+    "bin/lib32/BulletSim.dll" and "bin/lib64/BulletSim.dll" in the
+    OpenSimulator execution tree.
+
+4b) Linux and IOS:
+    Use the 'Makefile' to build BulletSim. A simple 'make' should build it.
+        
+    On Linux, copy "libBulletSim.so" into the OpenSimulator "bin/lib32" or "bin/lib64"
+    directories depending on the architecture of your system.
+    On Mac OSX, copy "libBulletSim.dylib" into the OpenSimulator "bin/lib32" directory
 
 
-This was developed with Bullet v2.82. If you use a different version, you will
+This was developed with Bullet v2.86. If you use a different version, you will
 need to change the include and library directories for the BulletSim compilation.
 
