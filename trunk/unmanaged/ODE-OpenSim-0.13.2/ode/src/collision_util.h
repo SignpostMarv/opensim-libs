@@ -77,7 +77,7 @@ void dLineClosestApproach (const dVector3 pa, const dVector3 ua,
 
 void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
                             const dVector3 c, const dMatrix3 R,
-                            const dVector3 side,
+                            const dVector3 halfside,
                             dVector3 lret, dVector3 bret);
 
 // 20 Apr 2004

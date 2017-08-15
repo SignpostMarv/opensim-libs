@@ -98,19 +98,21 @@ void dLineClosestApproach (const dVector3 pa, const dVector3 ua,
     p[0] = pb[0] - pa[0];
     p[1] = pb[1] - pa[1];
     p[2] = pb[2] - pa[2];
-    dReal uaub = dCalcVectorDot3(ua,ub);
-    dReal q1 =  dCalcVectorDot3(ua,p);
-    dReal q2 = -dCalcVectorDot3(ub,p);
-    dReal d = 1-uaub*uaub;
-    if (d <= REAL(0.0001)) {
+    dReal uaub = dCalcVectorDot3(ua, ub);
+    dReal q1 =  dCalcVectorDot3(ua, p);
+    dReal q2 = -dCalcVectorDot3(ub, p);
+    dReal d = 1 - uaub * uaub;
+    if (d <= REAL(0.0001))
+    {
         // @@@ this needs to be made more robust
         *alpha = 0;
         *beta  = 0;
     }
-    else {
+    else
+    {
         d = dRecip(d);
-        *alpha = (q1 + uaub*q2)*d;
-        *beta  = (uaub*q1 + q2)*d;
+        *alpha = (q1 + uaub * q2) * d;
+        *beta  = (uaub * q1 + q2) * d;
     }
 }
 
@@ -136,46 +138,50 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     dVector3 a1a2,b1b2,a1b1,a1b2,a2b1,a2b2,n;
     dReal la,lb,k,da1,da2,da3,da4,db1,db2,db3,db4,det;
 
-#define SET2(a,b) a[0]=b[0]; a[1]=b[1]; a[2]=b[2];
-#define SET3(a,b,op,c) a[0]=b[0] op c[0]; a[1]=b[1] op c[1]; a[2]=b[2] op c[2];
+#define SET2(a, b) a[0] = b[0]; a[1] = b[1]; a[2] = b[2];
+#define SET3(a, b, op, c) a[0] = b[0] op c[0]; a[1] = b[1] op c[1]; a[2] = b[2] op c[2];
 
     // check vertex-vertex features
 
-    SET3 (a1a2,a2,-,a1);
-    SET3 (b1b2,b2,-,b1);
-    SET3 (a1b1,b1,-,a1);
-    da1 = dCalcVectorDot3(a1a2,a1b1);
-    db1 = dCalcVectorDot3(b1b2,a1b1);
-    if (da1 <= 0 && db1 >= 0) {
-        SET2 (cp1,a1);
-        SET2 (cp2,b1);
+    SET3 (a1a2, a2, -, a1);
+    SET3 (b1b2, b2, -, b1);
+    SET3 (a1b1, b1, -, a1);
+    da1 = dCalcVectorDot3(a1a2, a1b1);
+    db1 = dCalcVectorDot3(b1b2, a1b1);
+    if (da1 <= 0 && db1 >= 0)
+    {
+        SET2 (cp1, a1);
+        SET2 (cp2, b1);
         return;
     }
 
-    SET3 (a1b2,b2,-,a1);
-    da2 = dCalcVectorDot3(a1a2,a1b2);
-    db2 = dCalcVectorDot3(b1b2,a1b2);
-    if (da2 <= 0 && db2 <= 0) {
-        SET2 (cp1,a1);
-        SET2 (cp2,b2);
+    SET3 (a1b2, b2, -, a1);
+    da2 = dCalcVectorDot3(a1a2, a1b2);
+    db2 = dCalcVectorDot3(b1b2, a1b2);
+    if (da2 <= 0 && db2 <= 0)
+    {
+        SET2 (cp1, a1);
+        SET2 (cp2, b2);
         return;
     }
 
-    SET3 (a2b1,b1,-,a2);
-    da3 = dCalcVectorDot3(a1a2,a2b1);
-    db3 = dCalcVectorDot3(b1b2,a2b1);
-    if (da3 >= 0 && db3 >= 0) {
-        SET2 (cp1,a2);
-        SET2 (cp2,b1);
+    SET3 (a2b1, b1, -, a2);
+    da3 = dCalcVectorDot3(a1a2, a2b1);
+    db3 = dCalcVectorDot3(b1b2, a2b1);
+    if (da3 >= 0 && db3 >= 0)
+    {
+        SET2 (cp1, a2);
+        SET2 (cp2, b1);
         return;
     }
 
-    SET3 (a2b2,b2,-,a2);
-    da4 = dCalcVectorDot3(a1a2,a2b2);
-    db4 = dCalcVectorDot3(b1b2,a2b2);
-    if (da4 >= 0 && db4 <= 0) {
-        SET2 (cp1,a2);
-        SET2 (cp2,b2);
+    SET3 (a2b2, b2, -, a2);
+    da4 = dCalcVectorDot3(a1a2, a2b2);
+    db4 = dCalcVectorDot3(b1b2, a2b2);
+    if (da4 >= 0 && db4 <= 0)
+    {
+        SET2 (cp1, a2);
+        SET2 (cp2, b2);
         return;
     }
 
@@ -183,44 +189,52 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     // if one or both of the lines has zero length, we will never get to here,
     // so we do not have to worry about the following divisions by zero.
 
-    la = dCalcVectorDot3(a1a2,a1a2);
-    if (da1 >= 0 && da3 <= 0) {
+    la = dCalcVectorLengthSquare3(a1a2);
+    if (da1 >= 0 && da3 <= 0)
+    {
         k = da1 / la;
-        SET3 (n,a1b1,-,k*a1a2);
-        if (dCalcVectorDot3(b1b2,n) >= 0) {
+        SET3 (n, a1b1, -, k * a1a2);
+        if (dCalcVectorDot3(b1b2, n) >= 0)
+        {
             SET3 (cp1,a1,+,k*a1a2);
             SET2 (cp2,b1);
             return;
         }
     }
 
-    if (da2 >= 0 && da4 <= 0) {
+    if (da2 >= 0 && da4 <= 0)
+    {
         k = da2 / la;
-        SET3 (n,a1b2,-,k*a1a2);
-        if (dCalcVectorDot3(b1b2,n) <= 0) {
-            SET3 (cp1,a1,+,k*a1a2);
-            SET2 (cp2,b2);
+        SET3 (n, a1b2, -, k * a1a2);
+        if (dCalcVectorDot3(b1b2, n) <= 0)
+        {
+            SET3 (cp1, a1, +, k * a1a2);
+            SET2 (cp2, b2);
             return;
         }
     }
 
-    lb = dCalcVectorDot3(b1b2,b1b2);
-    if (db1 <= 0 && db2 >= 0) {
+    lb = dCalcVectorLengthSquare3(b1b2);
+    if (db1 <= 0 && db2 >= 0)
+    {
         k = -db1 / lb;
-        SET3 (n,-a1b1,-,k*b1b2);
-        if (dCalcVectorDot3(a1a2,n) >= 0) {
-            SET2 (cp1,a1);
-            SET3 (cp2,b1,+,k*b1b2);
+        SET3 (n, -a1b1, -, k * b1b2);
+        if (dCalcVectorDot3(a1a2, n) >= 0)
+        {
+            SET2 (cp1, a1);
+            SET3 (cp2, b1, +, k * b1b2);
             return;
         }
     }
 
-    if (db3 <= 0 && db4 >= 0) {
+    if (db3 <= 0 && db4 >= 0)
+    {
         k = -db3 / lb;
-        SET3 (n,-a2b1,-,k*b1b2);
-        if (dCalcVectorDot3(a1a2,n) <= 0) {
-            SET2 (cp1,a2);
-            SET3 (cp2,b1,+,k*b1b2);
+        SET3 (n, -a2b1, -, k * b1b2);
+        if (dCalcVectorDot3(a1a2, n) <= 0)
+        {
+            SET2 (cp1, a2);
+            SET3 (cp2, b1, +, k * b1b2);
             return;
         }
     }
@@ -228,18 +242,19 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     // it must be edge-edge
 
     k = dCalcVectorDot3(a1a2,b1b2);
-    det = la*lb - k*k;
-    if (det <= 0) {
+    det = la * lb - k * k;
+    if (det <= 0)
+    {
         // this should never happen, but just in case...
-        SET2(cp1,a1);
-        SET2(cp2,b1);
+        SET2(cp1, a1);
+        SET2(cp2, b1);
         return;
     }
     det = dRecip (det);
-    dReal alpha = (lb*da1 -  k*db1) * det;
-    dReal beta  = ( k*da1 - la*db1) * det;
-    SET3 (cp1,a1,+,alpha*a1a2);
-    SET3 (cp2,b1,+,beta*b1b2);
+    dReal alpha = (lb * da1 -  k * db1) * det;
+    dReal beta  = ( k *da1 - la * db1) * det;
+    SET3 (cp1, a1, +, alpha * a1a2);
+    SET3 (cp2, b1, +, beta * b1b2);
 
 # undef SET2
 # undef SET3
@@ -269,7 +284,7 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
 
 void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
                             const dVector3 c, const dMatrix3 R,
-                            const dVector3 side,
+                            const dVector3 h,
                             dVector3 lret, dVector3 bret)
 {
     int i;
@@ -288,12 +303,6 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     dMultiply1_331 (v,R,tmp);
 
     dVector3 sign;
-
-    // compute the half-sides of the box
-    dReal h[3];
-    h[0] = REAL(0.5) * side[0];
-    h[1] = REAL(0.5) * side[1];
-    h[2] = REAL(0.5) * side[2];
 
     // region is -1,0,+1 depending on which side of the box planes each
     // coordinate is on. tanchor is the next t value at which there is a
