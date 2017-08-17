@@ -9,8 +9,8 @@ LDIR = ./lib
 BULLETLIBS = $(LDIR)/libBulletDynamics.a $(LDIR)/libBulletCollision.a $(LDIR)/libLinearMath.a $(LDIR)/libHACD.a
  
 #CC = gcc
-CC = g++
-LD = g++
+CC = /usr/bin/g++
+LD = /usr/bin/g++
 UNAME := $(shell uname)
 UNAMEPROCESSOR := $(shell uname -m)
 
@@ -39,8 +39,8 @@ TARGET = libBulletSim.dylib
 #LFLAGS = -m32 -dynamiclib -Wl -o $(TARGET)
 #CFLAGS = -m32 -arch i386 -stdlib=libstdc++ -mmacosx-version-min=10.6 -I$(IDIR) -g 
 #LFLAGS = -v -m32 -arch i386 -std=c++11 -stdlib=libstdc++ -mmacosx-version-min=10.6 -dynamic -o $(TARGET)
-CFLAGS = -m32 -arch i386 -I$(IDIR) -g 
-LFLAGS = -v -dynamiclib -m32 -arch i386 -o $(TARGET)
+CFLAGS = -arch i386 -arch x86_64 -std=c++11  -O3 -I$(IDIR) -g 
+LFLAGS = -v -dynamiclib -arch i386 -arch x86_64 -o $(TARGET)
 endif
 
 BASEFILES = API2.cpp BulletSim.cpp

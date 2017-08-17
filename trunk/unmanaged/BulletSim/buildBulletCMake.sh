@@ -13,15 +13,21 @@ cd bullet-build
 
 if [[ "$UNAME" == "Darwin" ]] ; then
     cmake .. -G "Unix Makefiles" \
+            -DBUILD_BULLET2_DEMOS=off \
+            -DBUILD_BULLET3=on \
+            -DBUILD_CLSOCKET=off \
+            -DBUILD_CPU_DEMOS=off \
+            -DBUILD_ENET=off \
             -DBUILD_EXTRAS=on \
             -DBUILD_DEMOS=off \
+            -DBUILD_PYBULLET=off \
             -DBUILD_SHARED_LIBS=off \
-            -DINSTALL_LIBS=off \
             -DINSTALL_EXTRA_LIBS=off \
-            -DCMAKE_OSX_ARCHITECTURES="i386" \
-            -DCMAKE_CXX_FLAGS="-m32 -arch i386 -mmacosx-version-min=10.6" \
-            -DCMAKE_C_FLAGS="-m32 -arch i386 -mmacosx-version-min=10.6" \
-            -DCMAKE_EXE_LINKER_FLAGS="-m32 -arch i386 -mmacosx-version-min=10.6" \
+            -DINSTALL_LIBS=off \
+            -DCMAKE_OSX_ARCHITECTURES="i386; x86_64" \
+            -DCMAKE_CXX_FLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.11" \
+            -DCMAKE_C_FLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.11" \
+            -DCMAKE_EXE_LINKER_FLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.11" \
             -DCMAKE_VERBOSE_MAKEFILE="on" \
             -DCMAKE_BUILD_TYPE=Release
 else
