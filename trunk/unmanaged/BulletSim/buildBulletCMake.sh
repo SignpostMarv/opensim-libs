@@ -20,10 +20,12 @@ if [[ "$UNAME" == "Darwin" ]] ; then
             -DBUILD_ENET=off \
             -DBUILD_EXTRAS=on \
             -DBUILD_DEMOS=off \
+            -DBUILD_OPENGL_DEMOS=off \
             -DBUILD_PYBULLET=off \
             -DBUILD_SHARED_LIBS=off \
-            -DINSTALL_EXTRA_LIBS=off \
-            -DINSTALL_LIBS=off \
+            -DBUILD_UNIT_TESTS=off \
+            -DINSTALL_EXTRA_LIBS=on \
+            -DINSTALL_LIBS=on \
             -DCMAKE_OSX_ARCHITECTURES="i386; x86_64" \
             -DCMAKE_CXX_FLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.11" \
             -DCMAKE_C_FLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.11" \
