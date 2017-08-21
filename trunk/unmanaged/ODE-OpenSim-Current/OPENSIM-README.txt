@@ -1,6 +1,8 @@
 OPENSIM README
+tis is version ODE-OpenSim.0.13.2
 
-The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with modifications for opensim 
+The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with selected adictions from more recent vrsions and
+ modifications by opensim 
 
 = BUILD INSTRUCTIONS =
 
@@ -46,6 +48,8 @@ cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib64/libode-x86_64.so (possible n
 CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x --disable-threading-intf
 make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so
+
+you can run strip to remove debug information and reduce file size
 
 you may need to ajdust files bin/Ode.NET.dll.config  and bin/OpenSim.Region.PhysicsModule.ubOde.dll.config
 
