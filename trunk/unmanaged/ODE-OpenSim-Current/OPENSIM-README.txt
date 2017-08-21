@@ -31,7 +31,7 @@ C++ debug does have a large impact on performance. You should only use it for te
 if you dont see the file ./configure you need to do
 ./bootstrap
 to create it. Check it so see its dependencies on several linux tools.
-
+you may need to do chmod +x bootstrap before since git keeps losing it
 (could not test following adapted from justin instructions bellow)
 
 == On Linux 32-bit ==
