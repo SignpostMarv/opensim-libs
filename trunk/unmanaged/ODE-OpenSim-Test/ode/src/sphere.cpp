@@ -159,8 +159,10 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
     p[1] = pos[1] - boxpos[1];
     p[2] = pos[2] - boxpos[2];
 
+    dMultiply1_331 (t, boxR, p);
+
     l[0] = box->halfside[0];
-    t[0] = dCalcVectorDot3_14(p, boxR);
+//    t[0] = dCalcVectorDot3_14(p, boxR);
     if (t[0] < -l[0])
     {
         t[0] = -l[0];
@@ -173,7 +175,7 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
     }
 
     l[1] = box->halfside[1];
-    t[1] = dCalcVectorDot3_14(p, boxR + 1);
+//    t[1] = dCalcVectorDot3_14(p, boxR + 1);
     if (t[1] < -l[1])
     {
         t[1] = -l[1];
@@ -185,7 +187,7 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
         onborder = 1;
     }
 
-    t[2] = dCalcVectorDot3_14(p, boxR + 2);
+//    t[2] = dCalcVectorDot3_14(p, boxR + 2);
     l[2] = box->halfside[2];
     if (t[2] < -l[2])
     {

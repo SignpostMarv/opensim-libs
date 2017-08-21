@@ -1,5 +1,5 @@
 OPENSIM README
-tis is version ODE-OpenSim.0.13.2
+tis is version ODE-OpenSim.0.13.3
 
 The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with selected adictions from more recent vrsions and
  modifications by opensim 

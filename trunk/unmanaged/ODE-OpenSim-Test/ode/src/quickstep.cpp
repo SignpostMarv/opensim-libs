@@ -1212,7 +1212,7 @@ void dxQuickStepIsland_Stage2a(dxQuickStepperStage2CallContext *stage2CallContex
             for (unsigned int i = 0; i != infom; ++i) {
                 rhs_row[i] *= stepsizeRecip;
                 rhs_rowV[i] *= stepsizeRecip;
-                cfm_row[i] *= stepsizeRecip;
+//                cfm_row[i] *= stepsizeRecip;
             }
 
             // adjust returned findex values for global index numbering
@@ -2471,7 +2471,6 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
     IndexError *order = stage4CallContext->m_order;
     unsigned int index = order[i].index;
 
-
     dReal *rhs;
 
     if(doPos)
@@ -2497,7 +2496,7 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
     dReal delta;
 
     {
-        const dReal *cfm = localContext->m_cfm;
+  //      const dReal *cfm = localContext->m_cfm;
   //      delta = rhs[index] - old_lambda * cfm[index];
         delta = rhs[index];
 
@@ -2529,13 +2528,14 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
         // the constraints are ordered so that all lambda[] values needed have
         // already been computed.
         const int *findex = localContext->m_findex;
-        if (findex[index] != -1) {
-            dReal *hi = localContext->m_hi;
-            hi_act = dFabs (hi[index] * lambda[findex[index]]);
+        int curfindex = findex[index];
+        dReal *hi = localContext->m_hi;
+        hi_act = hi[index];
+
+        if (curfindex != -1) {
+            hi_act = dFabs (hi_act * lambda[curfindex]);
             lo_act = -hi_act;
         } else {
-            dReal *hi = localContext->m_hi;
-            hi_act = hi[index];
             dReal *lo = localContext->m_lo;
             lo_act = lo[index];
         }

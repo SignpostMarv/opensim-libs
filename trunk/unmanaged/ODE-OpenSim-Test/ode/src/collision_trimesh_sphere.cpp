@@ -39,7 +39,8 @@
 #if dTRIMESH_OPCODE
 
 // Ripped from Opcode 1.1.
-static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 Origin, const dVector3 Edge0, const dVector3 Edge1, dReal& Dist, dReal& u, dReal& v){
+static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 Origin, const dVector3 Edge0, 
+                           const dVector3 Edge1, dReal& Dist, dReal& u, dReal& v){
 
     // now onto the bulk of the collision...
 
@@ -47,7 +48,6 @@ static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 
     Diff[0] = Origin[0] - Center[0];
     Diff[1] = Origin[1] - Center[1];
     Diff[2] = Origin[2] - Center[2];
-    Diff[3] = Origin[3] - Center[3];
 
     dReal A00 = dCalcVectorDot3(Edge0, Edge0);
     dReal A01 = dCalcVectorDot3(Edge0, Edge1);
@@ -64,75 +64,96 @@ static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 
 
     dReal DistSq;
 
-    if (u + v <= Det){
-        if(u < REAL(0.0)){
-            if(v < REAL(0.0)){  // region 4
-                if(B0 < REAL(0.0)){
+    if (u + v <= Det)
+    {
+        if(u < REAL(0.0))
+        {
+            if(v < REAL(0.0))
+            {  // region 4
+                if(B0 < REAL(0.0))
+                {
                     v = REAL(0.0);
-                    if (-B0 >= A00){
+                    if (-B0 >= A00)
+                    {
                         u = REAL(1.0);
                         DistSq = A00 + REAL(2.0) * B0 + C;
                     }
-                    else{
+                    else
+                    {
                         u = -B0 / A00;
                         DistSq = B0 * u + C;
                     }
                 }
-                else{
+                else
+                {
                     u = REAL(0.0);
-                    if(B1 >= REAL(0.0)){
+                    if(B1 >= REAL(0.0))
+                    {
                         v = REAL(0.0);
                         DistSq = C;
                     }
-                    else if(-B1 >= A11){
+                    else if(-B1 >= A11)
+                    {
                         v = REAL(1.0);
                         DistSq = A11 + REAL(2.0) * B1 + C;
                     }
-                    else{
+                    else
+                    {
                         v = -B1 / A11;
                         DistSq = B1 * v + C;
                     }
                 }
             }
-            else{  // region 3
+            else
+            {  // region 3
                 u = REAL(0.0);
-                if(B1 >= REAL(0.0)){
+                if(B1 >= REAL(0.0))
+                {
                     v = REAL(0.0);
                     DistSq = C;
                 }
-                else if(-B1 >= A11){
+                else if(-B1 >= A11)
+                {
                     v = REAL(1.0);
                     DistSq = A11 + REAL(2.0) * B1 + C;
                 }
-                else{
+                else
+                {
                     v = -B1 / A11;
                     DistSq = B1 * v + C;
                 }
             }
         }
-        else if(v < REAL(0.0)){  // region 5
+        else if(v < REAL(0.0))
+        {  // region 5
             v = REAL(0.0);
-            if (B0 >= REAL(0.0)){
+            if (B0 >= REAL(0.0))
+            {
                 u = REAL(0.0);
                 DistSq = C;
             }
-            else if (-B0 >= A00){
+            else if (-B0 >= A00)
+            {
                 u = REAL(1.0);
                 DistSq = A00 + REAL(2.0) * B0 + C;
             }
-            else{
+            else
+            {
                 u = -B0 / A00;
                 DistSq = B0 * u + C;
             }
         }
-        else{  // region 0
+        else
+        {  // region 0
             // minimum at interior point
-            if (Det == REAL(0.0)){
+            if (Det == REAL(0.0))
+            {
                 u = REAL(0.0);
                 v = REAL(0.0);
                 DistSq = FLT_MAX;
             }
-            else{
+            else
+            {
                 dReal InvDet = REAL(1.0) / Det;
                 u *= InvDet;
                 v *= InvDet;
@@ -140,90 +161,111 @@ static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 
             }
         }
     }
-    else{
+    else
+    {
         dReal Tmp0, Tmp1, Numer, Denom;
 
-        if(u < REAL(0.0)){  // region 2
+        if(u < REAL(0.0))
+        {  // region 2
             Tmp0 = A01 + B0;
             Tmp1 = A11 + B1;
-            if (Tmp1 > Tmp0){
+            if (Tmp1 > Tmp0)
+            {
                 Numer = Tmp1 - Tmp0;
                 Denom = A00 - REAL(2.0) * A01 + A11;
-                if (Numer >= Denom){
+                if (Numer >= Denom)
+                {
                     u = REAL(1.0);
                     v = REAL(0.0);
                     DistSq = A00 + REAL(2.0) * B0 + C;
                 }
-                else{
+                else
+                {
                     u = Numer / Denom;
                     v = REAL(1.0) - u;
                     DistSq = u * (A00 * u + A01 * v + REAL(2.0) * B0) + v * (A01 * u + A11 * v + REAL(2.0) * B1) + C;
                 }
             }
-            else{
+            else
+            {
                 u = REAL(0.0);
-                if(Tmp1 <= REAL(0.0)){
+                if(Tmp1 <= REAL(0.0))
+                {
                     v = REAL(1.0);
                     DistSq = A11 + REAL(2.0) * B1 + C;
                 }
-                else if(B1 >= REAL(0.0)){
+                else if(B1 >= REAL(0.0))
+                {
                     v = REAL(0.0);
                     DistSq = C;
                 }
-                else{
+                else
+                {
                     v = -B1 / A11;
                     DistSq = B1 * v + C;
                 }
             }
         }
-        else if(v < REAL(0.0)){  // region 6
+        else if(v < REAL(0.0))
+        {  // region 6
             Tmp0 = A01 + B1;
             Tmp1 = A00 + B0;
-            if (Tmp1 > Tmp0){
+            if (Tmp1 > Tmp0)
+            {
                 Numer = Tmp1 - Tmp0;
                 Denom = A00 - REAL(2.0) * A01 + A11;
-                if (Numer >= Denom){
+                if (Numer >= Denom)
+                {
                     v = REAL(1.0);
                     u = REAL(0.0);
                     DistSq = A11 + REAL(2.0) * B1 + C;
                 }
-                else{
+                else
+                {
                     v = Numer / Denom;
                     u = REAL(1.0) - v;
                     DistSq =  u * (A00 * u + A01 * v + REAL(2.0) * B0) + v * (A01 * u + A11 * v + REAL(2.0) * B1) + C;
                 }
             }
-            else{
+            else
+            {
                 v = REAL(0.0);
                 if (Tmp1 <= REAL(0.0)){
                     u = REAL(1.0);
                     DistSq = A00 + REAL(2.0) * B0 + C;
                 }
-                else if(B0 >= REAL(0.0)){
+                else if(B0 >= REAL(0.0))
+                {
                     u = REAL(0.0);
                     DistSq = C;
                 }
-                else{
+                else
+                {
                     u = -B0 / A00;
                     DistSq = B0 * u + C;
                 }
             }
         }
-        else{  // region 1
+        else
+        {  // region 1
             Numer = A11 + B1 - A01 - B0;
-            if (Numer <= REAL(0.0)){
+            if (Numer <= REAL(0.0))
+            {
                 u = REAL(0.0);
                 v = REAL(1.0);
                 DistSq = A11 + REAL(2.0) * B1 + C;
             }
-            else{
+            else
+            {
                 Denom = A00 - REAL(2.0) * A01 + A11;
-                if (Numer >= Denom){
+                if (Numer >= Denom)
+                {
                     u = REAL(1.0);
                     v = REAL(0.0);
                     DistSq = A00 + REAL(2.0) * B0 + C;
                 }
-                else{
+                else
+                {
                     u = Numer / Denom;
                     v = REAL(1.0) - u;
                     DistSq = u * (A00 * u + A01 * v + REAL(2.0) * B0) + v * (A01 * u + A11 * v + REAL(2.0) * B1) + C;
@@ -234,7 +276,8 @@ static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 
 
     Dist = dSqrt(dFabs(DistSq));
 
-    if (Dist <= Radius){
+    if (Dist <= Radius)
+    {
         Dist = Radius - Dist;
         return true;
     }
@@ -395,9 +438,8 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
             // Since Depth already had a requirement to be non-negative,
             // negative direction projections should not be allowed as well,
             // as otherwise the multiplication will result in negative contact depth.
-            if (dirProj < REAL(0.0)){
+            if (dirProj < REAL(0.0))
                 continue; // Zero contact depth could be ignored
-            }
 
             dContactGeom* Contact = SAFECONTACT(Flags, Contacts, OutTriCount, Stride);
 
@@ -424,14 +466,17 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
             OutTriCount++;
         }
-        if (OutTriCount > 0){
-            if (TriMesh->SphereContactsMergeOption == MERGE_CONTACTS_FULLY) {
+        if (OutTriCount > 0)
+        {
+            if (TriMesh->SphereContactsMergeOption == MERGE_CONTACTS_FULLY)
+            {
                 dContactGeom* Contact = SAFECONTACT(Flags, Contacts, 0, Stride);
                 Contact->g1 = TriMesh;
                 Contact->g2 = SphereGeom;
                 Contact->side2 = -1;
 
-                if (OutTriCount > 1 && !(Flags & CONTACTS_UNIMPORTANT)){
+                if (OutTriCount > 1 && !(Flags & CONTACTS_UNIMPORTANT))
+                {
                     dVector3 pos;
                     pos[0] = Contact->pos[0];
                     pos[1] = Contact->pos[1];
@@ -445,7 +490,8 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
                     int TriIndex = Contact->side1;
 
-                    for (int i = 1; i < OutTriCount; i++){
+                    for (int i = 1; i < OutTriCount; i++)
+                    {
                         dContactGeom* TempContact = SAFECONTACT(Flags, Contacts, i, Stride);
 
                         pos[0] += TempContact->pos[0];
@@ -494,8 +540,10 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
                 return 1;
             }
-            else if (TriMesh->SphereContactsMergeOption == MERGE_CONTACT_NORMALS) {
-                if (OutTriCount != 1 && !(Flags & CONTACTS_UNIMPORTANT)){
+            else if (TriMesh->SphereContactsMergeOption == MERGE_CONTACT_NORMALS)
+            {
+                if (OutTriCount != 1 && !(Flags & CONTACTS_UNIMPORTANT))
+                {
                     dVector3 Normal;
 
                     dContactGeom* FirstContact = SAFECONTACT(Flags, Contacts, 0, Stride);
@@ -504,7 +552,8 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
                     Normal[2] = FirstContact->normal[2] * FirstContact->depth;
                     Normal[3] = FirstContact->normal[3] * FirstContact->depth;
 
-                    for (int i = 1; i < OutTriCount; i++){
+                    for (int i = 1; i < OutTriCount; i++)
+                    {
                         dContactGeom* Contact = SAFECONTACT(Flags, Contacts, i, Stride);
 
                         Normal[0] += Contact->normal[0] * Contact->depth;
@@ -515,7 +564,8 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
                     dNormalize3(Normal);
 
-                    for (int i = 0; i < OutTriCount; i++){
+                    for (int i = 0; i < OutTriCount; i++)
+                    {
                         dContactGeom* Contact = SAFECONTACT(Flags, Contacts, i, Stride);
 
                         Contact->normal[0] = Normal[0];
@@ -527,7 +577,8 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
                 return OutTriCount;
             }
-            else {
+            else
+            {
                 dIASSERT(TriMesh->SphereContactsMergeOption == DONT_MERGE_CONTACTS);
                 return OutTriCount;
             }
