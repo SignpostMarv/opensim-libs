@@ -68,6 +68,7 @@ namespace HttpServer
         {
             m_shuttingDown = true;
             m_internalThread.Join();
+            ProcessShutDown();
         }
 
         private static void TimerCallbackCheck(object o)
@@ -83,6 +84,39 @@ namespace HttpServer
                 Thread.Sleep(m_monitorMS);
             }
         }
+
+        public static void ProcessShutDown()
+        {
+            try
+            {
+                SocketError disconnectError = SocketError.HostDown;
+                for (int i = 0; i < m_contexts.Count; i++)
+                {
+                    HttpClientContext context = null;
+                    if (m_contexts.TryDequeue(out context))
+                    {
+                        try
+                        {
+                            context.Disconnect(disconnectError);
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch (NullReferenceException)
+            {
+                // Lockless queue so something is null or disposed
+            }
+            catch (ObjectDisposedException)
+            {
+                // Lockless queue so something is null or disposed
+            }
+            catch (Exception)
+            {
+                // We can't let this crash.
+            }
+        }
+
 
         /// <summary>
         /// Causes the watcher to immediately check the connections. 
