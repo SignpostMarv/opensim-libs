@@ -270,6 +270,7 @@ struct RaycastHit
 	IDTYPE ID;
 	float Fraction;
 	Vector3 Normal;
+	Vector3 Point;
 };
 
 // API-exposed structure to return a convex sweep result
