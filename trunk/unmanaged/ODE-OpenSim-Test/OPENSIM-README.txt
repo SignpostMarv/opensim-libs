@@ -1,6 +1,7 @@
 OPENSIM README
+this is version ODE-OpenSim.0.13.3
 
-The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with modifications for opensim 
+The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with selected adictions from more recent vrsions and modifications by opensim 
 
 = BUILD INSTRUCTIONS =
 
@@ -29,6 +30,7 @@ C++ debug does have a large impact on performance. You should only use it for te
 if you dont see the file ./configure you need to do
 ./bootstrap
 to create it. Check it so see its dependencies on several linux tools.
+you may need to do chmod +x bootstrap before since git keeps losing it
 
 (could not test following adapted from justin instructions bellow)
 
@@ -46,6 +48,8 @@ cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib64/libode-x86_64.so (possible n
 CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x --disable-threading-intf
 make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so
+
+you can run strip to remove debug information and reduce file size
 
 you may need to ajdust files bin/Ode.NET.dll.config  and bin/OpenSim.Region.PhysicsModule.ubOde.dll.config
 
