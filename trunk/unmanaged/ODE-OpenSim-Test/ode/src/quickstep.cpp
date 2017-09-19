@@ -137,6 +137,7 @@ static void Multiply1_12q1 (dReal *A, const dReal *B, const dReal *C, unsigned i
     dReal d = 0;
     dReal e = 0;
     dReal f = 0;
+
     dReal s;
 
     for(unsigned int i=0, k = 0; i<q; k += 12, i++)
@@ -158,6 +159,7 @@ static void Multiply1_12q1 (dReal *A, const dReal *B, const dReal *C, unsigned i
     A[3] = d;
     A[4] = e;
     A[5] = f;
+
 }
 
 //***************************************************************************

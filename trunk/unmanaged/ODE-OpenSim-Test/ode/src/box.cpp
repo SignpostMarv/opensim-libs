@@ -122,7 +122,6 @@ dReal dGeomBoxPointDepth (dGeomID g, dReal x, dReal y, dReal z)
 
     int   i;
     dReal tmp;
-    dReal side;
     dReal in_dist = dInfinity;
     dReal out_dist = -dInfinity;
     bool inside = true;
@@ -298,7 +297,7 @@ void cullPoints (int n, dReal p[], int m, int i0, int iret[])
     iret[0] = i0;
     iret++;
     
-    dReal astep = 2 * M_PI / m;
+    dReal astep = REAL(2.0) * M_PI / m;
     dReal base = A[i0];
     for (j = 1; j < m; j++)
     {

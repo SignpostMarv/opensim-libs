@@ -260,7 +260,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
         // find the closest angle to that, that is coterminal to
         // theta.
 
-        theta = atan2(t[1], t[0]);
+        theta = (dReal)atan2(t[1], t[0]);
         phase_hat = phase[i] + dCalcVectorDot3(omega[i], n[i]) / worldFPS;
 
         if (phase_hat > M_PI_2) {

@@ -28,12 +28,9 @@
 #include "matrix.h"
 #include "odemath.h"
 
-#if dTRIMESH_ENABLED
-
 #include "collision_util.h"
 #include "collision_trimesh_internal.h"
 
-#if dTRIMESH_OPCODE
 int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, int Stride){
     dIASSERT (Stride >= (int)sizeof(dContactGeom));
     dIASSERT (g1->type == dTriMeshClass);
@@ -147,59 +144,4 @@ int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, 
     }
     return OutTriCount;
 }
-#endif // dTRIMESH_OPCODE
 
-#if dTRIMESH_GIMPACT
-int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, int Stride)
-{
-    dIASSERT (Stride >= (int)sizeof(dContactGeom));
-    dIASSERT (g1->type == dTriMeshClass);
-    dIASSERT (RayGeom->type == dRayClass);
-    dIASSERT ((Flags & NUMC_MASK) >= 1);
-
-    dxTriMesh* TriMesh = (dxTriMesh*)g1;
-
-    dReal Length = dGeomRayGetLength(RayGeom);
-    int FirstContact, BackfaceCull;
-    dGeomRayGetParams(RayGeom, &FirstContact, &BackfaceCull);
-    int ClosestHit = dGeomRayGetClosestHit(RayGeom);
-    dVector3 Origin, Direction;
-    dGeomRayGet(RayGeom, Origin, Direction);
-
-    char intersect=0;
-    GIM_TRIANGLE_RAY_CONTACT_DATA contact_data;
-
-    if(ClosestHit)
-    {
-        intersect = gim_trimesh_ray_closest_collisionODE(&TriMesh->m_collision_trimesh,Origin,Direction,Length,&contact_data);
-    }
-    else
-    {
-        intersect = gim_trimesh_ray_collisionODE(&TriMesh->m_collision_trimesh,Origin,Direction,Length,&contact_data);
-    }
-
-    if(intersect == 0)
-    {
-        return 0;
-    }
-
-
-    if(!TriMesh->RayCallback || 
-        TriMesh->RayCallback(TriMesh, RayGeom, contact_data.m_face_id, contact_data.u , contact_data.v))
-    {
-        dContactGeom* Contact = &( Contacts[ 0 ] );
-        VEC_COPY(Contact->pos,contact_data.m_point);
-        VEC_COPY(Contact->normal,contact_data.m_normal);
-        Contact->depth = contact_data.tparam;
-        Contact->g1 = TriMesh;
-        Contact->g2 = RayGeom;
-        Contact->side1 = contact_data.m_face_id;
-        Contact->side2 = -1;
-        return 1;
-    }
-
-    return 0;
-}
-#endif  // dTRIMESH_GIMPACT
-
-#endif // dTRIMESH_ENABLED

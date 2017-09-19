@@ -59,10 +59,9 @@
 #include "collision_trimesh_internal.h"
 #include "util.h"
 
-#if dTRIMESH_ENABLED
 
 // OPCODE version
-#if dTRIMESH_OPCODE
+
 // largest number, double or float
 #if defined(dSINGLE)
 #define MAX_REAL	FLT_MAX
@@ -1084,102 +1083,3 @@ int dCollideCCTL(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int s
 
     return nContactCount;
 }
-#endif
-
-// GIMPACT version
-#if dTRIMESH_GIMPACT
-#define nCAPSULE_AXIS 2
-// capsule - trimesh  By francisco leon
-int dCollideCCTL(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int skip)
-{
-    dIASSERT (skip >= (int)sizeof(dContactGeom));
-    dIASSERT (o1->type == dTriMeshClass);
-    dIASSERT (o2->type == dCapsuleClass);
-    dIASSERT ((flags & NUMC_MASK) >= 1);
-
-    dxTriMesh* TriMesh = (dxTriMesh*)o1;
-    dxGeom*	   gCylinder = o2;
-
-    //Get capsule params
-    dMatrix3  mCapsuleRotation;
-    dVector3   vCapsulePosition;
-    dVector3   vCapsuleAxis;
-    dReal      vCapsuleRadius;
-    dReal      fCapsuleSize;
-    dMatrix3* pRot = (dMatrix3*) dGeomGetRotation(gCylinder);
-    memcpy(mCapsuleRotation,pRot,sizeof(dMatrix3));
-    dVector3* pDst = (dVector3*)dGeomGetPosition(gCylinder);
-    memcpy(vCapsulePosition,pDst,sizeof(dVector3));
-    //Axis
-    vCapsuleAxis[0] = mCapsuleRotation[0*4 + nCAPSULE_AXIS];
-    vCapsuleAxis[1] = mCapsuleRotation[1*4 + nCAPSULE_AXIS];
-    vCapsuleAxis[2] = mCapsuleRotation[2*4 + nCAPSULE_AXIS];
-    // Get size of CCylinder
-    dGeomCCylinderGetParams(gCylinder,&vCapsuleRadius,&fCapsuleSize);
-    fCapsuleSize*=0.5f;
-    //Set Capsule params
-    GIM_CAPSULE_DATA capsule;
-
-    capsule.m_radius = vCapsuleRadius;
-    VEC_SCALE(capsule.m_point1,fCapsuleSize,vCapsuleAxis);
-    VEC_SUM(capsule.m_point1,vCapsulePosition,capsule.m_point1);
-    VEC_SCALE(capsule.m_point2,-fCapsuleSize,vCapsuleAxis);
-    VEC_SUM(capsule.m_point2,vCapsulePosition,capsule.m_point2);
-
-
-    //Create contact list
-    GDYNAMIC_ARRAY trimeshcontacts;
-    GIM_CREATE_CONTACT_LIST(trimeshcontacts);
-
-    //Collide trimeshe vs capsule
-    gim_trimesh_capsule_collision(&TriMesh->m_collision_trimesh,&capsule,&trimeshcontacts);
-
-
-    if(trimeshcontacts.m_size == 0)
-    {
-        GIM_DYNARRAY_DESTROY(trimeshcontacts);
-        return 0;
-    }
-
-    GIM_CONTACT * ptrimeshcontacts = GIM_DYNARRAY_POINTER(GIM_CONTACT,trimeshcontacts);
-
-    unsigned contactcount = trimeshcontacts.m_size;
-    unsigned contactmax = (unsigned)(flags & NUMC_MASK);
-    if (contactcount > contactmax)
-    {
-        contactcount = contactmax;
-    }
-
-    dContactGeom* pcontact;
-    unsigned i;
-
-    for (i=0;i<contactcount;i++)
-    {
-        pcontact = SAFECONTACT(flags, contact, i, skip);
-
-        pcontact->pos[0] = ptrimeshcontacts->m_point[0];
-        pcontact->pos[1] = ptrimeshcontacts->m_point[1];
-        pcontact->pos[2] = ptrimeshcontacts->m_point[2];
-        pcontact->pos[3] = 1.0f;
-
-        pcontact->normal[0] = ptrimeshcontacts->m_normal[0];
-        pcontact->normal[1] = ptrimeshcontacts->m_normal[1];
-        pcontact->normal[2] = ptrimeshcontacts->m_normal[2];
-        pcontact->normal[3] = 0;
-
-        pcontact->depth = ptrimeshcontacts->m_depth;
-        pcontact->g1 = TriMesh;
-        pcontact->g2 = gCylinder;
-        pcontact->side1 = ptrimeshcontacts->m_feature1;
-        pcontact->side2 = -1;
-
-        ptrimeshcontacts++;
-    }
-
-    GIM_DYNARRAY_DESTROY(trimeshcontacts);
-
-    return (int)contactcount;
-}
-#endif
-
-#endif // dTRIMESH_ENABLED

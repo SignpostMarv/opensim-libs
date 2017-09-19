@@ -340,8 +340,8 @@
 		//! this = exp(a)
 				Matrix3x3&		Exp(const Matrix3x3& a);
 
-void FromQuat(const Quat &q);
-void FromQuatL2(const Quat &q, float l2);
+    void FromQuat(const Quat &q);
+    void FromQuatL2(const Quat &q, float l2);
 
 		// Arithmetic operators
 		//! Operator for Matrix3x3 Plus = Matrix3x3 + Matrix3x3;

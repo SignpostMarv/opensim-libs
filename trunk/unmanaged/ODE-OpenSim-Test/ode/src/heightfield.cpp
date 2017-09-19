@@ -41,9 +41,7 @@
 
 
 
-#if dTRIMESH_ENABLED
 #include "collision_trimesh_colliders.h"
-#endif // dTRIMESH_ENABLED
 
 #define dMIN(A,B)  ((A)>(B) ? (B) : (A))
 #define dMAX(A,B)  ((A)>(B) ? (A) : (B))
@@ -1097,16 +1095,12 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
         //max_collisionContact    = 3;
         break;
 
-#if dTRIMESH_ENABLED
-
     case dTriMeshClass:
         geomRayNCollider		= dCollideRayTrimesh;
         geomNPlaneCollider	    = dCollideTrimeshPlane;
         geomNDepthGetter		= NULL;// TODO: dGeomTrimeshPointDepth;
         //max_collisionContact    = 3;
         break;
-
-#endif // dTRIMESH_ENABLED
 
     default:
         dIASSERT(0);	// Shouldn't ever get here.

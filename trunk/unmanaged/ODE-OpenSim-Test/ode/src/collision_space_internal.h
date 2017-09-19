@@ -64,7 +64,7 @@ static inline void collideAABBs (dxGeom *g1, dxGeom *g2,
         bounds1[3] < bounds2[2] ||
         bounds1[4] > bounds2[5] ||
         bounds1[5] < bounds2[4]) {
-            return;
+        return;
     }
 
     // check if either object is able to prove that it doesn't intersect the

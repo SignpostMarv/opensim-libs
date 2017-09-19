@@ -7,10 +7,6 @@
  * CONFIGURATON SETTINGS - you can change these, and then rebuild
  *   ODE to modify the behavior of the library.
  *
- *   dTRIMESH_ENABLED  - enable/disable trimesh support
- *   dTRIMESH_OPCODE   - use the OPCODE trimesh engine
- *   dTRIMESH_GIMPACT  - use the GIMPACT trimesh engine
- *                       Only one trimesh engine should be enabled.
  *
  *   dTRIMESH_16BIT_INDICES (todo: opcode only)
  *                       Setup the trimesh engine to use 16 bit
@@ -18,9 +14,6 @@
  *                       32 bit indices. Use the dTriIndex type to
  *                       detect the correct index size.
  *
- *   dTRIMESH_OPCODE_USE_NEWOLD_TRIMESH_TRIMESH_COLLIDER
- *                       Use old implementation of trimesh-trimesh collider
- *                       (for backward compatibility only)
  *
  *   dOU_ENABLED       
  *   dATOMICS_ENABLED
@@ -39,18 +32,14 @@
  *
  ******************************************************************/
 
-#define dTRIMESH_ENABLED 1
-#define dTRIMESH_OPCODE 1
 #define dTRIMESH_16BIT_INDICES 0
-
-#define dTRIMESH_OPCODE_USE_OLD_TRIMESH_TRIMESH_COLLIDER 0
 
 /* #define dOU_ENABLED 1 */
 /* #define dATOMICS_ENABLED 1 */
 /* #define dTLS_ENABLED 1 */
 
-/* #define dTHREADING_INTF_DISABLED 1 */
-/* #define dBUILTIN_THREADING_IMPL_ENABLED 1 */
+// #define dTHREADING_INTF_DISABLED 1 
+// #define dBUILTIN_THREADING_IMPL_ENABLED 1
 
 
 /******************************************************************
@@ -125,8 +114,6 @@ typedef size_t intP;
 #define dOU_ENABLED 1
 #endif
 
-
 #include "typedefs.h"
-
 
 #endif

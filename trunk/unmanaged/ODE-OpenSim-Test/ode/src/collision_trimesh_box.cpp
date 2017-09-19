@@ -37,9 +37,6 @@
 #include "collision_util.h"
 #include "collision_trimesh_internal.h"
 
-#if dTRIMESH_ENABLED
-
-
 static void
 GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
                 dxGeom* in_g1,  dxGeom* in_g2, int TriIndex,
@@ -1139,7 +1136,6 @@ int sTrimeshBoxColliderData::TestCollisionForSingleTriangle(int ctContacts0, int
 }
 
 // OPCODE version of box to mesh collider
-#if dTRIMESH_OPCODE
 static void dQueryBTLPotentialCollisionTriangles(OBBCollider &Collider, 
                                                  const sTrimeshBoxColliderData &cData, dxTriMesh *TriMesh, dxGeom *BoxGeom,
                                                  OBBCache &BoxCache)
@@ -1272,81 +1268,6 @@ int dCollideBTL(dxGeom* g1, dxGeom* BoxGeom, int Flags, dContactGeom* Contacts, 
 
     return cData.m_ctContacts;
 }
-#endif
-
-// GIMPACT version of box to mesh collider
-#if dTRIMESH_GIMPACT
-int dCollideBTL(dxGeom* g1, dxGeom* BoxGeom, int Flags, dContactGeom* Contacts, int Stride)
-{
-    dIASSERT (Stride >= (int)sizeof(dContactGeom));
-    dIASSERT (g1->type == dTriMeshClass);
-    dIASSERT (BoxGeom->type == dBoxClass);
-    dIASSERT ((Flags & NUMC_MASK) >= 1);
-
-
-    dxTriMesh* TriMesh = (dxTriMesh*)g1;
-
-    g1 -> recomputeAABB();
-    BoxGeom -> recomputeAABB();
-
-
-    sTrimeshBoxColliderData cData;
-    cData.SetupInitialContext(TriMesh, BoxGeom, Flags, Contacts, Stride);
-
-    //*****at first , collide box aabb******//
-
-    GIM_TRIMESH * ptrimesh = &TriMesh->m_collision_trimesh;
-    aabb3f test_aabb;
-
-    test_aabb.minX = BoxGeom->aabb[0];
-    test_aabb.maxX = BoxGeom->aabb[1];
-    test_aabb.minY = BoxGeom->aabb[2];
-    test_aabb.maxY = BoxGeom->aabb[3];
-    test_aabb.minZ = BoxGeom->aabb[4];
-    test_aabb.maxZ = BoxGeom->aabb[5];
-
-    GDYNAMIC_ARRAY collision_result;
-    GIM_CREATE_BOXQUERY_LIST(collision_result);
-
-    gim_aabbset_box_collision(&test_aabb, &ptrimesh->m_aabbset , &collision_result);
-
-    if(collision_result.m_size==0)
-    {
-        GIM_DYNARRAY_DESTROY(collision_result);
-        return 0;
-    }
-    //*****Set globals for box collision******//
-
-    //collide triangles
-
-    GUINT32 * boxesresult = GIM_DYNARRAY_POINTER(GUINT32,collision_result);
-    gim_trimesh_locks_work_data(ptrimesh);
-
-    int ctContacts0 = 0;
-
-    for(unsigned int i=0;i<collision_result.m_size;i++)
-    {
-        dVector3 dv[3];
-
-        int Triint = boxesresult[i];
-        gim_trimesh_get_triangle_vertices(ptrimesh, Triint, dv[0], dv[1], dv[2]);
-
-        bool bFinishSearching;
-        ctContacts0 = cData.TestCollisionForSingleTriangle(ctContacts0, Triint, dv, bFinishSearching);
-
-        if (bFinishSearching)
-        {
-            break;
-        }
-    }
-
-    gim_trimesh_unlocks_work_data(ptrimesh);
-    GIM_DYNARRAY_DESTROY(collision_result);
-
-    return cData.m_ctContacts;
-}
-#endif
-
 
 // GenerateContact - Written by Jeff Smith (jeff@burri.to)
 //   Generate a "unique" contact.  A unique contact has a unique
@@ -1444,5 +1365,3 @@ GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
     }
     while (false);
 }
-
-#endif // dTRIMESH_ENABLED

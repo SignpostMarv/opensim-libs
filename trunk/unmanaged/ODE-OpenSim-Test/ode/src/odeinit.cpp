@@ -151,16 +151,12 @@ static bool AllocateThreadCollisionData(EODETLSKIND tkTlsKind)
     {
         dIASSERT(!(COdeTls::GetDataAllocationFlags(tkTlsKind) & TLD_INTERNAL_COLLISIONDATA_ALLOCATED));
 
-#if dTRIMESH_ENABLED 
-
         TrimeshCollidersCache *pccColliderCache = new TrimeshCollidersCache();
         if (!COdeTls::AssignTrimeshCollidersCache(tkTlsKind, pccColliderCache))
         {
             delete pccColliderCache;
             break;
         }
-
-#endif // dTRIMESH_ENABLED
 
         COdeTls::SignalDataAllocationFlags(tkTlsKind, TLD_INTERNAL_COLLISIONDATA_ALLOCATED);
 
@@ -281,17 +277,10 @@ static bool InitODEForMode(EODEINITMODE imInitMode)
 
             bWorldThreadingInitialized = true;
 
-#if dTRIMESH_ENABLED && dTRIMESH_OPCODE
             if (!Opcode::InitOpcode())
             {
                 break;
             }
-#endif
-
-#if dTRIMESH_ENABLED && dTRIMESH_GIMPACT
-            gimpact_init();
-#endif
-
             dInitColliders();
         }
 
@@ -381,17 +370,11 @@ static void CloseODEForMode(EODEINITMODE imInitMode)
         dFinitUserClasses();
         dFinitColliders();
 
-#if dTRIMESH_ENABLED && dTRIMESH_GIMPACT
-        gimpact_terminate();
-#endif
-
-#if dTRIMESH_ENABLED && dTRIMESH_OPCODE
         extern void opcode_collider_cleanup();
         // Free up static allocations in opcode
         opcode_collider_cleanup();
 
         Opcode::CloseOpcode();
-#endif
 
         dxWorld::FinalizeDefaultThreading();
     }

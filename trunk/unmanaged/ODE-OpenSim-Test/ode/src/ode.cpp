@@ -2218,11 +2218,8 @@ static const char ode_configuration[] = "ODE "
 REGISTER_EXTENSION( ODE_EXT_no_debug )
 #endif // dNODEBUG
 
-#if dTRIMESH_ENABLED
-REGISTER_EXTENSION( ODE_EXT_trimesh )
 
-// tri-mesh extensions
-#if dTRIMESH_OPCODE
+REGISTER_EXTENSION( ODE_EXT_trimesh )
 REGISTER_EXTENSION( ODE_EXT_opcode )
 
 // opcode extensions
@@ -2230,19 +2227,7 @@ REGISTER_EXTENSION( ODE_EXT_opcode )
 REGISTER_EXTENSION( ODE_OPC_16bit_indices )
 #endif
 
-#if !dTRIMESH_OPCODE_USE_OLD_TRIMESH_TRIMESH_COLLIDER
 REGISTER_EXTENSION( ODE_OPC_new_collider )
-#endif
-
-#endif // dTRIMESH_OPCODE
-
-#if dTRIMESH_GIMPACT
-REGISTER_EXTENSION( ODE_EXT_gimpact )
-
-// gimpact extensions
-#endif
-
-#endif // dTRIMESH_ENABLED
 
 #if dTLS_ENABLED
 REGISTER_EXTENSION( ODE_EXT_mt_collisions )

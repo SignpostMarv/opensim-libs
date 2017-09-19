@@ -49,7 +49,8 @@ void dGeomMoved (dxGeom *geom)
   dAASSERT (geom);
   
   // if geom is offset, mark it as needing a calculate
-  if (geom->offset_posr) {
+  if (geom->offset_posr)
+  {
     geom->gflags |= GEOM_POSR_BAD;
   }
   
@@ -57,7 +58,8 @@ void dGeomMoved (dxGeom *geom)
   // turning them into dirty geoms.
   dxSpace *parent = geom->parent_space;
 
-  while (parent && (geom->gflags & GEOM_DIRTY)==0) {
+  while (parent && (geom->gflags & GEOM_DIRTY) == 0)
+  {
     geom->markAABBBad();
     parent->dirty (geom);
     geom = parent;
@@ -227,13 +229,19 @@ void dxSimpleSpace::cleanGeoms()
 {
   // compute the AABBs of all dirty geoms, and clear the dirty flags
   lock_count++;
-  for (dxGeom *g=first; g && (g->gflags & GEOM_DIRTY); g=g->next) {
-    if (IS_SPACE(g)) {
-      ((dxSpace*)g)->cleanGeoms();
-    }
-    g->recomputeAABB();
-    dIASSERT((g->gflags & GEOM_AABB_BAD) == 0);
-    g->gflags &= ~GEOM_DIRTY;
+  if (gflags & GEOM_DIRTY)
+  {
+      for (dxGeom *g = first; g && (g->gflags & GEOM_DIRTY); g = g->next)
+      {
+          if (IS_SPACE(g))
+          {
+              ((dxSpace*)g)->cleanGeoms();
+          }
+          g->recomputeAABB();
+          dIASSERT((g->gflags & GEOM_AABB_BAD) == 0);
+          g->gflags &= ~GEOM_DIRTY;
+      }
+      gflags &= ~GEOM_DIRTY;
   }
   lock_count--;
 }
@@ -247,12 +255,16 @@ void dxSimpleSpace::collide (void *data, dNearCallback *callback)
   cleanGeoms();
 
   // intersect all bounding boxes
-  for (dxGeom *g1=first; g1; g1=g1->next) {
-    if (GEOM_ENABLED(g1)){
-      for (dxGeom *g2=g1->next; g2; g2=g2->next) {
-	if (GEOM_ENABLED(g2)){
-	  collideAABBs (g1,g2,data,callback);
-	}
+  for (dxGeom *g1=first; g1; g1=g1->next)
+  {
+    if (GEOM_ENABLED(g1))
+    {
+      for (dxGeom *g2=g1->next; g2; g2=g2->next)
+      {
+	    if (GEOM_ENABLED(g2))
+        {
+	        collideAABBs (g1,g2,data,callback);
+	    }
       }
     }
   }
@@ -266,6 +278,18 @@ void dxSimpleSpace::collide2 (void *data, dxGeom *geom,
 {
   dAASSERT (geom && callback);
 
+  if (!first)
+      return;
+  if (IS_SPACE(geom))
+  {
+      if (!((dxSpace*)geom)->first)
+          return;
+  }
+
+  if (((category_bits & geom->collide_bits) ||
+      (geom->category_bits &collide_bits)) == 0)
+      return;
+
   lock_count++;
   cleanGeoms();
   geom->recomputeAABB();
@@ -276,7 +300,6 @@ void dxSimpleSpace::collide2 (void *data, dxGeom *geom,
       collideAABBs (g,geom,data,callback);
     }
   }
-
   lock_count--;
 }
 
@@ -401,8 +424,10 @@ void dxHashSpace::cleanGeoms()
 {
   // compute the AABBs of all dirty geoms, and clear the dirty flags
   lock_count++;
-  for (dxGeom *g=first; g && (g->gflags & GEOM_DIRTY); g=g->next) {
-    if (IS_SPACE(g)) {
+  for (dxGeom *g=first; g && (g->gflags & GEOM_DIRTY); g=g->next)
+  {
+    if (IS_SPACE(g))
+    {
       ((dxSpace*)g)->cleanGeoms();
     }
     g->recomputeAABB();
@@ -436,8 +461,10 @@ void dxHashSpace::collide (void *data, dNearCallback *callback)
   dxAABB *first_aabb = 0;	// list of AABBs in hash table
   dxAABB *big_boxes = 0;	// list of AABBs too big for hash table
   maxlevel = global_minlevel - 1;
-  for (geom = first; geom; geom=geom->next) {
-    if (!GEOM_ENABLED(geom)){
+  for (geom = first; geom; geom=geom->next)
+  {
+    if (!GEOM_ENABLED(geom))
+    {
       continue;
     }
     dxAABB *aabb = (dxAABB*) ALLOCA (sizeof(dxAABB));
@@ -488,25 +515,30 @@ void dxHashSpace::collide (void *data, dNearCallback *callback)
 
   // allocate and initialize hash table node pointers
   Node **table = (Node **) ALLOCA (sizeof(Node*) * sz);
-  for (i=0; i<sz; i++) table[i] = 0;
+  for (i=0; i<sz; i++)
+    table[i] = 0;
 
   // add each AABB to the hash table (may need to add it to up to 8 cells)
-  for (aabb=first_aabb; aabb; aabb=aabb->next) {
+  for (aabb=first_aabb; aabb; aabb=aabb->next)
+  {
     const int *dbounds = aabb->dbounds;
-    for (int xi = dbounds[0]; xi <= dbounds[1]; xi++) {
-      for (int yi = dbounds[2]; yi <= dbounds[3]; yi++) {
-	for (int zi = dbounds[4]; zi <= dbounds[5]; zi++) {
-	  // get the hash index
-	  unsigned long hi = getVirtualAddress (aabb->level,xi,yi,zi) % sz;
-	  // add a new node to the hash table
-	  Node *node = (Node*) ALLOCA (sizeof (Node));
-	  node->x = xi;
-	  node->y = yi;
-	  node->z = zi;
-	  node->aabb = aabb;
-	  node->next = table[hi];
-	  table[hi] = node;
-	}
+    for (int xi = dbounds[0]; xi <= dbounds[1]; xi++)
+    {
+      for (int yi = dbounds[2]; yi <= dbounds[3]; yi++)
+      {
+	    for (int zi = dbounds[4]; zi <= dbounds[5]; zi++)
+        {
+	    // get the hash index
+	    unsigned long hi = getVirtualAddress (aabb->level,xi,yi,zi) % sz;
+	    // add a new node to the hash table
+	    Node *node = (Node*) ALLOCA (sizeof (Node));
+	    node->x = xi;
+	    node->y = yi;
+	    node->z = zi;
+	    node->aabb = aabb;
+	    node->next = table[hi];
+	    table[hi] = node;
+	    }
       }
     }
   }

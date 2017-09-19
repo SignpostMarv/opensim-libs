@@ -33,10 +33,7 @@
 #include "config.h"
 #endif
 
-#if dTRIMESH_ENABLED
 #include "collision_trimesh_internal.h"
-
-#if dTRIMESH_OPCODE
 
 // Ripped from Opcode 1.1.
 static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 Origin, const dVector3 Edge0, 
@@ -587,74 +584,3 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
     }
     else return 0;
 }
-#endif // dTRIMESH_OPCODE
-
-#if dTRIMESH_GIMPACT
-int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contacts, int Stride)
-{
-    dIASSERT (Stride >= (int)sizeof(dContactGeom));
-    dIASSERT (g1->type == dTriMeshClass);
-    dIASSERT (SphereGeom->type == dSphereClass);
-    dIASSERT ((Flags & NUMC_MASK) >= 1);
-
-    dxTriMesh* TriMesh = (dxTriMesh*)g1;
-    dVector3& Position = *(dVector3*)dGeomGetPosition(SphereGeom);
-    dReal Radius = dGeomSphereGetRadius(SphereGeom);
-    //Create contact list
-    GDYNAMIC_ARRAY trimeshcontacts;
-    GIM_CREATE_CONTACT_LIST(trimeshcontacts);
-
-    g1 -> recomputeAABB();
-    SphereGeom -> recomputeAABB();
-
-    //Collide trimeshes
-    gim_trimesh_sphere_collisionODE(&TriMesh->m_collision_trimesh,Position,Radius,&trimeshcontacts);
-
-    if(trimeshcontacts.m_size == 0)
-    {
-        GIM_DYNARRAY_DESTROY(trimeshcontacts);
-        return 0;
-    }
-
-    GIM_CONTACT * ptrimeshcontacts = GIM_DYNARRAY_POINTER(GIM_CONTACT,trimeshcontacts);
-
-    unsigned contactcount = trimeshcontacts.m_size;
-    unsigned maxcontacts = (unsigned)(Flags & NUMC_MASK);
-    if (contactcount > maxcontacts)
-    {
-        contactcount = maxcontacts;
-    }
-
-    dContactGeom* pcontact;
-    unsigned i;
-
-    for (i=0;i<contactcount;i++)
-    {
-        pcontact = SAFECONTACT(Flags, Contacts, i, Stride);
-
-        pcontact->pos[0] = ptrimeshcontacts->m_point[0];
-        pcontact->pos[1] = ptrimeshcontacts->m_point[1];
-        pcontact->pos[2] = ptrimeshcontacts->m_point[2];
-        pcontact->pos[3] = REAL(1.0);
-
-        pcontact->normal[0] = ptrimeshcontacts->m_normal[0];
-        pcontact->normal[1] = ptrimeshcontacts->m_normal[1];
-        pcontact->normal[2] = ptrimeshcontacts->m_normal[2];
-        pcontact->normal[3] = 0;
-
-        pcontact->depth = ptrimeshcontacts->m_depth;
-        pcontact->g1 = g1;
-        pcontact->g2 = SphereGeom;
-        pcontact->side1 = ptrimeshcontacts->m_feature1;
-        pcontact->side2 = -1;
-
-        ptrimeshcontacts++;
-    }
-
-    GIM_DYNARRAY_DESTROY(trimeshcontacts);
-
-    return (int)contactcount;
-}
-#endif // dTRIMESH_GIMPACT
-
-#endif // dTRIMESH_ENABLED

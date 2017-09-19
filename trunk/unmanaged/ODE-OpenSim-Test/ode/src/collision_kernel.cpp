@@ -193,7 +193,7 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dRayClass,dCapsuleClass,&dCollideRayCapsule);
     setCollider (dRayClass,dPlaneClass,&dCollideRayPlane);
     setCollider (dRayClass,dCylinderClass,&dCollideRayCylinder);
-#if dTRIMESH_ENABLED
+
     setCollider (dTriMeshClass,dSphereClass,&dCollideSTL);
     setCollider (dTriMeshClass,dBoxClass,&dCollideBTL);
     setCollider (dTriMeshClass,dRayClass,&dCollideRTL);
@@ -201,7 +201,6 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dTriMeshClass,dCapsuleClass,&dCollideCCTL);
     setCollider (dTriMeshClass,dPlaneClass,&dCollideTrimeshPlane);
     setCollider (dCylinderClass,dTriMeshClass,&dCollideCylinderTrimesh);
-#endif
 
 #ifdef dLIBCCD_BOX_CYL
     setCollider (dBoxClass,dCylinderClass,&dCollideBoxCylinderCCD);
@@ -258,9 +257,9 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dHeightfieldClass,dCapsuleClass,&dCollideHeightfield);
     setCollider (dHeightfieldClass,dCylinderClass,&dCollideHeightfield);
     setCollider (dHeightfieldClass,dConvexClass,&dCollideHeightfield);
-#if dTRIMESH_ENABLED
+
     setCollider (dHeightfieldClass,dTriMeshClass,&dCollideHeightfield);
-#endif
+
     //<-- dHeightfield Collision
 
     //--> dOSTerrain Collision
@@ -270,9 +269,9 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dOSTerrainClass,dCapsuleClass,&dCollideOSTerrain);
     setCollider (dOSTerrainClass,dCylinderClass,&dCollideOSTerrain);
     setCollider (dOSTerrainClass,dConvexClass,&dCollideOSTerrain);
-#if dTRIMESH_ENABLED
+
     setCollider (dOSTerrainClass,dTriMeshClass,&dCollideOSTerrain);
-#endif
+
     //<-- dOSTerrain Collision
 	
     setAllColliders (dGeomTransformClass,&dCollideTransform);

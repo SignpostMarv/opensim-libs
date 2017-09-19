@@ -23,9 +23,7 @@
 #include "osTerrain.h"
 #include "ode/timer.h"
 
-#if dTRIMESH_ENABLED
 #include "collision_trimesh_colliders.h"
-#endif // dTRIMESH_ENABLED
 
 #define dMIN(A,B)  ((A)>(B) ? (B) : (A))
 #define dMAX(A,B)  ((A)>(B) ? (A) : (B))
@@ -57,11 +55,59 @@
     dGeomMoved (MyPlane);           \
                     }
 
+#if defined (__AVX__)
+ODE_PURE_INLINE dReal dV3Dot(const dReal *a, const dReal *b)
+{
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    ma = _mm_dp_ps(ma, mb, 0x71);
 
+    return (dReal)_mm_cvtss_f32(ma);
+    //    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+#else
 ODE_PURE_INLINE dReal dV3Dot(const dReal *a, const dReal *b)
 {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
+#endif
+
+#if defined (__AVX__)
+ODE_PURE_INLINE dReal dV3lenghtSQ(const dReal *a)
+{
+    __m128 ma;
+    ma = _mm_loadu_ps(a);
+    ma = _mm_dp_ps(ma, ma, 0x71);
+
+    return (dReal)_mm_cvtss_f32(ma);
+}
+
+#else
+ODE_PURE_INLINE dReal dV3lenghtSQ(const dReal *a)
+{
+    return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+}
+#endif
+
+
+#if defined (__AVX__)
+ODE_PURE_INLINE dReal dV3lenght(const dReal *a)
+{
+    __m128 ma;
+    ma = _mm_loadu_ps(a);
+    ma = _mm_dp_ps(ma, ma, 0x71);
+    dReal l = (dReal)_mm_cvtss_f32(ma);
+    return dSqrt(l);
+}
+
+#else
+ODE_PURE_INLINE dReal dV3lenght(const dReal *a)
+{
+    return dSqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+}
+#endif
 
 ODE_PURE_INLINE dReal dV2Dot(const dReal *a, const dReal *b)
 {
@@ -80,7 +126,7 @@ ODE_PURE_INLINE dReal dV2DistSQ(const dReal *a, const dReal *b)
 
 ODE_PURE_INLINE dReal dV3CrossTerrainInvLen(dReal *norm, dReal dx, dReal dy)
 {
-    dReal dinvlength = 1.0 / dSqrt(dx * dx + dy * dy + REAL(1.0));
+    dReal dinvlength = REAL(1.0) / dSqrt(dx * dx + dy * dy + REAL(1.0));
 
     norm[0] = dx * dinvlength;
     norm[1] = dy * dinvlength;
@@ -167,15 +213,14 @@ void dxOSTerrainData::ComputeHeightBounds()
 
     m_fMinHeight = dInfinity;
     m_fMaxHeight = -dInfinity;
-
-    for (i=0; i<m_nWidthSamples*m_nDepthSamples; i++)
+    int tot = m_nWidthSamples*m_nDepthSamples;
+    for (i=0; i < tot; i++)
     {
         h = m_pHeightData[i];
         if (h < m_fMinHeight)	m_fMinHeight = h;
         if (h > m_fMaxHeight)	m_fMaxHeight = h;
     }
 }
-
 
 // returns whether point is over terrain Cell triangle?
 bool dxOSTerrainData::IsOnOSTerrain2(const OSTerrainVertex * const CellCorner,
@@ -190,8 +235,8 @@ bool dxOSTerrainData::IsOnOSTerrain2(const OSTerrainVertex * const CellCorner,
     // Currently both the implementation has been optimized and effects of 
     // computational errors have been eliminated.
 
-    dReal dX,MaxX,MinX;
-    dReal dY,MaxY,MinY;
+    dReal dX;
+    dReal dY;
 
     if (isFirst)
     {
@@ -678,8 +723,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 	{
 		// totally under heightfield
         // meshs aren't all centered around position
-        dReal Xpos = (o2->aabb[1] + o2->aabb[0]) * 0.5;
-        dReal Ypos = (o2->aabb[3] + o2->aabb[2]) * 0.5;
+        dReal Xpos = (o2->aabb[1] + o2->aabb[0]) * REAL(0.5);
+        dReal Ypos = (o2->aabb[3] + o2->aabb[2]) * REAL(0.5);
         const dReal h = m_p_data->GetHeight(Xpos - offsetX, Ypos - offsetY);
 
         pContact = CONTACT(contact,0);
@@ -749,16 +794,12 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         //max_collisionContact    = 3;
         break;
 
-#if dTRIMESH_ENABLED
-
     case dTriMeshClass:
         geomRayNCollider		= dCollideRayTrimesh;
         geomNPlaneCollider	    = dCollideTrimeshPlane;
         geomNDepthGetter		= NULL;// TODO: dGeomTrimeshPointDepth;
         //max_collisionContact    = 3;
         break;
-
-#endif // dTRIMESH_ENABLED
 
     default:
         dIASSERT(0);	// Shouldn't ever get here.
@@ -851,7 +892,6 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
     dReal dz1;
     dReal dz2;
-    dReal dinvlength;
 
     dReal AHeight;
     dReal BHeight;
@@ -979,7 +1019,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         if (tri_base->state == true)
             continue;// already tested
 
-        tri_base->state == true;
+        tri_base->state = true;
         itPlane = tri_base->planeDef;
 
         //set plane Geom
@@ -1521,7 +1561,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                     dist[0] = tdist[0];
                                     dist[1] = tdist[1] - t;
 
-                                    k = dV3Dot(dist, dist);
+                                    k = dV3lenghtSQ(dist);
                                     if (k < depth)
                                     {
                                         depth = k;
@@ -1550,7 +1590,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                 {
                                     dist[0] = tdist[0] - t;
                                     dist[1] = tdist[1] - t;
-                                    k = dV3Dot(dist, dist);
+                                    k = dV3lenghtSQ(dist);
                                     if (k < depth)
                                     {
                                         depth = k;
@@ -1581,7 +1621,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                            {
                                dist[0] = tdist[0] - t;
                                dist[1] = tdist[1];
-                               k = dV3Dot(dist, dist);
+                               k = dV3lenghtSQ(dist);
                                if (k < depth)
                                {
                                    depth = k;
@@ -1594,7 +1634,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                     }
                     else if (!topColide && !lastHbotColide && tdist[2] > dEpsilon && !lastVtopCollide[VtopColliedPtr -1])
                     {
-                       k = dV3Dot(tdist, tdist);
+                       k = dV3lenghtSQ(tdist);
                        if (k < depth)
                        {
                            depth = k;
@@ -1801,7 +1841,7 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 
     //------------------------------------------------------------------------------
 
-dCollideOSTerrainExit:
+//dCollideOSTerrainExit:
 
     return numTerrainContacts;
 }

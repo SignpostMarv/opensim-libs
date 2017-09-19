@@ -6,5 +6,5 @@ EXTRA_DIST = bootstrap \
             README.TXT \
             build
 
-SUBDIRS = include/ou src/ou test
+SUBDIRS = include/ou src/ou
 

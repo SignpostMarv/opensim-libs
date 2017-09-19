@@ -356,7 +356,7 @@ struct dxQuadTreeSpace : public dxSpace{
     int* CurrentChild;	// Only used while enumerating
     int CurrentLevel;	// Only used while enumerating
     dxGeom* CurrentObject;	// Only used while enumerating
-    int CurrentIndex;
+//    int CurrentIndex;
 };
 
 namespace {
@@ -393,7 +393,7 @@ dxQuadTreeSpace::dxQuadTreeSpace(dSpaceID _space, const dVector3 Center, const d
     CurrentChild = (int*)dAlloc((Depth + 1) * sizeof(int));
     CurrentLevel = 0;
     CurrentObject = 0;
-    CurrentIndex = -1;
+//    CurrentIndex = -1;
 
     // Init AABB. We initialize to infinity because it is not illegal for an object to be outside of the tree. Its simply inserted in the root block
     aabb[0] = -dInfinity;

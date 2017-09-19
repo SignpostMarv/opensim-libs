@@ -201,50 +201,32 @@ inline void dMatrix3Inv( const dMatrix3& ma, dMatrix3& dst )
 
     double detRecip = REAL(1.0) / det;
 
-    dst[0] =  ( ma[5]*ma[10] - ma[6]*ma[9]  ) * detRecip;
-    dst[1] =  ( ma[9]*ma[2]  - ma[1]*ma[10] ) * detRecip;
-    dst[2] =  ( ma[1]*ma[6]  - ma[5]*ma[2]  ) * detRecip;
+    dst[0] = (dReal)(( ma[5]*ma[10] - ma[6]*ma[9]  ) * detRecip);
+    dst[1] = (dReal)(( ma[9]*ma[2]  - ma[1]*ma[10] ) * detRecip);
+    dst[2] = (dReal)(( ma[1]*ma[6]  - ma[5]*ma[2]  ) * detRecip);
 
-    dst[4] =  ( ma[6]*ma[8]  - ma[4]*ma[10] ) * detRecip;
-    dst[5] =  ( ma[0]*ma[10] - ma[8]*ma[2]  ) * detRecip;
-    dst[6] =  ( ma[4]*ma[2]  - ma[0]*ma[6]  ) * detRecip;
+    dst[4] = (dReal)(( ma[6]*ma[8]  - ma[4]*ma[10] ) * detRecip);
+    dst[5] = (dReal)(( ma[0]*ma[10] - ma[8]*ma[2]  ) * detRecip);
+    dst[6] = (dReal)(( ma[4]*ma[2]  - ma[0]*ma[6]  ) * detRecip);
 
-    dst[8] =  ( ma[4]*ma[9]  - ma[8]*ma[5]  ) * detRecip;
-    dst[9] =  ( ma[8]*ma[1]  - ma[0]*ma[9]  ) * detRecip;
-    dst[10] = ( ma[0]*ma[5]  - ma[1]*ma[4]  ) * detRecip;
+    dst[8] = (dReal)(( ma[4]*ma[9]  - ma[8]*ma[5]  ) * detRecip);
+    dst[9] = (dReal)(( ma[8]*ma[1]  - ma[0]*ma[9]  ) * detRecip);
+    dst[10] = (dReal)(( ma[0]*ma[5]  - ma[1]*ma[4]  ) * detRecip);
 }
 
 inline void dQuatTransform(const dQuaternion& quat,const dVector3& source,dVector3& dest)
 {
+    dReal x0 = source[0] * quat[0] + source[2] * quat[2] - source[1] * quat[3];
+    dReal x1 = source[1] * quat[0] + source[0] * quat[3] - source[2] * quat[1];
+    dReal x2 = source[2] * quat[0] + source[1] * quat[1] - source[0] * quat[2];
 
-    // Nguyen Binh : this code seem to be the fastest.
-    dReal x0 = 	source[0] * quat[0] + source[2] * quat[2] - source[1] * quat[3];
-    dReal x1 = 	source[1] * quat[0] + source[0] * quat[3] - source[2] * quat[1];
-    dReal x2 = 	source[2] * quat[0] + source[1] * quat[1] - source[0] * quat[2];
-    dReal x3 = 	source[0] * quat[1] + source[1] * quat[2] + source[2] * quat[3];
+    dReal c2_x = quat[2] * x2 - quat[3] * x1;
+    dReal c2_y = quat[3] * x0 - quat[1] * x2;
+    dReal c2_z = quat[1] * x1 - quat[2] * x0;
 
-    dest[0]  = 	quat[0] * x0 + quat[1] * x3 + quat[2] * x2 - quat[3] * x1;
-    dest[1]  = 	quat[0] * x1 + quat[2] * x3 + quat[3] * x0 - quat[1] * x2;
-    dest[2]  = 	quat[0] * x2 + quat[3] * x3 + quat[1] * x1 - quat[2] * x0;
-
-    /*
-    // nVidia SDK implementation
-    dVector3 uv, uuv; 
-    dVector3 qvec;
-    qvec[0] = quat[1];
-    qvec[1] = quat[2];
-    qvec[2] = quat[3];
-
-    dVector3Cross(qvec,source,uv);
-    dVector3Cross(qvec,uv,uuv);
-
-    dVector3Scale(uv,REAL(2.0)*quat[0]);
-    dVector3Scale(uuv,REAL(2.0));
-
-    dest[0] = source[0] + uv[0] + uuv[0];
-    dest[1] = source[1] + uv[1] + uuv[1];
-    dest[2] = source[2] + uv[2] + uuv[2];   
-    */
+    dest[0] = source[0] + REAL(2.0) * c2_x;
+    dest[1] = source[1] + REAL(2.0) * c2_y;
+    dest[2] = source[2] + REAL(2.0) * c2_z;
 }
 
 inline void dQuatInvTransform(const dQuaternion& quat,const dVector3& source,dVector3& dest)
@@ -272,25 +254,25 @@ inline void dQuatInvTransform(const dQuaternion& quat,const dVector3& source,dVe
 
 inline void dGetEulerAngleFromRot(const dMatrix3& mRot,dReal& rX,dReal& rY,dReal& rZ)
 {
-    rY = asin(mRot[0 * 4 + 2]);
+    rY = (dReal)asin(mRot[0 * 4 + 2]);
     if (rY < M_PI /2)
     {
         if (rY > -M_PI /2)
         {
-            rX = atan2(-mRot[1*4 + 2], mRot[2*4 + 2]);
-            rZ = atan2(-mRot[0*4 + 1], mRot[0*4 + 0]);
+            rX = (dReal)atan2(-mRot[1*4 + 2], mRot[2*4 + 2]);
+            rZ = (dReal)atan2(-mRot[0*4 + 1], mRot[0*4 + 0]);
         }
         else
         {
             // not unique
-            rX = -atan2(mRot[1*4 + 0], mRot[1*4 + 1]);
+            rX = (dReal)-atan2(mRot[1*4 + 0], mRot[1*4 + 1]);
             rZ = REAL(0.0);
         }
     }
     else
     {
         // not unique
-        rX = atan2(mRot[1*4 + 0], mRot[1*4 + 1]);
+        rX = (dReal)atan2(mRot[1*4 + 0], mRot[1*4 + 1]);
         rZ = REAL(0.0);
     }
 }

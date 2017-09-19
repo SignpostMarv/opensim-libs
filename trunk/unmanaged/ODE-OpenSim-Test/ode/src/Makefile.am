@@ -8,13 +8,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 noinst_LTLIBRARIES = libfast.la
 libfast_la_SOURCES = fastldlt.c fastltsolve.c fastdot.c fastlsolve.c
 
-
-
 lib_LTLIBRARIES = libode.la
 
 libode_la_LDFLAGS = @EXTRA_LIBTOOL_LDFLAGS@ @ODE_VERSION_INFO@
 libode_la_LIBADD = libfast.la joints/libjoints.la
-
 
 # please, let's keep the filenames sorted
 libode_la_SOURCES =     nextafterf.c \
@@ -32,7 +29,6 @@ libode_la_SOURCES =     nextafterf.c \
                         collision_std.h \
                         collision_transform.cpp collision_transform.h \
                         collision_trimesh_colliders.h \
-                        collision_trimesh_disabled.cpp \
                         collision_trimesh_internal.h \
                         collision_util.cpp collision_util.h \
                         convex.cpp \
@@ -74,11 +70,9 @@ libode_la_SOURCES =     nextafterf.c \
                         typedefs.h \
                         util.cpp util.h
 
-
 ###################################
 #       O U    S T U F F
 ###################################
-
 
 if ENABLE_OU
 
@@ -90,42 +84,15 @@ libode_la_SOURCES +=    odetls.cpp odetls.h \
 endif
 
 
-###################################
-#   G I M P A C T    S T U F F
-###################################
-
-
-if GIMPACT
-AM_CPPFLAGS += -DdTRIMESH_ENABLED -DdTRIMESH_GIMPACT -I$(top_srcdir)/GIMPACT/include
-libode_la_SOURCES+= collision_trimesh_gimpact.cpp
-
-libode_la_LIBADD += $(top_builddir)/GIMPACT/src/libGIMPACT.la
-libode_la_SOURCES +=    collision_trimesh_trimesh.cpp \
-                        collision_trimesh_sphere.cpp \
-                        collision_trimesh_ray.cpp \
-                        collision_trimesh_opcode.cpp \
-                        collision_trimesh_box.cpp \
-                        collision_trimesh_ccylinder.cpp \
-                        collision_trimesh_distance.cpp \
-                        collision_trimesh_internal.h \
-                        collision_cylinder_trimesh.cpp \
-                        collision_trimesh_plane.cpp
-endif
-
-
-
 #################################
 #   O P C O D E    S T U F F
 #################################
 
-
-if OPCODE
 AM_CPPFLAGS += -I$(top_srcdir)/OPCODE -I$(top_srcdir)/OPCODE/Ice -DdTRIMESH_ENABLED -DdTRIMESH_OPCODE
 libode_la_LIBADD += $(top_builddir)/OPCODE/libOPCODE.la \
                     $(top_builddir)/OPCODE/Ice/libIce.la
 
 libode_la_SOURCES+=     collision_trimesh_trimesh.cpp \
-                        collision_trimesh_trimesh_new.cpp \
                         collision_trimesh_sphere.cpp \
                         collision_trimesh_ray.cpp \
                         collision_trimesh_opcode.cpp \
@@ -135,8 +102,6 @@ libode_la_SOURCES+=     collision_trimesh_trimesh.cpp \
                         collision_trimesh_internal.h \
                         collision_cylinder_trimesh.cpp \
                         collision_trimesh_plane.cpp
-endif
-
 
 if LIBCCD
 
@@ -180,6 +145,5 @@ endif
 if LIBCCD_CONVEX_CONVEX
 AM_CPPFLAGS += -DdLIBCCD_CONVEX_CONVEX
 endif
-
 
 endif

@@ -29,9 +29,8 @@
 // Local dependencies
 #include "collision_kernel.h"
 
-#if dTRIMESH_ENABLED
+
 #include "collision_trimesh_internal.h"
-#endif // dTRIMESH_ENABLED
 
 #define	SQR(x)			((x)*(x))						//!< Returns x square
 #define	CUBE(x)			((x)*(x)*(x))					//!< Returns x cube
@@ -238,8 +237,6 @@ void dMassSetTrimesh( dMass *m, dReal density, dGeomID g )
 
     dMassSetZero (m);
 
-#if dTRIMESH_ENABLED
-
     dxTriMesh *TriMesh = (dxTriMesh *)g;
     unsigned int triangles = FetchTriangleCount( TriMesh );
 
@@ -265,9 +262,9 @@ void dMassSetTrimesh( dMass *m, dReal density, dGeomID g )
         dSubtractVectors3( a, v[1], v[0] ); 
         dSubtractVectors3( b, v[2], v[0] ); 
         dCalcVectorCross3( n, b, a );
-        nx = fabs(n[0]);
-        ny = fabs(n[1]);
-        nz = fabs(n[2]);
+        nx = (dReal)fabs(n[0]);
+        ny = (dReal)fabs(n[1]);
+        nz = (dReal)fabs(n[2]);
 
         if( nx > ny && nx > nz )
             C = 0;
@@ -423,7 +420,6 @@ void dMassSetTrimesh( dMass *m, dReal density, dGeomID g )
     dMassCheck (m);
 # endif
 
-#endif // dTRIMESH_ENABLED
 }
 
 

@@ -35,8 +35,6 @@
 #include "collision_trimesh_internal.h"
 #include "util.h"
 
-#if dTRIMESH_ENABLED
-
 #define MAX_REAL	dInfinity
 static const int	nCYLINDER_AXIS				= 2;
 static const int    nCYLINDER_CIRCLE_SEGMENTS	= 8;
@@ -966,7 +964,6 @@ int sCylinderTrimeshColliderData::TestCollisionForSingleTriangle(int ctContacts0
 }
 
 // OPCODE version of cylinder to mesh collider
-#if dTRIMESH_OPCODE
 static void dQueryCTLPotentialCollisionTriangles(OBBCollider &Collider, 
                                                  sCylinderTrimeshColliderData &cData, dxGeom *Cylinder, dxTriMesh *Trimesh,
                                                  OBBCache &BoxCache)
@@ -1107,85 +1104,3 @@ int dCollideCylinderTrimesh(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *con
 
     return nContactCount;
 }
-#endif
-
-// GIMPACT version of cylinder to mesh collider
-#if dTRIMESH_GIMPACT
-int dCollideCylinderTrimesh(dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int skip)
-{
-    dIASSERT( skip >= (int)sizeof( dContactGeom ) );
-    dIASSERT( o1->type == dCylinderClass );
-    dIASSERT( o2->type == dTriMeshClass );
-    dIASSERT ((flags & NUMC_MASK) >= 1);
-
-    int nContactCount = 0;
-
-    dxGeom *Cylinder = o1;
-    dxTriMesh *Trimesh = (dxTriMesh *)o2;
-
-    // Main data holder
-    sCylinderTrimeshColliderData cData(flags, skip);
-    cData._InitCylinderTrimeshData(Cylinder, Trimesh);
-
-    //*****at first , collide box aabb******//
-
-    aabb3f test_aabb;
-
-    test_aabb.minX = o1->aabb[0];
-    test_aabb.maxX = o1->aabb[1];
-    test_aabb.minY = o1->aabb[2];
-    test_aabb.maxY = o1->aabb[3];
-    test_aabb.minZ = o1->aabb[4];
-    test_aabb.maxZ = o1->aabb[5];
-
-
-    GDYNAMIC_ARRAY collision_result;
-    GIM_CREATE_BOXQUERY_LIST(collision_result);
-
-    gim_aabbset_box_collision(&test_aabb, &Trimesh->m_collision_trimesh.m_aabbset , &collision_result);
-
-    if (collision_result.m_size != 0)
-    {
-        //*****Set globals for box collision******//
-
-        int ctContacts0 = 0;
-        cData.m_gLocalContacts = (sLocalContactData*)dALLOCA16(sizeof(sLocalContactData)*(cData.m_iFlags & NUMC_MASK));
-
-        GUINT32 * boxesresult = GIM_DYNARRAY_POINTER(GUINT32,collision_result);
-        GIM_TRIMESH * ptrimesh = &Trimesh->m_collision_trimesh;
-
-        gim_trimesh_locks_work_data(ptrimesh);
-
-        for(unsigned int i=0;i<collision_result.m_size;i++)
-        {
-            const int Triint = boxesresult[i];
-
-            dVector3 dv[3];
-            gim_trimesh_get_triangle_vertices(ptrimesh, Triint, dv[0], dv[1], dv[2]);
-
-            bool bFinishSearching;
-            ctContacts0 = cData.TestCollisionForSingleTriangle(ctContacts0, Triint, dv, bFinishSearching);
-
-            if (bFinishSearching) 
-            {
-                break;
-            }
-        }
-
-        gim_trimesh_unlocks_work_data(ptrimesh);
-
-        if (cData.m_nContacts != 0)
-        {
-            nContactCount = cData._ProcessLocalContacts(contact, Cylinder, Trimesh);
-        }
-    }
-
-    GIM_DYNARRAY_DESTROY(collision_result);
-
-    return nContactCount;
-}
-#endif
-
-#endif // dTRIMESH_ENABLED
-
-

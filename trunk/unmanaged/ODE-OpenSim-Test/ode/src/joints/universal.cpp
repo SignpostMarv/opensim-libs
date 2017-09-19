@@ -140,7 +140,7 @@ dxJointUniversal::getAngles( dReal *angle1, dReal *angle2 )
         qrel[2] = ax1[1] + ax2[1];
         qrel[3] = ax1[2] + ax2[2];
 
-        dReal l = dRecip( sqrt( qrel[1] * qrel[1] + qrel[2] * qrel[2] + qrel[3] * qrel[3] ) );
+        dReal l = dRecip((dReal)sqrt( qrel[1] * qrel[1] + qrel[2] * qrel[2] + qrel[3] * qrel[3] ) );
         qrel[1] *= l;
         qrel[2] *= l;
         qrel[3] *= l;

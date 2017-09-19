@@ -28,13 +28,10 @@
 #include "matrix.h"
 #include "odemath.h"
 
-#if dTRIMESH_ENABLED
-
 #include "collision_util.h"
 #include "collision_std.h"
 #include "collision_trimesh_internal.h"
 
-#if dTRIMESH_OPCODE
 int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contacts, int skip )
 {
     dIASSERT( skip >= (int)sizeof( dContactGeom ) );
@@ -164,77 +161,4 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
     // Return contact count.
     return contact_count;
 }
-#endif // dTRIMESH_OPCODE
-
-#if dTRIMESH_GIMPACT
-int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contacts, int skip )
-{
-    dIASSERT( skip >= (int)sizeof( dContactGeom ) );
-    dIASSERT( o1->type == dTriMeshClass );
-    dIASSERT( o2->type == dPlaneClass );
-    dIASSERT ((flags & NUMC_MASK) >= 1);
-
-    // Alias pointers to the plane and trimesh
-    dxTriMesh* trimesh = (dxTriMesh*)( o1 );
-    dVector4 plane;
-    dGeomPlaneGetParams(o2, plane);
-
-    o1 -> recomputeAABB();
-    o2 -> recomputeAABB();
-
-    //Find collision
-
-    GDYNAMIC_ARRAY collision_result;
-    GIM_CREATE_TRIMESHPLANE_CONTACTS(collision_result);
-
-    gim_trimesh_plane_collisionODE(&trimesh->m_collision_trimesh,plane,&collision_result);
-
-    if(collision_result.m_size == 0 )
-    {
-        GIM_DYNARRAY_DESTROY(collision_result);
-        return 0;
-    }
-
-
-    unsigned int contactcount = collision_result.m_size;
-    unsigned int contactmax = (unsigned int)(flags & NUMC_MASK);
-    if (contactcount > contactmax)
-    {
-        contactcount = contactmax;
-    }
-
-    dContactGeom* pcontact;
-    vec4f * planecontact_results = GIM_DYNARRAY_POINTER(vec4f,collision_result);
-
-    for(unsigned int i = 0; i < contactcount; i++ )
-    {
-        pcontact = SAFECONTACT(flags, contacts, i, skip);
-
-        pcontact->pos[0] = (*planecontact_results)[0];
-        pcontact->pos[1] = (*planecontact_results)[1];
-        pcontact->pos[2] = (*planecontact_results)[2];
-        pcontact->pos[3] = REAL(1.0);
-
-        pcontact->normal[0] = plane[0];
-        pcontact->normal[1] = plane[1];
-        pcontact->normal[2] = plane[2];
-        pcontact->normal[3] = 0;
-
-        pcontact->depth = (*planecontact_results)[3];
-        pcontact->g1 = o1; // trimesh geom
-        pcontact->g2 = o2; // plane geom
-        pcontact->side1 = -1; // note: don't have the triangle index, but OPCODE *does* do this properly
-        pcontact->side2 = -1;
-
-        planecontact_results++;
-    }
-
-    GIM_DYNARRAY_DESTROY(collision_result);
-
-    return (int)contactcount;
-}
-#endif // dTRIMESH_GIMPACT
-
-
-#endif // dTRIMESH_ENABLED
 
