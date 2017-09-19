@@ -2218,16 +2218,10 @@ static const char ode_configuration[] = "ODE "
 REGISTER_EXTENSION( ODE_EXT_no_debug )
 #endif // dNODEBUG
 
-
-REGISTER_EXTENSION( ODE_EXT_trimesh )
-REGISTER_EXTENSION( ODE_EXT_opcode )
-
 // opcode extensions
 #if dTRIMESH_16BIT_INDICES
 REGISTER_EXTENSION( ODE_OPC_16bit_indices )
 #endif
-
-REGISTER_EXTENSION( ODE_OPC_new_collider )
 
 #if dTLS_ENABLED
 REGISTER_EXTENSION( ODE_EXT_mt_collisions )
@@ -2241,6 +2235,9 @@ REGISTER_EXTENSION( ODE_THR_builtin_impl )
 #endif // #if dBUILTIN_THREADING_IMPL_ENABLED
 #endif // #if !dTHREADING_INTF_DISABLED
 
+#if defined(__AVX__)
+REGISTER_EXTENSION(ODE_AVX)
+#endif // dTLS_ENABLED
 //**********************************
 // EXTENSION LIST END
 
