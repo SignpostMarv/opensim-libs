@@ -307,8 +307,8 @@ public:
 							const btVector3& contact, const btVector3& norm, const float penetration);
 	void RecordGhostCollisions(btPairCachingGhostObject* obj);
 
-	SweepHit ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
-	RaycastHit RayTest(IDTYPE id, btVector3& from, btVector3& to);
+	SweepHit ConvexSweepTest(btCollisionShape* obj, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin);
+	RaycastHit RayTest(btVector3& from, btVector3& to, short filterGroup, short filterMask);
 	const btVector3 RecoverFromPenetration(IDTYPE id);
 
 	WorldData* getWorldData() { return &m_worldData; }

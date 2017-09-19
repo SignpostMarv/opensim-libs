@@ -192,7 +192,7 @@ void BulletSim::initPhysics2(ParamBlock* parms,
 	}
 	if (m_worldData.params->maxCollisionAlgorithmPoolSize > 0)
 	{
-		cci.m_defaultMaxCollisionAlgorithmPoolSize = m_worldData.params->maxCollisionAlgorithmPoolSize;
+		cci.m_defaultMaxCollisionAlgorithmPoolSize = (int)m_worldData.params->maxCollisionAlgorithmPoolSize;
 		m_worldData.BSLog("initPhysics2: setting defaultMaxCollisionAlgorithmPoolSize = %f", m_worldData.params->maxCollisionAlgorithmPoolSize);
 	}
 	
@@ -592,6 +592,7 @@ btCollisionShape* BulletSim::CreateHullShape2(int hullCount, float* hulls )
 		// 		);	// DEBUG DEBUG
 		// }	// DEBUG DEBUG
 		convexShape->setMargin(m_worldData.params->collisionMargin);
+		convexShape->optimizeConvexHull();
 		compoundShape->addChildShape(childTrans, convexShape);
 
 		ii += (vertexCount * 3 + 4);
@@ -683,7 +684,7 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 
 	// Hullify the mesh
 	myHACD.Compute();
-	int nHulls = myHACD.GetNClusters();	
+	int nHulls = (int)myHACD.GetNClusters();	
 	m_worldData.BSLog("HACD: After compute. nHulls=%d", nHulls);	// DEBUG DEBUG
 
 	// Create the compound shape all the hulls will be added to
@@ -706,7 +707,7 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 		btAlignedObjectArray<btVector3> vertices;
 		btVector3 centroid;
 		centroid.setValue(0,0,0);
-		for (int ii=0; ii < nTriangles; ii++)
+		for (int ii=0; ii < (int)nTriangles; ii++)
 		{
 			long tri = trianglesCH[ii].X();
 			btVector3 corner1(pointsCH[tri].X(), pointsCH[tri].Y(), pointsCH[tri].Z() );
@@ -751,10 +752,13 @@ btCollisionShape* BulletSim::BuildHullShapeFromMesh2(btCollisionShape* mesh, HAC
 			btGeometryUtil::getVerticesFromPlaneEquations(shiftedPlaneEquations,shiftedVertices);
 			
 			convexShape = new btConvexHullShape(&(shiftedVertices[0].getX()),shiftedVertices.size());
+			convexShape->optimizeConvexHull();
+
 		}
 		else
 		{
 			convexShape = new btConvexHullShape(&(vertices[0].getX()),vertices.size());
+			convexShape->optimizeConvexHull();
 		}
 		convexShape->setMargin(m_worldData.params->collisionMargin);
 
@@ -1058,7 +1062,7 @@ btCollisionShape* BulletSim::CreateConvexHullShape2(int indicesCount, int* indic
 }
 
 // TODO: get this code working
-SweepHit BulletSim::ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin)
+SweepHit BulletSim::ConvexSweepTest(btCollisionShape* shape, btVector3& fromPos, btVector3& targetPos, btScalar extraMargin)
 {
 	return SweepHit();
 	/*
@@ -1123,48 +1127,23 @@ SweepHit BulletSim::ConvexSweepTest(IDTYPE id, btVector3& fromPos, btVector3& ta
 	*/
 }
 
-// TODO: get this code working
-RaycastHit BulletSim::RayTest(IDTYPE id, btVector3& from, btVector3& to)
+RaycastHit BulletSim::RayTest(btVector3& from, btVector3& to, short filterGroup, short filterMask)
 {
-	return RaycastHit();
-	/*
 	RaycastHit hit;
-	hit.ID = ID_INVALID_HIT;
+	btCollisionWorld::ClosestRayResultCallback hitResult(from, to);
+	hitResult.m_collisionFilterGroup = filterGroup;
+	hitResult.m_collisionFilterMask = filterMask;
 
-	btCollisionObject* castingObject = NULL;
-
-	// Look for a character
-	CharactersMapType::iterator cit = m_characters.find(id);
-	if (cit != m_characters.end())
-		castingObject = cit->second;
-
-	if (!castingObject)
+	m_worldData.dynamicsWorld->rayTest(from, to, hitResult);
+	if (hitResult.hasHit())
 	{
-		// Look for a rigid body
-		BodiesMapType::iterator bit = m_bodies.find(id);
-		if (bit != m_bodies.end())
-			castingObject = bit->second;
-	}
-
-	if (castingObject)
-	{
-		// Create a callback for the test
-		ClosestNotMeRayResultCallback callback(castingObject);
-
-		// Do the raycast test
-		m_worldData.dynamicsWorld->rayTest(from, to, callback);
-
-		if (callback.hasHit())
-		{
-			hit.ID = CONVLOCALID(callback.m_collisionObject->getUserPointer());
-			hit.Fraction = callback.m_closestHitFraction;
-			hit.Normal = callback.m_hitNormalWorld;
-			//hit.Point = callback.m_hitPointWorld; // TODO: Is this useful?
-		}
+		hit.ID = CONVLOCALID(hitResult.m_collisionObject->getUserPointer());
+		hit.Fraction = hitResult.m_closestHitFraction;
+		hit.Normal = hitResult.m_hitNormalWorld;
+		hit.Point = hitResult.m_hitPointWorld;
 	}
 
 	return hit;
-	*/
 }
 
 // TODO: get this code working

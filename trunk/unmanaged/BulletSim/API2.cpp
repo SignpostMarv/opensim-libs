@@ -615,8 +615,8 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateTerrainShape2(IDTYPE id, Vector3 siz
 {
 	const int upAxis = 2;
 	btHeightfieldTerrainShape* terrainShape = new btHeightfieldTerrainShape(
-										size.X, size.Y, heightMap, scaleFactor, 
-										minHeight, maxHeight, upAxis, PHY_FLOAT, false);
+										(int)size.X, (int)size.Y, heightMap, (btScalar)scaleFactor, 
+										(btScalar)minHeight, (btScalar)maxHeight, upAxis, PHY_FLOAT, false);
 
 	terrainShape->setMargin(btScalar(collisionMargin));
 	terrainShape->setUseDiamondSubdivision(true);
@@ -635,7 +635,7 @@ EXTERN_C DLL_EXPORT btCollisionShape* CreateGroundPlaneShape2(
 {
 	// Initialize the ground plane
 	btVector3 groundPlaneNormal = btVector3(0, 0, 1);	// Z up
-	btStaticPlaneShape* m_planeShape = new btStaticPlaneShape(groundPlaneNormal, (int)height);
+	btStaticPlaneShape* m_planeShape = new btStaticPlaneShape(groundPlaneNormal, (btScalar)height);
 	m_planeShape->setMargin(collisionMargin);
 
 	m_planeShape->setUserPointer(PACKLOCALID(id));
@@ -2724,7 +2724,6 @@ EXTERN_C DLL_EXPORT bool SetCollisionGroupMask2(btCollisionObject* obj, unsigned
 // =====================================================================
 // =====================================================================
 // Raycasting.
-// NOTE DONE YET. NOT EVEN LOOKED AT.
 /**
  * Perform a sweep test by moving a convex shape through space and testing for collisions. 
  * Starting and ending rotations are not currently supported since this was designed for
@@ -2736,11 +2735,11 @@ EXTERN_C DLL_EXPORT bool SetCollisionGroupMask2(btCollisionObject* obj, unsigned
  * @param extraMargin Extra collision margin to add to the convex shape during the sweep.
  * @return Sweep results. If there were no collisions, SweepHit.ID will be ID_INVALID_HIT (0xFFFFFFFF)
  */
-EXTERN_C DLL_EXPORT SweepHit ConvexSweepTest2(BulletSim* world, unsigned int id, Vector3 from, Vector3 to, float extraMargin)
+EXTERN_C DLL_EXPORT SweepHit ConvexSweepTest2(BulletSim* world, btCollisionShape* obj, Vector3 from, Vector3 to, float extraMargin)
 {
 	btVector3 f = from.GetBtVector3();
 	btVector3 t = to.GetBtVector3();
-	return world->ConvexSweepTest(id, f, t, extraMargin);
+	return world->ConvexSweepTest(obj, f, t, extraMargin);
 }
 
 /**
@@ -2751,11 +2750,11 @@ EXTERN_C DLL_EXPORT SweepHit ConvexSweepTest2(BulletSim* world, unsigned int id,
  * @param to End of the ray.
  * @return Raycast results. If there were no collisions, RaycastHit.ID will be ID_INVALID_HIT (0xFFFFFFFF)
  */
-EXTERN_C DLL_EXPORT RaycastHit RayTest2(BulletSim* world, unsigned int id, Vector3 from, Vector3 to)
+EXTERN_C DLL_EXPORT RaycastHit RayTest2(BulletSim* world, Vector3 from, Vector3 to, unsigned int filterGroup, unsigned int filterMask)
 {
 	btVector3 f = from.GetBtVector3();
 	btVector3 t = to.GetBtVector3();
-	return world->RayTest(id, f, t);
+	return world->RayTest(f, t, (short)filterGroup, (short)filterMask);
 }
 
 /**
