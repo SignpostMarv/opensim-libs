@@ -17,7 +17,7 @@ SUBDIRS = include \
           $(OPCODE_DIR) \
           $(OU_DIR) \
           $(LIBCCD_DIR) \
-          ode \
+          ode
 
 bin_SCRIPTS = ode-config
 
