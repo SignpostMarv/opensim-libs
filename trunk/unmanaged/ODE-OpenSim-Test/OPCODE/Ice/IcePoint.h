@@ -588,7 +588,7 @@
 
             class ShadowMatrix3x3 { public: float m[3][3]; };	// To allow inlining
             const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
-            ma = _mm_loadu_ps(&x);
+
             t0 = _mm_loadu_ps(Mat->m[0]);
             t1 = _mm_loadu_ps(Mat->m[1]);
             t2 = _mm_loadu_ps(Mat->m[2]);
@@ -600,9 +600,9 @@
 
             t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
             t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
-//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
 
+            ma = _mm_loadu_ps(&x);
             m0 = _mm_dp_ps(ma, t0, 0x71);
             xx = _mm_cvtss_f32(m0);
             m1 = _mm_dp_ps(ma, t1, 0x71);
@@ -634,7 +634,7 @@
 
             class ShadowMatrix4x4 { public: float m[4][4]; };	// To allow inlining
             const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
-            ma = _mm_loadu_ps(&x);
+
             t0 = _mm_loadu_ps(Mat->m[0]);
             t1 = _mm_loadu_ps(Mat->m[1]);
             t2 = _mm_loadu_ps(Mat->m[2]);
@@ -646,9 +646,9 @@
 
             t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
             t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
-//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
 
+            ma = _mm_loadu_ps(&x);
             m0 = _mm_dp_ps(ma, t0, 0x71);
             xx = _mm_cvtss_f32(m0) + Mat->m[3][0];
             m1 = _mm_dp_ps(ma, t1, 0x71);
@@ -680,7 +680,7 @@
 
             class ShadowMatrix3x3 { public: float m[3][3]; };	// To allow inlining
             const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
-            ma = _mm_loadu_ps(&x);
+
             t0 = _mm_loadu_ps(Mat->m[0]);
             t1 = _mm_loadu_ps(Mat->m[1]);
             t2 = _mm_loadu_ps(Mat->m[2]);
@@ -692,9 +692,9 @@
 
             t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
             t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
-//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
 
+            ma = _mm_loadu_ps(&x);
             m0 = _mm_dp_ps(ma, t0, 0x71);
             xx = _mm_cvtss_f32(m0);
             m1 = _mm_dp_ps(ma, t1, 0x71);
@@ -729,7 +729,6 @@
 
             class ShadowMatrix4x4 { public: float m[4][4]; };	// To allow inlining
             const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
-            ma = _mm_loadu_ps(&x);
             t0 = _mm_loadu_ps(Mat->m[0]);
             t1 = _mm_loadu_ps(Mat->m[1]);
             t2 = _mm_loadu_ps(Mat->m[2]);
@@ -741,8 +740,9 @@
 
             t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
             t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
-//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
+
+            ma = _mm_loadu_ps(&x);
 
             m0 = _mm_dp_ps(ma, t0, 0x71);
             xx = _mm_cvtss_f32(m0) + Mat->m[3][0];

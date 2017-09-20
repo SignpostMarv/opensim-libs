@@ -372,6 +372,27 @@ ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
  * special case matrix multiplication, with operator selection
  */
 
+#if defined (__AVX__)
+ODE_PURE_INLINE void dMultiplyHelper0_331(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb,mc;
+    dReal restmp[3];
+    mb = _mm_loadu_ps(b);
+    ma = _mm_loadu_ps(a);
+    mc = _mm_dp_ps(ma, mb, 0x71);
+    restmp[0] = (dReal)_mm_cvtss_f32(mc);
+    ma = _mm_loadu_ps(a + 4);
+    mc = _mm_dp_ps(ma, mb, 0x71);
+    restmp[1] = (dReal)_mm_cvtss_f32(mc);
+    ma = _mm_loadu_ps(a + 8);
+    mc = _mm_dp_ps(ma, mb, 0x71);
+    restmp[2] = (dReal)_mm_cvtss_f32(mc);
+
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
 ODE_PURE_INLINE void dMultiplyHelper0_331(dReal *res, const dReal *a, const dReal *b)
 {
   const dReal res_0 = dCalcVectorDot3(a, b);
@@ -380,7 +401,40 @@ ODE_PURE_INLINE void dMultiplyHelper0_331(dReal *res, const dReal *a, const dRea
   /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
   res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
+#endif
 
+#if defined (__AVX__)
+ODE_PURE_INLINE void dMultiplyHelper1_331(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+    dReal restmp[3];
+
+    t0 = _mm_loadu_ps(a); // a0 a1 a2 a3
+    t1 = _mm_loadu_ps(a + 4); // a4 a5 a6 a7
+    t2 = _mm_loadu_ps(a + 8); // a8 a9 a10 a11
+
+    m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // a0 a1 a4 a5
+    m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // a2 a3 a6 a7
+    m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // a4 a5 a8 a9
+    m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // a6 a7 a10 a11
+
+    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); // a0 a4 a8 a8 
+    t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); // a1 a5 a9 a9 
+    t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); // a2 a6 a10 a10
+
+    ma = _mm_loadu_ps(b);
+
+    m0 = _mm_dp_ps(ma, t0, 0x71);
+    restmp[0] = _mm_cvtss_f32(m0);
+    m1 = _mm_dp_ps(ma, t1, 0x71);
+    restmp[1] = _mm_cvtss_f32(m1);
+    m2 = _mm_dp_ps(ma, t2, 0x71);
+    restmp[2] = _mm_cvtss_f32(m2);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
 ODE_PURE_INLINE void dMultiplyHelper1_331(dReal *res, const dReal *a, const dReal *b)
 {
   const dReal res_0 = dCalcVectorDot3_41(a, b);
@@ -389,6 +443,7 @@ ODE_PURE_INLINE void dMultiplyHelper1_331(dReal *res, const dReal *a, const dRea
   /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
   res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
+#endif
 
 ODE_PURE_INLINE void dMultiplyHelper0_133(dReal *res, const dReal *a, const dReal *b)
 {

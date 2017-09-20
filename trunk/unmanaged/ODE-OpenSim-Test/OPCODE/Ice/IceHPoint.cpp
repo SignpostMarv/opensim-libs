@@ -51,7 +51,7 @@ Point HPoint::operator*(const Matrix3x3& mat) const
 
     t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
     t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-    t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
+    t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
 
     m0 = _mm_dp_ps(ma, t0, 0x71);
     xx = _mm_cvtss_f32(m0);
