@@ -48,36 +48,59 @@
 		inline_	HPoint&		Sub(const float f[4])							{ x -= f[X];	y -= f[Y];	z -= f[Z];	w -= f[W];		return *this;	}
 		
 		//! Multiplies by a scalar
-		inline_	HPoint&		Mul(float s)									{ x *= s;		y *= s;		z *= s;		w *= s;			return *this;	}
+		inline_	HPoint&		Mul(float s)									{ x *= s; y *= s; z *= s; w *= s; return *this; }
 
 		//! Returns MIN(x, y, z, w);
-				float		Min()								const		{ return MIN(x, MIN(y, MIN(z, w)));										}
+        float Min() 	const { return MIN(x, MIN(y, MIN(z, w))); }
+
 		//! Returns MAX(x, y, z, w);
-				float		Max()								const		{ return MAX(x, MAX(y, MAX(z, w)));										}
+        float Max()     const { return MAX(x, MAX(y, MAX(z, w))); }
+
 		//! Sets each element to be componentwise minimum
-				HPoint&		Min(const HPoint& p)							{ x = MIN(x, p.x); y = MIN(y, p.y); z = MIN(z, p.z); w = MIN(w, p.w);	return *this;	}
+        HPoint&	Min(const HPoint& p) { x = MIN(x, p.x); y = MIN(y, p.y); z = MIN(z, p.z); w = MIN(w, p.w);	return *this; }
+
 		//! Sets each element to be componentwise maximum
-				HPoint&		Max(const HPoint& p)							{ x = MAX(x, p.x); y = MAX(y, p.y); z = MAX(z, p.z); w = MAX(w, p.w);	return *this;	}
+        HPoint&	Max(const HPoint& p) { x = MAX(x, p.x); y = MAX(y, p.y); z = MAX(z, p.z); w = MAX(w, p.w);	return *this; }
 
 		//! Computes square magnitude
-		inline_	float		SquareMagnitude()					const		{ return x*x + y*y + z*z + w*w;											}
+#if defined (__AVX__)
+        inline_	float SquareMagnitude()	const
+        {
+            __m128 ma;
+            ma = _mm_loadu_ps(&x);
+            ma = _mm_dp_ps(ma, ma, 0xf1);
+            return _mm_cvtss_f32(ma);
+        }
+#else
+        inline_	float SquareMagnitude()	const { return x*x + y*y + z*z + w*w; }
+#endif
 		//! Computes magnitude
-		inline_	float		Magnitude()							const		{ return sqrtf(x*x + y*y + z*z + w*w);									}
+#if defined (__AVX__)
+        inline_	float Magnitude() const
+        {
+            __m128 ma;
+            ma = _mm_loadu_ps(&x);
+            ma = _mm_dp_ps(ma, ma, 0xf1);
+            return _mm_cvtss_f32(ma);
+        }
+#else
+		inline_	float Magnitude() const { return sqrtf(x*x + y*y + z*z + w*w); }
+#endif
 
 		//! Normalize the vector
-		inline_	HPoint&		Normalize()
-							{
-								float M = Magnitude();
-								if(M)
-								{
-									M = 1.0f / M;
-									x *= M;
-									y *= M;
-									z *= M;
-									w *= M;
-								}
-								return *this;
-							}
+		inline_	HPoint&	Normalize()
+        {
+            float M = SquareMagnitude();
+            if(M)
+            {
+                M = 1.0f / sqrtf(M);
+                x *= M;
+                y *= M;
+                z *= M;
+                w *= M;
+                }
+            return *this;
+        }
 
 		// Arithmetic operators
 		//! Operator for HPoint Negate = - HPoint;

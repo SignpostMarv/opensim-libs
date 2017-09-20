@@ -139,6 +139,29 @@ BOOL Point::IsNotUsed()	const
 	return TRUE;
 }
 
+#if defined (__AVX__)
+Point& Point::Mult(const Matrix3x3& mat, const Point& a)
+{
+    __m128 ma, mp, mt;
+    float xx, yy, zz;
+
+    ma = _mm_loadu_ps(a);
+
+    mp = _mm_loadu_ps(mat.m[0]);
+    mt = _mm_dp_ps(ma, mp, 0x71);
+    xx = _mm_cvtss_f32(mt);
+
+    mp = _mm_loadu_ps(mat.m[1]);
+    mt = _mm_dp_ps(ma, mp, 0x71);
+    yy = _mm_cvtss_f32(mt);
+
+    mp = _mm_loadu_ps(mat.m[2]);
+    mt = _mm_dp_ps(ma, mp, 0x71);
+    zz = _mm_cvtss_f32(mt);
+    x = xx; y = yy; z = zz;
+    return *this;
+}
+#else
 Point& Point::Mult(const Matrix3x3& mat, const Point& a)
 {
 	x = a.x * mat.m[0][0] + a.y * mat.m[0][1] + a.z * mat.m[0][2];
@@ -146,6 +169,7 @@ Point& Point::Mult(const Matrix3x3& mat, const Point& a)
 	z = a.x * mat.m[2][0] + a.y * mat.m[2][1] + a.z * mat.m[2][2];
 	return *this;
 }
+#endif
 
 Point& Point::Mult2(const Matrix3x3& mat1, const Point& a1, const Matrix3x3& mat2, const Point& a2)
 {
@@ -155,6 +179,30 @@ Point& Point::Mult2(const Matrix3x3& mat1, const Point& a1, const Matrix3x3& mat
 	return *this;
 }
 
+#if defined (__AVX__)
+Point& Point::Mac(const Matrix3x3& mat, const Point& a)
+{
+    __m128 ma, mp, mt;
+    float xx, yy, zz;
+
+    ma = _mm_loadu_ps(a);
+
+    mp = _mm_loadu_ps(mat.m[0]);
+    mt = _mm_dp_ps(ma, mp, 0x71);
+    xx = _mm_cvtss_f32(mt);
+
+    mp = _mm_loadu_ps(mat.m[1]);
+    mt = _mm_dp_ps(ma, mp, 0x71);
+    yy = _mm_cvtss_f32(mt);
+
+    mp = _mm_loadu_ps(mat.m[2]);
+    mt = _mm_dp_ps(ma, mp, 0x71);
+    zz = _mm_cvtss_f32(mt);
+
+    x += xx; y += yy; z += zz;
+    return *this;
+}
+#else
 Point& Point::Mac(const Matrix3x3& mat, const Point& a)
 {
 	x += a.x * mat.m[0][0] + a.y * mat.m[0][1] + a.z * mat.m[0][2];
@@ -162,7 +210,38 @@ Point& Point::Mac(const Matrix3x3& mat, const Point& a)
 	z += a.x * mat.m[2][0] + a.y * mat.m[2][1] + a.z * mat.m[2][2];
 	return *this;
 }
+#endif
 
+#if defined (__AVX__)
+Point& Point::TransMult(const Matrix3x3& mat, const Point& a)
+{
+    __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+    float xx, yy, zz;
+
+    ma = _mm_loadu_ps(a);
+    t0 = _mm_loadu_ps(mat.m[0]);
+    t1 = _mm_loadu_ps(mat.m[1]);
+    t2 = _mm_loadu_ps(mat.m[2]);
+
+    m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
+    m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
+    m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
+    m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
+
+    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+    t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
+    t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
+
+    m0 = _mm_dp_ps(ma, t0, 0x71);
+    xx = _mm_cvtss_f32(m0);
+    m1 = _mm_dp_ps(ma, t1, 0x71);
+    yy = _mm_cvtss_f32(m1);
+    m2 = _mm_dp_ps(ma, t2, 0x71);
+    zz = _mm_cvtss_f32(m2);
+    x = xx; y = yy; z = zz;
+    return *this;
+}
+#else
 Point& Point::TransMult(const Matrix3x3& mat, const Point& a)
 {
 	x = a.x * mat.m[0][0] + a.y * mat.m[1][0] + a.z * mat.m[2][0];
@@ -170,6 +249,7 @@ Point& Point::TransMult(const Matrix3x3& mat, const Point& a)
 	z = a.x * mat.m[0][2] + a.y * mat.m[1][2] + a.z * mat.m[2][2];
 	return *this;
 }
+#endif
 
 Point& Point::Transform(const Point& r, const Matrix3x3& rotpos, const Point& linpos)
 {

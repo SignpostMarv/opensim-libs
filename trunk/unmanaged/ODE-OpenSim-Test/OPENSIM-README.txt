@@ -35,17 +35,17 @@ you may need to do chmod +x bootstrap before since git keeps losing it
 (could not test following adapted from justin instructions bellow)
 
 == On Linux 32-bit ==
-./configure --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x --disable-threading-intf 
+./configure --disable-asserts --enable-shared --disable-threading-intf 
 make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so	 (possible name is not ..so.1.1.1 )
 
 == On Linux 64-bit ==
-./configure --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x
+./configure --disable-asserts --enable-shared --disable-threading-intf 
 make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib64/libode-x86_64.so (possible name is not ..so.1.1.1 )
 
 == On Linux 64-bit to cross-compile to 32-bit ==
-CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --with-trimesh=opcode --disable-asserts --enable-shared --disable-demos --without-x --disable-threading-intf
+CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --disable-asserts --enable-shared --disable-threading-intf
 make
 cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so
 
@@ -55,14 +55,14 @@ you may need to ajdust files bin/Ode.NET.dll.config  and bin/OpenSim.Region.Phys
 
 
 == On Mac OS X Intel 64-bit to compile to a 32-bit, 64-bit Intel and PowerPC universal binary ==
-CFLAGS="-g -O2 -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch x86_64 -arch ppc" CXXFLAGS="-g -O2 -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch x86_64 -arch ppc" LDFLAGS="-arch i386 -arch x86_64 -arch ppc" ./configure --with-trimesh=opcode --disable-asserts --enable-shared --disable-dependency-tracking --disable-demos --without-x --disable-threading-intf
+CFLAGS="-g -O2 -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch x86_64 -arch ppc" CXXFLAGS="-g -O2 -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch x86_64 -arch ppc" LDFLAGS="-arch i386 -arch x86_64 -arch ppc" ./configure --disable-asserts --enable-shared --disable-dependency-tracking --disable-threading-intf
 make
 cp ode/src/.libs/libode.dylib $OPENSIM/bin/lib32/libode.dylib (32bits or )
 cp ode/src/.libs/libode.dylib $OPENSIM/bin/lib64/libode.dylib (64bits)
 
 
 engine ubOde shows ode.dll configuration in console and OpenSim.log similar to:
-[ubODE] ode library configuration: ODE ODE_EXT_trimesh ODE_EXT_opcode ODE_OPC_new_collider ODE_single_precision
+[ubODE] ode library configuration: ODE_single_precision ODE_OPENSIM OS0.13.3
 
 
 ==old coments: ==

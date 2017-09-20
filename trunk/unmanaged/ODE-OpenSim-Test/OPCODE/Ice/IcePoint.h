@@ -12,7 +12,11 @@
 #ifndef __ICEPOINT_H__
 #define __ICEPOINT_H__
 
-	// Forward declarations
+#if defined (__AVX__)
+#include <immintrin.h>
+#endif
+
+// Forward declarations
 	class HPoint;
 	class Plane;
 	class Matrix3x3;
@@ -54,18 +58,18 @@
 				Point&			UnitRandomVector();
 
 		//! Assignment from values
-		inline_	Point&			Set(float xx, float yy, float zz)		{ x  = xx;		y  = yy;	z  = zz;			return *this;	}
+		inline_	Point&			Set(float xx, float yy, float zz)		{ x = xx; y = yy; z = zz; return *this;	}
 		//! Assignment from array
-		inline_	Point&			Set(const float f[3])					{ x  = f[X];	y  = f[Y];	z  = f[Z];			return *this;	}
+		inline_	Point&			Set(const float f[3])					{ x  = f[X]; y  = f[Y];	z  = f[Z]; return *this;	}
 		//! Assignment from another point
-		inline_	Point&			Set(const Point& src)					{ x  = src.x;	y  = src.y;	z  = src.z;			return *this;	}
+		inline_	Point&			Set(const Point& src)					{ x  = src.x;	y  = src.y;	z  = src.z; return *this;	}
 
 		//! Adds a vector
-		inline_	Point&			Add(const Point& p)						{ x += p.x;		y += p.y;	z += p.z;			return *this;	}
+		inline_	Point&			Add(const Point& p)						{ x += p.x; y += p.y; z += p.z; return *this; }
 		//! Adds a vector
-		inline_	Point&			Add(float xx, float yy, float zz)		{ x += xx;		y += yy;	z += zz;			return *this;	}
+		inline_	Point&			Add(float xx, float yy, float zz)		{ x += xx; y += yy; z += zz; return *this;	}
 		//! Adds a vector
-		inline_	Point&			Add(const float f[3])					{ x += f[X];	y += f[Y];	z += f[Z];			return *this;	}
+		inline_	Point&			Add(const float f[3])					{ x += f[X]; y += f[Y]; z += f[Z]; return *this;	}
 		//! Adds vectors
 		inline_	Point&			Add(const Point& p, const Point& q)		{ x = p.x+q.x;	y = p.y+q.y;	z = p.z+q.z;	return *this;	}
 
@@ -214,48 +218,71 @@
 								}
 
 		//! Computes square magnitude
-		inline_	float			SquareMagnitude()	const		{ return x*x + y*y + z*z;												}
+#if defined (__AVX__)
+        inline_	float SquareMagnitude()	const
+        {
+            __m128 ma;
+            ma = _mm_loadu_ps(&x);
+            ma = _mm_dp_ps(ma, ma, 0x71);
+            return _mm_cvtss_f32(ma);
+        }
+#else
+		inline_	float SquareMagnitude()	const { return x*x + y*y + z*z;	}
+#endif
+
 		//! Computes magnitude
-		inline_	float			Magnitude()			const		{ return sqrtf(x*x + y*y + z*z);										}
-		//! Computes volume
-		inline_	float			Volume()			const		{ return x * y * z;														}
+#if defined (__AVX__)
+        inline_	float Magnitude()	const
+        {
+            __m128 ma;
+            ma = _mm_loadu_ps(&x);
+            ma = _mm_dp_ps(ma, ma, 0x71);
+            return sqrtf(_mm_cvtss_f32(ma));
+        }
+#else
+        inline_	float Magnitude() const	{ return sqrtf(x*x + y*y + z*z); }
+#endif
+
+        //! Computes volume
+		inline_	float Volume() const { return x * y * z; }
 
 		//! Checks the point is near zero
-		inline_	bool			ApproxZero()		const		{ return SquareMagnitude() < EPSILON2;									}
+		inline_	bool ApproxZero() const { return SquareMagnitude() < EPSILON2; }
 
 		//! Tests for exact zero vector
-		inline_	BOOL			IsZero()			const
-								{
-									if(IR(x) || IR(y) || IR(z))	return FALSE;
-									return TRUE;
-								}
+		inline_	BOOL IsZero()const
+        {
+            if(IR(x) || IR(y) || IR(z))	
+                return FALSE;
+			return TRUE;
+        }
 
 		//! Checks point validity
-		inline_	BOOL			IsValid()			const
-								{
-									if(!IsValidFloat(x))	return FALSE;
-									if(!IsValidFloat(y))	return FALSE;
-									if(!IsValidFloat(z))	return FALSE;
-									return TRUE;
-								}
+		inline_	BOOL IsValid() const
+        {
+            if(!IsValidFloat(x))	return FALSE;
+            if(!IsValidFloat(y))	return FALSE;
+            if(!IsValidFloat(z))	return FALSE;
+            return TRUE;
+        }
 
 		//! Slighty moves the point
-				void			Tweak(udword coord_mask, udword tweak_mask)
-								{
-									if(coord_mask&1)	{ udword Dummy = IR(x);	Dummy^=tweak_mask;	x = FR(Dummy); }
-									if(coord_mask&2)	{ udword Dummy = IR(y);	Dummy^=tweak_mask;	y = FR(Dummy); }
-									if(coord_mask&4)	{ udword Dummy = IR(z);	Dummy^=tweak_mask;	z = FR(Dummy); }
-								}
+		void Tweak(udword coord_mask, udword tweak_mask)
+		{
+			if(coord_mask&1)	{ udword Dummy = IR(x);	Dummy^=tweak_mask;	x = FR(Dummy); }
+			if(coord_mask&2)	{ udword Dummy = IR(y);	Dummy^=tweak_mask;	y = FR(Dummy); }
+			if(coord_mask&4)	{ udword Dummy = IR(z);	Dummy^=tweak_mask;	z = FR(Dummy); }
+		}
 
 		#define TWEAKMASK		0x3fffff
 		#define TWEAKNOTMASK	~TWEAKMASK
 		//! Slighty moves the point out
-		inline_	void			TweakBigger()
-								{
-									udword	Dummy = (IR(x)&TWEAKNOTMASK);	if(!IS_NEGATIVE_FLOAT(x))	Dummy+=TWEAKMASK+1;	x = FR(Dummy);
-											Dummy = (IR(y)&TWEAKNOTMASK);	if(!IS_NEGATIVE_FLOAT(y))	Dummy+=TWEAKMASK+1;	y = FR(Dummy);
-											Dummy = (IR(z)&TWEAKNOTMASK);	if(!IS_NEGATIVE_FLOAT(z))	Dummy+=TWEAKMASK+1;	z = FR(Dummy);
-								}
+		inline_	void TweakBigger()
+		{
+			udword	Dummy = (IR(x)&TWEAKNOTMASK);	if(!IS_NEGATIVE_FLOAT(x))	Dummy+=TWEAKMASK+1;	x = FR(Dummy);
+					Dummy = (IR(y)&TWEAKNOTMASK);	if(!IS_NEGATIVE_FLOAT(y))	Dummy+=TWEAKMASK+1;	y = FR(Dummy);
+					Dummy = (IR(z)&TWEAKNOTMASK);	if(!IS_NEGATIVE_FLOAT(z))	Dummy+=TWEAKMASK+1;	z = FR(Dummy);
+		}
 
 		//! Slighty moves the point in
 		inline_	void			TweakSmaller()
@@ -266,71 +293,131 @@
 								}
 
 		//! Normalizes the vector
-		inline_	Point&			Normalize()
-								{
-									float M = x*x + y*y + z*z;
-									if(M)
-									{
-										M = 1.0f / sqrtf(M);
-										x *= M;
-										y *= M;
-										z *= M;
-									}
-									return *this;
-								}
+		inline_	Point& Normalize()
+		{
+            float M = SquareMagnitude();
+			if(M)
+			{
+				M = 1.0f / sqrtf(M);
+				x *= M;
+				y *= M;
+				z *= M;
+			}
+			return *this;
+		}
 
 		//! Sets vector length
-		inline_	Point&			SetLength(float length)
-								{
-									float NewLength = length / Magnitude();
-									x *= NewLength;
-									y *= NewLength;
-									z *= NewLength;
-									return *this;
-								}
+		inline_	Point&	SetLength(float length)
+        {
+            float NewLength = length / Magnitude();
+            x *= NewLength;
+            y *= NewLength;
+            z *= NewLength;
+            return *this;
+        }
 
 		//! Clamps vector length
-		inline_	Point&			ClampLength(float limit_length)
-								{
-									if(limit_length>=0.0f)	// Magnitude must be positive
-									{
-										float CurrentSquareLength = SquareMagnitude();
+		inline_	Point&  ClampLength(float limit_length)
+        {
+            if(limit_length>=0.0f)	// Magnitude must be positive
+            {
+                float CurrentSquareLength = SquareMagnitude();
 
-										if(CurrentSquareLength > limit_length * limit_length)
-										{
-											float Coeff = limit_length / sqrtf(CurrentSquareLength);
-											x *= Coeff;
-											y *= Coeff;
-											z *= Coeff;
-										}
-									}
-									return *this;
-								}
+                if(CurrentSquareLength > limit_length * limit_length)
+                {
+                    float Coeff = limit_length / sqrtf(CurrentSquareLength);
+                    x *= Coeff;
+                    y *= Coeff;
+                    z *= Coeff;
+                }
+            }
+            return *this;
+        }
 
 		//! Computes distance to another point
-		inline_	float			Distance(const Point& b)			const
-								{
-									return sqrtf((x - b.x)*(x - b.x) + (y - b.y)*(y - b.y) + (z - b.z)*(z - b.z));
-								}
+#if defined (__AVX__)
+        inline_	float Distance(const Point& b) const
+        {
+            __m128 ma, mb;
+            ma = _mm_loadu_ps(&x);
+            mb = _mm_loadu_ps(&b.x);
+            ma = _mm_sub_ps(ma, mb);
+            ma = _mm_dp_ps(ma, ma, 0x71);
+            return sqrtf(_mm_cvtss_f32(ma));
+        }
+#else
+        inline_	float Distance(const Point& b) const
+        {
+            return sqrtf((x - b.x)*(x - b.x) + (y - b.y)*(y - b.y) + (z - b.z)*(z - b.z));
+        }
+#endif
 
 		//! Computes square distance to another point
-		inline_	float			SquareDistance(const Point& b)		const
-								{
-									return ((x - b.x)*(x - b.x) + (y - b.y)*(y - b.y) + (z - b.z)*(z - b.z));
-								}
+#if defined (__AVX__)
+        inline_	float SquareDistance(const Point& b) const
+        {
+            __m128 ma, mb;
+            ma = _mm_loadu_ps(&x);
+            mb = _mm_loadu_ps(&b.x);
+            ma = _mm_sub_ps(ma, mb);
+            ma = _mm_dp_ps(ma, ma, 0x71);
+            return _mm_cvtss_f32(ma);
+        }
+#else
+        inline_	float SquareDistance(const Point& b) const
+        {
+            return ((x - b.x)*(x - b.x) + (y - b.y)*(y - b.y) + (z - b.z)*(z - b.z));
+        }
+#endif
 
 		//! Dot product dp = this|a
-		inline_	float			Dot(const Point& p)					const		{	return p.x * x + p.y * y + p.z * z;				}
+#if defined (__AVX__)
+        inline_	float Dot(const Point& p) const
+        {
+            __m128 ma, mb;
+            ma = _mm_loadu_ps(&x);
+            mb = _mm_loadu_ps(&p.x);
+            ma = _mm_dp_ps(ma, mb, 0x71);
+
+            return _mm_cvtss_f32(ma);
+        }
+#else
+        inline_	float Dot(const Point& p) const	{ return p.x * x + p.y * y + p.z * z; }
+#endif
 
 		//! Cross product this = a x b
-		inline_	Point&			Cross(const Point& a, const Point& b)
-								{
-									x = a.y * b.z - a.z * b.y;
-									y = a.z * b.x - a.x * b.z;
-									z = a.x * b.y - a.y * b.x;
-									return *this;
-								}
+#if defined (__AVX__)
+        inline_	Point& Cross(const Point& a, const Point& b)
+        {
+            __m128 ma, mb, t1, t2, t3, t4;
+            ma = _mm_loadu_ps(a);
+            mb = _mm_loadu_ps(b);
+            float restmp[4];
 
+            t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1));
+            t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2));
+
+            t3 = _mm_mul_ps(t1, t2);
+
+            t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
+            t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
+
+            t4 = _mm_mul_ps(t1, t2);
+            ma = _mm_sub_ps(t3, t4);
+            _mm_storeu_ps(restmp, ma);
+            x = restmp[0];
+            y = restmp[1];
+            x = restmp[2];
+        }
+#else
+		inline_	Point& Cross(const Point& a, const Point& b)
+        {
+            x = a.y * b.z - a.z * b.y;
+            y = a.z * b.x - a.x * b.z;
+            z = a.x * b.y - a.y * b.x;
+            return *this;
+        }
+#endif
 		//! Vector code ( bitmask = sign(z) | sign(y) | sign(x) )
 		inline_	udword			VectorCode()						const
 								{
@@ -417,15 +504,51 @@
 		inline_	friend	Point	operator/(float s, const Point& p)				{ return Point(s / p.x, s / p.y, s / p.z);			}
 
 		//! Operator for float DotProd = Point | Point.
-		inline_	float			operator|(const Point& p)			const		{ return x*p.x + y*p.y + z*p.z;						}
+#if defined (__AVX__)
+        inline_	float operator|(const Point& p) const
+        {
+            __m128 ma, mb;
+            ma = _mm_loadu_ps(&x);
+            mb = _mm_loadu_ps(&p.x);
+            ma = _mm_dp_ps(ma, mb, 0x71);
+
+            return _mm_cvtss_f32(ma);
+        }
+#else
+		inline_	float operator|(const Point& p)	const { return x*p.x + y*p.y + z*p.z; }
+#endif
+
 		//! Operator for Point VecProd = Point ^ Point.
-		inline_	Point			operator^(const Point& p)			const
-								{
-									return Point(
-									y * p.z - z * p.y,
-									z * p.x - x * p.z,
-									x * p.y - y * p.x );
-								}
+#if defined (__AVX__)
+        inline_	Point operator^(const Point& p) const
+        {
+            __m128 ma, mb, t1, t2, t3, t4;
+            ma = _mm_loadu_ps(&x);
+            mb = _mm_loadu_ps(&p.x);
+            float restmp[4];
+
+            t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1));
+            t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2));
+
+            t3 = _mm_mul_ps(t1, t2);
+
+            t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
+            t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
+
+            t4 = _mm_mul_ps(t1, t2);
+            ma = _mm_sub_ps(t3, t4);
+            _mm_storeu_ps(restmp, ma);
+            return Point(restmp[0], restmp[1], restmp[2]);
+        }
+#else
+        inline_	Point operator^(const Point& p)	const
+        {
+            return Point(
+                y * p.z - z * p.y,
+                z * p.x - x * p.z,
+				x * p.y - y * p.x );
+        }
+#endif
 
 		//! Operator for Point += Point.
 		inline_	Point&			operator+=(const Point& p)						{ x += p.x; y += p.y; z += p.z;	return *this;		}
@@ -457,70 +580,204 @@
 		// Arithmetic operators
 
 		//! Operator for Point Mul = Point * Matrix3x3.
-		inline_	Point			operator*(const Matrix3x3& mat)		const
-								{
-									class ShadowMatrix3x3{ public: float m[3][3]; };	// To allow inlining
-									const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
+#if defined (__AVX__)
+        inline_	Point operator*(const Matrix3x3& mat) const
+        {
+            __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+            float xx, yy, zz;
 
-									return Point(
-									x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0],
-									x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1],
-									x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2] );
-								}
+            class ShadowMatrix3x3 { public: float m[3][3]; };	// To allow inlining
+            const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
+            ma = _mm_loadu_ps(&x);
+            t0 = _mm_loadu_ps(Mat->m[0]);
+            t1 = _mm_loadu_ps(Mat->m[1]);
+            t2 = _mm_loadu_ps(Mat->m[2]);
 
-		//! Operator for Point Mul = Point * Matrix4x4.
-		inline_	Point			operator*(const Matrix4x4& mat)		const
-								{
-									class ShadowMatrix4x4{ public: float m[4][4]; };	// To allow inlining
-									const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
+            m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
+            m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
+            m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
+            m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
 
-									return Point(
-									x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0] + Mat->m[3][0],
-									x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1] + Mat->m[3][1],
-									x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2] + Mat->m[3][2]);
-								}
+            t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+            t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
+//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+
+            m0 = _mm_dp_ps(ma, t0, 0x71);
+            xx = _mm_cvtss_f32(m0);
+            m1 = _mm_dp_ps(ma, t1, 0x71);
+            yy = _mm_cvtss_f32(m1);
+            m2 = _mm_dp_ps(ma, t2, 0x71);
+            zz = _mm_cvtss_f32(m2);
+            return Point(xx, yy, zz);
+        }
+#else
+        inline_	Point operator*(const Matrix3x3& mat) const
+		{
+            class ShadowMatrix3x3 { public: float m[3][3]; };	// To allow inlining
+            const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
+
+			return Point(
+    			x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0],
+	    		x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1],
+		    	x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2] );
+		}
+#endif
+
+        //! Operator for Point Mul = Point * Matrix4x4.
+
+#if defined (__AVX__)
+        inline_	Point operator*(const Matrix4x4& mat) const
+        {
+            __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+            float xx, yy, zz;
+
+            class ShadowMatrix4x4 { public: float m[4][4]; };	// To allow inlining
+            const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
+            ma = _mm_loadu_ps(&x);
+            t0 = _mm_loadu_ps(Mat->m[0]);
+            t1 = _mm_loadu_ps(Mat->m[1]);
+            t2 = _mm_loadu_ps(Mat->m[2]);
+
+            m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
+            m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
+            m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
+            m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
+
+            t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+            t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
+//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+
+            m0 = _mm_dp_ps(ma, t0, 0x71);
+            xx = _mm_cvtss_f32(m0) + Mat->m[3][0];
+            m1 = _mm_dp_ps(ma, t1, 0x71);
+            yy = _mm_cvtss_f32(m1) + Mat->m[3][1];
+            m2 = _mm_dp_ps(ma, t2, 0x71);
+            zz = _mm_cvtss_f32(m2) + Mat->m[3][2];
+            return Point(xx, yy, zz);
+        }
+#else
+		inline_	Point operator*(const Matrix4x4& mat) const
+        {
+            class ShadowMatrix4x4 { public: float m[4][4]; };	// To allow inlining
+            const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
+
+            return Point(
+                x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0] + Mat->m[3][0],
+                x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1] + Mat->m[3][1],
+                x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2] + Mat->m[3][2]);
+        }
+#endif
 
 		//! Operator for Point *= Matrix3x3.
-		inline_	Point&			operator*=(const Matrix3x3& mat)
-								{
-									class ShadowMatrix3x3{ public: float m[3][3]; };	// To allow inlining
-									const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
 
-									float xp = x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0];
-									float yp = x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1];
-									float zp = x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2];
+#if defined (__AVX__)
+        inline_	Point& operator*=(const Matrix3x3& mat)
+        {
+            __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+            float xx, yy, zz;
 
-									x = xp;	y = yp;	z = zp;
+            class ShadowMatrix3x3 { public: float m[3][3]; };	// To allow inlining
+            const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
+            ma = _mm_loadu_ps(&x);
+            t0 = _mm_loadu_ps(Mat->m[0]);
+            t1 = _mm_loadu_ps(Mat->m[1]);
+            t2 = _mm_loadu_ps(Mat->m[2]);
 
-									return *this;
-								}
+            m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
+            m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
+            m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
+            m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
 
+            t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+            t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
+//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+
+            m0 = _mm_dp_ps(ma, t0, 0x71);
+            xx = _mm_cvtss_f32(m0);
+            m1 = _mm_dp_ps(ma, t1, 0x71);
+            yy = _mm_cvtss_f32(m1);
+            m2 = _mm_dp_ps(ma, t2, 0x71);
+            zz = _mm_cvtss_f32(m2);
+            x = xx;	y = yy;	z = zz;
+            return *this;
+        }
+#else
+		inline_	Point& operator*=(const Matrix3x3& mat)
+        {
+            class ShadowMatrix3x3 { public: float m[3][3]; };	// To allow inlining
+            const ShadowMatrix3x3* Mat = (const ShadowMatrix3x3*)&mat;
+
+            float xp = x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0];
+            float yp = x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1];
+            float zp = x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2];
+
+            x = xp;	y = yp;	z = zp;
+
+            return *this;
+        }
+#endif
 		//! Operator for Point *= Matrix4x4.
-		inline_	Point&			operator*=(const Matrix4x4& mat)
-								{
-									class ShadowMatrix4x4{ public: float m[4][4]; };	// To allow inlining
-									const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
 
-									float xp = x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0] + Mat->m[3][0];
-									float yp = x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1] + Mat->m[3][1];
-									float zp = x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2] + Mat->m[3][2];
+#if defined (__AVX__)
+        inline_	Point& operator*=(const Matrix4x4& mat)
+        {
+            __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+            float xx, yy, zz;
 
-									x = xp;	y = yp;	z = zp;
+            class ShadowMatrix4x4 { public: float m[4][4]; };	// To allow inlining
+            const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
+            ma = _mm_loadu_ps(&x);
+            t0 = _mm_loadu_ps(Mat->m[0]);
+            t1 = _mm_loadu_ps(Mat->m[1]);
+            t2 = _mm_loadu_ps(Mat->m[2]);
 
-									return *this;
-								}
+            m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
+            m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
+            m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
+            m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
 
+            t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+            t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
+            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 2, 0)); //z0 z1 z2 z2
+//          t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 3, 3, 1)); //w0 w1 w2 w2
+
+            m0 = _mm_dp_ps(ma, t0, 0x71);
+            xx = _mm_cvtss_f32(m0) + Mat->m[3][0];
+            m1 = _mm_dp_ps(ma, t1, 0x71);
+            yy = _mm_cvtss_f32(m1) + Mat->m[3][1];
+            m2 = _mm_dp_ps(ma, t2, 0x71);
+            zz = _mm_cvtss_f32(m2) + Mat->m[3][2];
+            x = xx;	y = yy;	z = zz;
+            return *this;
+        }
+#else
+        inline_	Point& operator*=(const Matrix4x4& mat)
+        {
+            class ShadowMatrix4x4{ public: float m[4][4]; };	// To allow inlining
+            const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
+
+            float xp = x * Mat->m[0][0] + y * Mat->m[1][0] + z * Mat->m[2][0] + Mat->m[3][0];
+            float yp = x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1] + Mat->m[3][1];
+            float zp = x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2] + Mat->m[3][2];
+
+            x = xp;	y = yp;	z = zp;
+
+            return *this;
+        }
+#endif
 		// Cast operators
 
 		//! Cast a Point to a HPoint. w is set to zero.
-								operator	HPoint()				const;
-
-		inline_					operator	const	float*() const	{ return &x; }
-		inline_					operator			float*()		{ return &x; }
+		operator HPoint() const;
+        inline_	operator const	float*() const	{ return &x; }
+		inline_	operator float*()	{ return &x; }
 
 		public:
-				float			x, y, z;
-	};
+				float x, y, z;
+    };
 
 	FUNCTION ICEMATHS_API void Normalize1(Point& a);
 	FUNCTION ICEMATHS_API void Normalize2(Point& a);
