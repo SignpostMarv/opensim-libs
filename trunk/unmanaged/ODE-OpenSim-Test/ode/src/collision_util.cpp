@@ -95,12 +95,7 @@ void dLineClosestApproach (const dVector3 pa, const dVector3 ua,
                            dReal *alpha, dReal *beta)
 {
     dVector3 p;
-    p[0] = pb[0] - pa[0];
-    p[1] = pb[1] - pa[1];
-    p[2] = pb[2] - pa[2];
     dReal uaub = dCalcVectorDot3(ua, ub);
-    dReal q1 =  dCalcVectorDot3(ua, p);
-    dReal q2 = -dCalcVectorDot3(ub, p);
     dReal d = 1 - uaub * uaub;
     if (d <= REAL(0.0001))
     {
@@ -110,6 +105,9 @@ void dLineClosestApproach (const dVector3 pa, const dVector3 ua,
     }
     else
     {
+        dSubtractVectors3(p, pb, pa);
+        dReal q1 = dCalcVectorDot3(ua, p);
+        dReal q2 = -dCalcVectorDot3(ub, p);
         d = dRecip(d);
         *alpha = (q1 + uaub * q2) * d;
         *beta  = (uaub * q1 + q2) * d;
@@ -142,11 +140,11 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
 #define SET3(a, b, op, c) a[0] = b[0] op c[0]; a[1] = b[1] op c[1]; a[2] = b[2] op c[2];
 
     // check vertex-vertex features
-
-    SET3 (a1a2, a2, -, a1);
-    SET3 (b1b2, b2, -, b1);
-    SET3 (a1b1, b1, -, a1);
+    dSubtractVectors3(a1a2, a2, a1);
+    dSubtractVectors3(a1b1, b1, a1);
     da1 = dCalcVectorDot3(a1a2, a1b1);
+
+    dSubtractVectorCross3(b1b2, b2, b1);
     db1 = dCalcVectorDot3(b1b2, a1b1);
     if (da1 <= 0 && db1 >= 0)
     {
@@ -155,7 +153,7 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
         return;
     }
 
-    SET3 (a1b2, b2, -, a1);
+    dSubtractVectors3(a1b2, b2, a1);
     da2 = dCalcVectorDot3(a1a2, a1b2);
     db2 = dCalcVectorDot3(b1b2, a1b2);
     if (da2 <= 0 && db2 <= 0)
@@ -165,7 +163,7 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
         return;
     }
 
-    SET3 (a2b1, b1, -, a2);
+    dSubtractVectors3(a2b1, b1, a2);
     da3 = dCalcVectorDot3(a1a2, a2b1);
     db3 = dCalcVectorDot3(b1b2, a2b1);
     if (da3 >= 0 && db3 >= 0)
@@ -175,7 +173,7 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
         return;
     }
 
-    SET3 (a2b2, b2, -, a2);
+    dSubtractVectors3(a2b2, b2, a2);
     da4 = dCalcVectorDot3(a1a2, a2b2);
     db4 = dCalcVectorDot3(b1b2, a2b2);
     if (da4 >= 0 && db4 <= 0)
@@ -293,13 +291,9 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     // we will do all subsequent computations in this box-relative coordinate
     // system. we have to do a translation and rotation for each point.
     dVector3 tmp,s,v;
-    tmp[0] = p1[0] - c[0];
-    tmp[1] = p1[1] - c[1];
-    tmp[2] = p1[2] - c[2];
+    dSubtractVectors3(tmp, p1, c);
     dMultiply1_331 (s,R,tmp);
-    tmp[0] = p2[0] - p1[0];
-    tmp[1] = p2[1] - p1[1];
-    tmp[2] = p2[2] - p1[2];
+    dSubtractVectors3(tmp, p2, p1);
     dMultiply1_331 (v,R,tmp);
 
     dVector3 sign;
@@ -477,9 +471,7 @@ int dBoxTouchesBox (const dVector3 p1, const dMatrix3 R1,
         Q11,Q12,Q13,Q21,Q22,Q23,Q31,Q32,Q33;
 
     // get vector from centers of box 1 to box 2, relative to box 1
-    p[0] = p2[0] - p1[0];
-    p[1] = p2[1] - p1[1];
-    p[2] = p2[2] - p1[2];
+    dSubtractVectors3(p, p2, p1);
     dMultiply1_331 (pp,R1,p);		// get pp = p relative to body 1
 
     // get side lengths / 2

@@ -227,7 +227,7 @@ Point& Point::TransMult(const Matrix3x3& mat, const Point& a)
     m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
     m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
 
-    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); //x0 x1 x2 x2
     t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
     t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
 

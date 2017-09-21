@@ -39,9 +39,22 @@
 #define dVALIDMAT3(m) (!(dIsNan(m[0]) || dIsNan(m[1]) || dIsNan(m[2]) || dIsNan(m[3]) || dIsNan(m[4]) || dIsNan(m[5]) || dIsNan(m[6]) || dIsNan(m[7]) || dIsNan(m[8]) || dIsNan(m[9]) || dIsNan(m[10]) || dIsNan(m[11])))
 #define dVALIDMAT4(m) (!(dIsNan(m[0]) || dIsNan(m[1]) || dIsNan(m[2]) || dIsNan(m[3]) || dIsNan(m[4]) || dIsNan(m[5]) || dIsNan(m[6]) || dIsNan(m[7]) || dIsNan(m[8]) || dIsNan(m[9]) || dIsNan(m[10]) || dIsNan(m[11]) || dIsNan(m[12]) || dIsNan(m[13]) || dIsNan(m[14]) || dIsNan(m[15]) ))
 
-
-
 /* Some vector math */
+#if defined (__AVX__)
+ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
+{
+    dReal restmp[4];
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
 ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 {
     const dReal res_0 = a[0] + b[0];
@@ -52,7 +65,23 @@ ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
   res[1] = res_1;
   res[2] = res_2;
 }
+#endif
 
+#if defined (__AVX__)
+ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *b)
+{
+    dReal restmp[4];
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    ma = _mm_sub_ps(ma, mb);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
 ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *b)
 {
   const dReal res_0 = a[0] - b[0];
@@ -63,13 +92,41 @@ ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *
   res[1] = res_1;
   res[2] = res_2;
 }
-
+#endif
+#if defined (__AVX__)
+ODE_PURE_INLINE void dSubNoAliaseVectors3(dReal *res, const dReal *a, const dReal *b)
+{
+    dSubtractVectors3(res, a, b);
+}
+#else
 ODE_PURE_INLINE void dSubNoAliaseVectors3(dReal *res, const dReal *a, const dReal *b)
 {
   res[0] = a[0] - b[0];
   res[1] = a[1] - b[1];
   res[2] = a[2] - b[2];
 }
+#endif
+#if defined (__AVX__)
+ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
+{
+    dReal restmp[4];
+    __m128 ma, mb, mc;
+    mc = _mm_set1_ps(a_scale);
+    ma = _mm_loadu_ps(a);
+    ma = _mm_mul_ps(ma, mc);
+
+    mb = _mm_loadu_ps(b);
+    mc = _mm_set1_ps(b_scale);
+    mb = _mm_mul_ps(mb, mc);
+
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
 ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
 {
   const dReal res_0 = a_scale * a[0] + b_scale * b[0];
@@ -78,6 +135,7 @@ ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal 
   /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
   res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
+#endif
 
 ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 {
@@ -193,13 +251,15 @@ ODE_PURE_INLINE dReal dCalcVectorLengthSquare3(const dReal x, const dReal y, con
 ODE_PURE_INLINE dReal  dCalcPointDepth3(const dReal *test_p, const dReal *plane_p, const dReal *plane_n)
 {
     __m128 mt,mp,mn;
-    mt = _mm_loadu_ps(test_p);
     mp = _mm_loadu_ps(plane_p);
-    mt = _mm_sub_ps(mp, mt);
+    mt = _mm_loadu_ps(test_p);
     mn = _mm_loadu_ps(plane_n);
-    mt = _mm_dp_ps(mt, mn, 0x71);
-    dReal l = (dReal)_mm_cvtss_f32(mt);
-    return _mm_cvtss_f32(mt);
+
+    mp = _mm_sub_ps(mp, mt);
+    mt = _mm_mul_ps(mp, mn);
+
+    mp = _mm_dp_ps(mt, mt, 0x71);
+    return (dReal)_mm_cvtss_f32(mp);
 }
 #else
 ODE_PURE_INLINE dReal dCalcPointDepth3(const dReal *test_p, const dReal *plane_p, const dReal *plane_n)
@@ -356,7 +416,7 @@ ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
     mb = _mm_loadu_ps(b);
     ma = _mm_sub_ps(ma,mb);
     ma = _mm_dp_ps(ma, mb, 0x71);
-    return (dReal)_mm_cvtss_f32(ma);
+    return dSqrt((dReal)_mm_cvtss_f32(ma));
 }
 #else
 ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
@@ -368,6 +428,28 @@ ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
   return res;
 }
 #endif
+
+#if defined (__AVX__)
+ODE_PURE_INLINE dReal dCalcPointsDistanceSquare3(const dReal *a, const dReal *b)
+{
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    ma = _mm_sub_ps(ma, mb);
+    ma = _mm_dp_ps(ma, mb, 0x71);
+    return (dReal)_mm_cvtss_f32(ma);
+}
+#else
+ODE_PURE_INLINE dReal dCalcPointsDistanceSquare3(const dReal *a, const dReal *b)
+{
+    dReal res;
+    dReal tmp[3];
+    dSubtractVectors3(tmp, a, b);
+    res = dCalcVectorLengthSquare3(tmp);
+    return res;
+}
+#endif
+
 /*
  * special case matrix multiplication, with operator selection
  */

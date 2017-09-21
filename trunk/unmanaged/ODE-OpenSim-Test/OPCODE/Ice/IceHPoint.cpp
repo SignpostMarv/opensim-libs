@@ -49,7 +49,7 @@ Point HPoint::operator*(const Matrix3x3& mat) const
     m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
     m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
 
-    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 2, 0)); //x0 x1 x2 x2
+    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); //x0 x1 x2 x2
     t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
     t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
 
@@ -90,7 +90,7 @@ HPoint HPoint::operator*(const Matrix4x4& mat) const
     m1 = _mm_shuffle_ps(t2, t3, _MM_SHUFFLE(1, 0, 1, 0)); // x2 y2 x3 y3
     m3 = _mm_shuffle_ps(t2, t3, _MM_SHUFFLE(3, 2, 3, 2)); // z2 w2 z3 w3
 
-    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 0, 2, 0)); //x0 x1 x2 x2
+    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 0, 2, 0)); //x0 x1 x2 x3
     t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 1, 3, 1)); //y0 y1 y2 y3
     t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 0, 2, 0)); //z0 z1 z2 z3
     t3 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(3, 1, 2, 1)); //W0 W1 W2 W3

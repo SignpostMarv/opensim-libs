@@ -362,9 +362,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     int i, j, invert_normal, code;
 
     // get vector from centers of box 1 to box 2, relative to box 1
-    p[0] = p2[0] - p1[0];
-    p[1] = p2[1] - p1[1];
-    p[2] = p2[2] - p1[2];
+    dSubtractVectors3(p, p2, p1);
     dMultiply1_331 (pp, R1, p);		// get pp = p relative to body 1
 
     // for all 15 possible separating axes:
