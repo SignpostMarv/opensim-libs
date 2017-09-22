@@ -39,14 +39,18 @@ bool OBB::ContainsPoint(const Point& p) const
 	// Point * mRot maps from box space to world space
 	// mRot * Point maps from world space to box space (what we need here)
 
-	float f = mRot.m[0][0] * RelPoint.x + mRot.m[0][1] * RelPoint.y + mRot.m[0][2] * RelPoint.z;
+//	float f = mRot.m[0][0] * RelPoint.x + mRot.m[0][1] * RelPoint.y + mRot.m[0][2] * RelPoint.z;
+    float f = RelPoint | (Point)(mRot.m[0]);
+
 	if(f >= mExtents.x || f <= -mExtents.x) return false;
 
-	f = mRot.m[1][0] * RelPoint.x + mRot.m[1][1] * RelPoint.y + mRot.m[1][2] * RelPoint.z;
-	if(f >= mExtents.y || f <= -mExtents.y) return false;
+//	f = mRot.m[1][0] * RelPoint.x + mRot.m[1][1] * RelPoint.y + mRot.m[1][2] * RelPoint.z;
+    f = RelPoint | (Point)(mRot.m[1]);
+    if(f >= mExtents.y || f <= -mExtents.y) return false;
 
-	f = mRot.m[2][0] * RelPoint.x + mRot.m[2][1] * RelPoint.y + mRot.m[2][2] * RelPoint.z;
-	if(f >= mExtents.z || f <= -mExtents.z) return false;
+//	f = mRot.m[2][0] * RelPoint.x + mRot.m[2][1] * RelPoint.y + mRot.m[2][2] * RelPoint.z;
+    f = RelPoint | (Point)(mRot.m[2]);
+    if(f >= mExtents.z || f <= -mExtents.z) return false;
 	return true;
 }
 
@@ -96,13 +100,17 @@ bool OBB::ComputePlanes(Plane* planes)	const
 	planes[4].n = Axis2;
 	planes[5].n = -Axis2;
 
-	// Compute a point on each plane
-	Point p0 = mCenter + Axis0 * mExtents.x;
-	Point p1 = mCenter - Axis0 * mExtents.x;
-	Point p2 = mCenter + Axis1 * mExtents.y;
-	Point p3 = mCenter - Axis1 * mExtents.y;
-	Point p4 = mCenter + Axis2 * mExtents.z;
-	Point p5 = mCenter - Axis2 * mExtents.z;
+    Axis0 *= mExtents.x;
+    Axis1 *= mExtents.y;
+    Axis2 *= mExtents.z;
+    
+    // Compute a point on each plane
+    Point p0 = mCenter + Axis0;
+    Point p1 = mCenter - Axis0;
+	Point p2 = mCenter + Axis1;
+	Point p3 = mCenter - Axis1;
+	Point p4 = mCenter + Axis2;
+	Point p5 = mCenter - Axis2;
 
 	// Compute d
 	planes[0].d = -(planes[0].n|p0);
