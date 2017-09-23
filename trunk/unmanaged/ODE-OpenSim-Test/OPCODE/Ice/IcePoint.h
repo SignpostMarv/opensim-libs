@@ -723,10 +723,10 @@
 
             t3 = _mm_mul_ps(t1, t2);
 
-            t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
-            t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
-
+            t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+            t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
             t4 = _mm_mul_ps(t1, t2);
+
             ma = _mm_sub_ps(t3, t4);
             _mm_storeu_ps(restmp, ma);
             x = restmp[0];
@@ -971,13 +971,12 @@
 
             t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1));
             t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2));
-
             t3 = _mm_mul_ps(t1, t2);
 
-            t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
-            t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
-
+            t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+            t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
             t4 = _mm_mul_ps(t1, t2);
+
             ma = _mm_sub_ps(t3, t4);
             _mm_storeu_ps(restmp, ma);
             return Point(restmp[0], restmp[1], restmp[2]);
@@ -1024,7 +1023,10 @@
             ma = _mm_add_ps(ma, mb);
 
             _mm_storeu_ps(restmp, ma);
-            return Point(restmp[0], restmp[1], restmp[2]);
+            x = restmp[0];
+            y = restmp[1];
+            z = restmp[2];
+            return *this;
         }
 #else
         inline_ Point& operator+=(float s) { x += s; y += s; z += s; return *this; }
