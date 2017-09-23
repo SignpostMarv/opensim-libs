@@ -42,18 +42,16 @@ static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 
     // now onto the bulk of the collision...
 
     dVector3 Diff;
-    Diff[0] = Origin[0] - Center[0];
-    Diff[1] = Origin[1] - Center[1];
-    Diff[2] = Origin[2] - Center[2];
+    dSubtractVectors3(Diff, Origin, Center);
 
-    dReal A00 = dCalcVectorDot3(Edge0, Edge0);
+    dReal A00 = dCalcVectorLengthSquare3(Edge0);
     dReal A01 = dCalcVectorDot3(Edge0, Edge1);
-    dReal A11 = dCalcVectorDot3(Edge1, Edge1);
+    dReal A11 = dCalcVectorLengthSquare3(Edge1);
 
     dReal B0 = dCalcVectorDot3(Diff, Edge0);
     dReal B1 = dCalcVectorDot3(Diff, Edge1);
 
-    dReal C = dCalcVectorDot3(Diff, Diff);
+    dReal C = dCalcVectorLengthSquare3(Diff);
 
     dReal Det = dFabs(A00 * A11 - A01 * A01);
     u = A01 * B1 - A11 * B0;

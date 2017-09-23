@@ -308,13 +308,13 @@ ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *
     mb = _mm_loadu_ps(b);
     dReal restmp[4];
 
-    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1));
-    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2));
+    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
     
-    t3 = _mm_mul_ps(t1, t2);
+    t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
 
-    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
-    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
+    t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+    t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
 
     t4 = _mm_mul_ps(t1, t2);
     ma = _mm_sub_ps(t3, t4);
@@ -546,9 +546,42 @@ Note: NEVER call any of these functions/macros with the same variable for A and 
 it is not equivalent to A*=B.
 */
 
+#if defined (__AVX__)
+ODE_PURE_INLINE void dPointRotateTrans(dReal *res, const dReal *r, const dReal *p, const dReal *t)
+{
+    __m128 ma, mb, mr, mt;
+    dReal restmp[4];
+
+    mb = _mm_loadu_ps(p);
+    ma = _mm_loadu_ps(r);
+    mr = _mm_dp_ps(ma, mb, 0x7f);
+
+    ma = _mm_loadu_ps(r + 4);
+    mt = _mm_dp_ps(ma, mb, 0x7f);
+    mr = _mm_blend_ps(mr, mt, 2);
+
+    ma = _mm_loadu_ps(r + 8);
+    mt = _mm_dp_ps(ma, mb, 0x7f);
+    mr = _mm_blend_ps(mr, mt, 4);
+
+    ma = _mm_loadu_ps(t);
+    mr = _mm_add_ps(mr, ma);
+
+    _mm_storeu_ps(restmp, mr);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dPointRotateTrans(dReal *res, const dReal *r, const dReal *p, const dReal *t)
+{
+    dMultiplyHelper0_331(res, r, p);
+    dAddVectors3(res, res, t);
+}
+#endif
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
-  dMultiplyHelper0_331(res, a, b);
+    dMultiplyHelper0_331(res, a, b);
 }
 
 ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)

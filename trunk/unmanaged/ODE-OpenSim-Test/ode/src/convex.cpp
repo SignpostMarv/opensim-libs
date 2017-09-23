@@ -286,12 +286,11 @@ inline bool ClosestPointInRay(const dVector3 Origin1,
                               const dVector3 Direction2,
                               dReal& t)
 {
-    dVector3 w = {Origin1[0]-Origin2[0],
-        Origin1[1]-Origin2[1],
-        Origin1[2]-Origin2[2]};
-    dReal a = dCalcVectorDot3(Direction1 , Direction1);
+    dVector3 w;
+    dSubtractVectors3(w, Origin1, Origin2);
+    dReal a = dCalcVectorLengthSquare3(Direction1);
     dReal b = dCalcVectorDot3(Direction1 , Direction2);
-    dReal c = dCalcVectorDot3(Direction2 , Direction2);
+    dReal c = dCalcVectorLengthSquare3(Direction2);
     dReal d = dCalcVectorDot3(Direction1 , w);
     dReal e = dCalcVectorDot3(Direction2 , w);
     dReal denominator = (a*c)-(b*b);
@@ -340,8 +339,8 @@ inline float ClosestPointBetweenSegments(dVector3& p1,
     dVector3 r  = {p1[0] - p2[0],
         p1[1] - p2[1],
         p1[2] - p2[2]};
-    float a = dCalcVectorDot3(d1, d1);
-    float e = dCalcVectorDot3(d2, d2);
+    float a = dCalcVectorLengthSquare3(d1);
+    float e = dCalcVectorLengthSquare3(d2);
     float f = dCalcVectorDot3(d2, r);
     // Check if either or both segments degenerate into points
     if (a <= dEpsilon && e <= dEpsilon)

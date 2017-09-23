@@ -86,14 +86,23 @@ typedef duint32 dTriIndex;
  */
 #define dPAD(a) (((a) > 1) ? ((((a)-1)|3)+1) : (a))
 
-/* these types are mainly just used in headers */
+ /* these types are mainly just used in headers */
+/* smokes
+#if defined (__AVX__)
+typedef __declspec(align(16)) dReal dVector3[4];
+typedef __declspec(align(16)) dReal dVector4[4];
+typedef __declspec(align(16)) dReal dMatrix3[4 * 3];
+typedef __declspec(align(16)) dReal dMatrix4[4 * 4];
+typedef __declspec(align(16)) dReal dMatrix6[8 * 6];
+typedef __declspec(align(16)) dReal dQuaternion[4];
+#else */
 typedef dReal dVector3[4];
 typedef dReal dVector4[4];
-typedef dReal dMatrix3[4*3];
-typedef dReal dMatrix4[4*4];
-typedef dReal dMatrix6[8*6];
+typedef dReal dMatrix3[4 * 3];
+typedef dReal dMatrix4[4 * 4];
+typedef dReal dMatrix6[8 * 6];
 typedef dReal dQuaternion[4];
-
+//#endif
 
 /* precision dependent scalar math functions */
 

@@ -300,13 +300,8 @@ inline void FetchTriangle(dxTriMesh* TriMesh, int Index, const dVector3 Position
         v[0] = VP.Vertex[i]->x;
         v[1] = VP.Vertex[i]->y;
         v[2] = VP.Vertex[i]->z;
-        v[3] = 0;
 
-        dMultiply0_331(Out[i], Rotation, v);
-        Out[i][0] += Position[0];
-        Out[i][1] += Position[1];
-        Out[i][2] += Position[2];
-        Out[i][3] = 0;
+        dPointRotateTrans(Out[i], Rotation, v, Position);
     }
 }
 
@@ -407,24 +402,6 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         const dVector3 triOrigin, 
                         const dVector3 triEdge1, const dVector3 triEdge2,
                         dReal* t = 0, dReal* u = 0, dReal* v = 0 );
-
-inline
-void Vector3Subtract( const dVector3 left, const dVector3 right, dVector3 result )
-{
-    result[0] = left[0] - right[0];
-    result[1] = left[1] - right[1];
-    result[2] = left[2] - right[2];
-    result[3] = REAL(0.0);
-}
-
-inline
-void Vector3Add( const dVector3 left, const dVector3 right, dVector3 result )
-{
-    result[0] = left[0] + right[0];
-    result[1] = left[1] + right[1];
-    result[2] = left[2] + right[2];
-    result[3] = REAL(0.0);
-}
 
 inline
 void Vector3Negate( const dVector3 in, dVector3 out )

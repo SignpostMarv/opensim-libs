@@ -1303,9 +1303,8 @@ GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
                 Contact = SAFECONTACT(in_Flags, in_Contacts, i, in_Stride);
 
                 // same position?
-                for (int j=0; j<3; j++)
-                    diff[j] = in_ContactPos[j] - Contact->pos[j];
-                if (dCalcVectorDot3(diff, diff) < dEpsilon)
+                dSubtractVectors3(diff, in_ContactPos, Contact->pos);
+                if (dCalcVectorLengthSquare3(diff) < dEpsilon)
                 {
                     // same normal?
                     if (REAL(1.0) - dFabs(dCalcVectorDot3(in_Normal, Contact->normal)) < dEpsilon)

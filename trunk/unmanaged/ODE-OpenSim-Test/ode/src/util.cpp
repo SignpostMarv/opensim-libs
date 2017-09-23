@@ -585,7 +585,7 @@ void dxStepBody (dxBody *b, dReal h)
     // cap the angular velocity
     if (b->flags & dxBodyMaxAngularSpeed) {
         const dReal max_ang_speed = b->max_angular_speed;
-        const dReal aspeed = dCalcVectorDot3( b->avel, b->avel );
+        const dReal aspeed = dCalcVectorLengthSquare3( b->avel);
         if (aspeed > max_ang_speed*max_ang_speed) {
             const dReal coef = max_ang_speed/dSqrt(aspeed);
             dScaleVector3(b->avel, coef);
