@@ -82,18 +82,7 @@ AC_CHECK_HEADERS( [alloca.h stdio.h inttypes.h stdint.h stdlib.h math.h \
                   string.h stdarg.h malloc.h float.h time.h sys/time.h \
                   limits.h stddef.h])
 
-AC_MSG_CHECKING(if double precision is requested)
-AC_ARG_ENABLE(double-precision,
-        AS_HELP_STRING([--enable-double-precision],
-        [Configure ODE to work with double precision, if not specified, single precision is used @<:@default=no@:>@]),
-        usedouble=$enableval,usedouble=no)
-AC_MSG_RESULT([$usedouble])
-if test "$usedouble" = yes;
-then
-        ODE_PRECISION=dDOUBLE
-else
-        ODE_PRECISION=dSINGLE
-fi
+ODE_PRECISION=dSINGLE
 AC_SUBST(ODE_PRECISION)
 
 dnl Set some Platform Specific Variables
@@ -231,98 +220,6 @@ else
     use_builtin_threading_impl=no
 fi
 
-col_cylinder_cylinder=none
-col_box_cylinder=default
-col_capsule_cylinder=none
-col_convex_box=none
-col_convex_capsule=none
-col_convex_cylinder=none
-col_convex_sphere=default
-col_convex_convex=default
-
-use_libccd=no
-libccd_all=no
-AC_ARG_ENABLE(libccd, AS_HELP_STRING([--enable-libccd],
-            [enable all libccd colliders (except box-cylinder)]),
-            libccd_all=$enableval)
-if test x$libccd_all = xyes
-then
-    col_cylinder_cylinder=libccd
-    col_capsule_cylinder=libccd
-    col_convex_box=libccd
-    col_convex_capsule=libccd
-    col_convex_cylinder=libccd
-    col_convex_sphere=libccd
-    col_convex_convex=libccd
-    use_libccd=yes
-fi
-
-AC_ARG_WITH([cylinder-cylinder], AS_HELP_STRING([--with-cylinder-cylinder=@<:@none,libccd@:>@], [use specific collider for cylinder-cylinder]),
-            col_cylinder_cylinder=$withval)
-
-AC_ARG_WITH([box-cylinder],
-        AS_HELP_STRING([--with-box-cylinder=@<:@default,libccd@:>@], [use specific collider for box-cylinder]),
-            col_box_cylinder=$withval)
-
-AC_ARG_WITH([capsule-cylinder], AS_HELP_STRING([--with-capsule-cylinder=@<:@none,libccd@:>@], [use specific collider for capsule-cylinder]),
-            col_capsule_cylinder=$withval)
-
-AC_ARG_WITH([convex-box], AS_HELP_STRING([--with-convex-box=@<:@none,libccd@:>@], [use specific collider for convex-box]),
-            col_convex_box=$withval)
-
-AC_ARG_WITH([convex-capsule], AS_HELP_STRING([--with-convex-capsule=@<:@none,libccd@:>@], [use specific collider for convex-capsule]),
-            col_convex_capsule=$withval)
-
-AC_ARG_WITH([convex-cylinder], AS_HELP_STRING([--with-convex-cylinder=@<:@none,libccd@:>@], [use specific collider for convex-cylinder]),
-            col_convex_cylinder=$withval)
-
-AC_ARG_WITH([convex-sphere], AS_HELP_STRING([--with-convex-sphere=@<:@default,libccd@:>@], [use specific collider for convex-sphere]),
-            col_convex_sphere=$withval)
-
-AC_ARG_WITH([convex-convex], AS_HELP_STRING([--with-convex-convex=@<:@default,libccd@:>@], [use specific collider for convex-convex]),
-            col_convex_convex=$withval)
-
-if test x$col_cylinder_cylinder = xlibccd -o \
-    x$col_box_cylinder = xlibccd -o \
-    x$col_capsule_cylinder = xlibccd -o \
-    x$col_convex_box = xlibccd -o \
-    x$col_convex_capsule = libccd -o \
-    x$col_convex_cylinder = xlibccd -o \
-    x$col_convex_sphere = libccd -o \
-    x$col_convex_convex = libccd
-then
-    use_libccd=yes
-fi
-
-libccd_source=internal
-
-AC_ARG_WITH(libccd,
-        [AS_HELP_STRING([--with-libccd=@<:@internal|system@:>@],
-                [use the specified libccd @<:@default=internal@:>@])],
-        [libccd_source=$withval],
-        [libccd_source=system])
-
-if test x$use_libccd = xyes
-then
-    if test x$libccd_source = xsystem
-    then
-        PKG_CHECK_MODULES(CCD, ccd, ,[libccd_source=internal])
-    fi
-fi
-
-AC_CONFIG_SUBDIRS([libccd])
-
-AM_CONDITIONAL(LIBCCD, test x$use_libccd != xno)
-AM_CONDITIONAL(LIBCCD_INTERNAL, test x$libccd_source = xinternal)
-AM_CONDITIONAL(LIBCCD_BOX_CYL,          test x$col_box_cylinder = xlibccd)
-AM_CONDITIONAL(LIBCCD_CYL_CYL,          test x$col_cylinder_cylinder = xlibccd)
-AM_CONDITIONAL(LIBCCD_CAP_CYL,          test x$col_capsule_cylinder = xlibccd)
-AM_CONDITIONAL(LIBCCD_CONVEX_BOX,       test x$col_convex_box = xlibccd)
-AM_CONDITIONAL(LIBCCD_CONVEX_CAP,       test x$col_convex_capsule = xlibccd)
-AM_CONDITIONAL(LIBCCD_CONVEX_CYL,       test x$col_convex_cylinder = xlibccd)
-AM_CONDITIONAL(LIBCCD_CONVEX_SPHERE,    test x$col_convex_sphere = xlibccd)
-AM_CONDITIONAL(LIBCCD_CONVEX_CONVEX,    test x$col_convex_convex = xlibccd)
-
 AC_ARG_ENABLE([asserts],
         AS_HELP_STRING([--disable-asserts],
             [disables debug error checking]),
@@ -335,6 +232,20 @@ then
         CPPFLAGS="$CPPFLAGS -DNDEBUG"
     fi
 fi
+
+AC_ARG_ENABLE([use-avx],
+        AS_HELP_STRING([--use-avx],
+            [use AVX instructions]),
+        use-avx=$enableval,use-avx=yes)
+if test x$use-avx = xyes
+then
+    CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math"
+    CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
+    CPPFLAGS="$CPPFLAGS -ftree-vectorize -mavx -ffast-math"
+	AC_DEFINE(dUSEAVX, 1,[avx sup])
+fi
+
+AM_CONDITIONAL(ENABLE_DEMOS, test x$enable_demos = xyes)
 
 dnl include found system headers into config.h
 AH_TOP([
@@ -361,11 +272,7 @@ AH_BOTTOM([
  */
 typedef uintptr_t intP;
 
-#ifdef dSINGLE
-       #define dEpsilon  FLT_EPSILON
-#else
-       #define dEpsilon  DBL_EPSILON
-#endif
+#define dEpsilon  FLT_EPSILON
 
 #include "typedefs.h"
 
@@ -399,23 +306,6 @@ dnl Print some useful information
 echo "Configuration:"
 echo "  Build  system type:      $build"
 echo "  Host   system type:      $host"
-echo "  Use double precision:    $usedouble"
-echo "  Use libccd:              $use_libccd"
-
-if test x$use_libccd = xyes
-then
-echo "  libccd source:           $libccd_source"
-fi
-
-echo "  Custom colliders:"
-echo "        cylinder-cylinder: $col_cylinder_cylinder"
-echo "        box-cylinder:      $col_box_cylinder"
-echo "        capsule-cylinder:  $col_capsule_cylinder"
-echo "        convex-box:        $col_convex_box"
-echo "        convex-capsule:    $col_convex_capsule"
-echo "        convex-cylinder:   $col_convex_cylinder"
-echo "        convex-sphere:     $col_convex_sphere"
-echo "        convex-convex:     $col_convex_convex"
 echo "  Is target a Pentium:     $pentium"
 echo "  Is target x86-64:        $cpu64"
 echo "  TLS for global caches:   $use_ou_tls"

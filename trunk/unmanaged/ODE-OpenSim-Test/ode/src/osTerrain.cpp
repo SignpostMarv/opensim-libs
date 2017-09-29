@@ -55,7 +55,7 @@
     dGeomMoved (MyPlane);           \
                     }
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 ODE_PURE_INLINE dReal dV3Dot(const dReal *a, const dReal *b)
 {
     __m128 ma, mb;
@@ -74,7 +74,7 @@ ODE_PURE_INLINE dReal dV3Dot(const dReal *a, const dReal *b)
 }
 #endif
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 ODE_PURE_INLINE dReal dV3lenghtSQ(const dReal *a)
 {
     __m128 ma;
@@ -92,7 +92,7 @@ ODE_PURE_INLINE dReal dV3lenghtSQ(const dReal *a)
 #endif
 
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 ODE_PURE_INLINE dReal dV3lenght(const dReal *a)
 {
     __m128 ma;

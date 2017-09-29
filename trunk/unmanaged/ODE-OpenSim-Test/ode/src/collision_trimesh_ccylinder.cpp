@@ -86,7 +86,7 @@
 
 // dMatrix3
 // a=b
-#define SETM(a,b) dCopyMatrix4x4(a, b)
+#define SETM(a,b) dCopyMatrix4x3(a, b)
 
 
 // dVector3

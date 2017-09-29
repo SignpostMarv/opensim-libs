@@ -64,7 +64,7 @@ GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
 
 // dMatrix3
 // a=b
-#define SETM(a,b) dCopyMatrix4x4(a, b)
+#define SETM(a,b) dCopyMatrix4x3(a, b)
 
 
 // dVector3
@@ -90,6 +90,7 @@ GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
 // dVector3
 // length of vector a
 #define LENGTHOF(a) dCalcVectorLength3(a)
+#define LENGTHSQUAREOF(a) dCalcVectorLengthSquare3(a)
 
 
 struct sTrimeshBoxColliderData
@@ -147,19 +148,17 @@ bool sTrimeshBoxColliderData::_cldTestNormal(dReal fp0, dReal fR, dVector3 vNorm
     }
 
     // calculate normal's length
-    dReal fLength = LENGTHOF(vNormal);
+    dReal fLength = LENGTHSQUAREOF(vNormal);
     // if long enough
     if ( fLength > 0.0f ) {
 
-        dReal fOneOverLength = 1.0f/fLength;
+        dReal fOneOverLength = 1.0f/dSqrt(fLength);
         // normalize depth
         fDepth = fDepth*fOneOverLength;
 
         // get minimum depth
         if (fDepth < m_fBestDepth) {
-            m_vBestNormal[0] = -vNormal[0]*fOneOverLength;
-            m_vBestNormal[1] = -vNormal[1]*fOneOverLength;
-            m_vBestNormal[2] = -vNormal[2]*fOneOverLength;
+            dCopyScaledVector3(m_vBestNormal, vNormal, -fOneOverLength);
             m_iBestAxis = iAxis;
             //dAASSERT(fDepth>=0);
             m_fBestDepth = fDepth;
@@ -307,13 +306,13 @@ bool sTrimeshBoxColliderData::_cldTestEdge(dReal fp0, dReal fp1, dReal fR, dReal
     }
 
     // calculate normal's length
-    dReal fLength = LENGTHOF(vNormal);
+    dReal fLength = LENGTHSQUAREOF(vNormal);
 
     // if long enough
     if ( fLength > 0.0f ) {
 
         // normalize depth
-        dReal fOneOverLength = 1.0f/fLength;
+        dReal fOneOverLength = 1.0f/dSqrt(fLength);
         fDepth = fDepth*fOneOverLength;
         fD*=fOneOverLength;
 
@@ -632,10 +631,6 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
     return true;
 }
 
-
-
-
-
 // find two closest points on two lines
 static bool _cldClosestPointOnTwoLines(
     dVector3 vPoint1, dVector3 vLenVec1, dVector3 vPoint2, dVector3 vLenVec2,
@@ -664,10 +659,6 @@ static bool _cldClosestPointOnTwoLines(
         return false;
     }
 }
-
-
-
-
 
 // clip and generate contacts
 void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v1, const dVector3 &v2, int TriIndex) {
@@ -704,7 +695,6 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
             SET(vub,m_vE2);
         }
 
-
         // setup direction parameter for face edge
         dNormalize3(vub);
 
@@ -717,21 +707,14 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
 
         // find two closest points on both edges
         _cldClosestPointOnTwoLines( vPa, vua, vPb, vub, fParam1, fParam2 );
-        vPa[0] += vua[0]*fParam1;
-        vPa[1] += vua[1]*fParam1;
-        vPa[2] += vua[2]*fParam1;
-
-        vPb[0] += vub[0]*fParam2;
-        vPb[1] += vub[1]*fParam2;
-        vPb[2] += vub[2]*fParam2;
+        dAddScaledVector3(vPa, vua, fParam1);
+        dAddScaledVector3(vPb, vub, fParam2);
 
         // calculate collision point
         dVector3 vPntTmp;
         ADD(vPa,vPb,vPntTmp);
 
-        vPntTmp[0]*=0.5f;
-        vPntTmp[1]*=0.5f;
-        vPntTmp[2]*=0.5f;
+        dScaleVector3(vPntTmp, 0.5f);
 
         // generate contact point between two closest points
 #if 0 //#ifdef ORIG -- if to use conditional define, GenerateContact must be moved into #else
@@ -760,9 +743,9 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
 
         // vNr is normal in box frame, pointing from triangle to box
         dMatrix3 mTransposed;
-        mTransposed[0*4+0]=m_mHullBoxRot[0*4+0];
-        mTransposed[0*4+1]=m_mHullBoxRot[1*4+0];
-        mTransposed[0*4+2]=m_mHullBoxRot[2*4+0];
+        mTransposed[0]=m_mHullBoxRot[0*4+0];
+        mTransposed[1]=m_mHullBoxRot[1*4+0];
+        mTransposed[2]=m_mHullBoxRot[2*4+0];
 
         mTransposed[1*4+0]=m_mHullBoxRot[0*4+1];
         mTransposed[1*4+1]=m_mHullBoxRot[1*4+1];
@@ -773,10 +756,9 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
         mTransposed[2*4+2]=m_mHullBoxRot[2*4+2];
 
         dVector3 vNr;
-        vNr[0]=mTransposed[0*4+0]*vNormal2[0]+  mTransposed[0*4+1]*vNormal2[1]+  mTransposed[0*4+2]*vNormal2[2];
-        vNr[1]=mTransposed[1*4+0]*vNormal2[0]+  mTransposed[1*4+1]*vNormal2[1]+  mTransposed[1*4+2]*vNormal2[2];
-        vNr[2]=mTransposed[2*4+0]*vNormal2[0]+  mTransposed[2*4+1]*vNormal2[1]+  mTransposed[2*4+2]*vNormal2[2];
-
+        vNr[0] = dCalcVectorDot3(mTransposed, vNormal2);
+        vNr[1] = dCalcVectorDot3(mTransposed + 4, vNormal2);
+        vNr[2] = dCalcVectorDot3(mTransposed + 8, vNormal2);
 
         dVector3 vAbsNormal;
         vAbsNormal[0] = dFabs( vNr[0] );
@@ -1342,15 +1324,8 @@ GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
         // Add a new contact
         Contact = SAFECONTACT(in_Flags, in_Contacts, OutTriCount, in_Stride);
 
-        Contact->pos[0] = in_ContactPos[0];
-        Contact->pos[1] = in_ContactPos[1];
-        Contact->pos[2] = in_ContactPos[2];
-        Contact->pos[3] = 0.0;
-
-        Contact->normal[0] = in_Normal[0];
-        Contact->normal[1] = in_Normal[1];
-        Contact->normal[2] = in_Normal[2];
-        Contact->normal[3] = 0.0;
+        dCopyVector3(Contact->pos, in_ContactPos);
+        dCopyVector3(Contact->normal, in_Normal);
 
         Contact->depth = in_Depth;
 

@@ -12,7 +12,7 @@
 #ifndef __ICEPOINT_H__
 #define __ICEPOINT_H__
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 #include <immintrin.h>
 #endif
 
@@ -65,7 +65,7 @@
         inline_ Point& Set(const Point& src) { x = src.x; y = src.y; z  = src.z; return *this; }
 
         //! Adds a vector
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Add(const Point& p)
         {
             float restmp[4];
@@ -87,7 +87,7 @@
         //! Adds a vector
         inline_ Point& Add(float xx, float yy, float zz) { x += xx; y += yy; z += zz; return *this; }
         //! Adds a vector
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Add(const float f[3])
         {
             float restmp[4];
@@ -107,7 +107,7 @@
         inline_ Point& Add(const float f[3]) { x += f[0]; y += f[1]; z += f[2]; return *this; }
 #endif
         //! Adds vectors
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Add(const Point& p, const Point& q)
         {
             float restmp[4];
@@ -128,7 +128,7 @@
 #endif
 
         //! Subtracts a vector
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Sub(const Point& p)
         {
             float restmp[4];
@@ -151,7 +151,7 @@
         inline_ Point& Sub(float xx, float yy, float zz) { x -= xx; y -= yy; z -= zz; return *this; }
 
         //! Subtracts a vector
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Sub(const float f[3])
         {
             float restmp[4];
@@ -172,7 +172,7 @@
 #endif
 
         //! Subtracts vectors
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Sub(const Point& p, const Point& q)
         {
             float restmp[4];
@@ -197,7 +197,7 @@
         inline_ Point& Neg(const Point& a) { x = -a.x; y = -a.y; z = -a.z; return *this; }
 
         //! Multiplies by a scalar
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Mult(float s)
         {
             float restmp[4];
@@ -217,7 +217,7 @@
         inline_ Point& Mult(float s) { x *= s; y *= s; z *= s; return *this; }
 #endif
         //! this = a * scalar
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Mult(const Point& a, float scalar)
         {
             float restmp[4];
@@ -243,7 +243,7 @@
         }
 #endif
         //! this = a + b * scalar
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Mac(const Point& a, const Point& b, float scalar)
         {
             float restmp[4];
@@ -272,7 +272,7 @@
         }
 #endif
         //! this = this + a * scalar
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Mac(const Point& a, float scalar)
         {
             float restmp[4];
@@ -301,7 +301,7 @@
         }
 #endif
         //! this = a - b * scalar
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Msc(const Point& a, const Point& b, float scalar)
         {
             float restmp[4];
@@ -330,7 +330,7 @@
         }
 #endif
         //! this = this - a * scalar
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Msc(const Point& a, float scalar)
         {
             float restmp[4];
@@ -359,7 +359,7 @@
         }
 #endif
         //! this = a + b * scalarb + c * scalarc
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Mac2(const Point& a, const Point& b, float scalarb, const Point& c, float scalarc)
         {
             float restmp[4];
@@ -393,7 +393,7 @@
         }
 #endif
         //! this = a - b * scalarb - c * scalarc
-#if defined(__AVX__)
+#if defined(dUSEAVX)
     inline_ Point& Msc2(const Point& a, const Point& b, float scalarb, const Point& c, float scalarc)
     {
         float restmp[4];
@@ -439,7 +439,7 @@
         inline_ Point& TransMult(const Matrix3x3& mat, const Point& a);
 
         //! Linear interpolate between two vectors: this = a + t * (b - a)
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Lerp(const Point& a, const Point& b, float t)
         {
             float restmp[4];
@@ -512,7 +512,7 @@
         }
 
         //! Computes square magnitude
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_    float SquareMagnitude()    const
         {
             __m128 ma;
@@ -525,7 +525,7 @@
 #endif
 
         //! Computes magnitude
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ float Magnitude()    const
         {
             __m128 ma;
@@ -589,7 +589,7 @@
         }
 
         //! Normalizes the vector
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Normalize()
         {
             __m128 ma, mc;
@@ -659,7 +659,7 @@
         }
 
         //! Computes distance to another point
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ float Distance(const Point& b) const
         {
             __m128 ma, mb;
@@ -677,7 +677,7 @@
 #endif
 
         //! Computes square distance to another point
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ float SquareDistance(const Point& b) const
         {
             __m128 ma, mb;
@@ -695,7 +695,7 @@
 #endif
 
         //! Dot product dp = this|a
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_    float Dot(const Point& p) const
         {
             __m128 ma, mb;
@@ -710,7 +710,7 @@
 #endif
 
         //! Cross product this = a x b
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& Cross(const Point& a, const Point& b)
         {
             __m128 ma, mb, t1, t2, t3, t4;
@@ -809,7 +809,7 @@
         inline_ Point operator-() const { return Point(-x, -y, -z); }
 
         //! Operator for Point Plus = Point + Point.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator+(const Point& p) const
         {
             float restmp[4];
@@ -826,7 +826,7 @@
         inline_ Point operator+(const Point& p) const { return Point(x + p.x, y + p.y, z + p.z); }
 #endif
         //! Operator for Point Minus = Point - Point.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator-(const Point& p) const
         {
             float restmp[4];
@@ -843,7 +843,7 @@
         inline_ Point operator-(const Point& p) const { return Point(x - p.x, y - p.y, z - p.z); }
 #endif
         //! Operator for Point Mul   = Point * Point.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator*(const Point& p) const
         {
             float restmp[4];
@@ -860,7 +860,7 @@
         inline_ Point operator*(const Point& p) const { return Point(x * p.x, y * p.y, z * p.z); }
 #endif
         //! Operator for Point Scale = Point * float.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator*(float s) const
         {
             float restmp[4];
@@ -877,7 +877,7 @@
         inline_ Point operator*(float s) const { return Point(x * s,   y * s,   z * s ); }
 #endif
         //! Operator for Point Scale = float * Point.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ friend Point operator*(float s, const Point& p)
         {
             float restmp[4];
@@ -894,7 +894,7 @@
         inline_ friend Point operator*(float s, const Point& p) { return Point(s * p.x, s * p.y, s * p.z); }
 #endif
         //! Operator for Point Div   = Point / Point.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator/(const Point& p) const
         {
             float restmp[4];
@@ -911,7 +911,7 @@
         inline_ Point operator/(const Point& p) const { return Point(x / p.x, y / p.y, z / p.z); }
 #endif
         //! Operator for Point Scale = Point / float.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator/(float s) const
         {
             float restmp[4];
@@ -929,7 +929,7 @@
         inline_ Point operator/(float s) const { s = 1.0f / s; return Point(x * s, y * s, z * s); }
 #endif
         //! Operator for Point Scale = float / Point.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ friend Point operator/(float s, const Point& p)
         {
             float restmp[4];
@@ -946,7 +946,7 @@
         inline_ friend Point operator/(float s, const Point& p) { return Point(s / p.x, s / p.y, s / p.z); }
 #endif
         //! Operator for float DotProd = Point | Point.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ float operator|(const Point& p) const
         {
             __m128 ma, mb;
@@ -961,7 +961,7 @@
 #endif
 
         //! Operator for Point VecProd = Point ^ Point.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator^(const Point& p) const
         {
             __m128 ma, mb, t1, t2, t3, t4;
@@ -992,7 +992,7 @@
 #endif
 
         //! Operator for Point += Point.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator+=(const Point& p)
         {
             float restmp[4];
@@ -1012,7 +1012,7 @@
         inline_ Point& operator+=(const Point& p) { x += p.x; y += p.y; z += p.z; return *this; }
 #endif
         //! Operator for Point += float.
-#if defined(__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator+=(float s)
         {
             float restmp[4];
@@ -1032,7 +1032,7 @@
         inline_ Point& operator+=(float s) { x += s; y += s; z += s; return *this; }
 #endif
         //! Operator for Point -= Point.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator-=(const Point& p)
         {
             float restmp[4];
@@ -1055,7 +1055,7 @@
         inline_ Point& operator-=(float s) { x -= s; y -= s; z -= s; return *this; }
 
         //! Operator for Point *= Point.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator*=(const Point& p)
         {
             float restmp[4];
@@ -1078,7 +1078,7 @@
         inline_ Point& operator*=(float s) { x *= s; y *= s; z *= s; return *this; }
 
         //! Operator for Point /= Point.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator/=(const Point& p)
         {
             float restmp[4];
@@ -1110,7 +1110,7 @@
         // Arithmetic operators
 
         //! Operator for Point Mul = Point * Matrix3x3.
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator*(const Matrix3x3& mat) const
         {
             __m128 ma, t0, t1, t2, m0, m1, m2, m3;
@@ -1157,7 +1157,7 @@
 
         //! Operator for Point Mul = Point * Matrix4x4.
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point operator*(const Matrix4x4& mat) const
         {
             __m128 ma, t0, t1, t2, m0, m1, m2, m3;
@@ -1204,7 +1204,7 @@
 
         //! Operator for Point *= Matrix3x3.
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator*=(const Matrix3x3& mat)
         {
             __m128 ma, t0, t1, t2, m0, m1, m2, m3;
@@ -1253,7 +1253,7 @@
 #endif
         //! Operator for Point *= Matrix4x4.
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_ Point& operator*=(const Matrix4x4& mat)
         {
             __m128 ma, t0, t1, t2, m0, m1, m2, m3;

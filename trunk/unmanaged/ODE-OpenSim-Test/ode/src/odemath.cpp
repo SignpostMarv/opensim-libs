@@ -30,7 +30,6 @@
 #undef dNormalize3
 #undef dNormalize4
 
-
 // this may be called for vectors `a' with extremely small magnitude, for
 // example the result of a cross product on two nearly perpendicular vectors.
 // we must be robust to these small vectors. to prevent numerical error,
@@ -74,13 +73,11 @@ int _dSafeNormalize3 (dVector3 a)
         }
     }
 
-    a[0] /= aa[idx];
-    a[1] /= aa[idx];
-    a[2] /= aa[idx];
-    l = dRecipSqrt (a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
-    a[0] *= l;
-    a[1] *= l;
-    a[2] *= l;
+    dReal rk = dReal(1.0) / aa[idx];
+    dScaleVector3(a, rk);
+    l = dCalcVectorLengthSquare3(a);
+    l = dRecipSqrt(l);
+    dScaleVector3(a, l);
 
     return 1;
 }
@@ -119,13 +116,10 @@ void dNormalize3(dVector3 a)
 int _dSafeNormalize4 (dVector4 a)
 {
     dAASSERT (a);
-    dReal l = dCalcVectorDot3(a,a)+a[3]*a[3];
+    dReal l = dCalcVectorLengthSquare4(a);
     if (l > 0) {
         l = dRecipSqrt(l);
-        a[0] *= l;
-        a[1] *= l;
-        a[2] *= l;
-        a[3] *= l;
+        dScaleVector4(a, l);
         return 1;
     }
     else {

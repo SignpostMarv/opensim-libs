@@ -595,7 +595,8 @@ void dxStepBody (dxBody *b, dReal h)
 
 
     // handle linear velocity
-    for (unsigned int j=0; j<3; j++) b->posr.pos[j] += h * b->lvel[j];
+//    for (unsigned int j=0; j<3; j++) b->posr.pos[j] += h * b->lvel[j];
+    dAddScaledVector3(b->posr.pos, b->lvel, h);
 
     if (b->flags & dxBodyFlagFiniteRotation) {
         dVector3 irv;	// infitesimal rotation vector
@@ -606,12 +607,8 @@ void dxStepBody (dxBody *b, dReal h)
             // rotation axis, and a component orthogonal to it.
             dVector3 frv;		// finite rotation vector
             dReal k = dCalcVectorDot3 (b->finite_rot_axis,b->avel);
-            frv[0] = b->finite_rot_axis[0] * k;
-            frv[1] = b->finite_rot_axis[1] * k;
-            frv[2] = b->finite_rot_axis[2] * k;
-            irv[0] = b->avel[0] - frv[0];
-            irv[1] = b->avel[1] - frv[1];
-            irv[2] = b->avel[2] - frv[2];
+            dCopyScaledVector3(frv, b->finite_rot_axis, k);
+            dSubtractVectors3(irv, b->avel, frv);
 
             // make a rotation quaternion q that corresponds to frv * h.
             // compare this with the full-finite-rotation case below.
@@ -619,40 +616,38 @@ void dxStepBody (dxBody *b, dReal h)
             dReal theta = k * h;
             q[0] = dCos(theta);
             dReal s = sinc(theta) * h;
-            q[1] = frv[0] * s;
-            q[2] = frv[1] * s;
-            q[3] = frv[2] * s;
+            dCopyScaledVector3(&q[1], frv, s);
         }
         else {
             // make a rotation quaternion q that corresponds to w * h
-            dReal wlen = dSqrt (b->avel[0]*b->avel[0] + b->avel[1]*b->avel[1] +
-                b->avel[2]*b->avel[2]);
+            dReal wlen = dCalcVectorLength3(b->avel);
             h *= REAL(0.5);
             dReal theta = wlen * h;
             q[0] = dCos(theta);
             dReal s = sinc(theta) * h;
-            q[1] = b->avel[0] * s;
-            q[2] = b->avel[1] * s;
-            q[3] = b->avel[2] * s;
+            dCopyScaledVector3(&q[1], b->avel, s);
         }
 
         // do the finite rotation
         dQuaternion q2;
         dQMultiply0 (q2,q,b->q);
-        for (unsigned int j=0; j<4; j++) b->q[j] = q2[j];
+        //for (unsigned int j=0; j<4; j++) b->q[j] = q2[j];
+        dCopyVector3(b->q, q2);
 
         // do the infitesimal rotation if required
         if (b->flags & dxBodyFlagFiniteRotationAxis) {
             dReal dq[4];
             dWtoDQ (irv,b->q,dq);
-            for (unsigned int j=0; j<4; j++) b->q[j] += h * dq[j];
+            //for (unsigned int j=0; j<4; j++) b->q[j] += h * dq[j];
+            dAddScaledVector4(b->q, dq, h);
         }
     }
     else {
         // the normal way - do an infitesimal rotation
         dReal dq[4];
         dWtoDQ (b->avel,b->q,dq);
-        for (unsigned int j=0; j<4; j++) b->q[j] += h * dq[j];
+ //       for (unsigned int j=0; j<4; j++) b->q[j] += h * dq[j];
+        dAddScaledVector4(b->q, dq, h);
     }
 
     // normalize the quaternion and convert it to a rotation matrix

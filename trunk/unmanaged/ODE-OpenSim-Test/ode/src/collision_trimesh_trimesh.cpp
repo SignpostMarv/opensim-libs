@@ -201,7 +201,7 @@ dContactGeom *AddContactToNode(const CONTACT_KEY * contactkey,CONTACT_KEY_HASH_N
         if(node->m_keyarray[i].m_key == contactkey->m_key)
         {
             dContactGeom *contactfound = node->m_keyarray[i].m_contact;
-            if (dCalcPointsDistance3(contactfound->pos, contactkey->m_contact->pos) < REAL(1.00001) /*for comp. errors*/ * dSQRT3 / CONTACT_POS_HASH_QUOTIENT /*cube diagonal*/)
+            if (dCalcPointsDistanceSquare3(contactfound->pos, contactkey->m_contact->pos) < REAL(1.00001) /*for comp. errors*/ * dSQRT3 / CONTACT_POS_HASH_QUOTIENT /*cube diagonal*/)
             {
                 return contactfound;
             }
@@ -505,14 +505,12 @@ dCollideTTL(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int Strid
         &MakeMatrix(TLPosition1, TLRotation1, amatrix),
         &MakeMatrix(TLPosition2, TLRotation2, bmatrix) );
 
-
+/*
     // Make "double" versions of these matrices, if appropriate
     dMatrix4 A, B;
     dMakeMatrix4(TLPosition1, TLRotation1, A);
     dMakeMatrix4(TLPosition2, TLRotation2, B);
-
-
-
+*/
 
     if (IsOk) {
         // Get collision status => if true, objects overlap
@@ -1263,8 +1261,6 @@ bool TriTriContacts(const dVector3 tr1[3],
     LineContactSet contactpoints;
     contactpoints.Count = 0;
 
-
-
     ///find best direction
 
     depth = FindTriangleTriangleCollision(
@@ -1272,8 +1268,6 @@ bool TriTriContacts(const dVector3 tr1[3],
         tr2,
         normal,
         contactpoints);
-
-
 
     if(depth<0.0f) return false;
 

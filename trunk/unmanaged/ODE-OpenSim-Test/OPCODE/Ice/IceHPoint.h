@@ -63,7 +63,7 @@
         HPoint&	Max(const HPoint& p) { x = MAX(x, p.x); y = MAX(y, p.y); z = MAX(z, p.z); w = MAX(w, p.w);	return *this; }
 
 		//! Computes square magnitude
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_	float SquareMagnitude()	const
         {
             __m128 ma;
@@ -75,7 +75,7 @@
         inline_	float SquareMagnitude()	const { return x*x + y*y + z*z + w*w; }
 #endif
 		//! Computes magnitude
-#if defined (__AVX__)
+#if defined(dUSEAVX)
         inline_	float Magnitude() const
         {
             __m128 ma;

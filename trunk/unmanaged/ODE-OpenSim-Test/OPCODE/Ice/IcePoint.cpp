@@ -139,7 +139,7 @@ BOOL Point::IsNotUsed()	const
 	return TRUE;
 }
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 Point& Point::Mult(const Matrix3x3& mat, const Point& a)
 {
     __m128 ma, mp, mt;
@@ -179,7 +179,7 @@ Point& Point::Mult2(const Matrix3x3& mat1, const Point& a1, const Matrix3x3& mat
 	return *this;
 }
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 Point& Point::Mac(const Matrix3x3& mat, const Point& a)
 {
     __m128 ma, mp, mt;
@@ -212,7 +212,7 @@ Point& Point::Mac(const Matrix3x3& mat, const Point& a)
 }
 #endif
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 Point& Point::TransMult(const Matrix3x3& mat, const Point& a)
 {
     __m128 ma, t0, t1, t2, m0, m1, m2, m3;

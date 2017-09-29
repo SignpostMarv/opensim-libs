@@ -2235,7 +2235,7 @@ REGISTER_EXTENSION( ODE_THR_builtin_impl )
 #endif // #if dBUILTIN_THREADING_IMPL_ENABLED
 #endif // #if !dTHREADING_INTF_DISABLED
 
-#if defined(__AVX__)
+#if defined(dUSEAVX)
 REGISTER_EXTENSION(ODE_AVX)
 #endif // dTLS_ENABLED
 //**********************************

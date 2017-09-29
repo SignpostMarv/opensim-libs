@@ -18,9 +18,6 @@ libode_la_SOURCES =     nextafterf.c \
                         array.cpp array.h \
                         box.cpp \
                         capsule.cpp \
-                        collision_cylinder_box.cpp \
-                        collision_cylinder_plane.cpp \
-                        collision_cylinder_sphere.cpp \
                         collision_kernel.cpp collision_kernel.h \
                         collision_quadtreespace.cpp \
                         collision_sapspace.cpp \
@@ -31,10 +28,7 @@ libode_la_SOURCES =     nextafterf.c \
                         collision_trimesh_colliders.h \
                         collision_trimesh_internal.h \
                         collision_util.cpp collision_util.h \
-                        convex.cpp \
-                        cylinder.cpp \
                         error.cpp error.h \
-                        export-dif.cpp \
                         heightfield.cpp heightfield.h \
                         osTerrain.cpp osTerrain.h \
                         lcp.cpp lcp.h \
@@ -83,7 +77,6 @@ libode_la_SOURCES +=    odetls.cpp odetls.h \
 
 endif
 
-
 #################################
 #   O P C O D E    S T U F F
 #################################
@@ -97,53 +90,7 @@ libode_la_SOURCES+=     collision_trimesh_trimesh.cpp \
                         collision_trimesh_ray.cpp \
                         collision_trimesh_opcode.cpp \
                         collision_trimesh_box.cpp \
-                        collision_trimesh_ccylinder.cpp \
                         collision_trimesh_distance.cpp \
                         collision_trimesh_internal.h \
-                        collision_cylinder_trimesh.cpp \
                         collision_trimesh_plane.cpp
 
-if LIBCCD
-
-AM_CPPFLAGS += -DdLIBCCD_ENABLED
-
-if LIBCCD_INTERNAL
-AM_CPPFLAGS += -I$(top_srcdir)/libccd/src -I$(top_builddir)/libccd/src 
-libode_la_LIBADD += $(top_builddir)/libccd/src/libccd.la
-else
-AM_CPPFLAGS += $(CCD_CFLAGS)
-libode_la_LIBADD += $(CCD_LIBS)
-endif
-
-
-libode_la_SOURCES += collision_libccd.cpp collision_libccd.h
-
-if LIBCCD_BOX_CYL
-AM_CPPFLAGS += -DdLIBCCD_BOX_CYL
-endif
-
-if LIBCCD_CYL_CYL
-AM_CPPFLAGS += -DdLIBCCD_CYL_CYL
-endif
-
-if LIBCCD_CAP_CYL
-AM_CPPFLAGS += -DdLIBCCD_CAP_CYL
-endif
-
-if LIBCCD_CONVEX_BOX
-AM_CPPFLAGS += -DdLIBCCD_CONVEX_BOX
-endif
-if LIBCCD_CONVEX_CAP
-AM_CPPFLAGS += -DdLIBCCD_CONVEX_CAP
-endif
-if LIBCCD_CONVEX_CYL
-AM_CPPFLAGS += -DdLIBCCD_CONVEX_CYL
-endif
-if LIBCCD_CONVEX_SPHERE
-AM_CPPFLAGS += -DdLIBCCD_CONVEX_SPHERE
-endif
-if LIBCCD_CONVEX_CONVEX
-AM_CPPFLAGS += -DdLIBCCD_CONVEX_CONVEX
-endif
-
-endif

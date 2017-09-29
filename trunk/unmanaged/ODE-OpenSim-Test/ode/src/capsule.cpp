@@ -118,10 +118,10 @@ dReal dGeomCapsulePointDepth (dGeomID g, dReal x, dReal y, dReal z)
         beta = -lz2;
     else if (beta > lz2)
         beta = lz2;
-    a[0] -= beta*R[0*4+2];
-    a[1] -= beta*R[1*4+2];
-    a[2] -= beta*R[2*4+2];
-    return c->radius - dSqrt(a[0] * a[0] + (a[1] * a[1]) + a[2] * a[2]);
+    a[0] -= beta*R[2];
+    a[1] -= beta*R[6];
+    a[2] -= beta*R[10];
+    return c->radius - dCalcVectorLength3(a);
 }
 
 
@@ -232,9 +232,7 @@ int dCollideCapsuleBox (dxGeom *o1, dxGeom *o2, int flags,
         for (int i=0; i<num; i++)
         {
             dContactGeom *currContact = CONTACT(contact,i*skip);
-            currContact->normal[0] = normal[0];
-            currContact->normal[1] = normal[1];
-            currContact->normal[2] = normal[2];
+            dCopyVector3(currContact->normal, normal);
             currContact->g1 = o1;
             currContact->g2 = o2;
             currContact->side1 = -1;
@@ -415,9 +413,7 @@ int dCollideCapsulePlane(dxGeom *o1, dxGeom *o2, int flags,
     dReal k = dCalcVectorDot3 (p,plane->p);
     dReal depth = plane->p[3] - k + ccyl->radius;
     if (depth < 0) return 0;
-    contact->normal[0] = plane->p[0];
-    contact->normal[1] = plane->p[1];
-    contact->normal[2] = plane->p[2];
+    dCopyVector3(contact->normal, plane->p);
     contact->pos[0] = p[0] - plane->p[0] * ccyl->radius;
     contact->pos[1] = p[1] - plane->p[1] * ccyl->radius;
     contact->pos[2] = p[2] - plane->p[2] * ccyl->radius;
@@ -434,9 +430,7 @@ int dCollideCapsulePlane(dxGeom *o1, dxGeom *o2, int flags,
         depth = plane->p[3] - k + ccyl->radius;
         if (depth >= 0) {
             dContactGeom *c2 = CONTACT(contact,skip);
-            c2->normal[0] = plane->p[0];
-            c2->normal[1] = plane->p[1];
-            c2->normal[2] = plane->p[2];
+            dCopyVector3(c2->normal, plane->p);
             c2->pos[0] = p[0] - plane->p[0] * ccyl->radius;
             c2->pos[1] = p[1] - plane->p[1] * ccyl->radius;
             c2->pos[2] = p[2] - plane->p[2] * ccyl->radius;

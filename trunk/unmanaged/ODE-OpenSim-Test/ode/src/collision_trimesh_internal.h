@@ -291,18 +291,33 @@ inline unsigned FetchTriangleCount(dxTriMesh* TriMesh)
     return TriMesh->Data->Mesh.GetNbTriangles();
 }
 
-inline void FetchTriangle(dxTriMesh* TriMesh, int Index, const dVector3 Position, const dMatrix3 Rotation, dVector3 Out[3]){
+inline void FetchTriangle(dxTriMesh* TriMesh, int Index, const dVector3 Position, const dMatrix3 Rotation, dVector3 Out[3])
+{
     VertexPointers VP;
     ConversionArea VC;
     TriMesh->Data->Mesh.GetTriangle(VP, Index, VC);
-    for (int i = 0; i < 3; i++){
-        dVector3 v;
-        v[0] = VP.Vertex[i]->x;
-        v[1] = VP.Vertex[i]->y;
-        v[2] = VP.Vertex[i]->z;
 
-        dPointRotateTrans(Out[i], Rotation, v, Position);
+    /*
+        for (int i = 0; i < 3; i++)
+        {
+            dVector3 v;
+            v[0] = VP.Vertex[i]->x;
+            v[1] = VP.Vertex[i]->y;
+            v[2] = VP.Vertex[i]->z;
+
+            dPointRotateTrans(Out[i], Rotation, v, Position);
+        }
+    */
+    dVector3 invecs[3];
+
+    for (int i = 0; i < 3; i++)
+    {
+        invecs[i][0] = VP.Vertex[i]->x;
+        invecs[i][1] = VP.Vertex[i]->y;
+        invecs[i][2] = VP.Vertex[i]->z;
     }
+
+    dtriangleRotateTrans(Out, invecs, Rotation, Position);
 }
 
 inline void FetchTransformedTriangle(dxTriMesh* TriMesh, int Index, dVector3 Out[3]){
@@ -428,17 +443,6 @@ void Vector3Multiply( const dVector3 in, dReal scalar, dVector3 out )
     out[1] = in[1] * scalar;
     out[2] = in[2] * scalar;
     out[3] = REAL(0.0);
-}
-
-inline
-void TransformVector3( const dVector3 in, 
-                      const dMatrix3 orientation, const dVector3 position, 
-                      dVector3 out )
-{
-    dMultiply0_331( out, orientation, in );
-    out[0] += position[0];
-    out[1] += position[1];
-    out[2] += position[2];
 }
 
 //------------------------------------------------------------------------------

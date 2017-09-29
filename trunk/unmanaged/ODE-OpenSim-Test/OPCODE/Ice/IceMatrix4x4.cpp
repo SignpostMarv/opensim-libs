@@ -51,6 +51,44 @@ using namespace IceMaths;
  *	\param		src		[in] source matrix
  */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if defined(dUSEAVX)
+ICEMATHS_API void IceMaths::InvertPRMatrix(Matrix4x4& dest, const Matrix4x4& src)
+{
+    __m128 zero, s3, t0, t1, m0, m1, m2, m3,k;
+    t0 = _mm_loadu_ps(src.m[0]);
+    t1 = _mm_loadu_ps(src.m[1]);
+    s3 = _mm_loadu_ps(src.m[3]);
+
+    k = _mm_dp_ps(t0, s3, 0x71);
+    dest.m[3][0] = -_mm_cvtss_f32(k);
+    k = _mm_dp_ps(t1, s3, 0x71);
+    dest.m[3][1] = -_mm_cvtss_f32(k);
+
+    m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
+    m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
+
+    t0 = _mm_loadu_ps(src.m[2]);
+    k = _mm_dp_ps(t0, s3, 0x71);
+    dest.m[3][2] = -_mm_cvtss_f32(k);
+
+    m1 = _mm_shuffle_ps(t1, t0, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
+    m3 = _mm_shuffle_ps(t1, t0, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
+
+    zero = _mm_setzero_ps();
+    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); //x0 x1 x2 x2
+    _mm_blend_ps(t0, zero, 8);
+    _mm_storeu_ps(dest.m[0], t0);
+    t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
+    _mm_blend_ps(t0, zero, 8);
+    _mm_storeu_ps(dest.m[1], t1);
+    t0 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
+    _mm_blend_ps(t0, zero, 8);
+    _mm_storeu_ps(dest.m[2], t0);
+
+    dest.m[3][3] = 1.0f;
+}
+#else
 ICEMATHS_API void IceMaths::InvertPRMatrix(Matrix4x4& dest, const Matrix4x4& src)
 {
 	dest.m[0][0] = src.m[0][0];
@@ -68,12 +106,12 @@ ICEMATHS_API void IceMaths::InvertPRMatrix(Matrix4x4& dest, const Matrix4x4& src
 	dest.m[2][2] = src.m[2][2];
 	dest.m[3][2] = -(src.m[3][0]*src.m[2][0] + src.m[3][1]*src.m[2][1] + src.m[3][2]*src.m[2][2]);
 
-	dest.m[0][3] = 0.0f;
-	dest.m[1][3] = 0.0f;
-	dest.m[2][3] = 0.0f;
-	dest.m[3][3] = 1.0f;
+    dest.m[0][3] = 0.0f;
+    dest.m[1][3] = 0.0f;
+    dest.m[2][3] = 0.0f;
+    dest.m[3][3] = 1.0f;
 }
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Compute the cofactor of the Matrix at a specified location
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -191,40 +191,40 @@ void dQFromAxisAndAngle (dQuaternion q, dReal ax, dReal ay, dReal az,
 void dQMultiply0 (dQuaternion qa, const dQuaternion qb, const dQuaternion qc)
 {
     dAASSERT (qa && qb && qc);
-    qa[0] = qb[0]*qc[0] - qb[1]*qc[1] - qb[2]*qc[2] - qb[3]*qc[3];
-    qa[1] = qb[0]*qc[1] + qb[1]*qc[0] + qb[2]*qc[3] - qb[3]*qc[2];
-    qa[2] = qb[0]*qc[2] + qb[2]*qc[0] + qb[3]*qc[1] - qb[1]*qc[3];
-    qa[3] = qb[0]*qc[3] + qb[3]*qc[0] + qb[1]*qc[2] - qb[2]*qc[1];
+    qa[0] = qb[0] * qc[0] - qb[1] * qc[1] - qb[2] * qc[2] - qb[3] * qc[3];
+    qa[1] = qb[0] * qc[1] + qb[1] * qc[0] + qb[2] * qc[3] - qb[3] * qc[2];
+    qa[2] = qb[0] * qc[2] + qb[2] * qc[0] + qb[3] * qc[1] - qb[1] * qc[3];
+    qa[3] = qb[0] * qc[3] + qb[3] * qc[0] + qb[1] * qc[2] - qb[2] * qc[1];
 }
 
 
 void dQMultiply1 (dQuaternion qa, const dQuaternion qb, const dQuaternion qc)
 {
     dAASSERT (qa && qb && qc);
-    qa[0] = qb[0]*qc[0] + qb[1]*qc[1] + qb[2]*qc[2] + qb[3]*qc[3];
-    qa[1] = qb[0]*qc[1] - qb[1]*qc[0] - qb[2]*qc[3] + qb[3]*qc[2];
-    qa[2] = qb[0]*qc[2] - qb[2]*qc[0] - qb[3]*qc[1] + qb[1]*qc[3];
-    qa[3] = qb[0]*qc[3] - qb[3]*qc[0] - qb[1]*qc[2] + qb[2]*qc[1];
+    qa[0] = qb[0] * qc[0] + qb[1] * qc[1] + qb[2] * qc[2] + qb[3] * qc[3];
+    qa[1] = qb[0] * qc[1] - qb[1] * qc[0] - qb[2] * qc[3] + qb[3] * qc[2];
+    qa[2] = qb[0] * qc[2] - qb[2] * qc[0] - qb[3] * qc[1] + qb[1] * qc[3];
+    qa[3] = qb[0] * qc[3] - qb[3] * qc[0] - qb[1] * qc[2] + qb[2] * qc[1];
 }
 
 
 void dQMultiply2 (dQuaternion qa, const dQuaternion qb, const dQuaternion qc)
 {
     dAASSERT (qa && qb && qc);
-    qa[0] =  qb[0]*qc[0] + qb[1]*qc[1] + qb[2]*qc[2] + qb[3]*qc[3];
-    qa[1] = -qb[0]*qc[1] + qb[1]*qc[0] - qb[2]*qc[3] + qb[3]*qc[2];
-    qa[2] = -qb[0]*qc[2] + qb[2]*qc[0] - qb[3]*qc[1] + qb[1]*qc[3];
-    qa[3] = -qb[0]*qc[3] + qb[3]*qc[0] - qb[1]*qc[2] + qb[2]*qc[1];
+    qa[0] =  qb[0] * qc[0] + qb[1] * qc[1] + qb[2] * qc[2] + qb[3] * qc[3];
+    qa[1] = -qb[0] * qc[1] + qb[1] * qc[0] - qb[2] * qc[3] + qb[3] * qc[2];
+    qa[2] = -qb[0] * qc[2] + qb[2] * qc[0] - qb[3] * qc[1] + qb[1] * qc[3];
+    qa[3] = -qb[0] * qc[3] + qb[3] * qc[0] - qb[1] * qc[2] + qb[2] * qc[1];
 }
 
 
 void dQMultiply3 (dQuaternion qa, const dQuaternion qb, const dQuaternion qc)
 {
     dAASSERT (qa && qb && qc);
-    qa[0] =  qb[0]*qc[0] - qb[1]*qc[1] - qb[2]*qc[2] - qb[3]*qc[3];
-    qa[1] = -qb[0]*qc[1] - qb[1]*qc[0] + qb[2]*qc[3] - qb[3]*qc[2];
-    qa[2] = -qb[0]*qc[2] - qb[2]*qc[0] + qb[3]*qc[1] - qb[1]*qc[3];
-    qa[3] = -qb[0]*qc[3] - qb[3]*qc[0] + qb[1]*qc[2] - qb[2]*qc[1];
+    qa[0] =  qb[0] * qc[0] - qb[1] * qc[1] - qb[2] * qc[2] - qb[3] * qc[3];
+    qa[1] = -qb[0] * qc[1] - qb[1] * qc[0] + qb[2] * qc[3] - qb[3] * qc[2];
+    qa[2] = -qb[0] * qc[2] - qb[2] * qc[0] + qb[3] * qc[1] - qb[1] * qc[3];
+    qa[3] = -qb[0] * qc[3] - qb[3] * qc[0] + qb[1] * qc[2] - qb[2] * qc[1];
 }
 
 
@@ -237,19 +237,22 @@ void dRfromQ (dMatrix3 R, const dQuaternion q)
 {
     dAASSERT (q && R);
     // q = (s,vx,vy,vz)
-    dReal qq1 = 2*q[1]*q[1];
-    dReal qq2 = 2*q[2]*q[2];
-    dReal qq3 = 2*q[3]*q[3];
+    dReal qq1 = 2 * q[1] * q[1];
+    dReal qq2 = 2 * q[2] * q[2];
+    dReal qq3 = 2 * q[3] * q[3];
+
     _R(0,0) = 1 - qq2 - qq3;
-    _R(0,1) = 2*(q[1]*q[2] - q[0]*q[3]);
-    _R(0,2) = 2*(q[1]*q[3] + q[0]*q[2]);
+    _R(0,1) = 2 * (q[1] * q[2] - q[0] * q[3]);
+    _R(0,2) = 2 * (q[1] * q[3] + q[0] * q[2]);
     _R(0,3) = REAL(0.0);
-    _R(1,0) = 2*(q[1]*q[2] + q[0]*q[3]);
+
+    _R(1,0) = 2 * (q[1] * q[2] + q[0] * q[3]);
     _R(1,1) = 1 - qq1 - qq3;
-    _R(1,2) = 2*(q[2]*q[3] - q[0]*q[1]);
+    _R(1,2) = 2 * (q[2] * q[3] - q[0] * q[1]);
     _R(1,3) = REAL(0.0);
-    _R(2,0) = 2*(q[1]*q[3] - q[0]*q[2]);
-    _R(2,1) = 2*(q[2]*q[3] + q[0]*q[1]);
+
+    _R(2,0) = 2 * (q[1] * q[3] - q[0] * q[2]);
+    _R(2,1) = 2 * (q[2] * q[3] + q[0] * q[1]);
     _R(2,2) = 1 - qq1 - qq2;
     _R(2,3) = REAL(0.0);
 }
@@ -306,12 +309,47 @@ case_2:
     }
 }
 
+#if defined(dUSEAVX)
+void dDQfromW(dReal dq[4], const dVector3 w, const dQuaternion q)
+{
+    __m128 mq, mw, mdq, t0, t1, t2, zero;
+    mq = _mm_loadu_ps(q);
+    zero = _mm_setzero_ps();
+    mw = _mm_loadu_ps(w);
 
+    t0 = _mm_shuffle_ps(mw, mw, _MM_SHUFFLE(2, 2, 2, 2));
+    t1 = _mm_shuffle_ps(mq, mq, _MM_SHUFFLE(0, 1, 2, 3));
+    t2 = _mm_mul_ps(t0, t1);
+    t0 = _mm_sub_ps(zero, t2);
+    mdq = _mm_blend_ps(t2, t0, 3);
+
+    t0 = _mm_shuffle_ps(mw, mw, _MM_SHUFFLE(1, 1, 1, 1));
+    t1 = _mm_shuffle_ps(mq, mq, _MM_SHUFFLE(1, 0, 3, 2));
+    t2 = _mm_mul_ps(t0, t1);
+    t0 = _mm_sub_ps(zero, t2);
+    t2 = _mm_blend_ps(t2, t0, 9);
+    mdq = _mm_add_ps(mdq, t2);
+
+    t0 = _mm_shuffle_ps(mw, mw, _MM_SHUFFLE(0, 0, 0, 0));
+    t1 = _mm_shuffle_ps(mq, mq, _MM_SHUFFLE(2, 3, 0, 1));
+    t2 = _mm_mul_ps(t0, t1);
+    t0 = _mm_sub_ps(zero, t2);
+    t2 = _mm_blend_ps(t2, t0, 5);
+
+    t0 = _mm_set1_ps(0.5f);
+
+    t1 = _mm_add_ps(mdq, t2);
+
+    mdq = _mm_mul_ps(t1, t0);
+    _mm_storeu_ps(dq, mdq);
+}
+#else
 void dDQfromW (dReal dq[4], const dVector3 w, const dQuaternion q)
 {
     dAASSERT (w && q && dq);
-    dq[0] = REAL(0.5)*(- w[0]*q[1] - w[1]*q[2] - w[2]*q[3]);
-    dq[1] = REAL(0.5)*(  w[0]*q[0] + w[1]*q[3] - w[2]*q[2]);
-    dq[2] = REAL(0.5)*(- w[0]*q[3] + w[1]*q[0] + w[2]*q[1]);
-    dq[3] = REAL(0.5)*(  w[0]*q[2] - w[1]*q[1] + w[2]*q[0]);
+    dq[0] = REAL(0.5)*(- w[0] * q[1] - w[1] * q[2] - w[2] * q[3]);
+    dq[1] = REAL(0.5)*(  w[0] * q[0] + w[1] * q[3] - w[2] * q[2]);
+    dq[2] = REAL(0.5)*(- w[0] * q[3] + w[1] * q[0] + w[2] * q[1]);
+    dq[3] = REAL(0.5)*(  w[0] * q[2] - w[1] * q[1] + w[2] * q[0]);
 }
+#endif

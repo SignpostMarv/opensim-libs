@@ -23,7 +23,7 @@
 #ifndef _ODE_COMMON_H_
 #define _ODE_COMMON_H_
 
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 #include <immintrin.h>
 #endif
 
@@ -88,7 +88,7 @@ typedef duint32 dTriIndex;
 
  /* these types are mainly just used in headers */
 /* smokes
-#if defined (__AVX__)
+#if defined(dUSEAVX)
 typedef __declspec(align(16)) dReal dVector3[4];
 typedef __declspec(align(16)) dReal dVector4[4];
 typedef __declspec(align(16)) dReal dMatrix3[4 * 3];

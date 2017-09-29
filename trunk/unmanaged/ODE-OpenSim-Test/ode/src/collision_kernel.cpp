@@ -444,9 +444,7 @@ void getBodyPosr(const dxPosR& offset_posr, const dxPosR& final_posr, dxPosR& bo
     dMultiply0_333(body_posr.R, final_posr.R, inv_offset);
     dVector3 world_offset;
     dMultiply0_331(world_offset, body_posr.R, offset_posr.pos);
-    body_posr.pos[0] = final_posr.pos[0] - world_offset[0];
-    body_posr.pos[1] = final_posr.pos[1] - world_offset[1];
-    body_posr.pos[2] = final_posr.pos[2] - world_offset[2];
+    dSubtractVectors3(body_posr.pos, final_posr.pos, world_offset);
 }
 
 void getWorldOffsetPosr(const dxPosR& body_posr, const dxPosR& world_posr, dxPosR& offset_posr)
@@ -456,9 +454,7 @@ void getWorldOffsetPosr(const dxPosR& body_posr, const dxPosR& world_posr, dxPos
 
     dMultiply0_333(offset_posr.R, inv_body, world_posr.R);
     dVector3 world_offset;
-    world_offset[0] = world_posr.pos[0] - body_posr.pos[0];
-    world_offset[1] = world_posr.pos[1] - body_posr.pos[1];
-    world_offset[2] = world_posr.pos[2] - body_posr.pos[2];
+    dSubtractVectors3(world_offset, world_posr.pos, body_posr.pos);
     dMultiply0_331(offset_posr.pos, inv_body, world_offset);
 }
 
@@ -661,10 +657,7 @@ void dGeomCopyPosition(dxGeom *g, dVector3 pos)
     dAASSERT (g);
     dUASSERT (g->gflags & GEOM_PLACEABLE,"geom must be placeable");
     g->recomputePosr();
-    const dReal* src = g->final_posr->pos;
-    pos[0] = src[0];
-    pos[1] = src[1];
-    pos[2] = src[2];
+    dCopyVector3(pos, g->final_posr->pos);
 }
 
 
@@ -701,10 +694,7 @@ void dGeomGetQuaternion (dxGeom *g, dQuaternion quat)
     dUASSERT (g->gflags & GEOM_PLACEABLE,"geom must be placeable");
     if (g->body && !g->offset_posr) {
         const dReal * body_quat = dBodyGetQuaternion (g->body);
-        quat[0] = body_quat[0];
-        quat[1] = body_quat[1];
-        quat[2] = body_quat[2];
-        quat[3] = body_quat[3];
+        dCopyVector4(quat, body_quat);
     }
     else {
         g->recomputePosr();
@@ -811,9 +801,7 @@ void dGeomGetRelPointPos (dGeomID g, dReal px, dReal py, dReal pz, dVector3 resu
     prel[2] = pz;
     prel[3] = 0;
     dMultiply0_331 (p,g->final_posr->R,prel);
-    result[0] = p[0] + g->final_posr->pos[0];
-    result[1] = p[1] + g->final_posr->pos[1];
-    result[2] = p[2] + g->final_posr->pos[2];
+    dAddVectors3(result, p, g->final_posr->pos);
 }
 
 
@@ -1180,10 +1168,7 @@ void dGeomCopyOffsetPosition (dxGeom *g, dVector3 pos)
     dAASSERT (g);
     if (g->offset_posr)
     {
-        const dReal* src = g->offset_posr->pos;
-        pos[0] = src[0];
-        pos[1] = src[1];
-        pos[2] = src[2];
+        dCopyVector3(pos, g->offset_posr->pos);
     }
     else
     {
