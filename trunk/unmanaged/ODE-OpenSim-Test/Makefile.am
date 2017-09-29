@@ -5,18 +5,11 @@ if ENABLE_OU
 OU_DIR = ou
 endif
 
-if LIBCCD
-if LIBCCD_INTERNAL
-LIBCCD_DIR = libccd
-endif
-endif
-
 OPCODE_DIR = OPCODE
 
 SUBDIRS = include \
           $(OPCODE_DIR) \
           $(OU_DIR) \
-          $(LIBCCD_DIR) \
           ode
 
 bin_SCRIPTS = ode-config

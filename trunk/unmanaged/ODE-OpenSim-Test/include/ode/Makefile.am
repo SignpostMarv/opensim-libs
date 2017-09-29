@@ -7,7 +7,6 @@ libode_la_include_HEADERS = \
     compatibility.h \
     contact.h \
     error.h \
-    export-dif.h \
     mass.h \
     matrix.h \
     memory.h \
