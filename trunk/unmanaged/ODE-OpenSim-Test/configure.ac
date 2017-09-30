@@ -234,10 +234,11 @@ then
 fi
 
 AC_ARG_ENABLE([enableavx],
-        AS_HELP_STRING([--enable-avx],
-            [use AVX instructions]),
-        enableavx=$enableval,enableavx=no)
-if test x$enableavx = xyes
+        AS_HELP_STRING([--enable-avx],[use AVX instructions]),
+        enableavx=$enableval,
+		enableavx=no)
+
+if test "$enableavx" != no
 then
     CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math"
     CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
@@ -308,6 +309,7 @@ echo "  Is target a Pentium:     $pentium"
 echo "  Is target x86-64:        $cpu64"
 echo "  TLS for global caches:   $use_ou_tls"
 echo "  Threading intf enabled:  $threading_intf"
+echo "  Use AVX enabled:         $enableavx"
 echo "  Built-in threading included: $use_builtin_threading_impl"
 echo "  Enable debug error check: $asserts"
 echo "  Headers will be installed in $includedir/ode"
