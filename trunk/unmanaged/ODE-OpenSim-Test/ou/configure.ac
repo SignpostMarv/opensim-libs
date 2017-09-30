@@ -126,7 +126,7 @@ fi
 
 AC_CONFIG_FILES([Makefile
                  include/ou/Makefile
-                 src/ou/Makefile
+                 src/ou/Makefile])
 AC_OUTPUT
 
 echo "OU namespace: $OU_NAMESPACE"
