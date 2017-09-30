@@ -242,10 +242,8 @@ then
     CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math"
     CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
     CPPFLAGS="$CPPFLAGS -ftree-vectorize -mavx -ffast-math"
-	AC_DEFINE(dUSEAVX, 1,[avx sup])
+	AC_DEFINE([dUSEAVX], [1],[avx sup])
 fi
-
-AM_CONDITIONAL(ENABLE_DEMOS, test x$enable_demos = xyes)
 
 dnl include found system headers into config.h
 AH_TOP([
