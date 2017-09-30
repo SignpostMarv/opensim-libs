@@ -233,11 +233,11 @@ then
     fi
 fi
 
-AC_ARG_ENABLE([use-avx],
-        AS_HELP_STRING([--use-avx],
+AC_ARG_ENABLE([enable-avx],
+        AS_HELP_STRING([--enable-avx],
             [use AVX instructions]),
-        use-avx=$enableval,use-avx=yes)
-if test x$use-avx = xyes
+        enable-avx=$enableval,enable-avx=no)
+if test x$enable-avx = xyes
 then
     CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math"
     CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
