@@ -221,8 +221,7 @@ else
 fi
 
 AC_ARG_ENABLE([asserts],
-        AS_HELP_STRING([--disable-asserts],
-            [disables debug error checking]),
+		AS_HELP_STRING([--disable-asserts],[disables debug error checking]),
         asserts=$enableval,asserts=yes)
 if test x$asserts = xno
 then
@@ -233,17 +232,21 @@ then
     fi
 fi
 
+AC_MSG_CHECKING(for avx)
 AC_ARG_ENABLE([enableavx],
         AS_HELP_STRING([--enable-avx],[use AVX instructions]),
-        enableavx=$enableval,
+        enableavx=yes,
 		enableavx=no)
 
-if test "$enableavx" != no
+if test x$enableavx = xyes
 then
     CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math"
     CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
     CPPFLAGS="$CPPFLAGS -ftree-vectorize -mavx -ffast-math"
 	AC_DEFINE([dUSEAVX], [1],[avx sup])
+	AC_MSG_RESULT(enabled)
+else
+	AC_MSG_RESULT(no)
 fi
 
 dnl include found system headers into config.h
