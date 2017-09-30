@@ -232,10 +232,9 @@ then
     fi
 fi
 
-AC_MSG_CHECKING(for avx)
 AC_ARG_ENABLE([avx],
         AS_HELP_STRING([--enable-avx],[use AVX instructions]),
-        avx=yes,
+        avx=$enableval,
 		avx=no)
 
 if test x$avx = xyes
@@ -244,9 +243,6 @@ then
     CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
     CPPFLAGS="$CPPFLAGS -ftree-vectorize -mavx -ffast-math"
 	AC_DEFINE([dUSEAVX], [1],[avx sup])
-	AC_MSG_RESULT(enabled)
-else
-	AC_MSG_RESULT(no)
 fi
 
 dnl include found system headers into config.h
