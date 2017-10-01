@@ -283,7 +283,7 @@ public:
     //! Make a rotation matrix about an arbitrary axis
     Matrix3x3&        Rot(float angle, const Point& axis);
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     void Transpose()
     {
         __m128 t0, t1, m0, m1, m2, m3;
@@ -314,7 +314,7 @@ public:
 #endif
 
     //! this = Transpose(a)
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     void Transpose(const Matrix3x3& a)
     {
         __m128 t0, t1, m0, m1, m2, m3;
@@ -343,7 +343,7 @@ public:
     }
 #endif
     //! Compute the determinant of the matrix. We use the rule of Sarrus.
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     float Determinant() const
     {
         __m128 ma, mb, t1, t2, t3, t4;

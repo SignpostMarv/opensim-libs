@@ -29,10 +29,10 @@
 
 */
 
-#include "config.h"
 #include <ode/common.h>
 #include <ode/collision.h>
 #include <ode/rotation.h>
+#include "config.h"
 #include "matrix.h"
 #include "odemath.h"
 #include "collision_kernel.h"

@@ -309,7 +309,7 @@ case_2:
     }
 }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 void dDQfromW(dReal dq[4], const dVector3 w, const dQuaternion q)
 {
     __m128 mq, mw, mdq, t0, t1, t2, zero;

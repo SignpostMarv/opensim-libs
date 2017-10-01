@@ -29,10 +29,10 @@ internal data structures and functions for collision detection.
 #ifndef _ODE_COLLISION_KERNEL_H_
 #define _ODE_COLLISION_KERNEL_H_
 
-#include "config.h"
 #include <ode/common.h>
 #include <ode/contact.h>
 #include <ode/collision.h>
+#include "config.h"
 #include "objects.h"
 #include "odetls.h"
 

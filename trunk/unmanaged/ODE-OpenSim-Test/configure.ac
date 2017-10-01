@@ -239,8 +239,8 @@ AC_ARG_ENABLE([avx],
 
 if test x$avx = xyes
 then
-    CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math -DdUSEAVX"
-    CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math -DdUSEAVX"
+    CFLAGS="$CFLAGS -ftree-vectorize -mavx -ffast-math"
+    CXXFLAGS="$CXXFLAGS -ftree-vectorize -mavx -ffast-math"
 fi
 
 dnl include found system headers into config.h

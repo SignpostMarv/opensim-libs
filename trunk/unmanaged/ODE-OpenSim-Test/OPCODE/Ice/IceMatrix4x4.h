@@ -255,7 +255,7 @@ public:
 
     // Arithmetic operators
     //! Operator for Matrix4x4 Plus = Matrix4x4 + Matrix4x4;
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     inline_    Matrix4x4 operator+(const Matrix4x4& mat) const
     {
         Matrix4x4 out = Matrix4x4();
@@ -284,7 +284,7 @@ public:
     }
 #endif
     //! Operator for Matrix4x4 Minus = Matrix4x4 - Matrix4x4;
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     inline_ Matrix4x4 operator-(const Matrix4x4& mat) const
     {
         Matrix4x4 out = Matrix4x4();
@@ -312,7 +312,7 @@ public:
     }
 #endif
     //! Operator for Matrix4x4 Mul = Matrix4x4 * Matrix4x4;
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     inline_ Matrix4x4 operator*(const Matrix4x4& mat) const
     {
         Matrix4x4 out = Matrix4x4();
@@ -479,7 +479,7 @@ public:
     }
 
     //! Operator for Matrix4x4 *= Matrix4x4;
-#if defined(dUSEAVX)
+#if defined(__AVX__)
     Matrix4x4& operator*=(const Matrix4x4& mat)
     {
         __m128 mt0, mt1, mt2, mt3;

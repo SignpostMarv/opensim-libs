@@ -23,10 +23,10 @@
 // QuadTreeSpace by Erwin de Vries.
 // With math corrections by Oleh Derevenko. ;)
 
-#include "config.h"
 #include <ode/common.h>
 #include <ode/collision_space.h>
 #include <ode/collision.h>
+#include "config.h"
 #include "matrix.h"
 #include "collision_kernel.h"
 

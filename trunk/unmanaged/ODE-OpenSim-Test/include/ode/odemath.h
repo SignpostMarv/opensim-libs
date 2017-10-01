@@ -40,7 +40,7 @@
 #define dVALIDMAT4(m) (!(dIsNan(m[0]) || dIsNan(m[1]) || dIsNan(m[2]) || dIsNan(m[3]) || dIsNan(m[4]) || dIsNan(m[5]) || dIsNan(m[6]) || dIsNan(m[7]) || dIsNan(m[8]) || dIsNan(m[9]) || dIsNan(m[10]) || dIsNan(m[11]) || dIsNan(m[12]) || dIsNan(m[13]) || dIsNan(m[14]) || dIsNan(m[15]) ))
 
 /* Some vector math */
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddVector3(dReal *res, const dReal *a)
 {
     dReal restmp[4];
@@ -63,7 +63,7 @@ ODE_PURE_INLINE void dAddVector3(dReal *res, const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 {
     dReal restmp[4];
@@ -90,7 +90,7 @@ ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *b)
 {
     dReal restmp[4];
@@ -116,7 +116,7 @@ ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *
   res[2] = res_2;
 }
 #endif
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dSubNoAliaseVectors3(dReal *res, const dReal *a, const dReal *b)
 {
     dSubtractVectors3(res, a, b);
@@ -130,7 +130,7 @@ ODE_PURE_INLINE void dSubNoAliaseVectors3(dReal *res, const dReal *a, const dRea
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal scale)
 {
     dReal restmp[4];
@@ -157,7 +157,7 @@ ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal s
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddScaledVector4(dReal *res, const dReal *a, const dReal scale)
 {
     __m128 ma, mb, mc;
@@ -182,7 +182,7 @@ ODE_PURE_INLINE void dAddScaledVector4(dReal *res, const dReal *a, const dReal s
 #endif
 
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
 {
     dReal restmp[4];
@@ -214,7 +214,7 @@ ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal 
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 {
     dReal restmp[4];
@@ -237,7 +237,7 @@ ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 {
     __m128 ma, mc;
@@ -257,7 +257,7 @@ ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 {
     dReal restmp[4];
@@ -280,7 +280,7 @@ ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCopyFabsVector3(dReal *res, const dReal *a)
 {
     dReal restmp[4];
@@ -306,7 +306,7 @@ ODE_PURE_INLINE void dCopyFabsVector3(dReal *res, const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale)
 {
     dReal restmp[4];
@@ -331,7 +331,7 @@ ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void  dCopyNegatedVector3(dReal *res, const dReal *a)
 {
     dReal restmp[4];
@@ -357,7 +357,7 @@ ODE_PURE_INLINE void dCopyNegatedVector3(dReal *res, const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void  dNegateVector3(dReal *res)
 {
     dReal restmp[4];
@@ -384,7 +384,7 @@ ODE_PURE_INLINE void dNegateVector3(dReal *res)
 #endif
 
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCopyVector4(dReal *res, const dReal *a)
 {
     __m128 ma;
@@ -403,7 +403,7 @@ ODE_PURE_INLINE void dCopyVector4(dReal *res, const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCopyMatrix4x4(dReal *res, const dReal *a)
 {
     __m256 ab;
@@ -421,7 +421,7 @@ ODE_PURE_INLINE void dCopyMatrix4x4(dReal *res, const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCopyMatrix4x3(dReal *res, const dReal *a)
 {
     __m128 ma,mb,mc;
@@ -449,7 +449,7 @@ ODE_PURE_INLINE void dGetMatrixColumn3(dReal *res, const dReal *a, unsigned n)
   res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcVectorLength3(const dReal *a)
 {
     __m128 ma;
@@ -465,7 +465,7 @@ ODE_PURE_INLINE dReal dCalcVectorLength3(const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcVectorLength4(const dReal *a)
 {
     __m128 ma;
@@ -481,7 +481,7 @@ ODE_PURE_INLINE dReal dCalcVectorLength4(const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcVectorLengthSquare3(const dReal *a)
 {
     __m128 ma;
@@ -496,7 +496,7 @@ ODE_PURE_INLINE dReal dCalcVectorLengthSquare3(const dReal *a)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcVectorLengthSquare4(const dReal *a)
 {
     __m128 ma;
@@ -517,7 +517,7 @@ ODE_PURE_INLINE dReal dCalcVectorLengthSquare3(const dReal x, const dReal y, con
   return (x * x + y * y + z * z);
 }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal  dCalcPointDepth3(const dReal *test_p, const dReal *plane_p, const dReal *plane_n)
 {
     __m128 mt, mp, mn;
@@ -537,7 +537,7 @@ ODE_PURE_INLINE dReal dCalcPointDepth3(const dReal *test_p, const dReal *plane_p
   return (plane_p[0] - test_p[0]) * plane_n[0] + (plane_p[1] - test_p[1]) * plane_n[1] + (plane_p[2] - test_p[2]) * plane_n[2];
 }
 #endif
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3& point, const dVector4& plane)
 {
     __m128 mp, mn;
@@ -554,7 +554,7 @@ ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3& point, const dVect
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcVectorDot3(const dReal *a, const dReal *b)
 {
     __m128 ma, mb;
@@ -571,7 +571,7 @@ ODE_PURE_INLINE dReal dCalcVectorDot3(const dReal *a, const dReal *b)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcVectorDot4(const dReal *a, const dReal *b)
 {
     __m128 ma, mb;
@@ -604,7 +604,7 @@ ODE_PURE_INLINE dReal dCalcVectorDot3_14 (const dReal *a, const dReal *b) { retu
 ODE_PURE_INLINE dReal dCalcVectorDot3_41 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,4,1); }
 ODE_PURE_INLINE dReal dCalcVectorDot3_44 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,4,4); }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, mb, t1, t2, t3, t4;
@@ -663,7 +663,7 @@ ODE_PURE_INLINE void dCalcVectorCross3_414(dReal *res, const dReal *a, const dRe
 ODE_PURE_INLINE void dCalcVectorCross3_441(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 4, 4, 1); }
 ODE_PURE_INLINE void dCalcVectorCross3_444(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 4, 4, 4); }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, mb, mc, t1, t2, t3;
@@ -701,7 +701,7 @@ ODE_PURE_INLINE void dAddVectorCross3(dReal *res, const dReal *a, const dReal *b
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dSubtractVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, mb, mc, t1, t2, t3;
@@ -773,7 +773,7 @@ ODE_PURE_INLINE void dSetCrossMatrixMinus(dReal *res, const dReal *a, unsigned s
 /*
  * compute the distance between two 3D-vectors
  */
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
 {
     __m128 ma, mb;
@@ -794,7 +794,7 @@ ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcPointsDistanceSquare3(const dReal *a, const dReal *b)
 {
     __m128 ma, mb;
@@ -815,7 +815,7 @@ ODE_PURE_INLINE dReal dCalcPointsDistanceSquare3(const dReal *a, const dReal *b)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *b, const dReal t)
 {
     __m128 ma, mb, mc, t1, t2;
@@ -852,7 +852,7 @@ ODE_PURE_INLINE dReal dCalcLerpVectors3(dReal *res, const dReal *a, const dReal 
  * special case matrix multiplication, with operator selection
  */
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, mb,mc;
@@ -883,7 +883,7 @@ ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, t0, t1, t2, m0, m1, m2, m3;
@@ -945,7 +945,7 @@ Note: NEVER call any of these functions/macros with the same variable for A and 
 it is not equivalent to A*=B.
 */
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dPointRotateTrans(dReal *res, const dReal *r, const dReal *p, const dReal *t)
 {
     __m128 ma, mb, mr, mt;
@@ -979,7 +979,7 @@ ODE_PURE_INLINE void dPointRotateTrans(dReal *res, const dReal *vec, dReal *rot,
 }
 #endif
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dtriangleRotateTrans(dVector3 *res, dVector3 *invec, const dReal *rot, const dVector3 pos)
 {
     __m128 mrota, mrotb, mrotc, mpos, ma, mb, mr;
@@ -1098,7 +1098,7 @@ ODE_PURE_INLINE void dMultiplyAdd2_333(dReal *res, const dReal *a, const dReal *
   dAddVectors3(res + 8, res + 8, tmp);
 }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE dReal dCalcMatrix3Det(const dReal* mat)
 {
     __m128 ma, mb, t1, t2, t3, t4;
@@ -1170,7 +1170,7 @@ ODE_PURE_INLINE dReal dInvertMatrix3(dReal *dst, const dReal *ma)
     return det;
 }
 
-#if defined(dUSEAVX)
+#if defined(__AVX__)
 ODE_PURE_INLINE void dTransposetMatrix34(dReal *dst, const dReal *a)
 {
     __m128 t0, t1, t2, m0, m1, m2, m3;
