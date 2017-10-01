@@ -58,7 +58,7 @@
 
 #define dGeomRaySetNoNormalize(myRay, MyPoint, MyVector) {  \
     \
-    dVector3Copy (MyPoint, (myRay).final_posr->pos);   \
+    dCopyVector3 ((myRay).final_posr->pos, MyPoint);   \
     (myRay).final_posr->R[2] = (MyVector)[0];       \
     (myRay).final_posr->R[6] = (MyVector)[1];       \
     (myRay).final_posr->R[10] = (MyVector)[2];      \
@@ -958,13 +958,13 @@ static inline dReal DistancePointToLine(const dVector3 &_point,
                                         const dReal _Edgelength)
 {
     dVector3 v;
-    dVector3Subtract(_point, _pt0, v);
+    dSubtractVectors3(v, _point, _pt0);
     dVector3 s;
-    dVector3Copy (_Edge, s);
-    const dReal dot = dVector3Dot(v, _Edge) / _Edgelength;
-    dVector3Scale(s, dot);
-    dVector3Subtract(v, s, v);
-    return dVector3Length(v);
+    dCopyVector3(s, _Edge);
+    const dReal dot = dCalcVectorDot3(v, _Edge) / _Edgelength;
+    dScaleVector3(s, dot);
+    dSubtractVectors3(v, s, v);
+    return dCalcVectorLength3(v);
 }
 
 
@@ -1183,19 +1183,19 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
     // define 2 edges and a point that will define collision plane
     {
     dVector3 Edge1, Edge2; 
-    dVector3Subtract(C, A, Edge1);
-    dVector3Subtract(B, A, Edge2);
-    dVector3Cross(Edge1, Edge2, triplane);
+    dSubtractVectors3(Edge1, C, A);
+    dSubtractVectors3(Edge2, B, A);
+    dCalcVectorCross3(triplane, Edge1, Edge2);
     }
 
     // Define Plane
     // Normalize plane normal
-    const dReal dinvlength = REAL(1.0) / dVector3Length(triplane);
+    const dReal dinvlength = REAL(1.0) / dCalcVectorLength3(triplane);
     triplane[0] *= dinvlength;
     triplane[1] *= dinvlength;
     triplane[2] *= dinvlength;
     // get distance to origin from plane 
-    triplane[3] = dVector3Dot(triplane, A);
+    triplane[3] = dCalcVectorDot3(triplane, A);
 
     dGeomPlaneSetNoNormalize (sliding_plane, triplane);
     // find collision and compute contact points
@@ -1377,28 +1377,26 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
             HeightFieldTriangle * const itTriangle = &tempTriangleBuffer[k];
 
             // define 2 edges and a point that will define collision plane
-            dVector3Subtract(itTriangle->vertices[2]->vertex, itTriangle->vertices[0]->vertex, Edge1);
-            dVector3Subtract(itTriangle->vertices[1]->vertex, itTriangle->vertices[0]->vertex, Edge2);
+            dSubtractVectors3(Edge1, itTriangle->vertices[2]->vertex, itTriangle->vertices[0]->vertex);
+            dSubtractVectors3(Edge2, itTriangle->vertices[1]->vertex, itTriangle->vertices[0]->vertex);
 
             // find a perpendicular vector to the triangle
             if  (itTriangle->isUp)
-                dVector3Cross(Edge1, Edge2, triplane);
+                dCalcVectorCross3(triplane, Edge1, Edge2);
             else
-                dVector3Cross(Edge2, Edge1, triplane);
+                dCalcVectorCross3(triplane, Edge2, Edge1);
 
             // Define Plane
             // Normalize plane normal
-            const dReal dinvlength = REAL(1.0) / dVector3Length(triplane);
+            const dReal dinvlength = REAL(1.0) / dCalcVectorLength3(triplane);
             triplane[0] *= dinvlength;
             triplane[1] *= dinvlength;
             triplane[2] *= dinvlength;
             // get distance to origin from plane 
-            triplane[3] = dVector3Dot(triplane, itTriangle->vertices[0]->vertex);
+            triplane[3] = dCalcVectorDot3(triplane, itTriangle->vertices[0]->vertex);
 
             // saves normal for collision check (planes, triangles, vertices and edges.)
-            dVector3Copy(triplane, itTriangle->planeDef);
-            // saves distance for collision check (planes, triangles, vertices and edges.)
-            itTriangle->planeDef[3] = triplane[3];
+            dCopyVector4(itTriangle->planeDef, triplane);
         }
 
         // group by Triangles by Planes sharing shame plane definition
@@ -1420,7 +1418,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
             currPlane->resetTriangleListSize(numTri - k);
             currPlane->addTriangle(tri_base);
             // saves normal for collision check (planes, triangles, vertices and edges.)
-            dVector3Copy(tri_base->planeDef, currPlane->planeDef);
+            dCopyVector4(currPlane->planeDef, tri_base->planeDef);
             // saves distance for collision check (planes, triangles, vertices and edges.)
             currPlane->planeDef[3]= tri_base->planeDef[3];
 
@@ -1502,7 +1500,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                         itPlane->trianglelist[b]->isUp))
                     {
                         pContact = CONTACT(contact, numTerrainContacts*skip);
-                        dVector3Copy(pCPos, pContact->pos);
+                        dCopyVector3(pContact->pos, pCPos);
                         dOPESIGN(pContact->normal, =, -, itPlane->planeDef);
                         pContact->depth = planeCurrContact->depth;
                         pContact->side1 = planeCurrContact->side1;
@@ -1603,7 +1601,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
                     //create contact using vertices
-                    dVector3Copy (triVertex, pContact->pos);
+                    dCopyVector3(pContact->pos, triVertex);
                     //create contact using Plane Normal
                     dOPESIGN(pContact->normal, =, -, itTriangle->planeDef);
 
@@ -1650,8 +1648,8 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                 if (vertex0->state == true && vertex1->state == true)
                     continue;// plane did already collide.
 
-                dVector3Subtract(vertex1->vertex, vertex0->vertex, Edge);
-                edgeRay.length = dVector3Length (Edge);
+                dSubtractVectors3(Edge, vertex1->vertex, vertex0->vertex);
+                edgeRay.length = dCalcVectorLength3 (Edge);
                 dGeomRaySetNoNormalize(edgeRay, vertex1->vertex, Edge);
                 int prevTerrainContacts = numTerrainContacts;
                 pContact = CONTACT(contact, prevTerrainContacts*skip);
@@ -1732,8 +1730,8 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
     if (reComputeAABB)
     {
         // Backup original o2 position, rotation and AABB.
-        dVector3Copy( o2->final_posr->pos, posbak );
-        dMatrix3Copy( o2->final_posr->R, Rbak );
+        dCopyVector3(posbak, o2->final_posr->pos);
+        dCopyMatrix4x3(Rbak, o2->final_posr->R);
         memcpy( aabbbak, o2->aabb, sizeof( dReal ) * 6 );
         gflagsbak = o2->gflags;
     }
@@ -1746,8 +1744,8 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
         dMultiply1_333( R1, terrain->final_posr->R, o2->final_posr->R );
 
         // Update o2 with transformed position and rotation.
-        dVector3Copy( pos1, o2->final_posr->pos );
-        dMatrix3Copy( R1, o2->final_posr->R );
+        dCopyVector3(o2->final_posr->pos, pos1);
+        dCopyMatrix4x3(o2->final_posr->R, R1);
     }
 
 #ifndef DHEIGHTFIELD_CORNER_ORIGIN
@@ -1822,8 +1820,8 @@ dCollideHeightfieldExit:
     if (reComputeAABB)
     {
         // Restore o2 position, rotation and AABB
-        dVector3Copy( posbak, o2->final_posr->pos );
-        dMatrix3Copy( Rbak, o2->final_posr->R );
+        dCopyVector3(o2->final_posr->pos, posbak);
+        dCopyMatrix4x3(o2->final_posr->R, Rbak);
         memcpy( o2->aabb, aabbbak, sizeof(dReal)*6 );
         o2->gflags = gflagsbak;
 

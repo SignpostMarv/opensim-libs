@@ -28,10 +28,9 @@
  *                                                                       *
  *************************************************************************/
 
-
+#include "config.h"
 #include <ode/collision.h>
 #include <ode/rotation.h>
-#include "config.h"
 #include "matrix.h"
 #include "odemath.h"
 #include "collision_util.h"
@@ -50,48 +49,6 @@ GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
 #else
 #define MAXVALUE DBL_MAX
 #endif
-
-
-// dVector3
-// r=a-b
-#define SUBTRACT(a,b,r) dSubtractVectors3(r, a, b)
-
-
-// dVector3
-// a=b
-#define SET(a,b) dCopyVector3(a, b)
-
-
-// dMatrix3
-// a=b
-#define SETM(a,b) dCopyMatrix4x3(a, b)
-
-
-// dVector3
-// r=a+b
-#define ADD(a,b,r) dAddVectors3(r, a, b)
-
-
-// dMatrix3, int, dVector3
-// v=column a from m
-#define GETCOL(m,a,v) dGetMatrixColumn3(v, m, a)
-
-
-// dVector4, dVector3
-// distance between plane p and point v
-#define POINTDISTANCE(p,v) dPointPlaneDistance(v, p)
-
-
-// dVector4, dVector3, dReal
-// construct plane from normal and d
-#define CONSTRUCTPLANE(plane,normal,d) dConstructPlane(normal, d, plane)
-
-
-// dVector3
-// length of vector a
-#define LENGTHOF(a) dCalcVectorLength3(a)
-#define LENGTHSQUAREOF(a) dCalcVectorLengthSquare3(a)
-
 
 struct sTrimeshBoxColliderData
 {
@@ -139,22 +96,22 @@ struct sTrimeshBoxColliderData
 bool sTrimeshBoxColliderData::_cldTestNormal(dReal fp0, dReal fR, dVector3 vNormal, int iAxis)
 {
     // calculate overlapping interval of box and triangle
-    dReal fDepth = fR+fp0;
+    dReal fDepth = fR + fp0;
 
     // if we do not overlap
-    if ( fDepth<0 ) {
+    if ( fDepth < 0 ) {
         // do nothing
         return false;
     }
 
     // calculate normal's length
-    dReal fLength = LENGTHSQUAREOF(vNormal);
+    dReal fLength = dCalcVectorLengthSquare3(vNormal);
     // if long enough
     if ( fLength > 0.0f ) {
 
         dReal fOneOverLength = 1.0f/dSqrt(fLength);
         // normalize depth
-        fDepth = fDepth*fOneOverLength;
+        fDepth = fDepth * fOneOverLength;
 
         // get minimum depth
         if (fDepth < m_fBestDepth) {
@@ -168,9 +125,6 @@ bool sTrimeshBoxColliderData::_cldTestNormal(dReal fp0, dReal fR, dVector3 vNorm
     return true;
 }
 
-
-
-
 // Test box axis as separating axis
 bool sTrimeshBoxColliderData::_cldTestFace(dReal fp0, dReal fp1, dReal fp2, dReal fR, dReal fD,
                                            dVector3 vNormal, int iAxis)
@@ -178,34 +132,10 @@ bool sTrimeshBoxColliderData::_cldTestFace(dReal fp0, dReal fp1, dReal fp2, dRea
     dReal fMin, fMax;
 
     // find min of triangle interval
-    if ( fp0 < fp1 ) {
-        if ( fp0 < fp2 ) {
-            fMin = fp0;
-        } else {
-            fMin = fp2;
-        }
-    } else {
-        if( fp1 < fp2 ) {
-            fMin = fp1;
-        } else {
-            fMin = fp2;
-        }
-    }
+    fMin = fp0 < fp1 ? (fp0 < fp2 ? fp0 : fp2) : (fp1 < fp2 ? fp1 : fp2);
 
     // find max of triangle interval
-    if ( fp0 > fp1 ) {
-        if ( fp0 > fp2 ) {
-            fMax = fp0;
-        } else {
-            fMax = fp2;
-        }
-    } else {
-        if( fp1 > fp2 ) {
-            fMax = fp1;
-        } else {
-            fMax = fp2;
-        }
-    }
+    fMax = fp0 > fp1 ? ( fp0 > fp2 ? fp0 : fp2 ) : (fp1 > fp2 ? fp1 : fp2);
 
     // calculate minimum and maximum depth
     dReal fDepthMin = fR - fMin;
@@ -220,29 +150,29 @@ bool sTrimeshBoxColliderData::_cldTestFace(dReal fp0, dReal fp1, dReal fp2, dRea
     dReal fDepth = 0;
 
     // if greater depth is on negative side
-    if ( fDepthMin > fDepthMax ) {
+    if ( fDepthMin > fDepthMax )
+    {
         // use smaller depth (one from positive side)
         fDepth = fDepthMax;
         // flip normal direction
-        vNormal[0] = -vNormal[0];
-        vNormal[1] = -vNormal[1];
-        vNormal[2] = -vNormal[2];
+        dNegateVector3(vNormal);
         fD = -fD;
         // if greater depth is on positive side
-    } else {
+    }
+    else
+    {
         // use smaller depth (one from negative side)
         fDepth = fDepthMin;
     }
 
     // if lower depth than best found so far
-    if (fDepth < m_fBestDepth) {
+    if (fDepth < m_fBestDepth)
+    {
         // remember current axis as best axis
-        m_vBestNormal[0]  = vNormal[0];
-        m_vBestNormal[1]  = vNormal[1];
-        m_vBestNormal[2]  = vNormal[2];
-        m_iBestAxis    = iAxis;
+        dCopyVector3(m_vBestNormal, vNormal);
+        m_iBestAxis = iAxis;
         //dAASSERT(fDepth>=0);
-        m_fBestDepth   = fDepth;
+        m_fBestDepth = fDepth;
     }
 
     return true;
@@ -254,26 +184,18 @@ bool sTrimeshBoxColliderData::_cldTestEdge(dReal fp0, dReal fp1, dReal fR, dReal
 {
     dReal fMin, fMax;
 
-    // ===== Begin Patch by Francisco Leon, 2006/10/28 =====
-
-    // Fixed Null Normal. This prevents boxes passing
-    // through trimeshes at certain contact angles
-
-    fMin = vNormal[0] * vNormal[0] +
-        vNormal[1] * vNormal[1] +
-        vNormal[2] * vNormal[2];
-
-    if ( fMin <= dEpsilon ) /// THIS NORMAL WOULD BE DANGEROUS
+    dReal fLength = dCalcVectorLengthSquare3(vNormal);
+    if (fLength <= dEpsilon ) /// THIS NORMAL WOULD BE DANGEROUS
         return true;
 
-    // ===== Ending Patch by Francisco Leon =====
-
-
     // calculate min and max interval values
-    if ( fp0 < fp1 ) {
+    if ( fp0 < fp1 )
+    {
         fMin = fp0;
         fMax = fp1;
-    } else {
+    }
+    else
+    {
         fMin = fp1;
         fMax = fp0;
     }
@@ -295,39 +217,32 @@ bool sTrimeshBoxColliderData::_cldTestEdge(dReal fp0, dReal fp1, dReal fR, dReal
         // use smaller depth (one from positive side)
         fDepth = fDepthMax;
         // flip normal direction
-        vNormal[0] = -vNormal[0];
-        vNormal[1] = -vNormal[1];
-        vNormal[2] = -vNormal[2];
+        dNegateVector3(vNormal);
         fD = -fD;
         // if greater depth is on positive side
-    } else {
+    }
+    else
+    {
         // use smaller depth (one from negative side)
         fDepth = fDepthMin;
     }
 
     // calculate normal's length
-    dReal fLength = LENGTHSQUAREOF(vNormal);
 
-    // if long enough
-    if ( fLength > 0.0f ) {
+    // normalize depth
+    dReal fOneOverLength = 1.0f/dSqrt(fLength);
+    fDepth = fDepth*fOneOverLength;
+    fD *= fOneOverLength;
 
-        // normalize depth
-        dReal fOneOverLength = 1.0f/dSqrt(fLength);
-        fDepth = fDepth*fOneOverLength;
-        fD*=fOneOverLength;
-
-        // if lower depth than best found so far (favor face over edges)
-        if (fDepth*1.5f < m_fBestDepth) {
-            // remember current axis as best axis
-            m_vBestNormal[0]  = vNormal[0]*fOneOverLength;
-            m_vBestNormal[1]  = vNormal[1]*fOneOverLength;
-            m_vBestNormal[2]  = vNormal[2]*fOneOverLength;
-            m_iBestAxis    = iAxis;
+    // if lower depth than best found so far (favor face over edges)
+    if (fDepth * 1.5f < m_fBestDepth)
+    {
+        // remember current axis as best axis
+        dCopyScaledVector3(m_vBestNormal, vNormal, fOneOverLength);
+        m_iBestAxis = iAxis;
             //dAASSERT(fDepth>=0);
-            m_fBestDepth   = fDepth;
-        }
+        m_fBestDepth = fDepth;
     }
-
     return true;
 }
 
@@ -340,23 +255,20 @@ static void _cldClipPolyToPlane( dVector3 avArrayIn[], int ctIn,
     // start with no output points
     ctOut = 0;
 
-    int i0 = ctIn-1;
+    int i0 = ctIn - 1;
 
     // for each edge in input polygon
-    for (int i1=0; i1<ctIn; i0=i1, i1++) {
-
-
+    for (int i1 = 0; i1 < ctIn; i0 = i1, i1++)
+    {
         // calculate distance of edge points to plane
-        dReal fDistance0 = POINTDISTANCE( plPlane ,avArrayIn[i0] );
-        dReal fDistance1 = POINTDISTANCE( plPlane ,avArrayIn[i1] );
-
+        dReal fDistance0 = dCalcPointPlaneDistance(avArrayIn[i0], plPlane);
+        dReal fDistance1 = dCalcPointPlaneDistance(avArrayIn[i1], plPlane);
 
         // if first point is in front of plane
-        if( fDistance0 >= 0 ) {
+        if( fDistance0 >= 0 )
+        {
             // emit point
-            avArrayOut[ctOut][0] = avArrayIn[i0][0];
-            avArrayOut[ctOut][1] = avArrayIn[i0][1];
-            avArrayOut[ctOut][2] = avArrayIn[i0][2];
+            dCopyVector3(avArrayOut[ctOut], avArrayIn[i0]);
             ctOut++;
         }
 
@@ -364,23 +276,12 @@ static void _cldClipPolyToPlane( dVector3 avArrayIn[], int ctIn,
         if( (fDistance0 > 0 && fDistance1 < 0) || ( fDistance0 < 0 && fDistance1 > 0) ) {
 
             // find intersection point of edge and plane
-            dVector3 vIntersectionPoint;
-            vIntersectionPoint[0]= avArrayIn[i0][0] - (avArrayIn[i0][0]-avArrayIn[i1][0])*fDistance0/(fDistance0-fDistance1);
-            vIntersectionPoint[1]= avArrayIn[i0][1] - (avArrayIn[i0][1]-avArrayIn[i1][1])*fDistance0/(fDistance0-fDistance1);
-            vIntersectionPoint[2]= avArrayIn[i0][2] - (avArrayIn[i0][2]-avArrayIn[i1][2])*fDistance0/(fDistance0-fDistance1);
-
-            // emit intersection point
-            avArrayOut[ctOut][0] = vIntersectionPoint[0];
-            avArrayOut[ctOut][1] = vIntersectionPoint[1];
-            avArrayOut[ctOut][2] = vIntersectionPoint[2];
+            dReal fd = fDistance0 / (fDistance0 - fDistance1);
+            dCalcLerpVectors3(avArrayOut[ctOut], avArrayIn[i0], avArrayIn[i1], fd);
             ctOut++;
         }
     }
-
 }
-
-
-
 
 bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const dVector3 &v1, const dVector3 &v2) {
     // reset best axis
@@ -389,15 +290,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
     m_fBestDepth = MAXVALUE;
 
     // calculate edges
-    SUBTRACT(v1,v0,m_vE0);
-    SUBTRACT(v2,v0,m_vE1);
-    SUBTRACT(m_vE1,m_vE0,m_vE2);
+    dSubtractVectors3(m_vE0, v1, v0);
+    dSubtractVectors3(m_vE1, v2, v0);
+    dSubtractVectors3(m_vE2, m_vE1, m_vE0);
 
     // calculate poly normal
-    dCalcVectorCross3(m_vN,m_vE0,m_vE1);
+    dCalcVectorCross3(m_vN, m_vE0 ,m_vE1);
 
     // calculate length of face normal
-    dReal fNLen = LENGTHOF(m_vN);
+    dReal fNLen = dCalcVectorLength3(m_vN);
 
     // Even though all triangles might be initially valid, 
     // a triangle may degenerate into a segment after applying 
@@ -408,9 +309,9 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // extract box axes as vectors
     dVector3 vA0,vA1,vA2;
-    GETCOL(m_mHullBoxRot,0,vA0);
-    GETCOL(m_mHullBoxRot,1,vA1);
-    GETCOL(m_mHullBoxRot,2,vA2);
+    dGetMatrixColumn3(vA0, m_mHullBoxRot, 0);
+    dGetMatrixColumn3(vA1, m_mHullBoxRot, 1);
+    dGetMatrixColumn3(vA2, m_mHullBoxRot, 2);
 
     // box halfsizes
     dReal fa0 = m_vBoxHalfSize[0];
@@ -419,7 +320,7 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // calculate relative position between box and triangle
     dVector3 vD;
-    SUBTRACT(v0,m_vHullBoxPos,vD);
+    dSubtractVectors3(vD, v0, m_vHullBoxPos);
 
     dVector3 vL;
     dReal fp0, fp1, fp2, fR, fD;
@@ -427,30 +328,33 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
     // Test separating axes for intersection
     // ************************************************
     // Axis 1 - Triangle Normal
-    SET(vL,m_vN);
-    fp0  = dCalcVectorDot3(vL,vD);
+    dCopyVector3(vL, m_vN);
+    fp0  = dCalcVectorDot3(vL, vD);
     fp1  = fp0;
     fp2  = fp0;
-    fR=fa0*dFabs( dCalcVectorDot3(m_vN,vA0) ) + fa1 * dFabs( dCalcVectorDot3(m_vN,vA1) ) + fa2 * dFabs( dCalcVectorDot3(m_vN,vA2) );
+    fR = fa0 * dFabs( dCalcVectorDot3(m_vN, vA0) ) + fa1 * dFabs( dCalcVectorDot3(m_vN, vA1) ) + fa2 * dFabs( dCalcVectorDot3(m_vN, vA2) );
 
-    if (!_cldTestNormal(fp0, fR, vL, 1)) {
-        m_iExitAxis=1;
+    if (!_cldTestNormal(fp0, fR, vL, 1))
+    {
+        m_iExitAxis = 1;
         return false;
     }
 
+    dReal invfNLen = REAL(1.0) / fNLen;
     // ************************************************
 
     // Test Faces
     // ************************************************
     // Axis 2 - Box X-Axis
-    SET(vL,vA0);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 + dCalcVectorDot3(vA0,m_vE0);
-    fp2 = fp0 + dCalcVectorDot3(vA0,m_vE1);
+    dCopyVector3(vL, vA0);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 + dCalcVectorDot3(vA0, m_vE0);
+    fp2 = fp0 + dCalcVectorDot3(vA0, m_vE1);
     fR  = fa0;
 
-    if (!_cldTestFace(fp0, fp1, fp2, fR, fD, vL, 2)) {
+    if (!_cldTestFace(fp0, fp1, fp2, fR, fD, vL, 2))
+    {
         m_iExitAxis=2;
         return false;
     }
@@ -458,14 +362,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 3 - Box Y-Axis
-    SET(vL,vA1);
-    fD = dCalcVectorDot3(vL,m_vN)/fNLen;
+    dCopyVector3(vL, vA1);
+    fD = dCalcVectorDot3(vL, m_vN) * invfNLen;
     fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 + dCalcVectorDot3(vA1,m_vE0);
-    fp2 = fp0 + dCalcVectorDot3(vA1,m_vE1);
+    fp1 = fp0 + dCalcVectorDot3(vA1, m_vE0);
+    fp2 = fp0 + dCalcVectorDot3(vA1, m_vE1);
     fR  = fa1;
 
-    if (!_cldTestFace(fp0, fp1, fp2, fR, fD, vL, 3)) {
+    if (!_cldTestFace(fp0, fp1, fp2, fR, fD, vL, 3))
+    {
         m_iExitAxis=3;
         return false;
     }
@@ -474,14 +379,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 4 - Box Z-Axis
-    SET(vL,vA2);
-    fD = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 + dCalcVectorDot3(vA2,m_vE0);
-    fp2 = fp0 + dCalcVectorDot3(vA2,m_vE1);
+    dCopyVector3(vL, vA2);
+    fD = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 + dCalcVectorDot3(vA2, m_vE0);
+    fp2 = fp0 + dCalcVectorDot3(vA2, m_vE1);
     fR  = fa2;
 
-    if (!_cldTestFace(fp0, fp1, fp2, fR, fD, vL, 4)) {
+    if (!_cldTestFace(fp0, fp1, fp2, fR, fD, vL, 4))
+    {
         m_iExitAxis=4;
         return false;
     }
@@ -491,14 +397,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
     // Test Edges
     // ************************************************
     // Axis 5 - Box X-Axis cross Edge0
-    dCalcVectorCross3(vL,vA0,m_vE0);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
+    dCalcVectorCross3(vL, vA0, m_vE0);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
     fp1 = fp0;
-    fp2 = fp0 + dCalcVectorDot3(vA0,m_vN);
-    fR  = fa1 * dFabs(dCalcVectorDot3(vA2,m_vE0)) + fa2 * dFabs(dCalcVectorDot3(vA1,m_vE0));
+    fp2 = fp0 + dCalcVectorDot3(vA0, m_vN);
+    fR  = fa1 * dFabs(dCalcVectorDot3(vA2, m_vE0)) + fa2 * dFabs(dCalcVectorDot3(vA1, m_vE0));
 
-    if (!_cldTestEdge(fp1, fp2, fR, fD, vL, 5)) {
+    if (!_cldTestEdge(fp1, fp2, fR, fD, vL, 5))
+    {
         m_iExitAxis=5;
         return false;
     }
@@ -506,14 +413,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 6 - Box X-Axis cross Edge1
-    dCalcVectorCross3(vL,vA0,m_vE1);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 - dCalcVectorDot3(vA0,m_vN);
+    dCalcVectorCross3(vL, vA0, m_vE1);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 - dCalcVectorDot3(vA0, m_vN);
     fp2 = fp0;
-    fR  = fa1 * dFabs(dCalcVectorDot3(vA2,m_vE1)) + fa2 * dFabs(dCalcVectorDot3(vA1,m_vE1));
+    fR  = fa1 * dFabs(dCalcVectorDot3(vA2, m_vE1)) + fa2 * dFabs(dCalcVectorDot3(vA1, m_vE1));
 
-    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 6)) {
+    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 6))
+    {
         m_iExitAxis=6;
         return false;
     }
@@ -521,14 +429,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 7 - Box X-Axis cross Edge2
-    dCalcVectorCross3(vL,vA0,m_vE2);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 - dCalcVectorDot3(vA0,m_vN);
-    fp2 = fp0 - dCalcVectorDot3(vA0,m_vN);
-    fR  = fa1 * dFabs(dCalcVectorDot3(vA2,m_vE2)) + fa2 * dFabs(dCalcVectorDot3(vA1,m_vE2));
+    dCalcVectorCross3(vL,vA0, m_vE2);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 - dCalcVectorDot3(vA0, m_vN);
+    fp2 = fp0 - dCalcVectorDot3(vA0, m_vN);
+    fR  = fa1 * dFabs(dCalcVectorDot3(vA2, m_vE2)) + fa2 * dFabs(dCalcVectorDot3(vA1, m_vE2));
 
-    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 7)) {
+    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 7))
+    {
         m_iExitAxis=7;
         return false;
     }
@@ -537,14 +446,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 8 - Box Y-Axis cross Edge0
-    dCalcVectorCross3(vL,vA1,m_vE0);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
+    dCalcVectorCross3(vL, vA1, m_vE0);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
     fp1 = fp0;
-    fp2 = fp0 + dCalcVectorDot3(vA1,m_vN);
-    fR  = fa0 * dFabs(dCalcVectorDot3(vA2,m_vE0)) + fa2 * dFabs(dCalcVectorDot3(vA0,m_vE0));
+    fp2 = fp0 + dCalcVectorDot3(vA1, m_vN);
+    fR  = fa0 * dFabs(dCalcVectorDot3(vA2, m_vE0)) + fa2 * dFabs(dCalcVectorDot3(vA0, m_vE0));
 
-    if (!_cldTestEdge(fp0, fp2, fR, fD, vL, 8)) {
+    if (!_cldTestEdge(fp0, fp2, fR, fD, vL, 8))
+    {
         m_iExitAxis=8;
         return false;
     }
@@ -553,14 +463,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 9 - Box Y-Axis cross Edge1
-    dCalcVectorCross3(vL,vA1,m_vE1);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 - dCalcVectorDot3(vA1,m_vN);
+    dCalcVectorCross3(vL,vA1, m_vE1);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 - dCalcVectorDot3(vA1, m_vN);
     fp2 = fp0;
-    fR  = fa0 * dFabs(dCalcVectorDot3(vA2,m_vE1)) + fa2 * dFabs(dCalcVectorDot3(vA0,m_vE1));
+    fR  = fa0 * dFabs(dCalcVectorDot3(vA2, m_vE1)) + fa2 * dFabs(dCalcVectorDot3(vA0, m_vE1));
 
-    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 9)) {
+    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 9))
+    {
         m_iExitAxis=9;
         return false;
     }
@@ -569,14 +480,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 10 - Box Y-Axis cross Edge2
-    dCalcVectorCross3(vL,vA1,m_vE2);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 - dCalcVectorDot3(vA1,m_vN);
-    fp2 = fp0 - dCalcVectorDot3(vA1,m_vN);
-    fR  = fa0 * dFabs(dCalcVectorDot3(vA2,m_vE2)) + fa2 * dFabs(dCalcVectorDot3(vA0,m_vE2));
+    dCalcVectorCross3(vL,vA1, m_vE2);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 - dCalcVectorDot3(vA1, m_vN);
+    fp2 = fp0 - dCalcVectorDot3(vA1, m_vN);
+    fR  = fa0 * dFabs(dCalcVectorDot3(vA2, m_vE2)) + fa2 * dFabs(dCalcVectorDot3(vA0, m_vE2));
 
-    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 10)) {
+    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 10))
+    {
         m_iExitAxis=10;
         return false;
     }
@@ -585,14 +497,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 11 - Box Z-Axis cross Edge0
-    dCalcVectorCross3(vL,vA2,m_vE0);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
+    dCalcVectorCross3(vL, vA2, m_vE0);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
     fp1 = fp0;
-    fp2 = fp0 + dCalcVectorDot3(vA2,m_vN);
-    fR  = fa0 * dFabs(dCalcVectorDot3(vA1,m_vE0)) + fa1 * dFabs(dCalcVectorDot3(vA0,m_vE0));
+    fp2 = fp0 + dCalcVectorDot3(vA2, m_vN);
+    fR  = fa0 * dFabs(dCalcVectorDot3(vA1, m_vE0)) + fa1 * dFabs(dCalcVectorDot3(vA0, m_vE0));
 
-    if (!_cldTestEdge(fp0, fp2, fR, fD, vL, 11)) {
+    if (!_cldTestEdge(fp0, fp2, fR, fD, vL, 11))
+    {
         m_iExitAxis=11;
         return false;
     }
@@ -600,14 +513,15 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 12 - Box Z-Axis cross Edge1
-    dCalcVectorCross3(vL,vA2,m_vE1);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 - dCalcVectorDot3(vA2,m_vN);
+    dCalcVectorCross3(vL, vA2, m_vE1);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 - dCalcVectorDot3(vA2, m_vN);
     fp2 = fp0;
-    fR  = fa0 * dFabs(dCalcVectorDot3(vA1,m_vE1)) + fa1 * dFabs(dCalcVectorDot3(vA0,m_vE1));
+    fR  = fa0 * dFabs(dCalcVectorDot3(vA1, m_vE1)) + fa1 * dFabs(dCalcVectorDot3(vA0, m_vE1));
 
-    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 12)) {
+    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 12))
+    {
         m_iExitAxis=12;
         return false;
     }
@@ -615,18 +529,18 @@ bool sTrimeshBoxColliderData::_cldTestSeparatingAxes(const dVector3 &v0, const d
 
     // ************************************************
     // Axis 13 - Box Z-Axis cross Edge2
-    dCalcVectorCross3(vL,vA2,m_vE2);
-    fD  = dCalcVectorDot3(vL,m_vN)/fNLen;
-    fp0 = dCalcVectorDot3(vL,vD);
-    fp1 = fp0 - dCalcVectorDot3(vA2,m_vN);
-    fp2 = fp0 - dCalcVectorDot3(vA2,m_vN);
-    fR  = fa0 * dFabs(dCalcVectorDot3(vA1,m_vE2)) + fa1 * dFabs(dCalcVectorDot3(vA0,m_vE2));
+    dCalcVectorCross3(vL,vA2, m_vE2);
+    fD  = dCalcVectorDot3(vL, m_vN) * invfNLen;
+    fp0 = dCalcVectorDot3(vL, vD);
+    fp1 = fp0 - dCalcVectorDot3(vA2, m_vN);
+    fp2 = fp0 - dCalcVectorDot3(vA2, m_vN);
+    fR  = fa0 * dFabs(dCalcVectorDot3(vA1, m_vE2)) + fa1 * dFabs(dCalcVectorDot3(vA0, m_vE2));
 
-    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 13)) {
+    if (!_cldTestEdge(fp0, fp1, fR, fD, vL, 13))
+    {
         m_iExitAxis=13;
         return false;
     }
-
     // ************************************************
     return true;
 }
@@ -638,18 +552,18 @@ static bool _cldClosestPointOnTwoLines(
 {
     // calculate denominator
     dVector3 vp;
-    SUBTRACT(vPoint2,vPoint1,vp);
-    dReal fuaub  = dCalcVectorDot3(vLenVec1,vLenVec2);
-    dReal fq1    = dCalcVectorDot3(vLenVec1,vp);
-    dReal fq2    = -dCalcVectorDot3(vLenVec2,vp);
+    dSubtractVectors3(vp, vPoint2, vPoint1);
+    dReal fuaub  = dCalcVectorDot3(vLenVec1, vLenVec2);
+    dReal fq1    = dCalcVectorDot3(vLenVec1, vp);
+    dReal fq2    = -dCalcVectorDot3(vLenVec2, vp);
     dReal fd     = 1.0f - fuaub * fuaub;
 
     // if denominator is positive
     if (fd > 0.0f) {
         // calculate points of closest approach
-        fd = 1.0f/fd;
-        fvalue1 = (fq1 + fuaub*fq2)*fd;
-        fvalue2 = (fuaub*fq1 + fq2)*fd;
+        fd = 1.0f / fd;
+        fvalue1 = (fq1 + fuaub * fq2) * fd;
+        fvalue2 = (fuaub * fq1 + fq2) * fd;
         return true;
         // otherwise
     } else {
@@ -665,34 +579,38 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
     dIASSERT( !(m_iFlags & CONTACTS_UNIMPORTANT) || m_ctContacts < (m_iFlags & NUMC_MASK) ); // Do not call the function if there is no room to store results
 
     // if we have edge/edge intersection
-    if (m_iBestAxis > 4 ) {
-        dVector3 vub,vPb,vPa;
+    if (m_iBestAxis > 4 )
+    {
+        dVector3 vub, vPb, vPa;
 
-        SET(vPa,m_vHullBoxPos);
+        dCopyVector3(vPa, m_vHullBoxPos);
 
         // calculate point on box edge
-        for( int i=0; i<3; i++) {
+        for( int i=0; i < 3; i++)
+        {
             dVector3 vRotCol;
-            GETCOL(m_mHullBoxRot,i,vRotCol);
-            dReal fSign = dCalcVectorDot3(m_vBestNormal,vRotCol) > 0 ? 1.0f : -1.0f;
-
-            vPa[0] += fSign * m_vBoxHalfSize[i] * vRotCol[0];
-            vPa[1] += fSign * m_vBoxHalfSize[i] * vRotCol[1];
-            vPa[2] += fSign * m_vBoxHalfSize[i] * vRotCol[2];
+            dGetMatrixColumn3(vRotCol, m_mHullBoxRot, i);
+            dReal fSign = dCalcVectorDot3(m_vBestNormal, vRotCol) > 0 ? 1.0f : -1.0f;
+            fSign *= m_vBoxHalfSize[i];
+            dAddScaledVector3(vPa, vRotCol, fSign);
         }
 
-        int iEdge = (m_iBestAxis-5)%3;
+        int iEdge = (m_iBestAxis - 5) % 3;
 
         // decide which edge is on triangle
-        if ( iEdge == 0 ) {
-            SET(vPb,v0);
-            SET(vub,m_vE0);
-        } else if ( iEdge == 1) {
-            SET(vPb,v2);
-            SET(vub,m_vE1);
-        } else {
-            SET(vPb,v1);
-            SET(vub,m_vE2);
+        if ( iEdge == 0 )
+        {
+            dCopyVector3(vPb, v0);
+            dCopyVector3(vub, m_vE0);
+        }
+        else if ( iEdge == 1)
+        {
+            dCopyVector3(vPb, v2);
+            dCopyVector3(vub, m_vE1);
+        } else
+        {
+            dCopyVector3(vPb, v1);
+            dCopyVector3(vub, m_vE2);
         }
 
         // setup direction parameter for face edge
@@ -702,8 +620,8 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
 
         // setup direction parameter for box edge
         dVector3 vua;
-        int col=(m_iBestAxis-5)/3;
-        GETCOL(m_mHullBoxRot,col,vua);
+        int col = (m_iBestAxis - 5) / 3;
+        dGetMatrixColumn3(vua, m_mHullBoxRot, col);
 
         // find two closest points on both edges
         _cldClosestPointOnTwoLines( vPa, vua, vPb, vub, fParam1, fParam2 );
@@ -712,7 +630,7 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
 
         // calculate collision point
         dVector3 vPntTmp;
-        ADD(vPa,vPb,vPntTmp);
+        dAddVectors3(vPntTmp, vPa, vPb);
 
         dScaleVector3(vPntTmp, 0.5f);
 
@@ -720,8 +638,8 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
 #if 0 //#ifdef ORIG -- if to use conditional define, GenerateContact must be moved into #else
         dContactGeom* Contact = SAFECONTACT(m_iFlags, m_ContactGeoms, m_ctContacts, m_iStride);
         Contact->depth = m_fBestDepth;
-        SET(Contact->normal,m_vBestNormal);
-        SET(Contact->pos,vPntTmp);
+        dCopyVector3(Contact->normal,m_vBestNormal);
+        SdCopyVector3ET(Contact->pos,vPntTmp);
         Contact->g1 = Geom1;
         Contact->g2 = Geom2;
         Contact->side1 = TriIndex;
@@ -731,29 +649,16 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
         GenerateContact(m_iFlags, m_ContactGeoms, m_iStride, m_Geom1, m_Geom2, TriIndex,
             vPntTmp, m_vBestNormal, m_fBestDepth, m_ctContacts);
 
-
         // if triangle is the referent face then clip box to triangle face
-    } else if (m_iBestAxis == 1) {
-
+    }
+    else if (m_iBestAxis == 1)
+    {
         dVector3 vNormal2;
-        vNormal2[0]=-m_vBestNormal[0];
-        vNormal2[1]=-m_vBestNormal[1];
-        vNormal2[2]=-m_vBestNormal[2];
-
+        dCopyNegatedVector3(vNormal2, m_vBestNormal);
 
         // vNr is normal in box frame, pointing from triangle to box
         dMatrix3 mTransposed;
-        mTransposed[0]=m_mHullBoxRot[0*4+0];
-        mTransposed[1]=m_mHullBoxRot[1*4+0];
-        mTransposed[2]=m_mHullBoxRot[2*4+0];
-
-        mTransposed[1*4+0]=m_mHullBoxRot[0*4+1];
-        mTransposed[1*4+1]=m_mHullBoxRot[1*4+1];
-        mTransposed[1*4+2]=m_mHullBoxRot[2*4+1];
-
-        mTransposed[2*4+0]=m_mHullBoxRot[0*4+2];
-        mTransposed[2*4+1]=m_mHullBoxRot[1*4+2];
-        mTransposed[2*4+2]=m_mHullBoxRot[2*4+2];
+        dTransposetMatrix34(mTransposed, m_mHullBoxRot);
 
         dVector3 vNr;
         vNr[0] = dCalcVectorDot3(mTransposed, vNormal2);
@@ -761,55 +666,74 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
         vNr[2] = dCalcVectorDot3(mTransposed + 8, vNormal2);
 
         dVector3 vAbsNormal;
-        vAbsNormal[0] = dFabs( vNr[0] );
-        vAbsNormal[1] = dFabs( vNr[1] );
-        vAbsNormal[2] = dFabs( vNr[2] );
+        dCopyFabsVector3(vAbsNormal, vNr);
 
         // get closest face from box
         int iB0, iB1, iB2;
-        if (vAbsNormal[1] > vAbsNormal[0]) {
-            if (vAbsNormal[1] > vAbsNormal[2]) {
-                iB1 = 0;  iB0 = 1;  iB2 = 2;
-            } else {
-                iB1 = 0;  iB2 = 1;  iB0 = 2;
+        if (vAbsNormal[1] > vAbsNormal[0])
+        {
+            if (vAbsNormal[1] > vAbsNormal[2])
+            {
+                iB1 = 0;
+                iB0 = 1;
+                iB2 = 2;
             }
-        } else {
-
-            if (vAbsNormal[0] > vAbsNormal[2]) {
-                iB0 = 0;  iB1 = 1;  iB2 = 2;
-            } else {
-                iB1 = 0;  iB2 = 1;  iB0 = 2;
+            else
+            {
+                iB1 = 0;
+                iB2 = 1;
+                iB0 = 2;
+            }
+        }
+        else
+        {
+            if (vAbsNormal[0] > vAbsNormal[2])
+            {
+                iB0 = 0;
+                iB1 = 1;
+                iB2 = 2;
+            }
+            else
+            {
+                iB1 = 0;
+                iB2 = 1;
+                iB0 = 2;
             }
         }
 
         // Here find center of box face we are going to project
         dVector3 vCenter;
         dVector3 vRotCol;
-        GETCOL(m_mHullBoxRot,iB0,vRotCol);
+        dGetMatrixColumn3(vRotCol, m_mHullBoxRot,iB0);
+       
+        dSubtractVectors3(vCenter, m_vHullBoxPos, v0);
 
-        if (vNr[iB0] > 0) {
-            vCenter[0] = m_vHullBoxPos[0] - v0[0] - m_vBoxHalfSize[iB0] * vRotCol[0];
-            vCenter[1] = m_vHullBoxPos[1] - v0[1] - m_vBoxHalfSize[iB0] * vRotCol[1];
-            vCenter[2] = m_vHullBoxPos[2] - v0[2] - m_vBoxHalfSize[iB0] * vRotCol[2];
-        } else {
-            vCenter[0] = m_vHullBoxPos[0] - v0[0] + m_vBoxHalfSize[iB0] * vRotCol[0];
-            vCenter[1] = m_vHullBoxPos[1] - v0[1] + m_vBoxHalfSize[iB0] * vRotCol[1];
-            vCenter[2] = m_vHullBoxPos[2] - v0[2] + m_vBoxHalfSize[iB0] * vRotCol[2];
-        }
+        if (vNr[iB0] > 0)
+            dAddScaledVector3(vCenter, vRotCol, -m_vBoxHalfSize[iB0]);
+        else
+            dAddScaledVector3(vCenter, vRotCol, m_vBoxHalfSize[iB0]);
 
         // Here find 4 corner points of box
         dVector3 avPoints[4];
 
         dVector3 vRotCol2;
-        GETCOL(m_mHullBoxRot,iB1,vRotCol);
-        GETCOL(m_mHullBoxRot,iB2,vRotCol2);
+        dGetMatrixColumn3(vRotCol, m_mHullBoxRot, iB1);
+        dGetMatrixColumn3(vRotCol2, m_mHullBoxRot, iB2);
 
-        for(int x=0;x<3;x++) {
-            avPoints[0][x] = vCenter[x] + (m_vBoxHalfSize[iB1] * vRotCol[x]) - (m_vBoxHalfSize[iB2] * vRotCol2[x]);
-            avPoints[1][x] = vCenter[x] - (m_vBoxHalfSize[iB1] * vRotCol[x]) - (m_vBoxHalfSize[iB2] * vRotCol2[x]);
-            avPoints[2][x] = vCenter[x] - (m_vBoxHalfSize[iB1] * vRotCol[x]) + (m_vBoxHalfSize[iB2] * vRotCol2[x]);
-            avPoints[3][x] = vCenter[x] + (m_vBoxHalfSize[iB1] * vRotCol[x]) + (m_vBoxHalfSize[iB2] * vRotCol2[x]);
-        }
+        dReal m_vBoxHalfSizeiB1 = m_vBoxHalfSize[iB1];
+        dReal m_vBoxHalfSizeiB2 = m_vBoxHalfSize[iB2];
+
+        dAddScaledVectors3(avPoints[0], vRotCol, vRotCol2, m_vBoxHalfSizeiB1, -m_vBoxHalfSizeiB2);
+        dAddVector3(avPoints[0], vCenter);
+
+        dAddScaledVectors3(avPoints[1], vRotCol, vRotCol2, -m_vBoxHalfSizeiB1, -m_vBoxHalfSizeiB2);
+        dAddVector3(avPoints[1], vCenter);
+
+        dAddScaledVectors3(avPoints[2], vRotCol, vRotCol2, -m_vBoxHalfSizeiB1, m_vBoxHalfSizeiB2);
+        dAddVector3(avPoints[2], vCenter);
+
+        dAddScaledVectors3(avPoints[3], vRotCol, vRotCol2, m_vBoxHalfSizeiB1, m_vBoxHalfSizeiB2);
+        dAddVector3(avPoints[3], vCenter);
 
         // clip Box face with 4 planes of triangle (1 face plane, 3 egde planes)
         dVector3 avTempArray1[9];
@@ -818,7 +742,7 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
 
         int iTempCnt1=0;
         int iTempCnt2=0;
-
+/*
         // zeroify vectors - necessary?
         for(int i=0; i<9; i++) {
             avTempArray1[i][0]=0;
@@ -829,66 +753,65 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
             avTempArray2[i][1]=0;
             avTempArray2[i][2]=0;
         }
-
+*/
 
         // Normal plane
         dVector3 vTemp;
-        vTemp[0]=-m_vN[0];
-        vTemp[1]=-m_vN[1];
-        vTemp[2]=-m_vN[2];
+        dCopyNegatedVector3(vTemp, m_vN);
         dNormalize3(vTemp);
-        CONSTRUCTPLANE(plPlane,vTemp,0);
+        dConstructPlane(plPlane, vTemp, 0);
 
-        _cldClipPolyToPlane( avPoints, 4, avTempArray1, iTempCnt1, plPlane  );
-
+        _cldClipPolyToPlane(avPoints, 4, avTempArray1, iTempCnt1, plPlane);
 
         // Plane p0
         dVector3 vTemp2;
-        SUBTRACT(v1,v0,vTemp2);
-        dCalcVectorCross3(vTemp,m_vN,vTemp2);
+        dSubtractVectors3(vTemp2, v1, v0);
+        dCalcVectorCross3(vTemp, m_vN, vTemp2);
         dNormalize3(vTemp);
-        CONSTRUCTPLANE(plPlane,vTemp,0);
+        dConstructPlane(plPlane, vTemp, 0);
 
-        _cldClipPolyToPlane( avTempArray1, iTempCnt1, avTempArray2, iTempCnt2, plPlane  );
+        _cldClipPolyToPlane(avTempArray1, iTempCnt1, avTempArray2, iTempCnt2, plPlane);
 
         // Plane p1
-        SUBTRACT(v2,v1,vTemp2);
-        dCalcVectorCross3(vTemp,m_vN,vTemp2);
+        dSubtractVectors3(vTemp2, v2, v1);
+        dCalcVectorCross3(vTemp, m_vN, vTemp2);
         dNormalize3(vTemp);
-        SUBTRACT(v0,v2,vTemp2);
-        CONSTRUCTPLANE(plPlane,vTemp,dCalcVectorDot3(vTemp2,vTemp));
+        dSubtractVectors3(vTemp2, v0, v2);
+        dConstructPlane(plPlane, vTemp, dCalcVectorDot3(vTemp2, vTemp));
 
-        _cldClipPolyToPlane( avTempArray2, iTempCnt2, avTempArray1, iTempCnt1, plPlane  );
+        _cldClipPolyToPlane(avTempArray2, iTempCnt2, avTempArray1, iTempCnt1, plPlane);
 
         // Plane p2
-        SUBTRACT(v0,v2,vTemp2);
-        dCalcVectorCross3(vTemp,m_vN,vTemp2);
+        dSubtractVectors3(vTemp2, v0, v2);
+        dCalcVectorCross3(vTemp, m_vN, vTemp2);
         dNormalize3(vTemp);
-        CONSTRUCTPLANE(plPlane,vTemp,0);
+        dConstructPlane(plPlane,vTemp,0);
 
-        _cldClipPolyToPlane( avTempArray1, iTempCnt1, avTempArray2, iTempCnt2, plPlane  );
+        _cldClipPolyToPlane(avTempArray1, iTempCnt1, avTempArray2, iTempCnt2, plPlane);
 
         // END of clipping polygons
 
         // for each generated contact point
-        for ( int i=0; i<iTempCnt2; i++ ) {
+        for ( int i = 0; i < iTempCnt2; i++ )
+        {
             // calculate depth
-            dReal fTempDepth = dCalcVectorDot3(vNormal2,avTempArray2[i]);
+            dReal fTempDepth = dCalcVectorDot3(vNormal2, avTempArray2[i]);
 
             // clamp depth to zero
-            if (fTempDepth > 0) {
+            if (fTempDepth > 0)
+            {
                 fTempDepth = 0;
             }
 
             dVector3 vPntTmp;
-            ADD(avTempArray2[i],v0,vPntTmp);
+            dAddVectors3(vPntTmp, avTempArray2[i], v0);
 
 #if 0 //#ifdef ORIG -- if to use conditional define, GenerateContact must be moved into #else
             dContactGeom* Contact = SAFECONTACT(m_iFlags, m_ContactGeoms, m_ctContacts, m_iStride);
 
             Contact->depth = -fTempDepth;
-            SET(Contact->normal,m_vBestNormal);
-            SET(Contact->pos,vPntTmp);
+            dCopyVector3(Contact->normal,m_vBestNormal);
+            dCopyVector3(Contact->pos,vPntTmp);
             Contact->g1 = Geom1;
             Contact->g2 = Geom2;
             Contact->side1 = TriIndex;
@@ -906,28 +829,38 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
         //dAASSERT(m_ctContacts>0);
 
         // if box face is the referent face, then clip triangle on box face
-    } else { // 2 <= if iBestAxis <= 4
+    }
+    else
+    { // 2 <= if iBestAxis <= 4
 
         // get normal of box face
         dVector3 vNormal2;
-        SET(vNormal2,m_vBestNormal);
+        dCopyVector3(vNormal2, m_vBestNormal);
 
         // get indices of box axes in correct order
-        int iA0,iA1,iA2;
-        iA0 = m_iBestAxis-2;
-        if ( iA0 == 0 ) {
-            iA1 = 1; iA2 = 2;
-        } else if ( iA0 == 1 ) {
-            iA1 = 0; iA2 = 2;
-        } else {
-            iA1 = 0; iA2 = 1;
+        int iA0, iA1, iA2;
+        iA0 = m_iBestAxis - 2;
+        if ( iA0 == 0 )
+        {
+            iA1 = 1;
+            iA2 = 2;
+        }
+        else if ( iA0 == 1 )
+        {
+            iA1 = 0;
+            iA2 = 2;
+        }
+        else
+        {
+            iA1 = 0;
+            iA2 = 1;
         }
 
         dVector3 avPoints[3];
         // calculate triangle vertices in box frame
-        SUBTRACT(v0,m_vHullBoxPos,avPoints[0]);
-        SUBTRACT(v1,m_vHullBoxPos,avPoints[1]);
-        SUBTRACT(v2,m_vHullBoxPos,avPoints[2]);
+        dSubtractVectors3(avPoints[0], v0, m_vHullBoxPos);
+        dSubtractVectors3(avPoints[1], v1, m_vHullBoxPos);
+        dSubtractVectors3(avPoints[2], v2, m_vHullBoxPos);
 
         // CLIP Polygons
         // define temp data for clipping
@@ -935,7 +868,7 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
         dVector3 avTempArray2[9];
 
         int iTempCnt1, iTempCnt2;
-
+/*
         // zeroify vectors - necessary?
         for(int i=0; i<9; i++) {
             avTempArray1[i][0]=0;
@@ -946,73 +879,67 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
             avTempArray2[i][1]=0;
             avTempArray2[i][2]=0;
         }
-
+*/
         // clip triangle with 5 box planes (1 face plane, 4 edge planes)
 
         dVector4 plPlane;
 
         // Normal plane
         dVector3 vTemp;
-        vTemp[0]=-vNormal2[0];
-        vTemp[1]=-vNormal2[1];
-        vTemp[2]=-vNormal2[2];
-        CONSTRUCTPLANE(plPlane,vTemp,m_vBoxHalfSize[iA0]);
+        dCopyNegatedVector3(vTemp, vNormal2);
+        dConstructPlane(plPlane,vTemp,m_vBoxHalfSize[iA0]);
 
         _cldClipPolyToPlane( avPoints, 3, avTempArray1, iTempCnt1, plPlane );
 
-
         // Plane p0
-        GETCOL(m_mHullBoxRot,iA1,vTemp);
-        CONSTRUCTPLANE(plPlane,vTemp,m_vBoxHalfSize[iA1]);
+        dGetMatrixColumn3(vTemp, m_mHullBoxRot, iA1);
+        dConstructPlane(plPlane,vTemp,m_vBoxHalfSize[iA1]);
 
         _cldClipPolyToPlane( avTempArray1, iTempCnt1, avTempArray2, iTempCnt2, plPlane );
 
-
         // Plane p1
-        GETCOL(m_mHullBoxRot,iA1,vTemp);
-        vTemp[0]=-vTemp[0];
-        vTemp[1]=-vTemp[1];
-        vTemp[2]=-vTemp[2];
-        CONSTRUCTPLANE(plPlane,vTemp,m_vBoxHalfSize[iA1]);
+        dGetMatrixColumn3(vTemp, m_mHullBoxRot, iA1);
+        dCopyNegatedVector3(vTemp, vTemp);
+        dConstructPlane(plPlane,vTemp,m_vBoxHalfSize[iA1]);
 
         _cldClipPolyToPlane( avTempArray2, iTempCnt2, avTempArray1, iTempCnt1, plPlane );
 
         // Plane p2
-        GETCOL(m_mHullBoxRot,iA2,vTemp);
-        CONSTRUCTPLANE(plPlane,vTemp,m_vBoxHalfSize[iA2]);
+        dGetMatrixColumn3(vTemp, m_mHullBoxRot, iA2);
+        dConstructPlane(plPlane,vTemp,m_vBoxHalfSize[iA2]);
 
         _cldClipPolyToPlane( avTempArray1, iTempCnt1, avTempArray2, iTempCnt2, plPlane );
 
         // Plane p3
-        GETCOL(m_mHullBoxRot,iA2,vTemp);
-        vTemp[0]=-vTemp[0];
-        vTemp[1]=-vTemp[1];
-        vTemp[2]=-vTemp[2];
-        CONSTRUCTPLANE(plPlane,vTemp,m_vBoxHalfSize[iA2]);
+        dGetMatrixColumn3(vTemp, m_mHullBoxRot, iA2);
+        dCopyNegatedVector3(vTemp, vTemp);
+        dConstructPlane(plPlane,vTemp,m_vBoxHalfSize[iA2]);
 
         _cldClipPolyToPlane( avTempArray2, iTempCnt2, avTempArray1, iTempCnt1, plPlane );
 
 
         // for each generated contact point
-        for ( int i=0; i<iTempCnt1; i++ ) {
+        for ( int i=0; i<iTempCnt1; i++ )
+        {
             // calculate depth
             dReal fTempDepth = dCalcVectorDot3(vNormal2,avTempArray1[i])-m_vBoxHalfSize[iA0];
 
             // clamp depth to zero
-            if (fTempDepth > 0) {
+            if (fTempDepth > 0)
+            {
                 fTempDepth = 0;
             }
 
             // generate contact data
             dVector3 vPntTmp;
-            ADD(avTempArray1[i],m_vHullBoxPos,vPntTmp);
+            dAddVectors3(vPntTmp, avTempArray1[i], m_vHullBoxPos);
 
 #if 0 //#ifdef ORIG -- if to use conditional define, GenerateContact must be moved into #else
             dContactGeom* Contact = SAFECONTACT(m_iFlags, m_ContactGeoms, m_ctContacts, m_iStride);
 
             Contact->depth = -fTempDepth;
-            SET(Contact->normal,m_vBestNormal);
-            SET(Contact->pos,vPntTmp);
+            dCopyVector3(Contact->normal,m_vBestNormal);
+            dCopyVector3(Contact->pos,vPntTmp);
             Contact->g1 = Geom1;
             Contact->g2 = Geom2;
             Contact->side1 = TriIndex;
@@ -1031,15 +958,12 @@ void sTrimeshBoxColliderData::_cldClipping(const dVector3 &v0, const dVector3 &v
     }
 }
 
-
-
-
-
 // test one mesh triangle on intersection with given box
 void sTrimeshBoxColliderData::_cldTestOneTriangle(const dVector3 &v0, const dVector3 &v1, const dVector3 &v2, int TriIndex)//, void *pvUser)
 {
     // do intersection test and find best separating axis
-    if(!_cldTestSeparatingAxes(v0, v1, v2)) {
+    if(!_cldTestSeparatingAxes(v0, v1, v2))
+    {
         // if not found do nothing
         return;
     }
@@ -1064,19 +988,17 @@ void sTrimeshBoxColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom *Bo
     const dVector3& vPosBox=*(const dVector3*)dGeomGetPosition(BoxGeom);
 
     // to global
-    SETM(m_mHullBoxRot,mRotBox);
-    SET(m_vHullBoxPos,vPosBox);
+    dCopyMatrix4x3(m_mHullBoxRot,mRotBox);
+    dCopyVector3(m_vHullBoxPos,vPosBox);
 
     dGeomBoxGetLengths(BoxGeom, m_vBoxHalfSize);
-    m_vBoxHalfSize[0] *= 0.5f;
-    m_vBoxHalfSize[1] *= 0.5f;
-    m_vBoxHalfSize[2] *= 0.5f;
+    dScaleVector3(m_vBoxHalfSize, 0.5f);
 
     // get destination hull position and orientation
     const dVector3& vPosMesh=*(const dVector3*)dGeomGetPosition(TriMesh);
 
     // to global
-    SET(m_vHullDstPos,vPosMesh);
+    dCopyVector3(m_vHullDstPos,vPosMesh);
 
     // global info for contact creation
     m_ctContacts = 0;
@@ -1097,7 +1019,7 @@ int sTrimeshBoxColliderData::TestCollisionForSingleTriangle(int ctContacts0, int
                                                             dVector3 dv[3], bool &bOutFinishSearching)
 {
     // test this triangle
-    _cldTestOneTriangle(dv[0],dv[1],dv[2],Triint);
+    _cldTestOneTriangle(dv[0], dv[1] ,dv[2], Triint);
 
     // fill-in tri index for generated contacts
     for (; ctContacts0 < m_ctContacts; ctContacts0++) {
@@ -1165,15 +1087,19 @@ static void dQueryBTLPotentialCollisionTriangles(OBBCollider &Collider,
     const dVector3& vPosMesh=*(const dVector3*)dGeomGetPosition(TriMesh);
 
     // TC results
-    if (TriMesh->doBoxTC) {
+    if (TriMesh->doBoxTC)
+    {
         dxTriMesh::BoxTC* BoxTC = 0;
-        for (int i = 0; i < TriMesh->BoxTCCache.size(); i++){
-            if (TriMesh->BoxTCCache[i].Geom == BoxGeom){
+        for (int i = 0; i < TriMesh->BoxTCCache.size(); i++)
+        {
+            if (TriMesh->BoxTCCache[i].Geom == BoxGeom)
+            {
                 BoxTC = &TriMesh->BoxTCCache[i];
                 break;
             }
         }
-        if (!BoxTC){
+        if (!BoxTC)
+        {
             TriMesh->BoxTCCache.push(dxTriMesh::BoxTC());
 
             BoxTC = &TriMesh->BoxTCCache[TriMesh->BoxTCCache.size() - 1];
@@ -1185,7 +1111,8 @@ static void dQueryBTLPotentialCollisionTriangles(OBBCollider &Collider,
         Collider.SetTemporalCoherence(true);
         Collider.Collide(*BoxTC, Box, TriMesh->Data->BVTree, null, &MakeMatrix(vPosMesh, mRotMesh, amatrix));
     }
-    else {
+    else
+    {
         Collider.SetTemporalCoherence(false);
         Collider.Collide(BoxCache, Box, TriMesh->Data->BVTree, null,
             &MakeMatrix(vPosMesh, mRotMesh, amatrix));
@@ -1220,8 +1147,10 @@ int dCollideBTL(dxGeom* g1, dxGeom* BoxGeom, int Flags, dContactGeom* Contacts, 
     int TriCount = Collider.GetNbTouchedPrimitives();
     const int* Triangles = (const int*)Collider.GetTouchedPrimitives();
 
-    if (TriCount != 0){
-        if (TriMesh->ArrayCallback != null){
+    if (TriCount != 0)
+    {
+        if (TriMesh->ArrayCallback != null)
+        {
             TriMesh->ArrayCallback(TriMesh, BoxGeom, Triangles, TriCount);
         }
 
@@ -1232,9 +1161,11 @@ int dCollideBTL(dxGeom* g1, dxGeom* BoxGeom, int Flags, dContactGeom* Contacts, 
         int ctContacts0 = 0;
 
         // loop through all intersecting triangles
-        for (int i = 0; i < TriCount; i++){
+        for (int i = 0; i < TriCount; i++)
+        {
             const int Triint = Triangles[i];
-            if (!Callback(TriMesh, BoxGeom, Triint)) continue;
+            if (!Callback(TriMesh, BoxGeom, Triint))
+                continue;
 
             dVector3 dv[3];
             FetchTriangle(TriMesh, Triint, vPosMesh, mRotMesh, dv);

@@ -98,8 +98,6 @@ static bool TriTriContacts(const dVector3 tr1[3],
 
 #define MULT(dest,v,factor) dCopyScaledVector3(dest, v, factor)
 
-#define SET(dest,src) dCopyVector3(dest, src)
-
 #define SMULT(p,q,s) dCopyScaledVector3(p, q, s)
 
 #define COMBO(combo,p,t,q) dAddScaledVectors3(combo, p, q, REAL(1.0), t)
@@ -123,13 +121,13 @@ SwapNormals(dVector3 *&pen_v, dVector3 *&col_v, dVector3* v1, dVector3* v2,
         pen_v = v2;
         pen_elt = elt_f2;
         col_v = v1;
-        SET(n, n1);
+        dCopyVector3(n, n1);
     }
     else {
         pen_v = v1;
         pen_elt = elt_f1;
         col_v = v2;
-        SET(n, n2);
+        dCopyVector3(n, n2);
     }
 }
 
@@ -390,7 +388,7 @@ dContactGeom *  PushNewContact( dxGeom* g1, dxGeom* g2, int TriIndex1, int TriIn
                                dContactGeom* Contacts, int Stride,
                                int &contactcount)
 {
-    dIASSERT(dFabs(dVector3Length((const dVector3 &)(*normal)) - REAL(1.0)) < REAL(1e-6)); // This assumption is used in the code
+    dIASSERT(dFabs(dCalcVectorLength3((const dVector3 &)(*normal)) - REAL(1.0)) < REAL(1e-6)); // This assumption is used in the code
 
     dContactGeom * pcontact;
 
@@ -735,7 +733,7 @@ void PlaneClipSegment( const dVector3  s1, const dVector3  s2,
     SUB(clipped,s2,s1);
     dis2 = DOT(clipped,N);
     MULT(clipped,clipped,-dis1/dis2);
-    ADD(clipped,clipped,s1);
+    dAddVectors3(clipped, clipped, s1);
     clipped[3] = 1.0f;
 }
 
@@ -966,7 +964,7 @@ dReal MostDeepPoints(
 
     for(i=0;i<deep_points.Count;i++)
     {
-        SET(deep_points.Points[i],points.Points[max_candidates[i]]);
+        dCopyVector3(deep_points.Points[i],points.Points[max_candidates[i]]);
     }
     return maxdeep;
 
@@ -1052,7 +1050,7 @@ dReal FindTriangleTriangleCollision(
             tri1plane,
             tri1plane[3],
             deep_points1);
-        SET(separating_normal,tri1plane);
+        dCopyVector3(separating_normal,tri1plane);
 
     }
     currdir++;
@@ -1088,7 +1086,7 @@ dReal FindTriangleTriangleCollision(
             maxdeep = dist;
             mostdir = currdir;
             //mostface = 1;
-            SET(separating_normal,tri2plane);
+            dCopyVector3(separating_normal,tri2plane);
         }
     }
     currdir++;
@@ -1126,7 +1124,7 @@ dReal FindTriangleTriangleCollision(
     {
     maxdeep = dist;
     mostdir = currdir;
-    SET(separating_normal,crossdir);
+    dCopyVector3(separating_normal,crossdir);
     }
     }
     currdir++;
@@ -1185,12 +1183,12 @@ dReal FindTriangleTriangleCollision(
     {
     MULT(separating_normal,separating_normal,-1.0f);
     deep_points.Count = 1;
-    SET(deep_points.Points[0],pt2);
+    dCopyVector3(deep_points.Points[0],pt2);
     }
     else
     {
     deep_points.Count = 1;
-    SET(deep_points.Points[0],pt2);
+    dCopyVector3(deep_points.Points[0],pt2);
     }
 
     }
@@ -1201,12 +1199,12 @@ dReal FindTriangleTriangleCollision(
     {
     MULT(separating_normal,separating_normal,-1.0f);
     deep_points.Count = 1;
-    SET(deep_points.Points[0],pt2);
+    dCopyVector3(deep_points.Points[0],pt2);
     }
     else
     {
     deep_points.Count = 1;
-    SET(deep_points.Points[0],pt2);
+    dCopyVector3(deep_points.Points[0],pt2);
     }
 
     }
@@ -1224,12 +1222,12 @@ dReal FindTriangleTriangleCollision(
     {
     MULT(separating_normal,separating_normal,-1.0f);
     deep_points.Count = 1;
-    SET(deep_points.Points[0],pt2);
+    dCopyVector3(deep_points.Points[0],pt2);
     }
     else
     {
     deep_points.Count = 1;
-    SET(deep_points.Points[0],pt2);
+    dCopyVector3(deep_points.Points[0],pt2);
     }
 
 

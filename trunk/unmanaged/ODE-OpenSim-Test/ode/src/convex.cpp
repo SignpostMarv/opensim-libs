@@ -167,7 +167,7 @@ dxConvex::BSPNode* dxConvex::CreateNode(std::vector<Arc> Arcs,std::vector<Polygo
 {
 #if 0
     dVector3 ea,eb,e;
-    dVector3Copy(points+((edges.begin()+Arcs[0].edge)first*3),ea);
+    dCopyVector3(ea, points+((edges.begin()+Arcs[0].edge)first*3));
     dMultiply0_331(e1b,cvx1.final_posr->R,cvx1.points+(i->second*3));
 
     dVector3Copy(points[edges[Arcs[0].edge]
@@ -347,8 +347,8 @@ inline float ClosestPointBetweenSegments(dVector3& p1,
     {
         // Both segments degenerate into points
         s = t = 0.0f;
-        dVector3Copy(p1,c1);
-        dVector3Copy(p2,c2);
+        dCopyVector3(c1, p1);
+        dCopyVector3(c2, p2);
         return (c1[0] - c2[0])*(c1[0] - c2[0])+
             (c1[1] - c2[1])*(c1[1] - c2[1])+
             (c1[2] - c2[2])*(c1[2] - c2[2]);
@@ -608,10 +608,10 @@ int dCollideConvexPlane (dxGeom *o1, dxGeom *o2, int flags,
     for(unsigned int i=0;i<Convex->pointcount;++i)
     {
         dMultiply0_331 (v2,Convex->final_posr->R,&Convex->points[(i*3)]);
-        dVector3Add(Convex->final_posr->pos, v2, v2);
+        dAddVectors3(v2, Convex->final_posr->pos, v2);
 
         unsigned int distance2sign = GTEQ_ZERO;
-        dReal distance2 = dVector3Dot(Plane->p, v2) - Plane->p[3]; // Ax + By + Cz - D
+        dReal distance2 = dCalcVectorDot3(Plane->p, v2) - Plane->p[3]; // Ax + By + Cz - D
         if((distance2 <= REAL(0.0)))
         {
             distance2sign = distance2 != REAL(0.0) ? LTEQ_ZERO : BOTH_SIGNS;
@@ -619,8 +619,8 @@ int dCollideConvexPlane (dxGeom *o1, dxGeom *o2, int flags,
             if (contacts != maxc)
             {
                 dContactGeom *target = SAFECONTACT(flags, contact, contacts, skip);
-                dVector3Copy(Plane->p, target->normal);
-                dVector3Copy(v2, target->pos);
+                dCopyVector3(target->normal, Plane->p);
+                dCopyVector3(target->pos, v2);
                 target->depth = -distance2;
                 target->g1 = Convex;
                 target->g2 = Plane;
@@ -677,7 +677,7 @@ int dCollideSphereConvex (dxGeom *o1, dxGeom *o2, int flags,
         dMultiply0_331(plane,Convex->final_posr->R,&Convex->planes[(i*4)]);
         plane[3]=(&Convex->planes[(i*4)])[3];
         // Get the distance from the sphere origin to the plane
-        dist = dVector3Dot(plane, offsetpos) - plane[3]; // Ax + By + Cz - D
+        dist = dCalcVectorDot3(plane, offsetpos) - plane[3]; // Ax + By + Cz - D
         if(dist>0)
         {
             // if we get here, we know the center of the sphere is
@@ -888,11 +888,11 @@ bool CheckEdgeIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,int& curc,
                             ((plane[0] * cvx2.final_posr->pos[0]) +
                             (plane[1] * cvx2.final_posr->pos[1]) +
                             (plane[2] * cvx2.final_posr->pos[2]));
-                        dReal depth = (dVector3Dot(depthplane, target->pos) - depthplane[3]); // Ax + By + Cz - D
+                        dReal depth = (dCalcVectorDot3(depthplane, target->pos) - depthplane[3]); // Ax + By + Cz - D
                         if((fabs(depth)<fabs(target->depth))&&((depth<-dEpsilon)||(depth>dEpsilon)))
                         {
                             target->depth=depth;
-                            dVector3Copy(depthplane,target->normal);
+                            dCopyVector3(target->normal, depthplane);
                         }
                     }
                     ++curc;
@@ -980,10 +980,10 @@ inline bool CheckSATConvexEdges(dxConvex& cvx1,
     dVector4 plane;
     dVector3 e1,e2,e1a,e1b,e2a,e2b;
     dVector3 dist;
-    dVector3Copy(ccso.dist,dist);
+    dCopyVector3(dist, ccso.dist);
     unsigned int s1 = cvx1.SupportIndex(dist);
     // invert direction
-    dVector3Inv(dist);
+    dNegateVector3(dist);
     unsigned int s2 = cvx2.SupportIndex(dist);
     for(unsigned int i = 0;i<cvx1.edgecount;++i)
     {
@@ -1020,16 +1020,16 @@ inline bool CheckSATConvexEdges(dxConvex& cvx1,
                 ccso.min_depth=depth;
                 ccso.depth_type = 2; // 2 means edge-edge
                 // use cached values, add position
-                dVector3Copy(e1a,ccso.e1a);
-                dVector3Copy(e1b,ccso.e1b);
+                dCopyVector3(ccso.e1a, e1a);
+                dCopyVector3(ccso.e1b, e1b);
                 ccso.e1a[0]+=cvx1.final_posr->pos[0];
                 ccso.e1a[1]+=cvx1.final_posr->pos[1];
                 ccso.e1a[2]+=cvx1.final_posr->pos[2];
                 ccso.e1b[0]+=cvx1.final_posr->pos[0];
                 ccso.e1b[1]+=cvx1.final_posr->pos[1];
                 ccso.e1b[2]+=cvx1.final_posr->pos[2];
-                dVector3Copy(e2a,ccso.e2a);
-                dVector3Copy(e2b,ccso.e2b);
+                dCopyVector3(ccso.e2a, e2a);
+                dCopyVector3(ccso.e2b, e2b);
                 ccso.e2a[0]+=cvx2.final_posr->pos[0];
                 ccso.e2a[1]+=cvx2.final_posr->pos[1];
                 ccso.e2a[2]+=cvx2.final_posr->pos[2];
@@ -1079,7 +1079,7 @@ inline unsigned int GetSupportSide(dVector3& dir,dxConvex& cvx)
     dReal SavedDot;
     dReal Dot;
     unsigned int side=0;
-    dVector3Copy(dir,tmp);
+    dCopyVector3(tmp, dir);
     dNormalize3(tmp);
     dMultiply1_331(dics,cvx.final_posr->R,tmp);
     SavedDot = dCalcVectorDot3(dics,cvx.planes);
@@ -1143,7 +1143,7 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
             dVector3 dist,p;
             dReal t,d,d1,d2;
             bool outside,out;
-            dVector3Copy(ccso.dist,dist);
+            dCopyVector3(dist, ccso.dist);
             reference_side = GetSupportSide(dist,cvx1);
             dist[0]=-dist[0];
             dist[1]=-dist[1];
@@ -1174,23 +1174,23 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
             pIncidentPoints = pIncidentPoly+1;
             // Get the first point of the incident face
             dMultiply0_331(i2,cvx2.final_posr->R,&cvx2.points[(pIncidentPoints[0]*3)]);
-            dVector3Add(i2,cvx2.final_posr->pos,i2);
+            dAddVectors3(i2,cvx2.final_posr->pos,i2);
             // Get the same point in the reference convex space
-            dVector3Copy(i2,r2);
-            dVector3Subtract(r2,cvx1.final_posr->pos,r2);
-            dVector3Copy(r2,tmp);
+            dCopyVector3(r2, i2);
+            dSubtractVectors3(r2, cvx1.final_posr->pos, r2);
+            dCopyVector3(tmp, r2);
             dMultiply1_331(r2,cvx1.final_posr->R,tmp);
             for(unsigned int i=0;i<pIncidentPoly[0];++i)
             {
                 // Move i2 to i1, r2 to r1
-                dVector3Copy(i2,i1);
-                dVector3Copy(r2,r1);
+                dCopyVector3(i1, i2);
+                dCopyVector3(r1, r2);
                 dMultiply0_331(i2,cvx2.final_posr->R,&cvx2.points[(pIncidentPoints[(i+1)%pIncidentPoly[0]]*3)]);
-                dVector3Add(i2,cvx2.final_posr->pos,i2);
+                dAddVectors3(i2,cvx2.final_posr->pos,i2);
                 // Get the same point in the reference convex space
-                dVector3Copy(i2,r2);
-                dVector3Subtract(r2,cvx1.final_posr->pos,r2);
-                dVector3Copy(r2,tmp);
+                dCopyVector3(r2, i2);
+                dSubtractVectors3(r2,cvx1.final_posr->pos,r2);
+                dCopyVector3(tmp, r2);
                 dMultiply1_331(r2,cvx1.final_posr->R,tmp);
                 outside=false;
                 for(unsigned int j=0;j<cvx1.planecount;++j)
@@ -1239,7 +1239,7 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
                             // produce less operations than this one, but
                             // this way we know we are getting the right data
                             dMultiply0_331(tmp,cvx1.final_posr->R,p);
-                            dVector3Add(tmp,cvx1.final_posr->pos,p);
+                            dAddVectors3(p, tmp, cvx1.final_posr->pos);
 #endif
                             // get p's distance to reference plane
                             d = p[0]*rplane[0]+
@@ -1248,8 +1248,8 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
                                 rplane[3];
                             if(d>0)
                             {
-                                dVector3Copy(p,SAFECONTACT(flags, contact, contacts, skip)->pos);
-                                dVector3Copy(rplane,SAFECONTACT(flags, contact, contacts, skip)->normal);
+                                dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->pos, p);
+                                dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->normal, rplane);
                                 SAFECONTACT(flags, contact, contacts, skip)->g1=&cvx1;
                                 SAFECONTACT(flags, contact, contacts, skip)->g2=&cvx2;
                                 SAFECONTACT(flags, contact, contacts, skip)->depth=d;
@@ -1270,8 +1270,8 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
                     rplane[3];
                 if(d>0)
                 {
-                    dVector3Copy(i1,SAFECONTACT(flags, contact, contacts, skip)->pos);
-                    dVector3Copy(rplane,SAFECONTACT(flags, contact, contacts, skip)->normal);
+                    dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->pos, i1);
+                    dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->normal, rplane);
                     SAFECONTACT(flags, contact, contacts, skip)->g1=&cvx1;
                     SAFECONTACT(flags, contact, contacts, skip)->g2=&cvx2;
                     SAFECONTACT(flags, contact, contacts, skip)->depth=d;
@@ -1304,7 +1304,7 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
             for(unsigned int i=0;i<pReferencePoly[0];++i)
             {
                 dMultiply0_331(i1,cvx1.final_posr->R,&cvx1.points[(pReferencePoints[i]*3)]);
-                dVector3Add(cvx1.final_posr->pos,i1,i1);
+                dAddVectors3(i1, cvx1.final_posr->pos, i1);
                 // Project onto Incident face plane
                 t = -(i1[0]*iplane[0]+
                     i1[1]*iplane[1]+
@@ -1314,9 +1314,9 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
                 i1[1]+=iplane[1]*t;
                 i1[2]+=iplane[2]*t;
                 // Get the same point in the incident convex space
-                dVector3Copy(i1,r1);
-                dVector3Subtract(r1,cvx2.final_posr->pos,r1);
-                dVector3Copy(r1,tmp);
+                dCopyVector3(r1, i1);
+                dSubtractVectors3(r1,cvx2.final_posr->pos,r1);
+                dCopyVector3(tmp, r1);
                 dMultiply1_331(r1,cvx2.final_posr->R,tmp);
                 // Check if it is outside the incident convex
                 out = false;
@@ -1349,8 +1349,8 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
                             rplane[3];
                         if(d>0)
                         {
-                            dVector3Copy(i1,SAFECONTACT(flags, contact, contacts, skip)->pos);
-                            dVector3Copy(rplane,SAFECONTACT(flags, contact, contacts, skip)->normal);
+                            dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->pos, i1);
+                            dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->normal, rplane);
                             SAFECONTACT(flags, contact, contacts, skip)->g1=&cvx1;
                             SAFECONTACT(flags, contact, contacts, skip)->g2=&cvx2;
                             SAFECONTACT(flags, contact, contacts, skip)->depth=d;
@@ -1369,7 +1369,7 @@ int TestConvexIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,
                 dSqrt(ClosestPointBetweenSegments(ccso.e1a,ccso.e1b,ccso.e2a,ccso.e2b,c1,c2));
             SAFECONTACT(flags, contact, contacts, skip)->g1=&cvx1;
             SAFECONTACT(flags, contact, contacts, skip)->g2=&cvx2;
-            dVector3Copy(c1,SAFECONTACT(flags, contact, contacts, skip)->pos);
+            dCopyVector3(SAFECONTACT(flags, contact, contacts, skip)->pos, c1);
             SAFECONTACT(flags, contact, contacts, skip)->normal[0] = c2[0]-c1[0];
             SAFECONTACT(flags, contact, contacts, skip)->normal[1] = c2[1]-c1[1];
             SAFECONTACT(flags, contact, contacts, skip)->normal[2] = c2[2]-c1[2];    

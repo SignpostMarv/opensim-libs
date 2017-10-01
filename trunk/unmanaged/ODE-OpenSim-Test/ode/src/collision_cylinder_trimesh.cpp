@@ -25,10 +25,9 @@
  *   Ported to ODE by Nguyen Binh
  */
 
-
+#include "config.h"
 #include <ode/collision.h>
 #include <ode/rotation.h>
-#include "config.h"
 #include "matrix.h"
 #include "odemath.h"
 #include "collision_util.h"
@@ -127,7 +126,7 @@ inline int _IsNearContacts(sLocalContactData& c1,sLocalContactData& c2)
     dVector3	vDiff;
 
     // First check if they are "near" in position
-    dVector3Subtract(c1.vPos,c2.vPos,vDiff);
+    dSubtractVectors3(vDiff, c1.vPos, c2.vPos);
     if (  (dFabs(vDiff[0]) < fSameContactPositionEpsilon)
         &&(dFabs(vDiff[1]) < fSameContactPositionEpsilon)
         &&(dFabs(vDiff[2]) < fSameContactPositionEpsilon))
@@ -136,7 +135,7 @@ inline int _IsNearContacts(sLocalContactData& c1,sLocalContactData& c2)
     }
 
     // Second check if they are "near" in normal direction
-    dVector3Subtract(c1.vNormal,c2.vNormal,vDiff);
+    dSubtractVectors3(vDiff, c1.vNormal, c2.vNormal);
     if (  (dFabs(vDiff[0]) < fSameContactNormalEpsilon)
         &&(dFabs(vDiff[1]) < fSameContactNormalEpsilon)
         &&(dFabs(vDiff[2]) < fSameContactNormalEpsilon) )
@@ -208,13 +207,13 @@ int	sCylinderTrimeshColliderData::_ProcessLocalContacts(dContactGeom *contact,
         {
             Contact = SAFECONTACT(m_iFlags, contact, nFinalContact, m_iSkip);
             Contact->depth = m_gLocalContacts[iContact].fDepth;
-            dVector3Copy(m_gLocalContacts[iContact].vNormal,Contact->normal);
-            dVector3Copy(m_gLocalContacts[iContact].vPos,Contact->pos);
+            dCopyVector3(Contact->normal, m_gLocalContacts[iContact].vNormal);
+            dCopyVector3(Contact->pos, m_gLocalContacts[iContact].vPos);
             Contact->g1 = Cylinder;
             Contact->g2 = Trimesh;
             Contact->side1 = -1;
             Contact->side2 = m_gLocalContacts[iContact].triIndex;
-            dVector3Inv(Contact->normal);
+            dNegateVector3(Contact->normal);
 
             nFinalContact++;
         }
@@ -239,7 +238,7 @@ bool sCylinderTrimeshColliderData::_cldTestAxis(
 {
 
     // calculate length of separating axis vector
-    dReal fL = dVector3Length(vAxis);
+    dReal fL = dCalcVectorLength3(vAxis);
     // if not long enough
     if ( fL < REAL(1e-5) )
     {
@@ -252,7 +251,7 @@ bool sCylinderTrimeshColliderData::_cldTestAxis(
     vAxis[1] /= fL;
     vAxis[2] /= fL;
 
-    dReal fdot1 = dVector3Dot(m_vCylinderAxis,vAxis);
+    dReal fdot1 = dCalcVectorDot3(m_vCylinderAxis,vAxis);
     // project capsule on vAxis
     dReal frc;
 
@@ -268,17 +267,17 @@ bool sCylinderTrimeshColliderData::_cldTestAxis(
     }
 
     dVector3 vV0;
-    dVector3Subtract(v0,m_vCylinderPos,vV0);
+    dSubtractVectors3(vV0, v0, m_vCylinderPos);
     dVector3 vV1;
-    dVector3Subtract(v1,m_vCylinderPos,vV1);
+    dSubtractVectors3(vV1, v1, m_vCylinderPos);
     dVector3 vV2;
-    dVector3Subtract(v2,m_vCylinderPos,vV2);
+    dSubtractVectors3(vV2, v2, m_vCylinderPos);
 
     // project triangle on vAxis
     dReal afv[3];
-    afv[0] = dVector3Dot( vV0 , vAxis );
-    afv[1] = dVector3Dot( vV1 , vAxis );
-    afv[2] = dVector3Dot( vV2 , vAxis );
+    afv[0] = dCalcVectorDot3( vV0 , vAxis );
+    afv[1] = dCalcVectorDot3( vV1 , vAxis );
+    afv[2] = dCalcVectorDot3( vV2 , vAxis );
 
     dReal fMin = MAX_REAL;
     dReal fMax = -MAX_REAL;
@@ -320,13 +319,13 @@ bool sCylinderTrimeshColliderData::_cldTestAxis(
         m_fBestDepth			= fDepth;
         m_fBestCenter		    = fCenter;
         m_fBestrt				= frc;
-        dVector3Copy(vAxis,m_vContactNormal);
+        dCopyVector3(m_vContactNormal, vAxis);
         m_iBestAxis				= iAxis;
 
         // flip normal if interval is wrong faced
         if ( fCenter< REAL(0.0) && !bNoFlip) 
         { 
-            dVector3Inv(m_vContactNormal);
+            dNegateVector3(m_vContactNormal);
             m_fBestCenter = -fCenter;
         }
     }
@@ -342,14 +341,14 @@ bool sCylinderTrimeshColliderData::_cldTestCircleToEdgeAxis(
 {
     // calculate direction of edge
     dVector3 vkl;
-    dVector3Subtract( vVx1 , vVx0 , vkl);
+    dSubtractVectors3(vkl, vVx1 , vVx0);
     dNormalize3(vkl);
     // starting point of edge 
     dVector3 vol;
-    dVector3Copy(vVx0,vol);
+    dCopyVector3(vol, vVx0);
 
     // calculate angle cosine between cylinder axis and edge
-    dReal fdot2 = dVector3Dot(vkl , vCylinderAxis1);
+    dReal fdot2 = dCalcVectorDot3(vkl , vCylinderAxis1);
 
     // if edge is perpendicular to cylinder axis
     if(dFabs(fdot2)<REAL(1e-5))
@@ -360,8 +359,8 @@ bool sCylinderTrimeshColliderData::_cldTestCircleToEdgeAxis(
 
     // find point of intersection between edge line and circle plane
     dVector3 vTemp;
-    dVector3Subtract(vCenterPoint,vol,vTemp);
-    dReal fdot1 = dVector3Dot(vTemp,vCylinderAxis1);
+    dSubtractVectors3(vTemp, vCenterPoint, vol);
+    dReal fdot1 = dCalcVectorDot3(vTemp,vCylinderAxis1);
     dVector3 vpnt;// = vol + vkl * (fdot1/fdot2);
     vpnt[0] = vol[0] + vkl[0] * fdot1/fdot2;
     vpnt[1] = vol[1] + vkl[1] * fdot1/fdot2;
@@ -369,12 +368,12 @@ bool sCylinderTrimeshColliderData::_cldTestCircleToEdgeAxis(
 
     // find tangent vector on circle with same center (vCenterPoint) that touches point of intersection (vpnt)
     dVector3 vTangent;
-    dVector3Subtract(vCenterPoint,vpnt,vTemp);
-    dVector3Cross(vTemp,vCylinderAxis1,vTangent);
+    dSubtractVectors3(vTemp, vCenterPoint, vpnt);
+    dCalcVectorCross3(vTangent, vTemp,vCylinderAxis1);
 
     // find vector orthogonal both to tangent and edge direction
     dVector3 vAxis;
-    dVector3Cross(vTangent,vkl,vAxis);
+    dCalcVectorCross3(vAxis, vTangent, vkl);
 
     // use that vector as separating axis
     return _cldTestAxis( v0, v1, v2, vAxis, iAxis );
@@ -390,9 +389,9 @@ inline void _CalculateAxis(const dVector3& v1,
     dVector3 t1;
     dVector3 t2;
 
-    dVector3Subtract(v1,v2,t1);
-    dVector3Cross(t1,v3,t2);
-    dVector3Cross(t2,v3,r);
+    dSubtractVectors3(t1, v1, v2);
+    dCalcVectorCross3(t2, t1, v3);
+    dCalcVectorCross3(r, t2, v3);
 }
 
 bool sCylinderTrimeshColliderData::_cldTestSeparatingAxes(
@@ -402,9 +401,9 @@ bool sCylinderTrimeshColliderData::_cldTestSeparatingAxes(
 {
 
     // calculate edge vectors
-    dVector3Subtract(v1 ,v0 , m_vE0);
+    dSubtractVectors3(m_vE0, v1, v0);
     // m_vE1 has been calculated before -> so save some cycles here
-    dVector3Subtract(v0 ,v2 , m_vE2);
+    dSubtractVectors3(m_vE2, v0 , v2);
 
     // calculate caps centers in absolute space
     dVector3 vCp0;
@@ -435,7 +434,7 @@ bool sCylinderTrimeshColliderData::_cldTestSeparatingAxes(
 
     // axis CxE0
     // vAxis = ( m_vCylinderAxis cross m_vE0 );
-    dVector3Cross(m_vCylinderAxis, m_vE0,vAxis);
+    dCalcVectorCross3(vAxis, m_vCylinderAxis, m_vE0);
     if (!_cldTestAxis(v0, v1, v2, vAxis, 2)) 
     { 
         return false; 
@@ -443,7 +442,7 @@ bool sCylinderTrimeshColliderData::_cldTestSeparatingAxes(
 
     // axis CxE1
     // vAxis = ( m_vCylinderAxis cross m_vE1 );
-    dVector3Cross(m_vCylinderAxis, m_vE1,vAxis);
+    dCalcVectorCross3(vAxis, m_vCylinderAxis, m_vE1);
     if (!_cldTestAxis(v0, v1, v2, vAxis, 3)) 
     { 
         return false; 
@@ -451,7 +450,7 @@ bool sCylinderTrimeshColliderData::_cldTestSeparatingAxes(
 
     // axis CxE2
     // vAxis = ( m_vCylinderAxis cross m_vE2 );
-    dVector3Cross(m_vCylinderAxis, m_vE2,vAxis);
+    dCalcVectorCross3(vAxis, m_vCylinderAxis, m_vE2);
     if (!_cldTestAxis(v0, v1, v2, vAxis, 4)) 
     { 
         return false; 
@@ -486,7 +485,7 @@ bool sCylinderTrimeshColliderData::_cldTestSeparatingAxes(
 
     // test cylinder axis
     // vAxis = m_vCylinderAxis;
-    dVector3Copy(m_vCylinderAxis , vAxis);
+    dCopyVector3(vAxis, m_vCylinderAxis);
     if (!_cldTestAxis(v0, v1, v2, vAxis, 14)) 
     { 
         return false; 
@@ -541,13 +540,13 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
     const dVector3 &v0, const dVector3 &/*v1*/, const dVector3 &/*v2*/)
 {
     // translate cylinder
-    dReal fTemp = dVector3Dot(m_vCylinderAxis , m_vContactNormal);
+    dReal fTemp = dCalcVectorDot3(m_vCylinderAxis , m_vContactNormal);
     dVector3 vN2;
     vN2[0] = m_vContactNormal[0] - m_vCylinderAxis[0]*fTemp;
     vN2[1] = m_vContactNormal[1] - m_vCylinderAxis[1]*fTemp;
     vN2[2] = m_vContactNormal[2] - m_vCylinderAxis[2]*fTemp;
 
-    fTemp = dVector3Length(vN2);
+    fTemp = dCalcVectorLength3(vN2);
     if (fTemp < REAL(1e-5))
     {
         return false;
@@ -591,7 +590,7 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
     vPlaneNormal[0] = -m_vNormal[0];
     vPlaneNormal[1] = -m_vNormal[1];
     vPlaneNormal[2] = -m_vNormal[2];
-    dConstructPlane(vPlaneNormal,REAL(0.0),plPlane);
+    dConstructPlane(plPlane, vPlaneNormal,REAL(0.0));
     if(!dClipEdgeToPlane( vCEdgePoint0, vCEdgePoint1, plPlane )) 
     { 
         return false; 
@@ -599,8 +598,8 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
 
     // plane with edge 0
     //plPlane = Plane4f( ( m_vNormal cross m_vE0 ), REAL(1e-5));
-    dVector3Cross(m_vNormal,m_vE0,vPlaneNormal);
-    dConstructPlane(vPlaneNormal,REAL(1e-5),plPlane);
+    dCalcVectorCross3(vPlaneNormal, m_vNormal, m_vE0);
+    dConstructPlane(plPlane, vPlaneNormal,REAL(1e-5));
     if(!dClipEdgeToPlane( vCEdgePoint0, vCEdgePoint1, plPlane )) 
     { 
         return false; 
@@ -608,10 +607,10 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
 
     // plane with edge 1
     //dVector3 vTemp = ( m_vNormal cross m_vE1 );
-    dVector3Cross(m_vNormal,m_vE1,vPlaneNormal);
-    fTemp = dVector3Dot(m_vE0 , vPlaneNormal) - REAL(1e-5);
+    dCalcVectorCross3(vPlaneNormal, m_vNormal, m_vE1);
+    fTemp = dCalcVectorDot3(m_vE0 , vPlaneNormal) - REAL(1e-5);
     //plPlane = Plane4f( vTemp, -(( m_vE0 dot vTemp )-REAL(1e-5)));
-    dConstructPlane(vPlaneNormal,-fTemp,plPlane);
+    dConstructPlane(plPlane, vPlaneNormal,-fTemp);
     if(!dClipEdgeToPlane( vCEdgePoint0, vCEdgePoint1, plPlane )) 
     {
         return false;
@@ -619,8 +618,8 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
 
     // plane with edge 2
     // plPlane = Plane4f( ( m_vNormal cross m_vE2 ), REAL(1e-5));
-    dVector3Cross(m_vNormal,m_vE2,vPlaneNormal);
-    dConstructPlane(vPlaneNormal,REAL(1e-5),plPlane);
+    dCalcVectorCross3(vPlaneNormal, m_vNormal, m_vE2);
+    dConstructPlane(plPlane, vPlaneNormal,REAL(1e-5));
     if(!dClipEdgeToPlane( vCEdgePoint0, vCEdgePoint1, plPlane )) 
     { 
         return false; 
@@ -637,10 +636,10 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
 
     // calculate depths for both contact points
     dVector3 vTemp;
-    dVector3Subtract(vCEdgePoint0,m_vCylinderPos, vTemp);
-    dReal fRestDepth0 = -dVector3Dot(vTemp,m_vContactNormal) + m_fBestrt;
-    dVector3Subtract(vCEdgePoint1,m_vCylinderPos, vTemp);
-    dReal fRestDepth1 = -dVector3Dot(vTemp,m_vContactNormal) + m_fBestrt;
+    dSubtractVectors3(vTemp, vCEdgePoint0, m_vCylinderPos);
+    dReal fRestDepth0 = -dCalcVectorDot3(vTemp,m_vContactNormal) + m_fBestrt;
+    dSubtractVectors3(vTemp, vCEdgePoint1, m_vCylinderPos);
+    dReal fRestDepth1 = -dCalcVectorDot3(vTemp,m_vContactNormal) + m_fBestrt;
 
     dReal fDepth0 = m_fBestDepth - (fRestDepth0);
     dReal fDepth1 = m_fBestDepth - (fRestDepth1);
@@ -659,8 +658,8 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
     // Generate contact 0
     {
         m_gLocalContacts[m_nContacts].fDepth = fDepth0;
-        dVector3Copy(m_vContactNormal,m_gLocalContacts[m_nContacts].vNormal);
-        dVector3Copy(vCEdgePoint0,m_gLocalContacts[m_nContacts].vPos);
+        dCopyVector3(m_gLocalContacts[m_nContacts].vNormal, m_vContactNormal);
+        dCopyVector3(m_gLocalContacts[m_nContacts].vPos, vCEdgePoint0);
         m_gLocalContacts[m_nContacts].nFlags = 1;
         m_nContacts++;
         if(m_nContacts >= (m_iFlags & NUMC_MASK)) 
@@ -671,8 +670,8 @@ bool sCylinderTrimeshColliderData::_cldClipCylinderEdgeToTriangle(
     {
         // generate contacts
         m_gLocalContacts[m_nContacts].fDepth = fDepth1;
-        dVector3Copy(m_vContactNormal,m_gLocalContacts[m_nContacts].vNormal);
-        dVector3Copy(vCEdgePoint1,m_gLocalContacts[m_nContacts].vPos);
+        dCopyVector3(m_gLocalContacts[m_nContacts].vNormal, m_vContactNormal);
+        dCopyVector3(m_gLocalContacts[m_nContacts].vPos, vCEdgePoint1);
         m_gLocalContacts[m_nContacts].nFlags = 1;
         m_nContacts++;		
     }
@@ -692,14 +691,14 @@ void sCylinderTrimeshColliderData::_cldClipCylinderToTriangle(
     dSetZero(&avTempArray2[0][0],nMAX_CYLINDER_TRIANGLE_CLIP_POINTS * 4);
 
     // setup array of triangle vertices
-    dVector3Copy(v0,avPoints[0]);
-    dVector3Copy(v1,avPoints[1]);
-    dVector3Copy(v2,avPoints[2]);
+    dCopyVector3(avPoints[0], v0);
+    dCopyVector3(avPoints[1], v1);
+    dCopyVector3(avPoints[2], v2);
 
     dVector3 vCylinderCirclePos, vCylinderCircleNormal_Rel;
     dSetZero(vCylinderCircleNormal_Rel,4);
     // check which circle from cylinder we take for clipping
-    if ( dVector3Dot(m_vCylinderAxis , m_vContactNormal) > REAL(0.0)) 
+    if ( dCalcVectorDot3(m_vCylinderAxis , m_vContactNormal) > REAL(0.0)) 
     {
         // get top circle
         vCylinderCirclePos[0] = m_vCylinderPos[0] + m_vCylinderAxis[0]*(m_fCylinderSize*REAL(0.5));
@@ -723,7 +722,7 @@ void sCylinderTrimeshColliderData::_cldClipCylinderToTriangle(
     // transform triangle points to space of cylinder circle
     for(i=0; i<3; i++) 
     {
-        dVector3Subtract(avPoints[i] , vCylinderCirclePos , vTemp);
+        dSubtractVectors3(vTemp, avPoints[i], vCylinderCirclePos);
         dQuatTransform(m_qInvCylinderRot,vTemp,avPoints[i]);
     }
 
@@ -733,14 +732,14 @@ void sCylinderTrimeshColliderData::_cldClipCylinderToTriangle(
 
     // plane of cylinder that contains circle for intersection
     //plPlane = Plane4f( vCylinderCircleNormal_Rel, 0.0f );
-    dConstructPlane(vCylinderCircleNormal_Rel,REAL(0.0),plPlane);
+    dConstructPlane(plPlane, vCylinderCircleNormal_Rel,REAL(0.0));
     dClipPolyToPlane(avPoints, 3, avTempArray1, iTmpCounter1, plPlane);
 
     // Body of base circle of Cylinder
     int nCircleSegment = 0;
     for (nCircleSegment = 0; nCircleSegment < nCYLINDER_CIRCLE_SEGMENTS; nCircleSegment++)
     {
-        dConstructPlane(m_avCylinderNormals[nCircleSegment],m_fCylinderRadius,plPlane);
+        dConstructPlane(plPlane, m_avCylinderNormals[nCircleSegment],m_fCylinderRadius);
 
         if (0 == (nCircleSegment % 2))
         {
@@ -769,15 +768,15 @@ void sCylinderTrimeshColliderData::_cldClipCylinderToTriangle(
             vPoint[1] += vCylinderCirclePos[1];
             vPoint[2] += vCylinderCirclePos[2];
 
-            dVector3Subtract(vPoint,m_vCylinderPos,vTemp);
-            ftmpdot	 = dFabs(dVector3Dot(vTemp, m_vContactNormal));
+            dSubtractVectors3(vTemp, vPoint, m_vCylinderPos);
+            ftmpdot	 = dFabs(dCalcVectorDot3(vTemp, m_vContactNormal));
             fTempDepth = m_fBestrt - ftmpdot;
             // Depth must be positive
             if (fTempDepth > REAL(0.0))
             {
                 m_gLocalContacts[m_nContacts].fDepth = fTempDepth;
-                dVector3Copy(m_vContactNormal,m_gLocalContacts[m_nContacts].vNormal);
-                dVector3Copy(vPoint,m_gLocalContacts[m_nContacts].vPos);
+                dCopyVector3(m_gLocalContacts[m_nContacts].vNormal, m_vContactNormal);
+                dCopyVector3(m_gLocalContacts[m_nContacts].vPos, vPoint);
                 m_gLocalContacts[m_nContacts].nFlags = 1;
                 m_nContacts++;
                 if(m_nContacts >= (m_iFlags & NUMC_MASK)) 
@@ -794,15 +793,15 @@ void sCylinderTrimeshColliderData::_cldClipCylinderToTriangle(
             vPoint[1] += vCylinderCirclePos[1];
             vPoint[2] += vCylinderCirclePos[2];
 
-            dVector3Subtract(vPoint,m_vCylinderPos,vTemp);
-            ftmpdot	 = dFabs(dVector3Dot(vTemp, m_vContactNormal));
+            dSubtractVectors3(vTemp, vPoint, m_vCylinderPos);
+            ftmpdot	 = dFabs(dCalcVectorDot3(vTemp, m_vContactNormal));
             fTempDepth = m_fBestrt - ftmpdot;
             // Depth must be positive
             if (fTempDepth > REAL(0.0))
             {
                 m_gLocalContacts[m_nContacts].fDepth = fTempDepth;
-                dVector3Copy(m_vContactNormal,m_gLocalContacts[m_nContacts].vNormal);
-                dVector3Copy(vPoint,m_gLocalContacts[m_nContacts].vPos);
+                dCopyVector3(m_gLocalContacts[m_nContacts].vNormal, m_vContactNormal);
+                dCopyVector3(m_gLocalContacts[m_nContacts].vPos, vPoint);
                 m_gLocalContacts[m_nContacts].nFlags = 1;
                 m_nContacts++;
                 if(m_nContacts >= (m_iFlags & NUMC_MASK)) 
@@ -819,10 +818,10 @@ void sCylinderTrimeshColliderData::TestOneTriangleVsCylinder(
     const bool bDoubleSided)
 {
     // calculate triangle normal
-    dVector3Subtract( v2 , v1 , m_vE1);
+    dSubtractVectors3(m_vE1, v2 , v1);
     dVector3 vTemp;
-    dVector3Subtract( v0 , v1 ,vTemp);
-    dVector3Cross(m_vE1 , vTemp , m_vNormal );
+    dSubtractVectors3(vTemp, v0 , v1);
+    dCalcVectorCross3(m_vNormal, m_vE1 , vTemp);
 
     // Even though all triangles might be initially valid, 
     // a triangle may degenerate into a segment after applying 
@@ -834,12 +833,12 @@ void sCylinderTrimeshColliderData::TestOneTriangleVsCylinder(
 
     // create plane from triangle
     //Plane4f plTrianglePlane = Plane4f( vPolyNormal, v0 ); 
-    dReal plDistance = -dVector3Dot(v0, m_vNormal);
+    dReal plDistance = -dCalcVectorDot3(v0, m_vNormal);
     dVector4 plTrianglePlane;
-    dConstructPlane( m_vNormal,plDistance,plTrianglePlane);
+    dConstructPlane(plTrianglePlane, m_vNormal, plDistance);
 
     // calculate sphere distance to plane
-    dReal fDistanceCylinderCenterToPlane = dPointPlaneDistance(m_vCylinderPos , plTrianglePlane);
+    dReal fDistanceCylinderCenterToPlane = dCalcPointPlaneDistance(m_vCylinderPos , plTrianglePlane);
 
     // Sphere must be over positive side of triangle
     if(fDistanceCylinderCenterToPlane < 0 && !bDoubleSided) 
@@ -855,15 +854,15 @@ void sCylinderTrimeshColliderData::TestOneTriangleVsCylinder(
     if (fDistanceCylinderCenterToPlane < REAL(0.0) )
     {
         // flip it
-        dVector3Copy(v0 , vPnt0);
-        dVector3Copy(v1 , vPnt2);
-        dVector3Copy(v2 , vPnt1);
+        dCopyVector3(vPnt0, v0);
+        dCopyVector3(vPnt2, v1);
+        dCopyVector3(vPnt1, v2);
     }
     else
     {
-        dVector3Copy(v0 , vPnt0);
-        dVector3Copy(v1 , vPnt1);
-        dVector3Copy(v2 , vPnt2);
+        dCopyVector3(vPnt0, v0);
+        dCopyVector3(vPnt1, v1);
+        dCopyVector3(vPnt2, v2);
     }
 
     m_fBestDepth = MAX_REAL;
@@ -884,7 +883,7 @@ void sCylinderTrimeshColliderData::TestOneTriangleVsCylinder(
         return;
     }
 
-    dReal fdot = dVector3Dot( m_vContactNormal , m_vCylinderAxis );
+    dReal fdot = dCalcVectorDot3( m_vContactNormal , m_vCylinderAxis );
 
     // choose which clipping method are we going to apply
     if (dFabs(fdot) < REAL(0.9) ) 
@@ -905,26 +904,25 @@ void sCylinderTrimeshColliderData::_InitCylinderTrimeshData(dxGeom *Cylinder, dx
     // get cylinder information
     // Rotation
     const dReal* pRotCyc = dGeomGetRotation(Cylinder); 
-    dMatrix3Copy(pRotCyc,m_mCylinderRot);
+    dCopyMatrix4x3(m_mCylinderRot, pRotCyc);
     dGeomGetQuaternion(Cylinder,m_qCylinderRot);
 
     // Position
     const dVector3* pPosCyc = (const dVector3*)dGeomGetPosition(Cylinder);
-    dVector3Copy(*pPosCyc,m_vCylinderPos);
+    dCopyVector3(m_vCylinderPos, *pPosCyc);
     // Cylinder axis
     dMat3GetCol(m_mCylinderRot,nCYLINDER_AXIS,m_vCylinderAxis);
     // get cylinder radius and size
     dGeomCylinderGetParams(Cylinder,&m_fCylinderRadius,&m_fCylinderSize);
 
     // get trimesh position and orientation
-    const dReal* pRotTris = dGeomGetRotation(Trimesh); 
-    dMatrix3Copy(pRotTris,m_mTrimeshRot);
+    const dReal* pRotTris = dGeomGetRotation(Trimesh);
+    dCopyMatrix4x3(m_mTrimeshRot, pRotTris);
     dGeomGetQuaternion(Trimesh,m_qTrimeshRot);
 
     // Position
     const dVector3* pPosTris = (const dVector3*)dGeomGetPosition(Trimesh);
-    dVector3Copy(*pPosTris,m_vTrimeshPos);
-
+    dCopyVector3(m_vTrimeshPos, *pPosTris);
 
     // calculate basic angle for 8-gon
     dReal fAngle = (dReal) (M_PI / nCYLINDER_CIRCLE_SEGMENTS);

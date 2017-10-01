@@ -23,13 +23,12 @@
 #ifndef _ODE_COMMON_H_
 #define _ODE_COMMON_H_
 
-#if defined(dUSEAVX)
-#include <immintrin.h>
-#endif
-
 #include <ode/odeconfig.h>
 #include <ode/error.h>
 
+#if defined(dUSEAVX)
+#include <immintrin.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

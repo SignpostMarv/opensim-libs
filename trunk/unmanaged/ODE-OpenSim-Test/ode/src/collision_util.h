@@ -88,57 +88,6 @@ void dClipPolyToPlane(const dVector3 avArrayIn[], const int ctIn, dVector3 avArr
 
 void dClipPolyToCircle(const dVector3 avArrayIn[], const int ctIn, dVector3 avArrayOut[], int &ctOut, const dVector4 &plPlane ,dReal fRadius);
 
-// Some vector math
-static inline void dVector3Subtract(const dVector3& a,const dVector3& b,dVector3& c)
-{
-    dSubtractVectors3(c, a, b);
-}
-
-static inline void dVector3Scale(dVector3& a,dReal nScale)
-{
-    dScaleVector3(a, nScale);
-}
-
-static inline void dVector3Add(const dVector3& a,const dVector3& b,dVector3& c)
-{
-    dAddVectors3(c, a, b);
-}
-
-static inline void dVector3Copy(const dVector3& a,dVector3& c)
-{
-    dCopyVector3(c, a);
-}
-
-static inline void dVector4Copy(const dVector4& a,dVector4& c)
-{
-    dCopyVector4(c, a);
-}
-
-static inline void dVector3Cross(const dVector3& a,const dVector3& b,dVector3& c)
-{
-    dCalcVectorCross3(c, a, b);
-}
-
-static inline dReal dVector3Length(const dVector3& a)
-{
-    return dCalcVectorLength3(a);
-}
-
-static inline dReal dVector3LengthSquare(const dVector3& a)
-{
-    return dCalcVectorLengthSquare3(a);
-}
-
-static inline dReal dVector3Dot(const dVector3& a,const dVector3& b)
-{
-    return dCalcVectorDot3(a, b);
-}
-
-static inline void dVector3Inv(dVector3& a)
-{
-    dNegateVector3(a);
-}
-
 static inline void dMat3GetCol(const dMatrix3& m,const int col, dVector3& v)
 {
     dGetMatrixColumn3(v, m, col);
@@ -159,59 +108,10 @@ static inline void dMultiplyMat3Vec3(const dMatrix3& m,const dVector3& v, dVecto
     dMultiply0_331(r, m, v);
 }
 
-static inline dReal dPointPlaneDistance(const dVector3& point,const dVector4& plane)
+static inline void dConstructPlane(dVector4& plane, const dVector3& normal,const dReal& distance)
 {
-    return (plane[0]*point[0] + plane[1]*point[1] + plane[2]*point[2] + plane[3]);
-}
-
-static inline void dConstructPlane(const dVector3& normal,const dReal& distance, dVector4& plane)
-{
-    plane[0] = normal[0];
-    plane[1] = normal[1];
-    plane[2] = normal[2];
+    dCopyVector3(plane, normal);
     plane[3] = distance;
-}
-
-static inline void dMatrix3Copy(const dReal* source,dMatrix3& dest)
-{
-    dCopyMatrix4x3(dest, source);
-}
-
-static inline dReal dMatrix3Det( const dMatrix3& mat )
-{
-    dReal det;
-
-    det = mat[0] * ( mat[5]*mat[10] - mat[9]*mat[6] )
-        - mat[1] * ( mat[4]*mat[10] - mat[8]*mat[6] )
-        + mat[2] * ( mat[4]*mat[9]  - mat[8]*mat[5] );
-
-    return( det );
-}
-
-
-inline void dMatrix3Inv( const dMatrix3& ma, dMatrix3& dst )
-{
-    dReal det = dMatrix3Det( ma );
-
-    if ( dFabs( det ) < REAL(0.0005) )
-    {
-        dRSetIdentity( dst );
-        return;
-    }
-
-    double detRecip = REAL(1.0) / det;
-
-    dst[0] = (dReal)(( ma[5]*ma[10] - ma[6]*ma[9]  ) * detRecip);
-    dst[1] = (dReal)(( ma[9]*ma[2]  - ma[1]*ma[10] ) * detRecip);
-    dst[2] = (dReal)(( ma[1]*ma[6]  - ma[5]*ma[2]  ) * detRecip);
-
-    dst[4] = (dReal)(( ma[6]*ma[8]  - ma[4]*ma[10] ) * detRecip);
-    dst[5] = (dReal)(( ma[0]*ma[10] - ma[8]*ma[2]  ) * detRecip);
-    dst[6] = (dReal)(( ma[4]*ma[2]  - ma[0]*ma[6]  ) * detRecip);
-
-    dst[8] = (dReal)(( ma[4]*ma[9]  - ma[8]*ma[5]  ) * detRecip);
-    dst[9] = (dReal)(( ma[8]*ma[1]  - ma[0]*ma[9]  ) * detRecip);
-    dst[10] = (dReal)(( ma[0]*ma[5]  - ma[1]*ma[4]  ) * detRecip);
 }
 
 inline void dQuatTransform(const dQuaternion& quat,const dVector3& source,dVector3& dest)
@@ -232,23 +132,22 @@ inline void dQuatTransform(const dQuaternion& quat,const dVector3& source,dVecto
 inline void dQuatInvTransform(const dQuaternion& quat,const dVector3& source,dVector3& dest)
 {
 
-    dReal norm = quat[0]*quat[0] + quat[1]*quat[1] + quat[2]*quat[2] + quat[3]*quat[3];
+    dReal norm = dCalcVectorLengthSquare4(quat);
 
     if (norm > REAL(0.0))
     {
         dQuaternion invQuat;
-        invQuat[0] =  quat[0] / norm;
-        invQuat[1] = -quat[1] / norm;
-        invQuat[2] = -quat[2] / norm;
-        invQuat[3] = -quat[3] / norm;	
-
+        norm = 1.0f / sqrtf(norm);
+        invQuat[0] =  quat[0] * norm;
+        invQuat[1] = -quat[1] * norm;
+        invQuat[2] = -quat[2] * norm;
+        invQuat[3] = -quat[3] * norm;
         dQuatTransform(invQuat,source,dest);
-
     }
     else
     {
         // Singular -> return identity
-        dVector3Copy(source,dest);
+        dCopyVector3(dest, source);
     }
 }
 
@@ -279,14 +178,15 @@ inline void dGetEulerAngleFromRot(const dMatrix3& mRot,dReal& rX,dReal& rY,dReal
 
 inline void dQuatInv(const dQuaternion& source, dQuaternion& dest)
 {
-    dReal norm = source[0]*source[0] + source[1]*source[1] + source[2]*source[2] + source[3]*source[3];
+    dReal norm = dCalcVectorLengthSquare4(source);
 
     if (norm > 0.0f)
     {
-        dest[0] = source[0] / norm;
-        dest[1] = -source[1] / norm;
-        dest[2] = -source[2] / norm;
-        dest[3] = -source[3] / norm;	
+        norm = 1.0f / sqrtf(norm);
+        dest[0] = source[0] * norm;
+        dest[1] = -source[1] * norm;
+        dest[2] = -source[2] * norm;
+        dest[3] = -source[3] * norm;
     }
     else
     {
@@ -297,6 +197,5 @@ inline void dQuatInv(const dQuaternion& source, dQuaternion& dest)
         dest[3] = REAL(0.0);
     }
 }
-
 
 #endif

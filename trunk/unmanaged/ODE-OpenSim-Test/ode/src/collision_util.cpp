@@ -41,21 +41,14 @@ int dCollideSpheres (dVector3 p1, dReal r1,
     // printf ("d=%.2f  (%.2f %.2f %.2f) (%.2f %.2f %.2f) r1=%.2f r2=%.2f\n",
     //	  d,p1[0],p1[1],p1[2],p2[0],p2[1],p2[2],r1,r2);
 
-    dReal dx = p1[0] - p2[0];
-    dReal d = dx * dx;
-
-    dReal dy = p1[1] - p2[1];
-    d += dy * dy;
-
-    dReal dz = p1[2] - p2[2];
-    d += dz * dz;
+    dVector3 delta;
+    dSubtractVectors3(delta, p1, p2);
+    float d = dCalcVectorLengthSquare3(delta);
 
     dReal rsum = r1 + r2;
     if( d < dEpsilon)
     {
-        c->pos[0] = p1[0];
-        c->pos[1] = p1[1];
-        c->pos[2] = p1[2];
+        dCopyVector3(c->pos, p1);
         c->normal[0] = 1;
         c->normal[1] = 0;
         c->normal[2] = 0;
@@ -68,24 +61,15 @@ int dCollideSpheres (dVector3 p1, dReal r1,
 
     d = dSqrt(d);
     c->depth = rsum - d;
-    
-    dReal k = REAL(0.5) * (r2 - r1 - d);
 
     d = dRecip(d);
-    dx *= d;
-    c->normal[0] = dx;
-    dx *= k;
-    c->pos[0] = p1[0] + dx;
+    dScaleVector3(delta, d);
 
-    dy *= d;
-    c->normal[1] = dy;
-    dy *= k;
-    c->pos[1] = p1[1] + dy;
+    dCopyVector3(c->normal, delta);
 
-    dz *= d; 
-    c->normal[2] = dz;
-    dz *= k;
-    c->pos[2] = p1[2] + dz;
+    dCopyVector3(c->pos, p1);
+    dReal k = REAL(0.5) * (r2 - r1 - d);
+    dAddScaledVector4(c->pos, delta, k);
     return 1;
 }
 
@@ -446,8 +430,7 @@ got_answer:
 
     // compute closest point on the box
     dMultiply0_331(s,R,tmp);
-    for (i=0; i<3; i++)
-        bret[i] = s[i] + c[i];
+    dAddVectors3(bret, s, c);
 }
 
 
@@ -472,46 +455,66 @@ int dBoxTouchesBox (const dVector3 p1, const dMatrix3 R1,
 
     // get vector from centers of box 1 to box 2, relative to box 1
     dSubtractVectors3(p, p2, p1);
-    dMultiply1_331 (pp,R1,p);		// get pp = p relative to body 1
+    dMultiply1_331 (pp, R1 ,p);		// get pp = p relative to body 1
 
     // get side lengths / 2
-    A1 = side1[0]*REAL(0.5); A2 = side1[1]*REAL(0.5); A3 = side1[2]*REAL(0.5);
-    B1 = side2[0]*REAL(0.5); B2 = side2[1]*REAL(0.5); B3 = side2[2]*REAL(0.5);
+    A1 = side1[0]*REAL(0.5);
+    A2 = side1[1]*REAL(0.5);
+    A3 = side1[2]*REAL(0.5);
+
+    B1 = side2[0]*REAL(0.5);
+    B2 = side2[1]*REAL(0.5);
+    B3 = side2[2]*REAL(0.5);
 
     // for the following tests, excluding computation of Rij, in the worst case,
     // 15 compares, 60 adds, 81 multiplies, and 24 absolutes.
     // notation: R1=[u1 u2 u3], R2=[v1 v2 v3]
 
     // separating axis = u1,u2,u3
-    R11 = dCalcVectorDot3_44(R1+0,R2+0); R12 = dCalcVectorDot3_44(R1+0,R2+1); R13 = dCalcVectorDot3_44(R1+0,R2+2);
-    Q11 = dFabs(R11); Q12 = dFabs(R12); Q13 = dFabs(R13);
-    if (dFabs(pp[0]) > (A1 + B1*Q11 + B2*Q12 + B3*Q13)) return 0;
-    R21 = dCalcVectorDot3_44(R1+1,R2+0); R22 = dCalcVectorDot3_44(R1+1,R2+1); R23 = dCalcVectorDot3_44(R1+1,R2+2);
-    Q21 = dFabs(R21); Q22 = dFabs(R22); Q23 = dFabs(R23);
-    if (dFabs(pp[1]) > (A2 + B1*Q21 + B2*Q22 + B3*Q23)) return 0;
-    R31 = dCalcVectorDot3_44(R1+2,R2+0); R32 = dCalcVectorDot3_44(R1+2,R2+1); R33 = dCalcVectorDot3_44(R1+2,R2+2);
-    Q31 = dFabs(R31); Q32 = dFabs(R32); Q33 = dFabs(R33);
-    if (dFabs(pp[2]) > (A3 + B1*Q31 + B2*Q32 + B3*Q33)) return 0;
+    R11 = dCalcVectorDot3_44(R1+0,R2+0);
+    R12 = dCalcVectorDot3_44(R1+0,R2+1);
+    R13 = dCalcVectorDot3_44(R1+0,R2+2);
+    Q11 = dFabs(R11);
+    Q12 = dFabs(R12);
+    Q13 = dFabs(R13);
+    if (dFabs(pp[0]) > (A1 + B1  * Q11 + B2 * Q12 + B3 * Q13))
+        return 0;
+    R21 = dCalcVectorDot3_44(R1+1,R2+0);
+    R22 = dCalcVectorDot3_44(R1+1,R2+1);
+    R23 = dCalcVectorDot3_44(R1+1,R2+2);
+    Q21 = dFabs(R21);
+    Q22 = dFabs(R22);
+    Q23 = dFabs(R23);
+    if (dFabs(pp[1]) > (A2 + B1 * Q21 + B2 * Q22 + B3 * Q23))
+        return 0;
+    R31 = dCalcVectorDot3_44(R1+2,R2+0);
+    R32 = dCalcVectorDot3_44(R1+2,R2+1);
+    R33 = dCalcVectorDot3_44(R1+2,R2+2);
+    Q31 = dFabs(R31);
+    Q32 = dFabs(R32);
+    Q33 = dFabs(R33);
+    if (dFabs(pp[2]) > (A3 + B1 * Q31 + B2 * Q32 + B3 * Q33))
+        return 0;
 
     // separating axis = v1,v2,v3
-    if (dFabs(dCalcVectorDot3_41(R2+0,p)) > (A1*Q11 + A2*Q21 + A3*Q31 + B1)) return 0;
-    if (dFabs(dCalcVectorDot3_41(R2+1,p)) > (A1*Q12 + A2*Q22 + A3*Q32 + B2)) return 0;
-    if (dFabs(dCalcVectorDot3_41(R2+2,p)) > (A1*Q13 + A2*Q23 + A3*Q33 + B3)) return 0;
+    if (dFabs(dCalcVectorDot3_41(R2+0, p)) > (A1 * Q11 + A2 * Q21 + A3 * Q31 + B1)) return 0;
+    if (dFabs(dCalcVectorDot3_41(R2+1 ,p)) > (A1 * Q12 + A2 * Q22 + A3 * Q32 + B2)) return 0;
+    if (dFabs(dCalcVectorDot3_41(R2+2, p)) > (A1 * Q13 + A2 * Q23 + A3 * Q33 + B3)) return 0;
 
     // separating axis = u1 x (v1,v2,v3)
-    if (dFabs(pp[2]*R21-pp[1]*R31) > A2*Q31 + A3*Q21 + B2*Q13 + B3*Q12) return 0;
-    if (dFabs(pp[2]*R22-pp[1]*R32) > A2*Q32 + A3*Q22 + B1*Q13 + B3*Q11) return 0;
-    if (dFabs(pp[2]*R23-pp[1]*R33) > A2*Q33 + A3*Q23 + B1*Q12 + B2*Q11) return 0;
+    if (dFabs(pp[2]*R21-pp[1]*R31) > A2 * Q31 + A3 * Q21 + B2 * Q13 + B3 * Q12) return 0;
+    if (dFabs(pp[2]*R22-pp[1]*R32) > A2 * Q32 + A3 * Q22 + B1 * Q13 + B3 * Q11) return 0;
+    if (dFabs(pp[2]*R23-pp[1]*R33) > A2 * Q33 + A3 * Q23 + B1 * Q12 + B2 * Q11) return 0;
 
     // separating axis = u2 x (v1,v2,v3)
-    if (dFabs(pp[0]*R31-pp[2]*R11) > A1*Q31 + A3*Q11 + B2*Q23 + B3*Q22) return 0;
-    if (dFabs(pp[0]*R32-pp[2]*R12) > A1*Q32 + A3*Q12 + B1*Q23 + B3*Q21) return 0;
-    if (dFabs(pp[0]*R33-pp[2]*R13) > A1*Q33 + A3*Q13 + B1*Q22 + B2*Q21) return 0;
+    if (dFabs(pp[0]*R31-pp[2]*R11) > A1 * Q31 + A3 * Q11 + B2 * Q23 + B3 * Q22) return 0;
+    if (dFabs(pp[0]*R32-pp[2]*R12) > A1 * Q32 + A3 * Q12 + B1 * Q23 + B3 * Q21) return 0;
+    if (dFabs(pp[0]*R33-pp[2]*R13) > A1 * Q33 + A3 * Q13 + B1 * Q22 + B2 * Q21) return 0;
 
     // separating axis = u3 x (v1,v2,v3)
-    if (dFabs(pp[1]*R11-pp[0]*R21) > A1*Q21 + A2*Q11 + B2*Q33 + B3*Q32) return 0;
-    if (dFabs(pp[1]*R12-pp[0]*R22) > A1*Q22 + A2*Q12 + B1*Q33 + B3*Q31) return 0;
-    if (dFabs(pp[1]*R13-pp[0]*R23) > A1*Q23 + A2*Q13 + B1*Q32 + B2*Q31) return 0;
+    if (dFabs(pp[1]*R11-pp[0]*R21) > A1 * Q21 + A2 * Q11 + B2 * Q33 + B3 * Q32) return 0;
+    if (dFabs(pp[1]*R12-pp[0]*R22) > A1 * Q22 + A2 * Q12 + B1 * Q33 + B3 * Q31) return 0;
+    if (dFabs(pp[1]*R13-pp[0]*R23) > A1 * Q23 + A2 * Q13 + B1 * Q32 + B2 * Q31) return 0;
 
     return 1;
 }
@@ -536,8 +539,8 @@ int dBoxTouchesBox (const dVector3 p1, const dMatrix3 R1,
 int dClipEdgeToPlane( dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector4& plPlane)
 {
     // calculate distance of edge points to plane
-    dReal fDistance0 = dPointPlaneDistance(  vEpnt0 ,plPlane );
-    dReal fDistance1 = dPointPlaneDistance(  vEpnt1 ,plPlane );
+    dReal fDistance0 = dCalcPointPlaneDistance(  vEpnt0 ,plPlane );
+    dReal fDistance1 = dCalcPointPlaneDistance(  vEpnt1 ,plPlane );
 
     // if both points are behind the plane
     if ( fDistance0 < 0 && fDistance1 < 0 ) 
@@ -563,10 +566,10 @@ int dClipEdgeToPlane( dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector4& plPlan
         // clamp correct edge to intersection point
         if ( fDistance0 < 0 ) 
         {
-            dVector3Copy(vIntersectionPoint,vEpnt0);
+            dCopyVector3(vEpnt0, vIntersectionPoint);
         } else 
         {
-            dVector3Copy(vIntersectionPoint,vEpnt1);
+            dCopyVector3(vEpnt1, vIntersectionPoint);
         }
         return 1;
     }
@@ -588,8 +591,8 @@ void		 dClipPolyToPlane( const dVector3 avArrayIn[], const int ctIn,
 
 
         // calculate distance of edge points to plane
-        dReal fDistance0 = dPointPlaneDistance(  avArrayIn[i0],plPlane );
-        dReal fDistance1 = dPointPlaneDistance(  avArrayIn[i1],plPlane );
+        dReal fDistance0 = dCalcPointPlaneDistance(  avArrayIn[i0],plPlane );
+        dReal fDistance1 = dCalcPointPlaneDistance(  avArrayIn[i1],plPlane );
 
         // if first point is in front of plane
         if( fDistance0 >= 0 ) {
@@ -635,14 +638,14 @@ void		 dClipPolyToCircle(const dVector3 avArrayIn[], const int ctIn,
     for (int i1=0; i1<ctIn; i0=i1, i1++) 
     {
         // calculate distance of edge points to plane
-        dReal fDistance0 = dPointPlaneDistance(  avArrayIn[i0],plPlane );
-        dReal fDistance1 = dPointPlaneDistance(  avArrayIn[i1],plPlane );
+        dReal fDistance0 = dCalcPointPlaneDistance(  avArrayIn[i0],plPlane );
+        dReal fDistance1 = dCalcPointPlaneDistance(  avArrayIn[i1],plPlane );
 
         // if first point is in front of plane
         if( fDistance0 >= 0 ) 
         {
             // emit point
-            if (dVector3LengthSquare(avArrayIn[i0]) <= fRadius*fRadius)
+            if (dCalcVectorLengthSquare3(avArrayIn[i0]) <= fRadius*fRadius)
             {
                 avArrayOut[ctOut][0] = avArrayIn[i0][0];
                 avArrayOut[ctOut][1] = avArrayIn[i0][1];
@@ -665,7 +668,7 @@ void		 dClipPolyToCircle(const dVector3 avArrayIn[], const int ctIn,
                 (avArrayIn[i0][2]-avArrayIn[i1][2])*fDistance0/(fDistance0-fDistance1);
 
             // emit intersection point
-            if (dVector3LengthSquare(avArrayIn[i0]) <= fRadius*fRadius)
+            if (dCalcVectorLengthSquare3(avArrayIn[i0]) <= fRadius*fRadius)
             {
                 avArrayOut[ctOut][0] = vIntersectionPoint[0];
                 avArrayOut[ctOut][1] = vIntersectionPoint[1];

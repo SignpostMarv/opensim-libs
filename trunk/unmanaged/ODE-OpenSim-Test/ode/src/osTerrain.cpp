@@ -28,87 +28,6 @@
 #define dMIN(A,B)  ((A)>(B) ? (B) : (A))
 #define dMAX(A,B)  ((A)>(B) ? (A) : (B))
 
-// Three-way MIN and MAX
-#define dMIN3(A,B,C)	( (A)<(B) ? dMIN((A),(C)) : dMIN((B),(C)) )
-#define dMAX3(A,B,C)	( (A)>(B) ? dMAX((A),(C)) : dMAX((B),(C)) )
-
-#define dOPESIGN(a, op1, op2,b) \
-    (a)[0] op1 op2 ((b)[0]); \
-    (a)[1] op1 op2 ((b)[1]); \
-    (a)[2] op1 op2 ((b)[2]);
-
-#define dGeomRaySetNoNormalize(myRay, MyPoint, MyVector) {  \
-    \
-    dVector3Copy (MyPoint, (myRay).final_posr->pos);   \
-    (myRay).final_posr->R[2] = (MyVector)[0];       \
-    (myRay).final_posr->R[6] = (MyVector)[1];       \
-    (myRay).final_posr->R[10] = (MyVector)[2];      \
-    dGeomMoved (&myRay);                        \
-            }
-
-#define dGeomPlaneSetNoNormalize(MyPlane, MyPlaneDef) { \
-    \
-    (MyPlane)->p[0] = (MyPlaneDef)[0];  \
-    (MyPlane)->p[1] = (MyPlaneDef)[1];  \
-    (MyPlane)->p[2] = (MyPlaneDef)[2];  \
-    (MyPlane)->p[3] = (MyPlaneDef)[3];  \
-    dGeomMoved (MyPlane);           \
-                    }
-
-#if defined(dUSEAVX)
-ODE_PURE_INLINE dReal dV3Dot(const dReal *a, const dReal *b)
-{
-    __m128 ma, mb;
-    ma = _mm_loadu_ps(a);
-    mb = _mm_loadu_ps(b);
-    ma = _mm_dp_ps(ma, mb, 0x71);
-
-    return (dReal)_mm_cvtss_f32(ma);
-    //    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-#else
-ODE_PURE_INLINE dReal dV3Dot(const dReal *a, const dReal *b)
-{
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-#endif
-
-#if defined(dUSEAVX)
-ODE_PURE_INLINE dReal dV3lenghtSQ(const dReal *a)
-{
-    __m128 ma;
-    ma = _mm_loadu_ps(a);
-    ma = _mm_dp_ps(ma, ma, 0x71);
-
-    return (dReal)_mm_cvtss_f32(ma);
-}
-
-#else
-ODE_PURE_INLINE dReal dV3lenghtSQ(const dReal *a)
-{
-    return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
-}
-#endif
-
-
-#if defined(dUSEAVX)
-ODE_PURE_INLINE dReal dV3lenght(const dReal *a)
-{
-    __m128 ma;
-    ma = _mm_loadu_ps(a);
-    ma = _mm_dp_ps(ma, ma, 0x71);
-    dReal l = (dReal)_mm_cvtss_f32(ma);
-    return dSqrt(l);
-}
-
-#else
-ODE_PURE_INLINE dReal dV3lenght(const dReal *a)
-{
-    return dSqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-}
-#endif
-
 ODE_PURE_INLINE dReal dV2Dot(const dReal *a, const dReal *b)
 {
     return a[0] * b[0] + a[1] * b[1];
@@ -604,23 +523,7 @@ static inline bool DescendingTriangleSort(const OSTerrainTriangle * const A, con
     return ((A->maxAAAB - B->maxAAAB) > dEpsilon);
 }
 
-static inline dReal DistancePointToLine(const dVector3 &_point,
-                                         const dVector3 &_pt0,
-                                         const dVector3 &_Edge,
-                                         const dReal _Edgelength)
-{
-    dVector3 v;
-    dVector3Subtract(_point, _pt0, v);
-    dVector3 s;
-    dVector3Copy (_Edge, s);
-    const dReal dot = dVector3Dot(v, _Edge) / _Edgelength;
-    dVector3Scale(s, dot);
-    dVector3Subtract(v, s, v);
-    return dVector3Length(v);
-}
-
-
-    void SortPlaneContacts(dContactGeom* PlaneContact,int numPlaneContacts)
+void SortPlaneContacts(dContactGeom* PlaneContact,int numPlaneContacts)
     {
         dContactGeom t;
         int i,j;
@@ -813,7 +716,10 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         triplane[1] = 0;
         triplane[2] = 1;
         triplane[3] =  minZ;
-        dGeomPlaneSetNoNormalize (sliding_plane, triplane);
+
+        dCopyVector4((sliding_plane)->p, triplane);
+        dGeomMoved(sliding_plane);
+
         // find collision and compute contact points
         numTerrainContacts = geomNPlaneCollider (o2, sliding_plane, flags, contact, skip);
 	    dIASSERT(numTerrainContacts <= numMaxContactsPossible);
@@ -821,7 +727,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         for (i = 0; i < numTerrainContacts; i++)
         {
 		    pContact = CONTACT(contact, i*skip);
-            dOPESIGN(pContact->normal, =, -, triplane);
+            dCopyNegatedVector3(pContact->normal, triplane);
         }
         return numTerrainContacts;
     }
@@ -962,7 +868,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
                 dV3CrossTerrain(plane, dz1, dz2);
 
-                plane[3] = dVector3Dot(CurrTri->planeDef, C->vertex);
+                plane[3] = dCalcVectorDot3(CurrTri->planeDef, C->vertex);
             }
 
             if (isACollide || isBCollide || isDCollide)
@@ -988,7 +894,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
                 dV3CrossTerrain(plane, dz1, dz2);
 
-                plane[3] = dVector3Dot(CurrTri->planeDef, B->vertex);
+                plane[3] = dCalcVectorDot3(CurrTri->planeDef, B->vertex);
             }
         }
     }
@@ -1023,7 +929,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         itPlane = tri_base->planeDef;
 
         //set plane Geom
-        dGeomPlaneSetNoNormalize (sliding_plane,  itPlane);
+        dCopyVector4((sliding_plane)->p, itPlane);
+        dGeomMoved(sliding_plane);
 
         numPlaneContacts = geomNPlaneCollider (o2, sliding_plane, planeTestFlags, PlaneContact, sizeof(dContactGeom));
         if(numPlaneContacts > 0)
@@ -1037,8 +944,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                     tri_base->isFirst))
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
-                    dVector3Copy(planeCurrContact->pos, pContact->pos);
-                    dOPESIGN(pContact->normal, =, -, itPlane);
+                    dCopyVector3( pContact->pos, planeCurrContact->pos);
+                    dCopyNegatedVector3(pContact->normal, itPlane);
                     pContact->depth = planeCurrContact->depth;
                     pContact->side1 = planeCurrContact->side1;
                     pContact->side2 = planeCurrContact->side2;
@@ -1092,8 +999,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                     tri_test->isFirst))
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
-                    dVector3Copy(planeCurrContact->pos, pContact->pos);
-                    dOPESIGN(pContact->normal, =, -, itPlane);
+                    dCopyVector3(pContact->pos, planeCurrContact->pos);
+                    dCopyNegatedVector3(pContact->normal, itPlane);
                     pContact->depth = planeCurrContact->depth;
                     pContact->side1 = planeCurrContact->side1;
                     pContact->side2 = planeCurrContact->side2;
@@ -1170,10 +1077,9 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
                     //create contact using vertices
-                    dVector3Copy (triVertex, pContact->pos);
+                    dCopyVector3(pContact->pos, triVertex);
                     //create contact using Plane Normal
-                    dOPESIGN(pContact->normal, =, -, itTriangle->planeDef);
-
+                    dCopyNegatedVector3(pContact->normal, itTriangle->planeDef);
                     pContact->depth = depth;
                     pContact->side1 = -1;
                     pContact->side2 = -1;
@@ -1221,7 +1127,7 @@ void inline dOSTerrainAddSphereContact(const dContactGeom* contact, int skip,
         return;
     }
 
-    dOPESIGN(pContact->pos, = , , pos);
+    dCopyVector3(pContact->pos, pos);
     pContact->depth = depth;
     numTerrainContacts++;
 }
@@ -1255,9 +1161,8 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
     dxSphere *sphere = (dxSphere*)o2;
     radius = sphere->radius;
-    center[0] = sphere->final_posr->pos[0];
-    center[1] = sphere->final_posr->pos[1];
-    center[2] = sphere->final_posr->pos[2];
+
+    dCopyVector3(center, sphere->final_posr->pos);
 
     const dReal minO2Height = center[2] - radius;
 
@@ -1455,7 +1360,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                         dz2 = AHeight - CHeight;
                         dV3CrossTerrain(normA, dz1, dz2);
 
-                        k = dV3Dot(tdist, normA);
+                        k = dCalcVectorDot3(tdist, normA);
                         depth = radius - k;
                         if (depth > dEpsilon)
                         {
@@ -1489,7 +1394,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                         dz2 = AHeight - CHeight;
                         dV3CrossTerrain(normA, dz1, dz2);
 
-                        k = dV3Dot(tdist, normA);
+                        k = dCalcVectorDot3(tdist, normA);
                         depth = radius - k;
                         if (depth > dEpsilon)
                         {
@@ -1518,7 +1423,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                         dz2 = BHeight - DHeight;
                         dV3CrossTerrain(normB, dz1, dz2);
 
-                        k = dV3Dot(tdist, normB);
+                        k = dCalcVectorDot3(tdist, normB);
                         depth = radius - k;
                         if (depth > dEpsilon)
                         {
@@ -1561,13 +1466,11 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                     dist[0] = tdist[0];
                                     dist[1] = tdist[1] - t;
 
-                                    k = dV3lenghtSQ(dist);
+                                    k = dCalcVectorLengthSquare3(dist);
                                     if (k < depth)
                                     {
                                         depth = k;
-                                        pdist[0] = dist[0];
-                                        pdist[1] = dist[1];
-                                        pdist[2] = dist[2];
+                                        dCopyVector3(pdist, dist);
                                     }
                                 }
                             }
@@ -1590,13 +1493,11 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                 {
                                     dist[0] = tdist[0] - t;
                                     dist[1] = tdist[1] - t;
-                                    k = dV3lenghtSQ(dist);
+                                    k = dCalcVectorLengthSquare3(dist);
                                     if (k < depth)
                                     {
                                         depth = k;
-                                        pdist[0] = dist[0];
-                                        pdist[1] = dist[1];
-                                        pdist[2] = dist[2];
+                                        dCopyVector3(pdist, dist);
                                     }
                                 }
                             }
@@ -1621,26 +1522,22 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                            {
                                dist[0] = tdist[0] - t;
                                dist[1] = tdist[1];
-                               k = dV3lenghtSQ(dist);
+                               k = dCalcVectorLengthSquare3(dist);
                                if (k < depth)
                                {
                                    depth = k;
-                                   pdist[0] = dist[0];
-                                   pdist[1] = dist[1];
-                                   pdist[2] = dist[2];
+                                   dCopyVector3(pdist, dist);
                                }
                            }
                         }
                     }
                     else if (!topColide && !lastHbotColide && tdist[2] > dEpsilon && !lastVtopCollide[VtopColliedPtr -1])
                     {
-                       k = dV3lenghtSQ(tdist);
+                       k = dCalcVectorLengthSquare3(tdist);
                        if (k < depth)
                        {
                            depth = k;
-                           pdist[0] = tdist[0];
-                           pdist[1] = tdist[1];
-                           pdist[2] = tdist[2];
+                           dCopyVector3(pdist, tdist);
                        }
                     }
                 }
@@ -1672,12 +1569,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
         pContact->side1 = -1;
         pContact->side2 = -1;
         pContact->depth = pContactB->depth;
-        dOPESIGN(pContact->normal, = , - , pContactB->pos);
+        dCopyNegatedVector3(pContact->normal, pContactB->pos);
         dNormalize3(pContact->normal);
-        dOPESIGN(pContact->pos, = , - , pContactB->pos);
-        pContact->pos[0] += center[0];
-        pContact->pos[1] += center[1];
-        pContact->pos[2] += center[2];
+        dSubtractVectors3(pContact->pos, center, pContactB->pos);
 
         pContactB = CONTACT(ContactBuffer, skip);
         if(pContactB->depth > 0)
@@ -1686,12 +1580,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dOPESIGN(pContact->normal, = , - , pContactB->pos);
+            dCopyNegatedVector3(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dOPESIGN(pContact->pos, = , - , pContactB->pos);
-            pContact->pos[0] += center[0];
-            pContact->pos[1] += center[1];
-            pContact->pos[2] += center[2];
+            dSubtractVectors3(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
 
@@ -1702,13 +1593,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dOPESIGN(pContact->normal, = , - , pContactB->pos);
+            dCopyNegatedVector3(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dOPESIGN(pContact->pos, = , - , pContactB->pos);
-            dNormalize3(pContact->normal);
-            pContact->pos[0] += center[0];
-            pContact->pos[1] += center[1];
-            pContact->pos[2] += center[2];
+            dSubtractVectors3(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
 
@@ -1719,12 +1606,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dOPESIGN(pContact->normal, = , - , pContactB->pos);
+            dCopyNegatedVector3(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dOPESIGN(pContact->pos, = , - , pContactB->pos);
-            pContact->pos[0] += center[0];
-            pContact->pos[1] += center[1];
-            pContact->pos[2] += center[2];
+            dSubtractVectors3(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
 
@@ -1735,12 +1619,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dOPESIGN(pContact->normal, = , - , pContactB->pos);
-            dOPESIGN(pContact->pos, = , - , pContactB->pos);
+            dCopyNegatedVector3(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            pContact->pos[0] += center[0];
-            pContact->pos[1] += center[1];
-            pContact->pos[2] += center[2];
+            dSubtractVectors3(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
         return numTerrainContacts;
