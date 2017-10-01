@@ -835,7 +835,7 @@ ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *
     res[2] = restmp[2];
 }
 #else
-ODE_PURE_INLINE dReal dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *b, const dReal t)
+ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *b, const dReal t)
 {
     // res = a + ( b - a ) * t;
     dReal tmp[3];
