@@ -40,7 +40,6 @@
 #include "util.h"
 #include "odetls.h"
 
-
 // misc defines
 #define ALLOCA dALLOCA16
 

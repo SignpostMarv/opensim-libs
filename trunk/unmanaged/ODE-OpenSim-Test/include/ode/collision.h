@@ -963,6 +963,7 @@ ODE_API dReal dGeomSpherePointDepth (dGeomID sphere, dReal x, dReal y, dReal z);
 
 
 /*--> Convex Functions*/
+/*
 ODE_API dGeomID dCreateConvex (dSpaceID space,
 			       dReal *_planes,
 			       unsigned int _planecount,
@@ -974,7 +975,9 @@ ODE_API void dGeomSetConvex (dGeomID g,
 			     unsigned int _count,
 			     dReal *_points,
 			     unsigned int _pointcount,unsigned int *_polygons);
+*/
 /*<-- Convex Functions*/
+
 
 /**
  * @defgroup collide_box Box Class

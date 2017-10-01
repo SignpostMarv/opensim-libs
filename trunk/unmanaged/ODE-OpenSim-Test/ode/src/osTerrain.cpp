@@ -682,7 +682,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         geomNDepthGetter		= dGeomCapsulePointDepth;
         // max_collisionContact    = 3;
         break;
-
+/*
     case dCylinderClass:
         geomRayNCollider		= dCollideRayCylinder;
         geomNPlaneCollider	    = dCollideCylinderPlane;
@@ -696,7 +696,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         geomNDepthGetter		= NULL;// TODO: dGeomConvexPointDepth;
         //max_collisionContact    = 3;
         break;
-
+*/
     case dTriMeshClass:
         geomRayNCollider		= dCollideRayTrimesh;
         geomNPlaneCollider	    = dCollideTrimeshPlane;

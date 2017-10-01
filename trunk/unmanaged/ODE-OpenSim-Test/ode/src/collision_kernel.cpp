@@ -192,7 +192,7 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dRayClass,dBoxClass,&dCollideRayBox);
     setCollider (dRayClass,dCapsuleClass,&dCollideRayCapsule);
     setCollider (dRayClass,dPlaneClass,&dCollideRayPlane);
-    setCollider (dRayClass,dCylinderClass,&dCollideRayCylinder);
+//    setCollider (dRayClass,dCylinderClass,&dCollideRayCylinder);
 
     setCollider (dTriMeshClass,dSphereClass,&dCollideSTL);
     setCollider (dTriMeshClass,dBoxClass,&dCollideBTL);
@@ -200,8 +200,8 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dTriMeshClass,dTriMeshClass,&dCollideTTL);
     setCollider (dTriMeshClass,dCapsuleClass,&dCollideCCTL);
     setCollider (dTriMeshClass,dPlaneClass,&dCollideTrimeshPlane);
-    setCollider (dCylinderClass,dTriMeshClass,&dCollideCylinderTrimesh);
-
+//    setCollider (dCylinderClass,dTriMeshClass,&dCollideCylinderTrimesh);
+/*
 #ifdef dLIBCCD_BOX_CYL
     setCollider (dBoxClass,dCylinderClass,&dCollideBoxCylinderCCD);
 #else
@@ -218,6 +218,7 @@ static void setAllColliders (int i, dColliderFn *fn)
 #endif
 
     //--> Convex Collision
+
 #ifdef dLIBCCD_CONVEX_BOX
     setCollider (dConvexClass, dBoxClass, &dCollideConvexBoxCCD);
 #else
@@ -246,17 +247,17 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dConvexClass,dConvexClass,&dCollideConvexConvex);
 #endif
 
-    setCollider (dConvexClass,dPlaneClass,&dCollideConvexPlane);
-    setCollider (dRayClass,dConvexClass,&dCollideRayConvex);
+//    setCollider (dConvexClass,dPlaneClass,&dCollideConvexPlane);
+//    setCollider (dRayClass,dConvexClass,&dCollideRayConvex);
     //<-- Convex Collision
-
+*/
     //--> dHeightfield Collision
     setCollider (dHeightfieldClass,dRayClass,&dCollideHeightfield);
     setCollider (dHeightfieldClass,dSphereClass,&dCollideHeightfield);
     setCollider (dHeightfieldClass,dBoxClass,&dCollideHeightfield);
     setCollider (dHeightfieldClass,dCapsuleClass,&dCollideHeightfield);
-    setCollider (dHeightfieldClass,dCylinderClass,&dCollideHeightfield);
-    setCollider (dHeightfieldClass,dConvexClass,&dCollideHeightfield);
+//    setCollider (dHeightfieldClass,dCylinderClass,&dCollideHeightfield);
+//    setCollider (dHeightfieldClass,dConvexClass,&dCollideHeightfield);
 
     setCollider (dHeightfieldClass,dTriMeshClass,&dCollideHeightfield);
 
@@ -267,8 +268,8 @@ static void setAllColliders (int i, dColliderFn *fn)
     setCollider (dOSTerrainClass,dSphereClass,&dCollideOSTerrain);
     setCollider (dOSTerrainClass,dBoxClass,&dCollideOSTerrain);
     setCollider (dOSTerrainClass,dCapsuleClass,&dCollideOSTerrain);
-    setCollider (dOSTerrainClass,dCylinderClass,&dCollideOSTerrain);
-    setCollider (dOSTerrainClass,dConvexClass,&dCollideOSTerrain);
+//    setCollider (dOSTerrainClass,dCylinderClass,&dCollideOSTerrain);
+//    setCollider (dOSTerrainClass,dConvexClass,&dCollideOSTerrain);
 
     setCollider (dOSTerrainClass,dTriMeshClass,&dCollideOSTerrain);
 

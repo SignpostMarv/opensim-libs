@@ -1080,7 +1080,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
         geomNDepthGetter		= dGeomCapsulePointDepth;
         // max_collisionContact    = 3;
         break;
-
+/*
     case dCylinderClass:
         geomRayNCollider		= dCollideRayCylinder;
         geomNPlaneCollider	    = dCollideCylinderPlane;
@@ -1094,7 +1094,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
         geomNDepthGetter		= NULL;// TODO: dGeomConvexPointDepth;
         //max_collisionContact    = 3;
         break;
-
+*/
     case dTriMeshClass:
         geomRayNCollider		= dCollideRayTrimesh;
         geomNPlaneCollider	    = dCollideTrimeshPlane;

@@ -68,6 +68,7 @@ int dCollideRayCylinder (dxGeom *o1, dxGeom *o2, int flags,
 
 // Cylinder - Box/Sphere by (C) CroTeam
 // Ported by Nguyen Binh
+/*
 int dCollideCylinderBox(dxGeom *o1, dxGeom *o2, 
                         int flags, dContactGeom *contact, int skip);
 int dCollideCylinderSphere(dxGeom *gCylinder, dxGeom *gSphere, 
@@ -89,6 +90,7 @@ int dCollideConvexConvex (dxGeom *o1, dxGeom *o2, int flags,
 int dCollideRayConvex (dxGeom *o1, dxGeom *o2, int flags, 
                        dContactGeom *contact, int skip);
 //<-- Convex Collision
+*/
 
 // dHeightfield
 int dCollideHeightfield( dxGeom *o1, dxGeom *o2, 

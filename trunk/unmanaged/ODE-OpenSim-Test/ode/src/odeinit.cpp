@@ -21,9 +21,7 @@
  *************************************************************************/
 
 /*
-
 ODE initialization/finalization code
-
 */
 
 #include <ode/common.h>

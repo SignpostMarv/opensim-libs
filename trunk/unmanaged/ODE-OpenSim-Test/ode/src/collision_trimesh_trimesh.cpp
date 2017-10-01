@@ -950,7 +950,6 @@ void ClipPointsByTri(const dVector3 * points, int pointcount, const dVector3 tri
         ClipConvexPolygonAgainstPlane(triplanenormal, clipped_points);
 }
 
-
 ///returns the penetration depth
 dReal FindTriangleTriangleCollision(const dVector3 tri1[3], const dVector3 tri2[3],
                                     dVector3 separating_normal, LineContactSet & deep_points)
