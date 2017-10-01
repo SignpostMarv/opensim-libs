@@ -258,29 +258,6 @@ ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 #endif
 
 #if defined(dUSEAVX)
-ODE_PURE_INLINE void dNegateVector3(dReal *res)
-{
-    dReal restmp[4];
-    __m128 ma, mc;
-
-    ma = _mm_loadu_ps(res);
-    mc = _mm_setzero_ps();
-    ma = _mm_sub_ps(mc, ma);
-
-    _mm_storeu_ps(restmp, ma);
-    res[0] = restmp[0];
-    res[1] = restmp[1];
-    res[2] = restmp[2];
-}
-#else
-ODE_PURE_INLINE void dNegateVector3(dReal *res)
-{
-  res[0] = -res[0];
-  res[1] = -res[1];
-  res[2] = -res[2];
-}
-#endif
-#if defined(dUSEAVX)
 ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 {
     dReal restmp[4];
@@ -353,6 +330,7 @@ ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale
   res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
+
 #if defined(dUSEAVX)
 ODE_PURE_INLINE void  dCopyNegatedVector3(dReal *res, const dReal *a)
 {
@@ -371,11 +349,37 @@ ODE_PURE_INLINE void  dCopyNegatedVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyNegatedVector3(dReal *res, const dReal *a)
 {
-  const dReal res_0 = -a[0];
-  const dReal res_1 = -a[1];
-  const dReal res_2 = -a[2];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    const dReal res_0 = -a[0];
+    const dReal res_1 = -a[1];
+    const dReal res_2 = -a[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(dUSEAVX)
+ODE_PURE_INLINE void  dNegateVector3(dReal *res)
+{
+    dReal restmp[4];
+    __m128 ma, mc;
+
+    ma = _mm_loadu_ps(res);
+    mc = _mm_setzero_ps();
+    ma = _mm_sub_ps(mc, ma);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dNegateVector3(dReal *res)
+{
+    const dReal res_0 = -res[0];
+    const dReal res_1 = -res[1];
+    const dReal res_2 = -res[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
 
@@ -842,7 +846,8 @@ ODE_PURE_INLINE dReal dCalcLerpVectors3(dReal *res, const dReal *a, const dReal 
     res[1] = tmp[1];
     res[2] = tmp[2];
 }
-#endif;
+#endif
+
 /*
  * special case matrix multiplication, with operator selection
  */
