@@ -370,7 +370,7 @@ namespace Newtonsoft.Json.Converters
             }
             else if (reader.TokenType == JsonToken.Date)
             {
-              element.AppendChild(document.CreateTextNode(XmlConvert.ToString((DateTime)reader.Value)));
+              element.AppendChild(document.CreateTextNode(XmlConvert.ToString((DateTime)reader.Value,XmlDateTimeSerializationMode.Utc)));
             }
             else if (reader.TokenType == JsonToken.Null)
             {

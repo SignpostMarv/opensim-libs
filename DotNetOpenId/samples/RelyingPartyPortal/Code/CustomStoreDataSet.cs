@@ -1,6 +1,8 @@
-﻿namespace ConsumerPortal.Code {
-    
-    
-    public partial class CustomStoreDataSet {
+﻿namespace ConsumerPortal.Code
+{
+
+
+    public partial class CustomStoreDataSet
+    {
     }
 }

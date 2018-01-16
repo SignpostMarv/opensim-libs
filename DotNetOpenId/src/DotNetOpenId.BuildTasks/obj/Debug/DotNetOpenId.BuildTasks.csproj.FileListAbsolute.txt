@@ -3,3 +3,9 @@ C:\Documents and Settings\dcolive\Desktop\dotnetopenid\bin\Debug\DotNetOpenId.Bu
 C:\Documents and Settings\dcolive\Desktop\dotnetopenid\src\DotNetOpenId.BuildTasks\obj\Debug\ResolveAssemblyReference.cache
 C:\Documents and Settings\dcolive\Desktop\dotnetopenid\src\DotNetOpenId.BuildTasks\obj\Debug\DotNetOpenId.BuildTasks.dll
 C:\Documents and Settings\dcolive\Desktop\dotnetopenid\src\DotNetOpenId.BuildTasks\obj\Debug\DotNetOpenId.BuildTasks.pdb
+C:\opensim\opensim-libs\DotNetOpenId\bin\Debug\DotNetOpenId.BuildTasks.dll
+C:\opensim\opensim-libs\DotNetOpenId\bin\Debug\DotNetOpenId.BuildTasks.pdb
+C:\opensim\opensim-libs\DotNetOpenId\src\DotNetOpenId.BuildTasks\obj\Debug\DotNetOpenId.BuildTasks.csprojResolveAssemblyReference.cache
+C:\opensim\opensim-libs\DotNetOpenId\src\DotNetOpenId.BuildTasks\obj\Debug\DotNetOpenId.BuildTasks.csproj.CoreCompileInputs.cache
+C:\opensim\opensim-libs\DotNetOpenId\src\DotNetOpenId.BuildTasks\obj\Debug\DotNetOpenId.BuildTasks.dll
+C:\opensim\opensim-libs\DotNetOpenId\src\DotNetOpenId.BuildTasks\obj\Debug\DotNetOpenId.BuildTasks.pdb
