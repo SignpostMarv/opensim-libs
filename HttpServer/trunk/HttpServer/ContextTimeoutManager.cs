@@ -26,7 +26,7 @@
  */
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq;
 using System.Net.Sockets;
@@ -44,7 +44,8 @@ namespace HttpServer
         /// Use a Thread or a Timer to monitor the ugly
         /// </summary>
         private static Thread m_internalThread = null;
-        private static readonly LocklessQueue<HttpClientContext> m_contexts = new LocklessQueue<HttpClientContext>();
+//        private static readonly LocklessQueue<HttpClientContext> m_contexts = new LocklessQueue<HttpClientContext>();
+        private static ConcurrentQueue<HttpClientContext> m_contexts = new ConcurrentQueue<HttpClientContext>();
         private static bool m_shuttingDown;
         private static int m_monitorMS = 1000;
 

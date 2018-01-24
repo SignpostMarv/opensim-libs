@@ -53,7 +53,7 @@ namespace HttpServer
 		private string _contentType;
 		private bool _contentTypeChangedByCode;
 		private Encoding _encoding = Encoding.UTF8;
-		private int _keepAlive = 200;
+		private int _keepAlive = 60;
         public uint requestID {get; private set;}
 
 		/// <summary>
@@ -149,6 +149,7 @@ namespace HttpServer
 			set { _encoding = value; }
 		}
 
+        
 		/// <summary>
 		/// Number of seconds to keep connection alive
 		/// </summary>
@@ -254,10 +255,16 @@ namespace HttpServer
 				throw new InvalidOperationException("Everything have already been sent.");
 
             _context.ReqResponseAboutToSend(requestID);
-            if(_keepAlive > 0)
-                _context.TimeoutKeepAlive = _keepAlive * 1000;
-            if(_context.MAXRequests == 0)
+            if(_context.MAXRequests == 0 || _keepAlive == 0)
+            {
                 Connection = ConnectionType.Close;
+                _context.TimeoutKeepAlive = 0;
+            }
+            else
+            {
+                if(_keepAlive > 0)
+                    _context.TimeoutKeepAlive = _keepAlive * 1000;
+            }
 
 			if (!HeadersSent)
             {
@@ -366,9 +373,9 @@ namespace HttpServer
 			if (_headers["Server"] == null)
 				_headers["Server"] = "Tiny WebServer";
 
-			if (Connection == ConnectionType.KeepAlive && _keepAlive > 0 && _context.MAXRequests > 0)
+			if (Connection == ConnectionType.KeepAlive && _context.TimeoutKeepAlive > 0 && _context.MAXRequests > 0)
 			{
-				_headers["Keep-Alive"] = "timeout=" + _keepAlive + ", max=" + _context.MAXRequests;
+				_headers["Keep-Alive"] = "timeout=" + _context.TimeoutKeepAlive + ", max=" + _context.MAXRequests;
 				_headers["Connection"] = "Keep-Alive";
 			}
 			else

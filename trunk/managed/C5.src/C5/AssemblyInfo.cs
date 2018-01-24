@@ -81,4 +81,3 @@ using System;
 #endif
 //[assembly: AssemblyKeyName("")]
 
-[assembly: CLSCompliant(true)]

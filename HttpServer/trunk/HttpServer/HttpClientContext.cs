@@ -21,8 +21,8 @@ namespace HttpServer
     /// TODO: Maybe this class should be broken up into HttpClientChannel and HttpClientContext?
     public class HttpClientContext : IHttpClientContext ,IDisposable
     {
-        const int MAXREQUESTS = 51;
-        const int MAXKEEPALIVE = 400000;
+        const int MAXREQUESTS = 20;
+        const int MAXKEEPALIVE = 60000;
 
         static private int basecontextID;
 
@@ -541,7 +541,7 @@ namespace HttpServer
             lock(requestsInServiceIDs)
             {
                 requestsInServiceIDs.Remove(requestID);
-                doclose = doclose && requestsInServiceIDs.Count == 0;
+//                doclose = doclose && requestsInServiceIDs.Count == 0;
                 if(requestsInServiceIDs.Count > 1)
                 {
 
