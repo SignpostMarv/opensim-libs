@@ -22,7 +22,7 @@ namespace HttpServer
         private readonly HttpParam _param = new HttpParam(HttpInput.Empty, HttpInput.Empty);
         private Stream _body = new MemoryStream();
         private int _bodyBytesLeft;
-        private ConnectionType _connection = ConnectionType.Close;
+        private ConnectionType _connection = ConnectionType.KeepAlive;
         private int _contentLength;
         private HttpForm _form = HttpForm.EmptyForm;
         private string _httpVersion = string.Empty;
@@ -429,7 +429,7 @@ namespace HttpServer
             _queryString = HttpInput.Empty;
             _bodyBytesLeft = 0;
             _headers.Clear();
-            _connection = ConnectionType.Close;
+            _connection = ConnectionType.KeepAlive;
             IsAjax = false;
             _form.Clear();
           }
