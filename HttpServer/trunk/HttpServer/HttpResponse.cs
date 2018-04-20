@@ -373,9 +373,10 @@ namespace HttpServer
 			if (_headers["Server"] == null)
 				_headers["Server"] = "Tiny WebServer";
 
-			if (Connection == ConnectionType.KeepAlive && _context.TimeoutKeepAlive > 0 && _context.MAXRequests > 0)
+            int keepaliveS = _context.TimeoutKeepAlive / 1000;
+			if (Connection == ConnectionType.KeepAlive &&  keepaliveS > 0 && _context.MAXRequests > 0)
 			{
-				_headers["Keep-Alive"] = "timeout=" + _context.TimeoutKeepAlive + ", max=" + _context.MAXRequests;
+				_headers["Keep-Alive"] = "timeout=" + keepaliveS + ", max=" + _context.MAXRequests;
 				_headers["Connection"] = "Keep-Alive";
 			}
 			else
