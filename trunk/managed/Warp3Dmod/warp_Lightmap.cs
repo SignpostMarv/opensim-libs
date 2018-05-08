@@ -70,7 +70,7 @@ namespace Warp3D
 						sheen = (float) light[i].highlightSheen / 255f;
 						spread = (float) light[i].highlightSpread / 4096;
 						spread = (spread < 0.01f) ? 0.01f : spread;
-						cos = (int) (255 * warp_Vector.angle(light[i].v,new warp_Vector(fnx, fny, sphere[pos])));
+						cos = (int) (255 * warp_Vector.vectorsCos(light[i].v,new warp_Vector(fnx, fny, sphere[pos])));
 						cos = (cos > 0) ? cos : 0;
 						dr += (warp_Color.getRed(diffuse) * cos) >> 8;
 						dg += (warp_Color.getGreen(diffuse) * cos) >> 8;

@@ -95,11 +95,17 @@ namespace Warp3D
 			return vectorProduct(sub(b,a),sub(c,a));
 		}
 
-		public static float angle(warp_Vector a, warp_Vector b)
+		public static float vectorsCos(warp_Vector a, warp_Vector b)
 			// returns the angle between 2 vectors
 		{
 			a.normalize();
 			b.normalize();
+			return (a.x*b.x+a.y*b.y+a.z*b.z);
+		}
+
+		public static float Dot(warp_Vector a, warp_Vector b)
+			// returns the angle between 2 vectors
+		{
 			return (a.x*b.x+a.y*b.y+a.z*b.z);
 		}
 

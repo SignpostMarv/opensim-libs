@@ -147,14 +147,14 @@ namespace Warp3D
 
 			if (dx!=0)
 			{
-				warp_Matrix m =new warp_Matrix();
+				warp_Matrix m = new warp_Matrix();
 				SIN=warp_Math.sin(dx);
 				COS=warp_Math.cos(dx);
 				m.m11=COS;
 				m.m12=SIN;
 				m.m21=-SIN;
 				m.m22=COS;
-				
+	
 				res.transform(m);
 			}
 			if (dy!=0)
@@ -187,18 +187,43 @@ namespace Warp3D
 
 		public void shift(float dx, float dy, float dz)
 		{
-            
-            transform( shiftMatrix( dx, dy, dz ) );
+			m03 += dx;
+			m13 += dy;
+			m23 += dz;
 		}
 
 		public void scale(float dx, float dy, float dz)
 		{
-			transform(scaleMatrix(dx,dy,dz));
+//			transform(scaleMatrix(dx,dy,dz));
+
+			m00 *= dx;
+			m01 *= dx;
+			m02 *= dx;
+			m03 *= dx;
+			m10 *= dy;
+			m11 *= dy;
+			m12 *= dy;
+			m13 *= dy;
+			m20 *= dz;
+			m21 *= dz;
+			m22 *= dz;
+			m23 *= dz;
 		}
 
 		public void scale(float d)
 		{
-			transform(scaleMatrix(d));
+			m00 *= d;
+			m01 *= d;
+			m02 *= d;
+			m03 *= d;
+			m10 *= d;
+			m11 *= d;
+			m12 *= d;
+			m13 *= d;
+			m20 *= d;
+			m21 *= d;
+			m22 *= d;
+			m23 *= d;
 		}
 
 		public void rotate(float dx, float dy, float dz)
@@ -218,17 +243,35 @@ namespace Warp3D
 
         public void scaleSelf( float dx, float dy, float dz )
 		{
-			preTransform(scaleMatrix(dx,dy,dz));
+			m00 *= dx;
+			m01 *= dy;
+			m02 *= dz;
+			m10 *= dx;
+			m11 *= dy;
+			m12 *= dz;
+			m20 *= dx;
+			m21 *= dy;
+			m22 *= dz;
 		}
 
 		public void scaleSelf(float d)
 		{
-			preTransform(scaleMatrix(d));
+			m00 *= d;
+			m01 *= d;
+			m02 *= d;
+			m10 *= d;
+			m11 *= d;
+			m12 *= d;
+			m20 *= d;
+			m21 *= d;
+			m22 *= d;
 		}
 
         public void shiftSelf( float dx, float dy, float dz )
         {
-            preTransform( shiftMatrix( dx, dy, dz ) );
+			m03 += m00 * dx + m01 * dy + m02 * dz;
+			m13 += m10 * dx + m11 * dy + m12 * dz;
+			m23 += m20 * dx + m21 * dx + m22 * dx;
         }
 
         public void rotateSelf( float dx, float dy, float dz )

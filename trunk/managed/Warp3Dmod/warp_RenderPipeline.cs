@@ -19,7 +19,7 @@ namespace Warp3D
 		ArrayList opaqueQueue = new ArrayList();
 		ArrayList transparentQueue = new ArrayList();
 
-		int zFar = 0xffffff;
+		int zFar = 0x7fffffff;
 
 		public int[] zBuffer;
 		public int[] idBuffer;

@@ -157,10 +157,10 @@ namespace Warp3D
 				return (color & 0xFEFEFE) >> 1;
 			}
 
-			r = ( ( (color >> 16) & 255) * factor) >> 8;
-			g = ( ( (color >> 8) & 255) * factor) >> 8;
+			r = ( ( (color >> 16) & 255) * factor) & GREEN;
+			g = ( ( (color >> 8) & 255) * factor) & GREEN;
 			b = ( (color & 255) * factor) >> 8;
-			return ALPHA | (r << 16) | (g << 8) | b;
+			return ALPHA | (r << 8) | g | b;
 		}
 
 		public static int multiply(int color1, int color2)
@@ -173,10 +173,10 @@ namespace Warp3D
 			{
 				return 0;
 			}
-			r = ( ( (color1 >> 16) & 255) * ( (color2 >> 16) & 255)) >> 8;
-			g = ( ( (color1 >> 8) & 255) * ( (color2 >> 8) & 255)) >> 8;
-			b = ( (color1 & 255) * (color2 & 255)) >> 8;
-			return ALPHA | (r << 16) | (g << 8) | b;
+			r = (((color1 >> 16) & 0xff) * ((color2 >> 16) & 0xff)) & GREEN;
+			g = (((color1 >> 8) & 0xff) * ((color2 >> 8) & 0xff)) & GREEN;
+			b = ((color1 & 0xff) * (color2 & 0xff)) >> 8;
+			return ALPHA | r << 8 | g | b;
 		}
 
 		public static int transparency(int bkgrd, int color, int alpha)
@@ -209,7 +209,6 @@ namespace Warp3D
 		{
 			return ALPHA | (warp_Math.crop(r, 0, 255) << 16) | (warp_Math.crop(g, 0, 255) << 8) | warp_Math.crop(b, 0, 255);
 		}
-
 
 		public static int getColor(int r, int g, int b)
 		{

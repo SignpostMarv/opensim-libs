@@ -32,20 +32,31 @@ namespace Warp3D
 
 		public void clipFrustrum(int w, int h)
 		{
-			if (parent.material==null) {visible=false; return; }
-			outOfFrustrum=(p1.clipcode&p2.clipcode&p3.clipcode)!=0;
-			if (outOfFrustrum) {visible=false; return; }
-			if (n2.z>0.5) {visible=true; return; }
+            if(parent.material == null)
+            {
+                visible = false;
+                return;
+            }
+            outOfFrustrum = (p1.clipcode & p2.clipcode & p3.clipcode) != 0;
+            if(outOfFrustrum)
+            {
+                visible = false;
+                return;
+            }
+            if(n2.z > 0.0001)
+            {
+                visible = true;
+                return;
+            }
 
-			triangleCenter.x=(p1.pos2.x+p2.pos2.x+p3.pos2.x);
-			triangleCenter.y=(p1.pos2.y+p2.pos2.y+p3.pos2.y);
-			triangleCenter.z=(p1.pos2.z+p2.pos2.z+p3.pos2.z);
+            triangleCenter.x = (p1.pos2.x + p2.pos2.x + p3.pos2.x);
+            triangleCenter.y = (p1.pos2.y + p2.pos2.y + p3.pos2.y);
+            triangleCenter.z = (p1.pos2.z + p2.pos2.z + p3.pos2.z);
 
-			visible=warp_Vector.angle(triangleCenter,n2)>0;
+            visible = warp_Vector.Dot(triangleCenter, n2) > 0;
+        }
 
-		}
-
-		public void project(warp_Matrix normalProjection)
+        public void project(warp_Matrix normalProjection)
 		{
 			n2=n.transform(normalProjection);
 			dist=getDist();

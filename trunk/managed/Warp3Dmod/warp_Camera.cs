@@ -21,6 +21,8 @@ namespace Warp3D
 		public float fovfact;             // Field of View factor
 		public int screenwidth;
 		public int screenheight;
+		public int halfscreenwidth;
+		public int halfscreenheight;
 		public int screenscale;
         
         internal bool isOrthographic;
@@ -57,6 +59,10 @@ namespace Warp3D
 			if (!needsRebuild) return;
 			needsRebuild=false;
 
+            halfscreenwidth = screenwidth >> 1;
+            halfscreenheight = screenheight >> 1;
+            
+
 			warp_Vector forward,up,right;
 
 			forward=warp_Vector.sub(lookat,pos);
@@ -77,12 +83,13 @@ namespace Warp3D
 
 			forward.normalize();
 			normalmatrix=new warp_Matrix(right,up,forward);
-			normalmatrix.rotate(0,0,rollfactor);
+            if(rollfactor != 0)
+			    normalmatrix.rotate(0,0,rollfactor);
 			matrix=normalmatrix.getClone();
 			matrix.shift(pos.x,pos.y,pos.z);
+			matrix=matrix.inverse();
 
 			normalmatrix=normalmatrix.inverse();
-			matrix=matrix.inverse();
 		}
 
 		public void setFov(float fov)

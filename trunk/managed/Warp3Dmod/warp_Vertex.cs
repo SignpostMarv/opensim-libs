@@ -78,30 +78,30 @@ namespace Warp3D
 		public void project(warp_Matrix vertexProjection,warp_Matrix normalProjection, warp_Camera camera)
 			// Projects this vertex into camera space
 		{
-			pos2=pos.transform(vertexProjection);
-			n2=n.transform(normalProjection);
-
+            pos2 = pos.transform(vertexProjection);
+            n2 = n.transform(normalProjection);
+ 
             if(camera.isOrthographic)
             {
-			    x=(int)(pos2.x * camera.EfectiveFovFactX + (camera.screenwidth >> 1));
-			    y=(int)(-pos2.y * camera.EfectiveFovFactY + (camera.screenheight >> 1));
+                x = (int)(pos2.x * camera.EfectiveFovFactX + camera.halfscreenwidth);
+                y = (int)(-pos2.y * camera.EfectiveFovFactY + camera.halfscreenheight);
             }
             else
             {
-			    float fact = camera.EfectiveFovFactX / ((pos2.z > 0.1) ? pos2.z : 0.1f);
-			    x=(int)(pos2.x * fact + (camera.screenwidth >> 1));
-			    y=(int)(-pos2.y * fact + (camera.screenheight >> 1));
+                float fact = camera.EfectiveFovFactX / ((pos2.z > 0.1) ? pos2.z : 0.1f);
+                x = (int)(pos2.x * fact + camera.halfscreenwidth);
+                y = (int)(-pos2.y * fact + camera.halfscreenheight);
             }
 
-			z=(int)(65536f*pos2.z);
-			sw = - (pos2.z);
-			nx=(int)(n2.x*127+127);
-			ny=(int)(n2.y*127+127);
-			if (parent.material==null) return;
-			if (parent.material.texture==null) return;
-			tx=(int)((float)parent.material.texture.width*u);
-			ty=(int)((float)parent.material.texture.height*v);
-		}
+            z = (int)(65536f * pos2.z);
+            sw = -(pos2.z);
+            nx = (int)(n2.x * 127 + 127);
+            ny = (int)(n2.y * 127 + 127);
+            if(parent.material == null || parent.material.texture == null)
+                return;
+            tx = (int)(parent.material.texture.width * u);
+            ty = (int)(parent.material.texture.height * v);
+        }
 
 		public void setUV(float u, float v)
 		{
