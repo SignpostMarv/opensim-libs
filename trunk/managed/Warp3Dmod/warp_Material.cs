@@ -9,15 +9,13 @@ namespace Warp3D
 	/// </summary>
 	public class warp_Material
 	{
-		public int color=0;
-		public int transparency=0;
+		public int color = warp_Color.White;
 		public int reflectivity=255;
 		public int type=0;
 		public warp_Texture texture=null;
 		public warp_Texture envmap=null;
 		public bool flat=false;
 		public bool wireframe=false;
-		public bool opaque=true;
 		public String texturePath=null;
 		public String envmapPath=null;
 		public warp_TextureSettings textureSettings=null;
@@ -33,9 +31,9 @@ namespace Warp3D
 			// TODO: Add constructor logic here
 			//
 		}
-		public warp_Material(int color)
+		public warp_Material(int c)
 		{
-			setColor(color);
+			color = c;
 		}
 
 		public warp_Material(warp_Texture t)
@@ -63,7 +61,6 @@ namespace Warp3D
 		private void readSettings(BinaryReader inStream)
 		{
 			setColor(readInt(inStream));
-			setTransparency(inStream.ReadByte());
 			setReflectivity(inStream.ReadByte());
 			setFlat(inStream.ReadBoolean());
 		}
@@ -159,7 +156,8 @@ namespace Warp3D
 		public void setTexture(warp_Texture t)
 		{
 			texture=t;
-			if (texture!=null) texture.resize();
+			if (texture!=null)
+                texture.resize();
 		}
 
 		public void setEnvmap(warp_Texture env)
@@ -170,14 +168,20 @@ namespace Warp3D
 
 		public void setColor(int c)
 		{
-			color=c;
+			color = c;
 		}
 
-		public void setTransparency(int factor)
-		{
-			transparency=warp_Math.crop(factor,0,255);
-			opaque=(transparency==0);
-		}
+		public bool opaque
+        {
+            get
+            {
+                if((color & warp_Color.MASKALPHA) != warp_Color.MASKALPHA)
+                    return false;
+                if(texture != null)
+                    return texture.opaque;
+                return true;
+            }
+        }
 
 		public void setReflectivity(int factor)
 		{
@@ -212,11 +216,6 @@ namespace Warp3D
 		public int getColor()
 		{
 			return color;
-		}
-
-		public int getTransparency()
-		{
-			return transparency;
 		}
 
 		public int getReflectivity()

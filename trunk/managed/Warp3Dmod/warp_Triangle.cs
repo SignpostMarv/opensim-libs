@@ -19,7 +19,7 @@ namespace Warp3D
 		public warp_Vector n2; // Projected Normal vector
 
 		private warp_Vector triangleCenter=new warp_Vector();
-		public float dist=0;
+		public float distZ=0;
 
 		public int id=0;
 
@@ -32,34 +32,26 @@ namespace Warp3D
 
 		public void clipFrustrum(int w, int h)
 		{
-            if(parent.material == null)
+            if(n2.z < 0.00001f)
             {
                 visible = false;
                 return;
             }
+
             outOfFrustrum = (p1.clipcode & p2.clipcode & p3.clipcode) != 0;
             if(outOfFrustrum)
             {
                 visible = false;
                 return;
             }
-            if(n2.z > 0.0001)
-            {
-                visible = true;
-                return;
-            }
-
-            triangleCenter.x = (p1.pos2.x + p2.pos2.x + p3.pos2.x);
-            triangleCenter.y = (p1.pos2.y + p2.pos2.y + p3.pos2.y);
-            triangleCenter.z = (p1.pos2.z + p2.pos2.z + p3.pos2.z);
-
-            visible = warp_Vector.Dot(triangleCenter, n2) > 0;
+            visible = true;
+            return;
         }
 
         public void project(warp_Matrix normalProjection)
 		{
 			n2=n.transform(normalProjection);
-			dist=getDist();
+			distZ=getDistZ();
 		}
 
 		public void regenerateNormal()
@@ -90,7 +82,7 @@ namespace Warp3D
 			return new warp_Vector(cx,cy,cz);
 		}
 
-		public float getDist()
+		public float getDistZ()
 		{
 			return p1.z+p2.z+p3.z;
 		}

@@ -10,7 +10,7 @@ namespace Warp3D
 		public int ambient=0;
 		public int fogcolor=0;
 		public int fogfact=0;
-		public int bgcolor=unchecked((int)0xffffffff);
+		public int bgcolor= warp_Color.White;
 
 		public warp_Texture background=null;
 

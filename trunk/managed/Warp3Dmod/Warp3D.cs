@@ -746,24 +746,6 @@ namespace Warp3D
 			return true;
 		}
 
-		public bool SetTransparency(string name, int t)
-		{
-			if (_scene == null)
-			{
-				return false;
-			}
-
-			warp_Material material = (warp_Material)_scene.materialData[name];
-			if (material == null)
-			{
-				return false;
-			}
-
-			material.setTransparency(t);
-
-			return true;
-		}
-
 		public bool Render()
 		{
 			try

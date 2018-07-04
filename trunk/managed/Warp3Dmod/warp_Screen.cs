@@ -32,7 +32,7 @@ namespace Warp3D
 
 		public void clear(int c)
 		{
-            warp_Math.clearBuffer( pixels, unchecked( ( int )0xff000000 ) | c );			
+            warp_Math.clearBuffer( pixels, c);			
 		}
 
 		public void draw(warp_Texture texture, int posx, int posy, int xsize,int ysize)

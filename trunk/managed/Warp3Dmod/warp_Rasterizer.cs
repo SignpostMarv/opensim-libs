@@ -14,9 +14,9 @@ namespace Warp3D
         // Current material settings
         private int color = 0;
         private int currentColor = 0;
-        private int transparency = 0;
         private int reflectivity = 0;
         private warp_Texture texture = null;
+        private int[] tpixels = null;
         private int[] envmap = null;
         private int[] diffuse = null;
         private int[] specular = null;
@@ -27,18 +27,18 @@ namespace Warp3D
 
         // Rasterizer hints
         private int mode = 0;
-        private int F = 0;      // FLAT
-        private int W = 1;  // WIREFRAME
-        private int P = 2;      // PHONG
-        private int E = 4;      // ENVMAP
-        private int T = 8;  // TEXTURED
+        private const int F = 0;      // FLAT
+        private const int W = 1;  // WIREFRAME
+        private const int P = 2;      // PHONG
+        private const int E = 4;      // ENVMAP
+        private const int T = 8;  // TEXTURED
         private int SHADED = 0;
 
         warp_Vertex p1, p2, p3, tempVertex;
 
         private int
         bkgrd, c, s, lutID, //lutID is position in LUT (diffuse,envmap,specular)
-        x1, x2, x3, x4, y1, y2, y3, z1, z2, z3, z4,
+        x1, x2, x3, x4, y1, y2, y3, dy21, dy31, z1, z2, z3, z4,
         x, y, z, dx, dy, dz, offset, pos, temp,
         xL, xR, xBase, zBase, xMax, dxL, dxR, dzBase,
 
@@ -57,11 +57,8 @@ namespace Warp3D
 
         warp_Screen screen;
         int[] zBuffer;
-        int[] idBuffer;
         int width, height;
-        bool useIdBuffer;
-        int currentId = 0;
-
+  
         // Constructor
         public warp_Rasterizer(warp_RenderPipeline pipeline)
         {
@@ -76,17 +73,14 @@ namespace Warp3D
         {
             screen = pipeline.screen;
             zBuffer = pipeline.zBuffer;
-            idBuffer = pipeline.idBuffer;
             width = screen.width;
             height = screen.height;
-            useIdBuffer = pipeline.useId;
         }
 
         public void clean()
         {
             screen = null;
             zBuffer = null;
-            idBuffer = null;
         }
 
         // Lightmap loader
@@ -101,10 +95,10 @@ namespace Warp3D
         }
 
         // Material loader
-        public void loadMaterial(warp_Material material)
+        public void loadMaterial(warp_Object obj)
         {
+            warp_Material material = obj.material;
             color = material.color;
-            transparency = material.transparency;
             reflectivity = material.reflectivity;
             texture = material.texture;
             if(material.envmap != null)
@@ -114,10 +108,34 @@ namespace Warp3D
 
             if(texture != null)
             {
-                tw = texture.width - 1;
-                th = texture.height - 1;
-                tbitW = texture.bitWidth;
-                tbitH = texture.bitHeight;
+                if(obj.projectedmaxMips < 2)
+                {
+                    color = warp_Color.multiply(color, texture.averageColor);
+                    texture = null;
+                }
+                else
+                {
+                    int mip = obj.projectedmaxMips - 1;
+                    if(mip > texture.maxmips)
+                        mip = texture.maxmips;
+
+                    if(texture.mips[mip] != null)
+                    {
+                        tpixels = texture.mips[mip];
+                        tbitW =  texture.mipsBitWidth[mip];
+                        tbitH = texture.mipsBitHeight[mip];
+                        tw = texture.mipstw[mip] - 1;
+                        th = texture.mipsth[mip] - 1;
+                    }
+                    else
+                    {
+                        tpixels = texture.pixel;
+                        tw = texture.width - 1;
+                        th = texture.height - 1;
+                        tbitW = texture.bitWidth;
+                        tbitH = texture.bitHeight;
+                    }
+                }
             }
 
             mode = 0;
@@ -129,6 +147,27 @@ namespace Warp3D
                 mode |= T;
             if(material.wireframe)
                 mode |= W;
+            materialLoaded = true;
+            ready = lightmapLoaded && materialLoaded;
+        }
+
+        public void loadFastMaterial(warp_Object obj)
+        {
+            color = obj.fastcolor;
+            reflectivity = obj.fastreflectivity;
+            texture = obj.fasttexture;
+            envmap = obj.fastenvmappixels;
+
+            if(texture != null)
+            {
+                tpixels = obj.fasttpixels;
+                tw = obj.fasttw;
+                th = obj.fastth;
+                tbitW = obj.fasttbitw;
+                tbitH = obj.fasttbith;
+            }
+
+            mode = obj.fastmode;
             materialLoaded = true;
             ready = lightmapLoaded && materialLoaded;
         }
@@ -192,16 +231,17 @@ namespace Warp3D
                 currentColor = warp_Color.add(c, s);
             }
 
-            currentId = (tri.parent.id << 16) | tri.id;
-
             x1 = p1.x << 8;
             x2 = p2.x << 8;
             x3 = p3.x << 8;
             y1 = p1.y;
             y2 = p2.y;
             y3 = p3.y;
+            
+            int dy21 = y2 - y1;
+            int dy31 = y3 - y1;
 
-      		x4 = x1 + (x3 - x1) * (y2 - y1) / (y3 - y1);
+      		x4 = x1 + (x3 - x1) * dy21 / dy31;
 
  			dx = (x4 - x2) >> 8;
 			if (dx == 0)
@@ -211,49 +251,45 @@ namespace Warp3D
             x2 <<= 8;
             x3 <<= 8;
             x4 <<= 8;
-/*
- 			dx = (x4 - x2) >> 16;
-			if (dx == 0)
-				return;
-*/
+
+			temp = (dy21 << 8) / dy31;
+
             z1 = p1.z;
-            z2 = p2.z;
             z3 = p3.z;
-            nx1 = p1.nx << 16;
-            nx2 = p2.nx << 16;
-            nx3 = p3.nx << 16;
-            ny1 = p1.ny << 16;
-            ny2 = p2.ny << 16;
-            ny3 = p3.ny << 16;
-
-            sw1 = 1.0f / p1.sw;
-            sw2 = 1.0f / p2.sw;
-            sw3 = 1.0f / p3.sw;
-
-            tx1 = p1.tx * sw1;
-            tx2 = p2.tx * sw2;
-            tx3 = p3.tx * sw3;
-            ty1 = p1.ty * sw1;
-            ty2 = p2.ty * sw2;
-            ty3 = p3.ty * sw3;
-
-			temp = 256 * (y2 - y1) / (y3 - y1);
-
             z4 = z1 + ((z3 - z1) >> 8) * temp;
-            nx4 = nx1 + ((nx3 - nx1) >> 8) * temp;
-            ny4 = ny1 + ((ny3 - ny1) >> 8) * temp;
-
-            float tf = (float)(y2 - y1) / (float)(y3 - y1);
-            tx4 = tx1 + ((tx3 - tx1) * tf);
-            ty4 = ty1 + ((ty3 - ty1) * tf);
-
-            sw4 = sw1 + ((sw3 - sw1) * tf);
-
+            z2 = p2.z;
             dz = (z4 - z2) / dx;
+
+            nx1 = p1.nx;
+            nx3 = p3.nx;
+            nx4 = nx1 + ((nx3 - nx1) >> 8) * temp;
+            nx2 = p2.nx;
             dnx = (nx4 - nx2) / dx;
+
+            ny1 = p1.ny;
+            ny3 = p3.ny;
+            ny4 = ny1 + ((ny3 - ny1) >> 8) * temp;
+            ny2 = p2.ny;
             dny = (ny4 - ny2) / dx;
+
+            float tf = (float)dy21 / (float)dy31;
+ 
+            tx1 = p1.tx * tw;
+            tx3 = p3.tx * tw;
+            tx4 = tx1 + ((tx3 - tx1) * tf);
+            tx2 = p2.tx * tw;
             dtx = (tx4 - tx2) / dx;
+
+            ty1 = p1.ty * th;
+            ty3 = p3.ty * th;
+            ty4 = ty1 + ((ty3 - ty1) * tf);
+            ty2 = p2.ty * th;
             dty = (ty4 - ty2) / dx;
+
+            sw1 = p1.invZ;
+            sw3 = p3.invZ;
+            sw4 = sw1 + ((sw3 - sw1) * tf);
+            sw2 = p2.invZ;
             dsw = (sw4 - sw2) / dx;
 
             if(dx < 0)
@@ -268,20 +304,19 @@ namespace Warp3D
                 nx2 = nx4;
                 ny2 = ny4;
             }
-            if(y2 >= 0)
+
+
+            dy = dy21;
+            if(y2 >= 0 && dy > 0)
             {
-                dy = y2 - y1;
-                if(dy != 0)
-                {
-                    dxL = (x2 - x1) / dy;
-                    dxR = (x4 - x1) / dy;
-                    dzBase = (z2 - z1) / dy;
-                    dnxBase = (nx2 - nx1) / dy;
-                    dnyBase = (ny2 - ny1) / dy;
-                    dtxBase = (tx2 - tx1) / dy;
-                    dtyBase = (ty2 - ty1) / dy;
-                    dswBase = (sw2 - sw1) / dy;
-                }
+                dxL = (x2 - x1) / dy;
+                dxR = (x4 - x1) / dy;
+                dzBase = (z2 - z1) / dy;
+                dnxBase = (nx2 - nx1) / dy;
+                dnyBase = (ny2 - ny1) / dy;
+                dtxBase = (tx2 - tx1) / dy;
+                dtyBase = (ty2 - ty1) / dy;
+                dswBase = (sw2 - sw1) / dy;
 
                 xBase = x1;
                 xMax = x1;
@@ -305,7 +340,8 @@ namespace Warp3D
                     y1 = 0;
                 }
 
-                y2 = (y2 < height) ? y2 : height;
+                if(y2 > height)
+                    y2 = height;
                 offset = y1 * width;
                 for(y = y1; y < y2; y++)
                 {
@@ -313,20 +349,17 @@ namespace Warp3D
                 }
             }
 
-            if(y2 < height)
+            dy = y3 - y2;
+            if(y2 < height && dy > 0)
             {
-                dy = y3 - y2;
-                if(dy != 0)
-                {
-                    dxL = (x3 - x2) / dy;
-                    dxR = (x3 - x4) / dy;
-                    dzBase = (z3 - z2) / dy;
-                    dnxBase = (nx3 - nx2) / dy;
-                    dnyBase = (ny3 - ny2) / dy;
-                    dtxBase = (tx3 - tx2) / dy;
-                    dtyBase = (ty3 - ty2) / dy;
-                    dswBase = (sw3 - sw2) / dy;
-                }
+                dxL = (x3 - x2) / dy;
+                dxR = (x3 - x4) / dy;
+                dzBase = (z3 - z2) / dy;
+                dnxBase = (nx3 - nx2) / dy;
+                dnyBase = (ny3 - ny2) / dy;
+                dtxBase = (tx3 - tx2) / dy;
+                dtyBase = (ty3 - ty2) / dy;
+                dswBase = (sw3 - sw2) / dy;
 
                 xBase = x2;
                 xMax = x4;
@@ -350,7 +383,8 @@ namespace Warp3D
                     y2 = 0;
                 }
 
-                y3 = (y3 < height) ? y3 : height;
+                if(y3 > height)
+                    y3 = height;
                 offset = y2 * width;
 
                 for(y = y2; y < y3; y++)
@@ -381,7 +415,8 @@ namespace Warp3D
                 sw -= xL * dsw;
                 xL = 0;
             }
-            xR = (xR < width) ? xR : width;
+            if(xR > width )
+                xR = width;
 
             if(mode == F)
                 renderLineF();
@@ -418,15 +453,12 @@ namespace Warp3D
                 if(z < zBuffer[pos])
                 {
                     bkgrd = screen.pixels[pos];
-                    c = warp_Color.transparency(bkgrd, currentColor, transparency);
+                    c = warp_Color.overSolid(bkgrd, currentColor);
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
                 z += dz;
             }
-
         }
 
         private void renderLineP()
@@ -441,13 +473,10 @@ namespace Warp3D
                     c = warp_Color.multiply(color, diffuse[lutID]);
                     s = specular[lutID];
                     s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.transparency(bkgrd, c, transparency);
+                    c = warp_Color.overSolid(bkgrd, c);
                     c = warp_Color.add(c, s);
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
                 z += dz;
                 nx += dnx;
@@ -467,12 +496,9 @@ namespace Warp3D
                     bkgrd = screen.pixels[pos];
                     s = warp_Color.add(specular[lutID], envmap[lutID]);
                     s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.transparency(bkgrd, s, transparency);
+                    c = warp_Color.overSolid(bkgrd, s);
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
                 z += dz;
                 nx += dnx;
@@ -488,14 +514,11 @@ namespace Warp3D
                 if(z < zBuffer[pos])
                 {
                     bkgrd = screen.pixels[pos];
-                    c = texture.pixel[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
-                    c = warp_Color.multiply(color,c);
-                    c = warp_Color.transparency(bkgrd, c, transparency);
+                    c = tpixels[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
+                    c = warp_Color.multiply(color, c);
+                    c = warp_Color.overSolid(bkgrd, c);
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
                 z += dz;
                 tx += dtx;
@@ -517,13 +540,10 @@ namespace Warp3D
                     c = warp_Color.multiply(color, diffuse[lutID]);
                     s = warp_Color.add(specular[lutID], envmap[lutID]);
                     s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.transparency(bkgrd, c, transparency);
+                    c = warp_Color.overSolid(bkgrd, c);
                     c = warp_Color.add(c, s);
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
                 z += dz;
                 nx += dnx;
@@ -541,17 +561,14 @@ namespace Warp3D
                     lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
 
                     bkgrd = screen.pixels[pos];
-                    c = texture.pixel[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
-                    c = warp_Color.multiply(color,c);
+                    c = tpixels[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
+                    c = warp_Color.multiply(color, c);
                     c = warp_Color.multiply(c, diffuse[lutID]);
                     s = warp_Color.scale(specular[lutID], reflectivity);
-                    c = warp_Color.transparency(bkgrd, c, transparency);
+                    c = warp_Color.overSolid(bkgrd, c);
                     c = warp_Color.add(c, s);
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
 
                 z += dz;
@@ -572,18 +589,16 @@ namespace Warp3D
                 {
                     lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
                     bkgrd = screen.pixels[pos];
-                    c = texture.pixel[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
-                    c = warp_Color.multiply(color,c);
+                    c = tpixels[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
+                    c = warp_Color.multiply(color, c);
                     c = warp_Color.multiply(c, diffuse[lutID]);
                     s = warp_Color.add(specular[lutID], envmap[lutID]);
                     s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.transparency(bkgrd, c, transparency);
+                    c = warp_Color.overSolid(bkgrd, c);
                     c = warp_Color.add(c, s);
 
                     screen.pixels[pos] = c;
                     zBuffer[pos] = z;
-                    if(useIdBuffer)
-                        idBuffer[pos] = currentId;
                 }
                 z += dz;
                 nx += dnx;
@@ -639,8 +654,6 @@ namespace Warp3D
                                 zBuffer[x + offset] = z;
                             }
                         }
-                        if(useIdBuffer)
-                            idBuffer[x + offset] = currentId;
                     }
                     z += dz;
                     y += dy;
@@ -674,8 +687,6 @@ namespace Warp3D
                                 zBuffer[x2 + offset] = z;
                             }
                         }
-                        if(useIdBuffer)
-                            idBuffer[x2 + offset] = currentId;
                     }
                     z += dz;
                     x += dx;
