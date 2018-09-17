@@ -19,7 +19,7 @@ namespace HttpServer
     /// Remember to <see cref="Start"/> after you have hooked the <see cref="RequestReceived"/> event.
     /// </remarks>
     /// TODO: Maybe this class should be broken up into HttpClientChannel and HttpClientContext?
-    public class HttpClientContext : IHttpClientContext ,IDisposable
+    public class HttpClientContext : IHttpClientContext, IDisposable
     {
         const int MAXREQUESTS = 20;
         const int MAXKEEPALIVE = 60000;
@@ -46,7 +46,7 @@ namespace HttpServer
         // The difference between this and request received is on POST more time is needed before we get the full request.
         public int TimeoutFullRequestProcessed = 600000; // 10 minutes
         public int m_TimeoutKeepAlive = MAXKEEPALIVE; // 400 seconds before keepalive timeout
-//        public int TimeoutKeepAlive = 120000; // 400 seconds before keepalive timeout
+        // public int TimeoutKeepAlive = 120000; // 400 seconds before keepalive timeout
 
         public int m_MAXRequests = MAXREQUESTS;
 
@@ -57,13 +57,13 @@ namespace HttpServer
         private bool gotResponseClose = false;
         private bool isSendingResponse = false;
 
-        public int contextID {get; private set; }
+        public int contextID { get; private set; }
         public int TimeoutKeepAlive
         {
             get { return m_TimeoutKeepAlive; }
             set
             {
-                if( value > MAXKEEPALIVE)
+                if (value > MAXKEEPALIVE)
                     m_TimeoutKeepAlive = MAXKEEPALIVE;
                 else
                     m_TimeoutKeepAlive = value;
@@ -75,14 +75,15 @@ namespace HttpServer
             get { return m_MAXRequests; }
             set
             {
-                if(value > MAXREQUESTS)
+                if (value > MAXREQUESTS)
                     m_MAXRequests = MAXREQUESTS;
-                else if(value <= 0)
+                else if (value <= 0)
                     m_MAXRequests = 0;
                 else
-                m_MAXRequests = value; }
+                    m_MAXRequests = value;
+            }
         }
-        
+
         public bool IsSending()
         {
             return isSendingResponse;
@@ -91,10 +92,10 @@ namespace HttpServer
         public bool StopMonitoring;
 
 
-		/// <summary>
-		/// Context have been started (a new client have connected)
-		/// </summary>
-    	public event EventHandler Started = delegate { };
+        /// <summary>
+        /// Context have been started (a new client have connected)
+        /// </summary>
+        public event EventHandler Started = delegate { };
 
         /// <summary>
 		/// Initializes a new instance of the <see cref="HttpClientContext"/> class.
@@ -119,15 +120,15 @@ namespace HttpServer
                 throw new ArgumentException("Stream must be writable and readable.");
 
             _bufferSize = 8192;
-			RemoteAddress = remoteEndPoint.Address.ToString();
-			RemotePort = remoteEndPoint.Port.ToString();
+            RemoteAddress = remoteEndPoint.Address.ToString();
+            RemotePort = remoteEndPoint.Port.ToString();
             _log = NullLogWriter.Instance;
             _parser = parserFactory.CreateParser(_log);
             _parser.RequestCompleted += OnRequestCompleted;
             _parser.RequestLineReceived += OnRequestLine;
             _parser.HeaderReceived += OnHeaderReceived;
             _parser.BodyBytesReceived += OnBodyBytesReceived;
-            _currentRequest = new HttpRequest( this );
+            _currentRequest = new HttpRequest(this);
             Available = false;
             IsSecured = secured;
             _stream = stream;
@@ -149,7 +150,7 @@ namespace HttpServer
             }
 
             basecontextID++;
-            if(basecontextID < 0)
+            if (basecontextID < 0)
                 basecontextID = 1;
 
             contextID = basecontextID;
@@ -157,12 +158,12 @@ namespace HttpServer
 
         public bool CanSend()
         {
-            if(Available || contextID < 0)
+            if (Available || contextID < 0)
                 return false;
 
-            if(Stream == null || _sock == null || !_sock.Connected)
+            if (Stream == null || _sock == null || !_sock.Connected)
                 return false;
-            
+
             return true;
         }
 
@@ -185,9 +186,9 @@ namespace HttpServer
         {
             if (string.Compare(e.Name, "expect", true) == 0 && e.Value.Contains("100-continue"))
             {
-                lock(requestsInServiceIDs)
+                lock (requestsInServiceIDs)
                 {
-                    if(requestsInServiceIDs.Count == 0)
+                    if (requestsInServiceIDs.Count == 0)
                         Respond("HTTP/1.1", HttpStatusCode.Continue, "Please continue mate.");
                 }
             }
@@ -240,7 +241,7 @@ namespace HttpServer
                 LogWriter.Write(this, LogPrio.Debug, err.ToString());
             }
 
-        	Started(this, EventArgs.Empty);
+            Started(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -251,19 +252,19 @@ namespace HttpServer
         /// </remarks>
         public virtual void Cleanup()
         {
-
-        	if (Stream == null) 
-				return;
             if (StreamPassedOff)
                 return;
-            
-        	Stream.Close();
-        	Stream = null;
-            _sock = null;
-        	_currentRequest.Clear();
+
+            if (Stream != null)
+            {
+                Stream.Close();
+                Stream = null;
+                _sock = null;
+            }
+            _currentRequest.Clear();
             requestsInServiceIDs.Clear();
-        	_bytesLeft = 0;
-            
+            _bytesLeft = 0;
+
             FirstRequestLineReceived = false;
             FullRequestReceived = false;
             FullRequestProcessed = false;
@@ -275,13 +276,11 @@ namespace HttpServer
             isSendingResponse = false;
 
             contextID = -100;
-        	_parser.Clear();
+            _parser.Clear();
         }
 
         public void Close()
         {
-            if (StreamPassedOff)
-                return;
             Cleanup();
             Available = true;
         }
@@ -302,7 +301,7 @@ namespace HttpServer
 
 
         // returns the SSL commonName of remote Certificate
-        public string SSLCommonName {get; internal set; }
+        public string SSLCommonName { get; internal set; }
 
         /// <summary>
         /// Specify which logger to use.
@@ -310,11 +309,11 @@ namespace HttpServer
         public ILogWriter LogWriter
         {
             get { return _log; }
-            set 
-			{ 
-				_log = value ?? NullLogWriter.Instance;
-				_parser.LogWriter = _log;
-			}
+            set
+            {
+                _log = value ?? NullLogWriter.Instance;
+                _parser.LogWriter = _log;
+            }
         }
 
         private Stream _stream;
@@ -356,9 +355,9 @@ namespace HttpServer
                         Stream.Close();
                         Stream = null;
                     }
-                   _sock = null;
+                    _sock = null;
                 }
-                catch {}
+                catch { }
 
                 Disconnected(this, new DisconnectedEventArgs(error));
             }
@@ -373,7 +372,7 @@ namespace HttpServer
             try
             {
                 int bytesRead = 0;
-                if(Stream == null)
+                if (Stream == null)
                     return;
                 try
                 {
@@ -407,13 +406,13 @@ namespace HttpServer
 #pragma warning restore 219
 #endif
                 int offset = _parser.Parse(_buffer, 0, _bytesLeft);
-				if (Stream == null)
-					return; // "Connection: Close" in effect.
+                if (Stream == null)
+                    return; // "Connection: Close" in effect.
 
                 // try again to see if we can parse another message (check parser to see if it is looking for a new message)
                 int nextOffset;
                 int nextBytesleft = _bytesLeft - offset;
-//                while (_parser.CurrentState == RequestParserState.FirstLine && offset != 0 && _bytesLeft - offset > 0)
+                //                while (_parser.CurrentState == RequestParserState.FirstLine && offset != 0 && _bytesLeft - offset > 0)
                 while (offset != 0 && nextBytesleft > 0)
                 {
 #if DEBUG
@@ -423,29 +422,29 @@ namespace HttpServer
 
                     nextOffset = _parser.Parse(_buffer, offset, nextBytesleft);
 
-					if (Stream == null)
-						return; // "Connection: Close" in effect.
+                    if (Stream == null)
+                        return; // "Connection: Close" in effect.
 
-                    if(nextOffset == 0)
+                    if (nextOffset == 0)
                         break;
 
                     offset = nextOffset;
                     nextBytesleft = _bytesLeft - offset;
-				}
+                }
 
                 // copy unused bytes to the beginning of the array
                 if (offset > 0 && _bytesLeft > offset)
-					Buffer.BlockCopy(_buffer, offset, _buffer, 0, _bytesLeft - offset);
+                    Buffer.BlockCopy(_buffer, offset, _buffer, 0, _bytesLeft - offset);
 
                 _bytesLeft -= offset;
                 if (Stream != null && Stream.CanRead)
-                    if(!StreamPassedOff)
-					    Stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
-				else
-				{
-					_log.Write(this, LogPrio.Warning, "Could not read any more from the socket.");
-					Disconnect(SocketError.Success);
-				}
+                    if (!StreamPassedOff)
+                        Stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
+                    else
+                    {
+                        _log.Write(this, LogPrio.Warning, "Could not read any more from the socket.");
+                        Disconnect(SocketError.Success);
+                    }
             }
             catch (BadRequestException err)
             {
@@ -454,7 +453,7 @@ namespace HttpServer
                 {
                     Respond("HTTP/1.0", HttpStatusCode.BadRequest, err.Message);
                 }
-                catch(Exception err2)
+                catch (Exception err2)
                 {
                     LogWriter.Write(this, LogPrio.Fatal, "Failed to reply to a bad request. " + err2);
                 }
@@ -464,7 +463,7 @@ namespace HttpServer
             {
                 LogWriter.Write(this, LogPrio.Debug, "Failed to end receive: " + err.Message);
                 if (err.InnerException is SocketException)
-                    Disconnect((SocketError) ((SocketException) err.InnerException).ErrorCode);
+                    Disconnect((SocketError)((SocketException)err.InnerException).ErrorCode);
                 else
                     Disconnect(SocketError.ConnectionReset);
             }
@@ -497,29 +496,29 @@ namespace HttpServer
             _currentRequest.Body.Seek(0, SeekOrigin.Begin);
 
             FullRequestReceived = true;
-            
+
             int nreqs;
-            lock(requestsInServiceIDs)
+            lock (requestsInServiceIDs)
             {
                 nreqs = requestsInServiceIDs.Count;
                 requestsInServiceIDs.Add(_currentRequest.ID);
-                if(m_MAXRequests > 0)
+                if (m_MAXRequests > 0)
                     m_MAXRequests--;
             }
 
             // for now pipeline requests need to be serialized by opensim
             RequestReceived(this, new RequestEventArgs(_currentRequest));
 
-           _currentRequest = new HttpRequest(this);
+            _currentRequest = new HttpRequest(this);
 
             int nreqsnow;
-            lock(requestsInServiceIDs)
+            lock (requestsInServiceIDs)
             {
                 nreqsnow = requestsInServiceIDs.Count;
             }
-            if(nreqs != nreqsnow)
+            if (nreqs != nreqsnow)
             {
-                 // request was not done by us
+                // request was not done by us
             }
         }
 
@@ -528,28 +527,28 @@ namespace HttpServer
             isSendingResponse = true;
         }
 
-        public void ReqResponseSent(uint requestID, ConnectionType ctype )
+        public void ReqResponseSent(uint requestID, ConnectionType ctype)
         {
-            if(ctype == ConnectionType.Close)    
+            if (ctype == ConnectionType.Close)
                 gotResponseClose = true;
             else
             {
                 // breakpoint
             }
- 
+
             bool doclose = gotResponseClose;
-            lock(requestsInServiceIDs)
+            lock (requestsInServiceIDs)
             {
                 requestsInServiceIDs.Remove(requestID);
-//                doclose = doclose && requestsInServiceIDs.Count == 0;
-                if(requestsInServiceIDs.Count > 1)
+                //                doclose = doclose && requestsInServiceIDs.Count == 0;
+                if (requestsInServiceIDs.Count > 1)
                 {
 
                 }
             }
 
             isSendingResponse = false;
-            if(doclose)
+            if (doclose)
                 Disconnect(SocketError.Success);
             else
             {
@@ -578,16 +577,16 @@ namespace HttpServer
                 reason = statusCode.ToString();
 
             string response = string.IsNullOrEmpty(body)
-                                  ? httpVersion + " " + (int) statusCode + " " + reason + "\r\n\r\n"
+                                  ? httpVersion + " " + (int)statusCode + " " + reason + "\r\n\r\n"
                                   : string.Format("{0} {1} {2}\r\nContent-Type: {5}\r\nContent-Length: {3}\r\n\r\n{4}",
-                                                  httpVersion, (int) statusCode, reason ?? statusCode.ToString(),
+                                                  httpVersion, (int)statusCode, reason ?? statusCode.ToString(),
                                                   body.Length, body, contentType);
             byte[] buffer = Encoding.ASCII.GetBytes(response);
 
             Send(buffer);
             if (_currentRequest.Connection == ConnectionType.Close)
                 FullRequestProcessed = true;
-            
+
         }
 
         /// <summary>
@@ -607,7 +606,7 @@ namespace HttpServer
         /// <exception cref="ArgumentNullException"></exception>
         public void Respond(string body)
         {
-            if (body == null) 
+            if (body == null)
                 throw new ArgumentNullException("body");
             Respond("HTTP/1.1", HttpStatusCode.OK, HttpStatusCode.OK.ToString(), body, null);
         }
@@ -640,23 +639,23 @@ namespace HttpServer
             // add some trivial checks required by opensim until another fix is possible
             // this are needed because opensim doesn't have access to stream state
             // and in its current state it will try to send to closed streams.
-            if(Stream == null || _sock == null || !_sock.Connected)
+            if (Stream == null || _sock == null || !_sock.Connected)
                 return false;
-            
-            lock(sendLock) // can't have overlaps here
+
+            lock (sendLock) // can't have overlaps here
             {
                 bool ok = true;
                 if (offset + size > buffer.Length)
-                    throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");          
+                    throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
                 try
                 {
                     // we are supposed to block so do block
-                    if(_sock.Poll(30000000,SelectMode.SelectWrite) && Stream != null && _sock != null )
+                    if (_sock.Poll(30000000, SelectMode.SelectWrite) && Stream != null && _sock != null)
                         Stream.Write(buffer, offset, size);
                     else
                         ok = false;
                 }
-//                catch(IOException e)
+                //                catch(IOException e)
                 catch
                 {
                     // code to handle recoverable errors
@@ -664,17 +663,17 @@ namespace HttpServer
                     //var socketExept = e.InnerException as SocketException;
                     //if (socketExept != null)
                     //{
-                        //var errcode = socketExept.ErrorCode;
+                    //var errcode = socketExept.ErrorCode;
                     //}
                     ok = false;
-//                    throw e; // let it still be visible
+                    //                    throw e; // let it still be visible
                 }
 
-                if(!ok && Stream != null)     
+                if (!ok && Stream != null)
                     Disconnect(SocketError.NoRecovery);
-                
+
                 return ok;
-             }
+            }
         }
 
         /// <summary>
@@ -683,12 +682,12 @@ namespace HttpServer
         /// <remarks>
         /// Event can be used to clean up a context, or to reuse it.
         /// </remarks>
-        public event EventHandler<DisconnectedEventArgs> Disconnected = delegate{};
+        public event EventHandler<DisconnectedEventArgs> Disconnected = delegate { };
         /// <summary>
         /// A request have been received in the context.
         /// </summary>
-        public event EventHandler<RequestEventArgs> RequestReceived = delegate{};
-        
+        public event EventHandler<RequestEventArgs> RequestReceived = delegate { };
+
         public HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing()
         {
             StreamPassedOff = true;
@@ -697,14 +696,17 @@ namespace HttpServer
             _parser.HeaderReceived -= OnHeaderReceived;
             _parser.BodyBytesReceived -= OnBodyBytesReceived;
             _parser.Clear();
-           
-            return new HTTPNetworkContext() { Socket = _sock ,Stream = _stream as NetworkStream};
+
+            return new HTTPNetworkContext() { Socket = _sock, Stream = _stream as NetworkStream };
         }
 
         public void Dispose()
         {
-            if(contextID >= 0 || Stream != null)
-                Cleanup();           
+            if (contextID >= 0)
+            {
+                StreamPassedOff = false;
+                Cleanup();
+            }
         }
 
         ~HttpClientContext()

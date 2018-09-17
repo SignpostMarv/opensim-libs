@@ -28,7 +28,6 @@ namespace Nwc.XmlRpc
         {
             using(XmlTextReader reader = new XmlTextReader(xmlData))
             {
-                reader.ProhibitDtd = true;
                 XmlRpcRequest request = new XmlRpcRequest();
                 bool done = false;
 

@@ -15,7 +15,7 @@ namespace HttpServer
     public class HttpContextFactory : IHttpContextFactory
     {
         private readonly int _bufferSize;
-        private readonly Dictionary<int,HttpClientContext> _activeContexts = new Dictionary<int,HttpClientContext>();
+        private readonly Dictionary<int, HttpClientContext> _activeContexts = new Dictionary<int, HttpClientContext>();
         private readonly IRequestParserFactory _factory;
         private readonly ILogWriter _logWriter;
 
@@ -47,51 +47,52 @@ namespace HttpServer
         /// <returns>A context.</returns>
         protected HttpClientContext CreateContext(bool isSecured, IPEndPoint endPoint, Stream stream, Socket sock)
         {
-        	HttpClientContext context;
+            HttpClientContext context;
 
             context = CreateNewContext(isSecured, endPoint, stream, sock);
             context.Disconnected += OnFreeContext;
             context.RequestReceived += OnRequestReceived;
 
-        	context.Stream = stream;
-			context.IsSecured = isSecured;
-			context.RemotePort = endPoint.Port.ToString();
-			context.RemoteAddress = endPoint.Address.ToString();
-			ContextTimeoutManager.StartMonitoringContext(context);
-            lock(_activeContexts)
+            context.Stream = stream;
+            context.IsSecured = isSecured;
+            context.RemotePort = endPoint.Port.ToString();
+            context.RemoteAddress = endPoint.Address.ToString();
+            ContextTimeoutManager.StartMonitoringContext(context);
+            lock (_activeContexts)
                 _activeContexts[context.contextID] = context;
             context.Start();
             return context;
         }
 
-		/// <summary>
-		/// Create a new context.
-		/// </summary>
-		/// <param name="isSecured">true if HTTPS is used.</param>
-		/// <param name="endPoint">Remote client</param>
-		/// <param name="stream">Network stream, <see cref="HttpClientContext"/></param>
-		/// <returns>A new context (always).</returns>
-    	protected virtual HttpClientContext CreateNewContext(bool isSecured, IPEndPoint endPoint, Stream stream, Socket sock)
-    	{
-    		return new HttpClientContext(isSecured, endPoint, stream, _factory, _bufferSize, sock);
-    	}
+        /// <summary>
+        /// Create a new context.
+        /// </summary>
+        /// <param name="isSecured">true if HTTPS is used.</param>
+        /// <param name="endPoint">Remote client</param>
+        /// <param name="stream">Network stream, <see cref="HttpClientContext"/></param>
+        /// <returns>A new context (always).</returns>
+        protected virtual HttpClientContext CreateNewContext(bool isSecured, IPEndPoint endPoint, Stream stream, Socket sock)
+        {
+            return new HttpClientContext(isSecured, endPoint, stream, _factory, _bufferSize, sock);
+        }
 
-    	private void OnRequestReceived(object sender, RequestEventArgs e)
+        private void OnRequestReceived(object sender, RequestEventArgs e)
         {
             RequestReceived(sender, e);
         }
 
         private void OnFreeContext(object sender, DisconnectedEventArgs e)
         {
-            var imp = (HttpClientContext) sender;
-            if(imp.contextID < 0)
+            var imp = (HttpClientContext)sender;
+            if (imp.contextID < 0)
                 return;
 
-            lock(_activeContexts)
+            lock (_activeContexts)
             {
-                if(_activeContexts.ContainsKey(imp.contextID))
+                if (_activeContexts.ContainsKey(imp.contextID))
                     _activeContexts.Remove(imp.contextID);
             }
+
             imp.Close();
         }
 
@@ -111,21 +112,21 @@ namespace HttpServer
              SslProtocols protocol, RemoteCertificateValidationCallback _clientCallback = null)
         {
             socket.NoDelay = true;
-			var networkStream = new NetworkStream(socket, true);
-            var remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
+            var networkStream = new NetworkStream(socket, true);
+            var remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
 
             SslStream sslStream = null;
             try
             {
-                if(_clientCallback == null)
+                if (_clientCallback == null)
                 {
-                    sslStream = new SslStream(networkStream, false);                   
+                    sslStream = new SslStream(networkStream, false);
                     sslStream.AuthenticateAsServer(certificate, false, protocol, false);
                 }
                 else
                 {
                     sslStream = new SslStream(networkStream, false,
-                            new RemoteCertificateValidationCallback(_clientCallback));                  
+                            new RemoteCertificateValidationCallback(_clientCallback));
                     sslStream.AuthenticateAsServer(certificate, true, protocol, false);
                 }
             }
@@ -140,11 +141,11 @@ namespace HttpServer
             return CreateContext(true, remoteEndPoint, sslStream, socket);
         }
 
-		
+
         /// <summary>
         /// A request have been received from one of the contexts.
         /// </summary>
-        public event EventHandler<RequestEventArgs> RequestReceived = delegate{};
+        public event EventHandler<RequestEventArgs> RequestReceived = delegate { };
 
         /// <summary>
         /// Creates a <see cref="IHttpClientContext"/> that handles a connected client.
@@ -156,8 +157,8 @@ namespace HttpServer
         public IHttpClientContext CreateContext(Socket socket)
         {
             socket.NoDelay = true;
-			var networkStream = new NetworkStream(socket, true);
-            var remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
+            var networkStream = new NetworkStream(socket, true);
+            var remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
             return CreateContext(false, remoteEndPoint, networkStream, socket);
         }
 

@@ -37,18 +37,18 @@ namespace HttpServer
             if (queryString == string.Empty)
                 return HttpInput.Empty;
 
-			HttpInput input = new HttpInput("QueryString");
+            HttpInput input = new HttpInput("QueryString");
 
-        	queryString = queryString.TrimStart('?', '&');
+            queryString = queryString.TrimStart('?', '&');
 
-			// a simple value.
-			if (queryString.IndexOf("&") == -1 && !queryString.Contains("%3d") && !queryString.Contains("%3D") && !queryString.Contains("="))
-			{
-				input.Add(string.Empty, queryString);
-				return input;
-			}
+            // a simple value.
+            if (queryString.IndexOf("&") == -1 && !queryString.Contains("%3d") && !queryString.Contains("%3D") && !queryString.Contains("="))
+            {
+                input.Add(string.Empty, queryString);
+                return input;
+            }
 
-        	int state = 0;
+            int state = 0;
             int startpos = 0;
             string name = null;
             for (int i = 0; i < queryString.Length; ++i)
@@ -72,16 +72,16 @@ namespace HttpServer
             }
 
             if (state == 0 && !input.GetEnumerator().MoveNext())
-				throw new FormatException("Not a valid query string: " + queryString);
+                throw new FormatException("Not a valid query string: " + queryString);
 
             if (startpos <= queryString.Length)
             {
-            	if (name != null)
-					Add(input, name, queryString.Substring(startpos, queryString.Length - startpos));
-				else
-					Add(input, string.Empty, queryString.Substring(startpos, queryString.Length - startpos));
+                if (name != null)
+                    Add(input, name, queryString.Substring(startpos, queryString.Length - startpos));
+                else
+                    Add(input, string.Empty, queryString.Substring(startpos, queryString.Length - startpos));
             }
-                
+
 
             return input;
         }

@@ -10,8 +10,8 @@ namespace Nwc.XmlRpc
     /// <summary>Class supporting the request side of an XML-RPC transaction.</summary>
     public class XmlRpcRequest
     {
-        private String _methodName = null;
-        private Encoding _encoding = new ASCIIEncoding();
+        private String m_methodName = null;
+        private Encoding m_encoding = new UTF8Encoding();
         private XmlRpcRequestSerializer _serializer = new XmlRpcRequestSerializer();
         private XmlRpcResponseDeserializer _deserializer = new XmlRpcResponseDeserializer();
 
@@ -28,7 +28,7 @@ namespace Nwc.XmlRpc
         /// <param name="methodName"><c>String</c> designating the <i>object.method</i> on the server the request
         /// should be directed to.</param>
         /// <param name="parameters"><c>ArrayList</c> of XML-RPC type parameters to invoke the request with.</param>
-        public XmlRpcRequest(String methodName,IList parameters)
+        public XmlRpcRequest(String methodName, IList parameters)
         {
             MethodName = methodName;
             _params = parameters;
@@ -48,11 +48,11 @@ namespace Nwc.XmlRpc
         {
             get
             {
-                return _methodName;
+                return m_methodName;
             }
             set
             {
-                _methodName = value;
+                m_methodName = value;
             }
         }
 
@@ -63,10 +63,10 @@ namespace Nwc.XmlRpc
             {
                 int index = MethodName.IndexOf(".");
 
-                if(index == -1)
+                if (index == -1)
                     return MethodName;
 
-                return MethodName.Substring(0,index);
+                return MethodName.Substring(0, index);
             }
         }
 
@@ -77,10 +77,10 @@ namespace Nwc.XmlRpc
             {
                 int index = MethodName.IndexOf(".");
 
-                if(index == -1)
+                if (index == -1)
                     return MethodName;
 
-                return MethodName.Substring(index + 1,MethodName.Length - index - 1);
+                return MethodName.Substring(index + 1, MethodName.Length - index - 1);
             }
         }
 
@@ -92,8 +92,8 @@ namespace Nwc.XmlRpc
         {
             XmlRpcResponse res = Send(url);
 
-            if(res.IsFault)
-                throw new XmlRpcException(res.FaultCode,res.FaultString);
+            if (res.IsFault)
+                throw new XmlRpcException(res.FaultCode, res.FaultString);
 
             return res.Value;
         }
@@ -101,27 +101,27 @@ namespace Nwc.XmlRpc
         /// <summary>Send the request to the server.</summary>
         /// <param name="url"><c>String</c> The url of the XML-RPC server.</param>
         /// <returns><c>XmlRpcResponse</c> The response generated.</returns>
-        public XmlRpcResponse Send(String url,int timeout = 100000)
+        public XmlRpcResponse Send(String url, int timeout = 100000)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            if(request == null)
+            if (request == null)
                 throw new XmlRpcException(XmlRpcErrorCodes.TRANSPORT_ERROR,
-                              XmlRpcErrorCodes.TRANSPORT_ERROR_MSG +": Could not create request with " + url);
+                              XmlRpcErrorCodes.TRANSPORT_ERROR_MSG + ": Could not create request with " + url);
             request.Method = "POST";
             request.ContentType = "text/xml";
             request.AllowWriteStreamBuffering = true;
             request.Timeout = timeout;
 
-            using(Stream stream = request.GetRequestStream())
-            using(XmlTextWriter xml = new XmlTextWriter(stream,_encoding))
+            using (Stream stream = request.GetRequestStream())
+            using (XmlTextWriter xml = new XmlTextWriter(stream, m_encoding))
             {
-                _serializer.Serialize(xml,this);
+                _serializer.Serialize(xml, this);
                 xml.Flush();
             }
 
             XmlRpcResponse resp;
-            using(HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-            using(StreamReader input = new StreamReader(response.GetResponseStream()))
+            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            using (StreamReader input = new StreamReader(response.GetResponseStream()))
                 resp = (XmlRpcResponse)_deserializer.Deserialize(input);
             return resp;
         }

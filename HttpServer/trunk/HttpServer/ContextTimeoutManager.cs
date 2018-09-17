@@ -132,14 +132,14 @@ namespace HttpServer
                     if (m_contexts.TryDequeue(out context))
                     {
                         SocketError disconnectError = SocketError.InProgress;
-                        bool stopMonitoring;
-                        if (!ContextTimedOut(context, out disconnectError, out stopMonitoring))
+                        bool disconnect;
+                        if (!ContextTimedOut(context, out disconnectError, out disconnect))
                         {
                             m_contexts.Enqueue(context);
                         }
                         else
                         {
-                            if (!stopMonitoring)
+                            if (disconnect)
                             {
                                 context.Disconnect(disconnectError);
                             }
@@ -161,24 +161,17 @@ namespace HttpServer
             }
         }
 
-        private static bool ContextTimedOut(HttpClientContext context, out SocketError disconnectError, out bool stopMonitoring)
+        private static bool ContextTimedOut(HttpClientContext context, out SocketError disconnectError, out bool disconnect)
         {
-            stopMonitoring = false;
+            disconnect = false;
             disconnectError = SocketError.InProgress;
 
             // First our error conditions
             if (context == null)
-            {
-                stopMonitoring = true;
                 return true;
-            }
 
-            // Recycled context
             if (context.Available)
-            {
-                stopMonitoring = true;
                 return true;
-            }
 
             // Next our special use conditions
             // Special case when multiple client contexts are being responded to by a single thread
@@ -190,17 +183,11 @@ namespace HttpServer
 
             // Special case for websockets
             if (context.StreamPassedOff)
-            {
-                stopMonitoring = true;
                 return true;
-            }
 
             // Now for the case when the context has the stop monitoring bool set
             if (context.StopMonitoring)
-            {
-                stopMonitoring = true;
                 return true;
-            }
 
             // Now we start checking for actual timeouts
 
@@ -210,12 +197,13 @@ namespace HttpServer
                 if (EnvironmentTickCountAdd(context.TimeoutFirstLine, context.MonitorStartMS) <= EnvironmentTickCount())
                 {
                     disconnectError = SocketError.TimedOut;
+                    disconnect = true;
                     context.MonitorStartMS = 0;
                     return true;
                 }
             }
 
-            // First we check that we got at least one line within context.TimeoutFirstLine milliseconds
+            //
             if (!context.FullRequestReceived)
             {
                 if (EnvironmentTickCountAdd(context.TimeoutRequestReceived, context.MonitorStartMS) <= EnvironmentTickCount())
@@ -226,12 +214,13 @@ namespace HttpServer
                 }
             }
 
-            // First we check that we got at least one line within context.TimeoutFirstLine milliseconds
+            // 
             if (!context.FullRequestProcessed)
             {
                 if (EnvironmentTickCountAdd(context.TimeoutFullRequestProcessed, context.MonitorStartMS) <= EnvironmentTickCount())
                 {
                     disconnectError = SocketError.TimedOut;
+                    disconnect = true;
                     context.MonitorStartMS = 0;
                     return true;
                 }
@@ -244,16 +233,14 @@ namespace HttpServer
             }
 
             if (context.FullRequestProcessed && context.MonitorKeepaliveMS == 0)
-            {
-                stopMonitoring = true;
                 return true;
-            }
 
             if (context.MonitorKeepaliveMS != 0 &&
                 EnvironmentTickCountAdd(context.TimeoutKeepAlive, context.MonitorKeepaliveMS) <= EnvironmentTickCount())
             {
                 disconnectError = SocketError.TimedOut;
                 context.MonitorStartMS = 0;
+                disconnect = true;
                 context.MonitorKeepaliveMS = 0;
                 return true;
             }
