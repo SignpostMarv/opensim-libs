@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Xml;
 using System.Net;
+using System.Net.Security;
 using System.Text;
 
 namespace Nwc.XmlRpc
@@ -88,9 +89,9 @@ namespace Nwc.XmlRpc
         /// <param name="url"><c>String</c> The url of the XML-RPC server.</param>
         /// <returns><c>Object</c> The value returned from the method invocation on the server.</returns>
         /// <exception cref="XmlRpcException">If an exception generated on the server side.</exception>
-        public Object Invoke(String url)
+        public Object Invoke(String url, RemoteCertificateValidationCallback certCallBack = null)
         {
-            XmlRpcResponse res = Send(url);
+            XmlRpcResponse res = Send(url, 100000, certCallBack);
 
             if (res.IsFault)
                 throw new XmlRpcException(res.FaultCode, res.FaultString);
@@ -101,7 +102,7 @@ namespace Nwc.XmlRpc
         /// <summary>Send the request to the server.</summary>
         /// <param name="url"><c>String</c> The url of the XML-RPC server.</param>
         /// <returns><c>XmlRpcResponse</c> The response generated.</returns>
-        public XmlRpcResponse Send(String url, int timeout = 100000)
+        public XmlRpcResponse Send(String url, int timeout = 100000, RemoteCertificateValidationCallback certCallBack = null)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             if (request == null)
@@ -111,6 +112,8 @@ namespace Nwc.XmlRpc
             request.ContentType = "text/xml";
             request.AllowWriteStreamBuffering = true;
             request.Timeout = timeout;
+            if(certCallBack != null)
+                request.ServerCertificateValidationCallback = certCallBack;
 
             using (Stream stream = request.GetRequestStream())
             using (XmlTextWriter xml = new XmlTextWriter(stream, m_encoding))
