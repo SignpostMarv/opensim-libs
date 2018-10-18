@@ -533,9 +533,7 @@ void dBodyAddRelForce (dBodyID b, dReal fx, dReal fy, dReal fz)
     t1[2] = fz;
     t1[3] = 0;
     dMultiply0_331 (t2,b->posr.R,t1);
-    b->facc[0] += t2[0];
-    b->facc[1] += t2[1];
-    b->facc[2] += t2[2];
+    dAddVector3r4(b->facc, t2);
 }
 
 
@@ -548,9 +546,7 @@ void dBodyAddRelTorque (dBodyID b, dReal fx, dReal fy, dReal fz)
     t1[2] = fz;
     t1[3] = 0;
     dMultiply0_331 (t2,b->posr.R,t1);
-    b->tacc[0] += t2[0];
-    b->tacc[1] += t2[1];
-    b->tacc[2] += t2[2];
+    dAddVector3r4(b->tacc, t2);
 }
 
 
@@ -568,7 +564,7 @@ void dBodyAddForceAtPos (dBodyID b, dReal fx, dReal fy, dReal fz,
     q[0] = px - b->posr.pos[0];
     q[1] = py - b->posr.pos[1];
     q[2] = pz - b->posr.pos[2];
-    dAddVectorCross3(b->tacc,q,f);
+    dAddVectorCross3r4(b->tacc,q,f);
 }
 
 
@@ -586,10 +582,8 @@ void dBodyAddForceAtRelPos (dBodyID b, dReal fx, dReal fy, dReal fz,
     prel[2] = pz;
     prel[3] = 0;
     dMultiply0_331 (p,b->posr.R,prel);
-    b->facc[0] += f[0];
-    b->facc[1] += f[1];
-    b->facc[2] += f[2];
-    dAddVectorCross3(b->tacc,p,f);
+    dAddVector3r4(b->facc, f);
+    dAddVectorCross3r4(b->tacc,p,f);
 }
 
 
@@ -603,14 +597,12 @@ void dBodyAddRelForceAtPos (dBodyID b, dReal fx, dReal fy, dReal fz,
     frel[2] = fz;
     frel[3] = 0;
     dMultiply0_331 (f,b->posr.R,frel);
-    b->facc[0] += f[0];
-    b->facc[1] += f[1];
-    b->facc[2] += f[2];
+    dAddVector3r4(b->facc, f);
     dVector3 q;
     q[0] = px - b->posr.pos[0];
     q[1] = py - b->posr.pos[1];
     q[2] = pz - b->posr.pos[2];
-    dAddVectorCross3(b->tacc,q,f);
+    dAddVectorCross3r4(b->tacc,q,f);
 }
 
 
@@ -629,10 +621,8 @@ void dBodyAddRelForceAtRelPos (dBodyID b, dReal fx, dReal fy, dReal fz,
     prel[3] = 0;
     dMultiply0_331 (f,b->posr.R,frel);
     dMultiply0_331 (p,b->posr.R,prel);
-    b->facc[0] += f[0];
-    b->facc[1] += f[1];
-    b->facc[2] += f[2];
-    dAddVectorCross3(b->tacc,p,f);
+    dAddVector3r4(b->facc, f);
+    dAddVectorCross3r4(b->tacc, p ,f);
 }
 
 
@@ -678,9 +668,7 @@ void dBodyGetRelPointPos (dBodyID b, dReal px, dReal py, dReal pz,
     prel[2] = pz;
     prel[3] = 0;
     dMultiply0_331 (p,b->posr.R,prel);
-    result[0] = p[0] + b->posr.pos[0];
-    result[1] = p[1] + b->posr.pos[1];
-    result[2] = p[2] + b->posr.pos[2];
+    dAddVectors3r4(result, p, b->posr.pos);
 }
 
 
@@ -694,9 +682,7 @@ void dBodyGetRelPointVel (dBodyID b, dReal px, dReal py, dReal pz,
     prel[2] = pz;
     prel[3] = 0;
     dMultiply0_331 (p,b->posr.R,prel);
-    result[0] = b->lvel[0];
-    result[1] = b->lvel[1];
-    result[2] = b->lvel[2];
+    dCopyVector3(result, b->lvel);
     dAddVectorCross3(result,b->avel,p);
 }
 
@@ -710,9 +696,7 @@ void dBodyGetPointVel (dBodyID b, dReal px, dReal py, dReal pz,
     p[1] = py - b->posr.pos[1];
     p[2] = pz - b->posr.pos[2];
     p[3] = 0;
-    result[0] = b->lvel[0];
-    result[1] = b->lvel[1];
-    result[2] = b->lvel[2];
+    dCopyVector3(result, b->lvel);
     dAddVectorCross3(result,b->avel,p);
 }
 
@@ -796,9 +780,7 @@ int dBodyGetFiniteRotationMode (dBodyID b)
 void dBodyGetFiniteRotationAxis (dBodyID b, dVector3 result)
 {
     dAASSERT (b);
-    result[0] = b->finite_rot_axis[0];
-    result[1] = b->finite_rot_axis[1];
-    result[2] = b->finite_rot_axis[2];
+    dCopyVector3r4(result, b->finite_rot_axis);
 }
 
 
@@ -1638,9 +1620,7 @@ void dWorldSetGravity (dWorldID w, dReal x, dReal y, dReal z)
 void dWorldGetGravity (dWorldID w, dVector3 g)
 {
     dAASSERT (w);
-    g[0] = w->gravity[0];
-    g[1] = w->gravity[1];
-    g[2] = w->gravity[2];
+    dCopyVector3(g, w->gravity);
 }
 
 

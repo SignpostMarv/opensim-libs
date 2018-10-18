@@ -37,7 +37,7 @@ dxJointAMotor::dxJointAMotor( dxWorld *w ) :
     int i;
     num = 0;
     mode = dAMotorUser;
-    for ( i = 0; i < 3; i++ )
+    for ( i = 0; i < 3; ++i )
     {
         rel[i] = 0;
         dSetZero( axis[i], 4 );
@@ -67,12 +67,12 @@ dxJointAMotor::computeGlobalAxes( dVector3 ax[3] )
             ax[2][1] = axis[2][1];
             ax[2][2] = axis[2][2];
         }
-        dCalcVectorCross3( ax[1], ax[2], ax[0] );
+        dCalcVectorCross3r4( ax[1], ax[2], ax[0] );
         dNormalize3( ax[1] );
     }
     else
     {
-        for ( int i = 0; i < num; i++ )
+        for ( int i = 0; i < num; ++i )
         {
             if ( rel[i] == 1 )
             {
@@ -200,7 +200,7 @@ dxJointAMotor::getInfo1( dxJoint::Info1 *info )
     }
 
     // see if we're powered or at a joint limit for each axis
-    for ( int i = 0; i < num; i++ )
+    for ( int i = 0; i < num; ++i )
     {
         if ( limot[i].testRotationalLimit( angle[i] ) ||
             limot[i].fmax > 0 )
@@ -251,7 +251,7 @@ dxJointAMotor::getInfo2( dReal worldFPS, dReal /*worldERP*/, const Info2Descr* i
     }
 
     int row = 0;
-    for ( i = 0; i < num; i++ )
+    for ( i = 0; i < num; ++i )
     {
         row += limot[i].addLimot( this, worldFPS, info, row, *( axptr[i] ), 1 );
     }

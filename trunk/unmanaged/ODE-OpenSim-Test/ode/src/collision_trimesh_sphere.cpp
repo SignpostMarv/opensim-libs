@@ -42,7 +42,7 @@ static bool GetContactData(const dVector3& Center, dReal Radius, const dVector3 
     // now onto the bulk of the collision...
 
     dVector3 Diff;
-    dSubtractVectors3(Diff, Origin, Center);
+    dSubtractVectors3r4(Diff, Origin, Center);
 
     dReal A00 = dCalcVectorLengthSquare3(Edge0);
     dReal A01 = dCalcVectorDot3(Edge0, Edge1);
@@ -301,9 +301,7 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
     // Sphere
     Sphere Sphere;
-    Sphere.mCenter.x = Position[0];
-    Sphere.mCenter.y = Position[1];
-    Sphere.mCenter.z = Position[2];
+    dCopyVector3(Sphere.mCenter, Position);
     Sphere.mRadius = Radius;
 
     Matrix4x4 amatrix;
@@ -369,15 +367,11 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
             dVector3& v2 = dv[2];
 
             dVector3 vu;
-            vu[0] = v1[0] - v0[0];
-            vu[1] = v1[1] - v0[1];
-            vu[2] = v1[2] - v0[2];
+            dSubtractVectors3r4(vu, v1, v0);
             vu[3] = REAL(0.0);
 
             dVector3 vv;
-            vv[0] = v2[0] - v0[0];
-            vv[1] = v2[1] - v0[1];
-            vv[2] = v2[2] - v0[2];
+            dSubtractVectors3r4(vv, v2, v0);
             vv[3] = REAL(0.0);
 
             // Get plane coefficients
@@ -398,9 +392,10 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
             * to be adjusted (penetration has occured anyway).
             */
 
-            dReal side = dCalcVectorDot3(Plane,Position) - dCalcVectorDot3(Plane, v0);
+            dReal side = dCalcVectorDot3(Plane, Position) - dCalcVectorDot3(Plane, v0);
 
-            if(side < REAL(0.0)) {
+            if(side < REAL(0.0))
+            {
                 continue;
             }
 
@@ -417,18 +412,15 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
             dVector3 ContactPos;
 
             dReal w = REAL(1.0) - u - v;
-            ContactPos[0] = (v0[0] * w) + (v1[0] * u) + (v2[0] * v);
-            ContactPos[1] = (v0[1] * w) + (v1[1] * u) + (v2[1] * v);
-            ContactPos[2] = (v0[2] * w) + (v1[2] * u) + (v2[2] * v);
+            dAddScaledVectors3r4(ContactPos, v1, v2, u, v);
+            dAddScaledVector3r4(ContactPos, v0, w);
 
             // Depth returned from GetContactData is depth along 
             // contact point - sphere center direction
             // we'll project it to contact normal
             dVector3 dir;
-            dir[0] = Position[0]-ContactPos[0];
-            dir[1] = Position[1]-ContactPos[1];
-            dir[2] = Position[2]-ContactPos[2];
-            dReal dirProj = dCalcVectorDot3(dir, Plane) / dSqrt(dCalcVectorDot3(dir, dir));
+            dSubtractVectors3r4(dir, Position, ContactPos);
+            dReal dirProj = dCalcVectorDot3(dir, Plane) / dCalcVectorLength3(dir);
 
             // Since Depth already had a requirement to be non-negative,
             // negative direction projections should not be allowed as well,
@@ -438,17 +430,10 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
 
             dContactGeom* Contact = SAFECONTACT(Flags, Contacts, OutTriCount, Stride);
 
-            Contact->pos[0] = ContactPos[0];
-            Contact->pos[1] = ContactPos[1];
-            Contact->pos[2] = ContactPos[2];
-            Contact->pos[3] = REAL(0.0);
+            dCopyVector3r4(Contact->pos, ContactPos);
 
             // Using normal as plane (reversed)
-            Contact->normal[0] = -Plane[0];
-            Contact->normal[1] = -Plane[1];
-            Contact->normal[2] = -Plane[2];
-            Contact->normal[3] = REAL(0.0);
-
+            dCopyNegatedVector3r4(Contact->normal, Plane);
             Contact->depth = Depth * dirProj;
             //Contact->depth = Radius - side; // (mg) penetration depth is distance along normal not shortest distance
 
@@ -473,38 +458,25 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
                 if (OutTriCount > 1 && !(Flags & CONTACTS_UNIMPORTANT))
                 {
                     dVector3 pos;
-                    pos[0] = Contact->pos[0];
-                    pos[1] = Contact->pos[1];
-                    pos[2] = Contact->pos[2];
+                    dCopyVector3r4(pos, Contact->pos);
 
                     dVector3 normal;
-                    normal[0] = Contact->normal[0] * Contact->depth;
-                    normal[1] = Contact->normal[1] * Contact->depth;
-                    normal[2] = Contact->normal[2] * Contact->depth;
-                    normal[3] = REAL(0.0);
+                    dCopyScaledVector3r4(normal, Contact->normal, Contact->depth);
 
-                    int TriIndex = Contact->side1;
+                    int TriIndex = Contact->side1; 
 
                     for (int i = 1; i < OutTriCount; i++)
                     {
                         dContactGeom* TempContact = SAFECONTACT(Flags, Contacts, i, Stride);
 
-                        pos[0] += TempContact->pos[0];
-                        pos[1] += TempContact->pos[1];
-                        pos[2] += TempContact->pos[2];
-
-                        normal[0] += TempContact->normal[0] * TempContact->depth;
-                        normal[1] += TempContact->normal[1] * TempContact->depth;
-                        normal[2] += TempContact->normal[2] * TempContact->depth;
-
+                        dAddVector3r4(pos, TempContact->pos);
+                        dAddScaledVector3r4(normal, TempContact->normal, TempContact->depth);
                         TriIndex = (TriMesh->TriMergeCallback) ? TriMesh->TriMergeCallback(TriMesh, TriIndex, TempContact->side1) : -1;
                     }
 
                     Contact->side1 = TriIndex;
-
-                    Contact->pos[0] = pos[0] / OutTriCount;
-                    Contact->pos[1] = pos[1] / OutTriCount;
-                    Contact->pos[2] = pos[2] / OutTriCount;
+                    dReal invOutTriCount = dRecip(OutTriCount);
+                    dCopyScaledVector3r4(Contact->pos, pos, invOutTriCount);
 
                     if ( !dSafeNormalize3(normal) )
                         return OutTriCount;	// Cannot merge in this pathological case
@@ -527,10 +499,7 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
                         mergedDepth = ( mergedDepth < adjusted ) ? adjusted : mergedDepth;
                     }
                     Contact->depth = mergedDepth;
-                    Contact->normal[0] = normal[0];
-                    Contact->normal[1] = normal[1];
-                    Contact->normal[2] = normal[2];
-                    Contact->normal[3] = normal[3];
+                    dCopyVector3r4(Contact->normal, normal);
                 }
 
                 return 1;
@@ -542,19 +511,12 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
                     dVector3 Normal;
 
                     dContactGeom* FirstContact = SAFECONTACT(Flags, Contacts, 0, Stride);
-                    Normal[0] = FirstContact->normal[0] * FirstContact->depth;
-                    Normal[1] = FirstContact->normal[1] * FirstContact->depth;
-                    Normal[2] = FirstContact->normal[2] * FirstContact->depth;
-                    Normal[3] = FirstContact->normal[3] * FirstContact->depth;
+                    dCopyScaledVector3r4(Normal, FirstContact->normal, FirstContact->depth);
 
                     for (int i = 1; i < OutTriCount; i++)
                     {
                         dContactGeom* Contact = SAFECONTACT(Flags, Contacts, i, Stride);
-
-                        Normal[0] += Contact->normal[0] * Contact->depth;
-                        Normal[1] += Contact->normal[1] * Contact->depth;
-                        Normal[2] += Contact->normal[2] * Contact->depth;
-                        Normal[3] += Contact->normal[3] * Contact->depth;
+                        dAddScaledVector3r4(Normal, Contact->normal, Contact->depth);
                     }
 
                     dNormalize3(Normal);
@@ -563,10 +525,7 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
                     {
                         dContactGeom* Contact = SAFECONTACT(Flags, Contacts, i, Stride);
 
-                        Contact->normal[0] = Normal[0];
-                        Contact->normal[1] = Normal[1];
-                        Contact->normal[2] = Normal[2];
-                        Contact->normal[3] = Normal[3];
+                        dCopyVector3r4(Contact->normal, Normal);
                     }
                 }
 

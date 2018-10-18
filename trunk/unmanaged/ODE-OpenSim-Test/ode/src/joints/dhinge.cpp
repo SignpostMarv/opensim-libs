@@ -89,7 +89,7 @@ dxJointDHinge::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr* info 
     if ( node[1].body )
         dBodyVectorToWorld(node[1].body, axis2[0], axis2[1], axis2[2], globalAxis2);
     else
-        dCopyVector3(globalAxis2, axis2);
+        dCopyVector3r4(globalAxis2, axis2);
     
     // similar to the hinge joint
     dVector3 u;
@@ -124,7 +124,7 @@ dxJointDHinge::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr* info 
     if ( node[1].body ) {
 
         dVector3 h;
-        dAddScaledVectors3(h, node[0].body->posr.pos, node[1].body->posr.pos, -0.5, 0.5);
+        dAddScaledVectors3r4(h, node[0].body->posr.pos, node[1].body->posr.pos, -0.5, 0.5);
 
         dVector3 omega;
         dCalcVectorCross3(omega, h, globalAxis1);
@@ -147,10 +147,10 @@ dxJointDHinge::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr* info 
     if ( node[1].body )
         dBodyGetRelPointPos(node[1].body, anchor2[0], anchor2[1], anchor2[2], globalA2);
     else
-        dCopyVector3(globalA2, anchor2);
+        dCopyVector3r4(globalA2, anchor2);
 
     dVector3 d;
-    dSubtractVectors3(d, globalA1, globalA2); // displacement error
+    dSubtractVectors3r4(d, globalA1, globalA2); // displacement error
     info->c[3] = -k * dCalcVectorDot3(globalAxis1, d);
 }
 

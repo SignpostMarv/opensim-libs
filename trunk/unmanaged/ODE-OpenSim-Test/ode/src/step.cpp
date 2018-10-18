@@ -331,9 +331,6 @@ void dxStepIsland(const dxStepperProcessingCallContext *callContext)
     const size_t ji_reserve_count = 2 * (size_t)_nj;
     dJointWithInfo1 *const jointinfos = memarena->AllocateArray<dJointWithInfo1>(ji_reserve_count);
 
-    const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
-    dIASSERT(allowedThreads != 0);
-
     void *stagesMemArenaState = memarena->SaveState();
 
     dxStepperStage1CallContext *stage1CallContext = (dxStepperStage1CallContext *)memarena->AllocateBlock(sizeof(dxStepperStage1CallContext));
@@ -345,26 +342,9 @@ void dxStepIsland(const dxStepperProcessingCallContext *callContext)
     dxStepperStage0JointsCallContext *stage0JointsCallContext = (dxStepperStage0JointsCallContext *)memarena->AllocateBlock(sizeof(dxStepperStage0JointsCallContext));
     new(stage0JointsCallContext) dxStepperStage0JointsCallContext(callContext, jointinfos, &stage1CallContext->m_stage0Outputs);
 
-    if (allowedThreads == 1)
-    {
-        dxStepIsland_Stage0_Bodies(stage0BodiesCallContext);
-        dxStepIsland_Stage0_Joints(stage0JointsCallContext);
-        dxStepIsland_Stage1(stage1CallContext);
-    }
-    else
-    {
-        unsigned bodyThreads = allowedThreads;
-        unsigned jointThreads = 1;
-
-        dCallReleaseeID stage1CallReleasee;
-        world->PostThreadedCallForUnawareReleasee(NULL, &stage1CallReleasee, bodyThreads + jointThreads, callContext->m_finalReleasee, 
-            NULL, &dxStepIsland_Stage1_Callback, stage1CallContext, 0, "StepIsland Stage1");
-
-        world->PostThreadedCallsGroup(NULL, bodyThreads, stage1CallReleasee, &dxStepIsland_Stage0_Bodies_Callback, stage0BodiesCallContext, "StepIsland Stage0-Bodies");
-
-        world->PostThreadedCall(NULL, NULL, 0, stage1CallReleasee, NULL, &dxStepIsland_Stage0_Joints_Callback, stage0JointsCallContext, 0, "StepIsland Stage0-Joints");
-        dIASSERT(jointThreads == 1);
-    }
+    dxStepIsland_Stage0_Bodies(stage0BodiesCallContext);
+    dxStepIsland_Stage0_Joints(stage0JointsCallContext);
+    dxStepIsland_Stage1(stage1CallContext);
 }    
 
 static 
@@ -770,32 +750,10 @@ void dxStepIsland_Stage1(dxStepperStage1CallContext *stage1CallContext)
         dxStepperStage2CallContext *stage2CallContext = (dxStepperStage2CallContext *)memarena->AllocateBlock(sizeof(dxStepperStage2CallContext));
         stage2CallContext->Initialize(callContext, localContext, JinvM, cfm);
 
-        const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
-        dIASSERT(allowedThreads != 0);
-
-        if (allowedThreads == 1)
-        {
-            dxStepIsland_Stage2a(stage2CallContext);
-            dxStepIsland_Stage2b(stage2CallContext);
-            dxStepIsland_Stage2c(stage2CallContext);
-            dxStepIsland_Stage3(stage3CallContext);
-        }
-        else
-        {
-            dCallReleaseeID stage3CallReleasee;
-            world->PostThreadedCallForUnawareReleasee(NULL, &stage3CallReleasee, 1, callContext->m_finalReleasee, 
-                NULL, &dxStepIsland_Stage3_Callback, stage3CallContext, 0, "StepIsland Stage3");
-
-            dCallReleaseeID stage2bSyncReleasee;
-            world->PostThreadedCall(NULL, &stage2bSyncReleasee, 1, stage3CallReleasee, 
-                NULL, &dxStepIsland_Stage2bSync_Callback, stage2CallContext, 0, "StepIsland Stage2b Sync");
-
-            dCallReleaseeID stage2aSyncReleasee;
-            world->PostThreadedCall(NULL, &stage2aSyncReleasee, allowedThreads, stage2bSyncReleasee, 
-                NULL, &dxStepIsland_Stage2aSync_Callback, stage2CallContext, 0, "StepIsland Stage2a Sync");
-
-            world->PostThreadedCallsGroup(NULL, allowedThreads, stage2aSyncReleasee, &dxStepIsland_Stage2a_Callback, stage2CallContext, "StepIsland Stage2a");
-        }
+        dxStepIsland_Stage2a(stage2CallContext);
+        dxStepIsland_Stage2b(stage2CallContext);
+        dxStepIsland_Stage2c(stage2CallContext);
+        dxStepIsland_Stage3(stage3CallContext);
     }
     else {
         dxStepIsland_Stage3(stage3CallContext);
@@ -907,10 +865,9 @@ int dxStepIsland_Stage2aSync_Callback(void *_stage2CallContext, dcallindex_t cal
     dxStepperStage2CallContext *stage2CallContext = (dxStepperStage2CallContext *)_stage2CallContext;
     const dxStepperProcessingCallContext *callContext = stage2CallContext->m_stepperCallContext;
     dxWorld *world = callContext->m_world;
-    const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
 
-    world->AlterThreadedCallDependenciesCount(callThisReleasee, allowedThreads);
-    world->PostThreadedCallsGroup(NULL, allowedThreads, callThisReleasee, &dxStepIsland_Stage2b_Callback, stage2CallContext, "StepIsland Stage2b");
+    world->AlterThreadedCallDependenciesCount(callThisReleasee, 1);
+    world->PostThreadedCallsGroup(NULL, 1, callThisReleasee, &dxStepIsland_Stage2b_Callback, stage2CallContext, "StepIsland Stage2b");
 
     return 1;
 }
@@ -1053,10 +1010,9 @@ int dxStepIsland_Stage2bSync_Callback(void *_stage2CallContext, dcallindex_t cal
     dxStepperStage2CallContext *stage2CallContext = (dxStepperStage2CallContext *)_stage2CallContext;
     const dxStepperProcessingCallContext *callContext = stage2CallContext->m_stepperCallContext;
     dxWorld *world = callContext->m_world;
-    const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
-
-    world->AlterThreadedCallDependenciesCount(callThisReleasee, allowedThreads);
-    world->PostThreadedCallsGroup(NULL, allowedThreads, callThisReleasee, &dxStepIsland_Stage2c_Callback, stage2CallContext, "StepIsland Stage2c");
+ 
+    world->AlterThreadedCallDependenciesCount(callThisReleasee, 1);
+    world->PostThreadedCallsGroup(NULL, 1, callThisReleasee, &dxStepIsland_Stage2c_Callback, stage2CallContext, "StepIsland Stage2c");
 
     return 1;
 }

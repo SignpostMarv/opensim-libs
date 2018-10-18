@@ -104,7 +104,7 @@ void sCylinderBoxData::_cldInitCylinderBox()
     dCopyMatrix4x3(m_mCylinderRot, pRotCyc);
 
     const dVector3* pPosCyc = (const dVector3*)dGeomGetPosition(m_gCylinder);
-    dCopyVector3(m_vCylinderPos, *pPosCyc);
+    dCopyVector3r4(m_vCylinderPos, *pPosCyc);
 
     dMat3GetCol(m_mCylinderRot,nCYLINDER_AXIS,m_vCylinderAxis);
 
@@ -116,7 +116,7 @@ void sCylinderBoxData::_cldInitCylinderBox()
     dCopyMatrix4x3(m_mBoxRot, pRotBox);
     
     const dVector3* pPosBox  = (const dVector3*)dGeomGetPosition(m_gBox);
-    dCopyVector3(m_vBoxPos, *pPosBox);
+    dCopyVector3r4(m_vBoxPos, *pPosBox);
 
     dGeomBoxGetLengths(m_gBox, m_vBoxHalfSize);
     m_vBoxHalfSize[0] *= REAL(0.5);
@@ -170,11 +170,11 @@ void sCylinderBoxData::_cldInitCylinderBox()
     for(i=0; i < 8; i++) 
     {
         dMultiplyMat3Vec3(m_mBoxRot,m_avBoxVertices[i], vTempBoxVertices[i]);
-        dAddVectors3(m_avBoxVertices[i], vTempBoxVertices[i], m_vBoxPos);
+        dAddVectors3r4(m_avBoxVertices[i], vTempBoxVertices[i], m_vBoxPos);
     }
 
     // find relative position
-    dSubtractVectors3(m_vDiff, m_vCylinderPos, m_vBoxPos);
+    dSubtractVectors3r4(m_vDiff, m_vCylinderPos, m_vBoxPos);
     m_fBestDepth = MAX_FLOAT;
     m_vNormal[0] = REAL(0.0);
     m_vNormal[1] = REAL(0.0);
@@ -270,7 +270,7 @@ int sCylinderBoxData::_cldTestAxis( dVector3& vInputNormal, int iAxis )
     if ( fDepth < m_fBestDepth ) 
     {
         m_fBestDepth = fDepth;
-        dCopyVector3(m_vNormal, vInputNormal);
+        dCopyVector3r4(m_vNormal, vInputNormal);
         m_iBestAxis  = iAxis;
         m_fBestrb    = frb;
         m_fBestrc    = frc;
@@ -278,7 +278,7 @@ int sCylinderBoxData::_cldTestAxis( dVector3& vInputNormal, int iAxis )
         // flip normal if interval is wrong faced
         if (fd > 0) 
         { 
-            dNegateVector3(m_vNormal);
+            dNegateVector3r4(m_vNormal);
         }
     }
 
@@ -294,11 +294,11 @@ int sCylinderBoxData::_cldTestEdgeCircleAxis(
 {
     // calculate direction of edge
     dVector3 vDirEdge;
-    dSubtractVectors3(vDirEdge, vVx1, vVx0);
+    dSubtractVectors3r4(vDirEdge, vVx1, vVx0);
     dNormalize3(vDirEdge);
     // starting point of edge 
     dVector3 vEStart;
-    dCopyVector3(vEStart, vVx0);;
+    dCopyVector3r4(vEStart, vVx0);;
 
     // calculate angle cosine between cylinder axis and edge
     dReal fdot2 = dCalcVectorDot3 (vDirEdge,m_vCylinderAxis);
@@ -312,7 +312,7 @@ int sCylinderBoxData::_cldTestEdgeCircleAxis(
 
     // find point of intersection between edge line and circle plane
     dVector3 vTemp1;
-    dSubtractVectors3(vTemp1, vCenterPoint, vEStart);
+    dSubtractVectors3r4(vTemp1, vCenterPoint, vEStart);
     dReal fdot1 = dCalcVectorDot3(vTemp1,m_vCylinderAxis);
     dVector3 vpnt;
     vpnt[0]= vEStart[0] + vDirEdge[0] * (fdot1/fdot2);
@@ -322,12 +322,12 @@ int sCylinderBoxData::_cldTestEdgeCircleAxis(
     // find tangent vector on circle with same center (vCenterPoint) that
     // touches point of intersection (vpnt)
     dVector3 vTangent;
-    dSubtractVectors3(vTemp1, vCenterPoint, vpnt);
-    dCalcVectorCross3(vTangent, vTemp1, m_vCylinderAxis);
+    dSubtractVectors3r4(vTemp1, vCenterPoint, vpnt);
+    dCalcVectorCross3r4(vTangent, vTemp1, m_vCylinderAxis);
 
     // find vector orthogonal both to tangent and edge direction
     dVector3 vAxis;
-    dCalcVectorCross3(vAxis, vTangent, vDirEdge);
+    dCalcVectorCross3r4(vAxis, vTangent, vDirEdge);
 
     // use that vector as separating axis
     return _cldTestAxis( vAxis, iAxis );
@@ -371,7 +371,7 @@ int sCylinderBoxData::_cldTestSeparatingAxes()
 
     // axis C - Cylinder Axis
     //vAxis = vCylinderAxis;
-    dCopyVector3(vAxis, m_vCylinderAxis);
+    dCopyVector3r4(vAxis, m_vCylinderAxis);
     if (!_cldTestAxis( vAxis, 4 )) 
     {
         return 0;
@@ -417,10 +417,10 @@ int sCylinderBoxData::_cldTestSeparatingAxes()
     for(i=0; i< 8; i++) 
     {
         //vAxis = ( vCylinderAxis cross (m_avBoxVertices[i] - vCylinderPos));
-        dSubtractVectors3(vTemp1, m_avBoxVertices[i], m_vCylinderPos);
-        dCalcVectorCross3(vTemp2, m_vCylinderAxis, vTemp1);
+        dSubtractVectors3r4(vTemp1, m_avBoxVertices[i], m_vCylinderPos);
+        dCalcVectorCross3r4(vTemp2, m_vCylinderAxis, vTemp1);
         //vAxis = ( vCylinderAxis cross vAxis );
-        dCalcVectorCross3(vAxis, vTemp2, m_vCylinderAxis);
+        dCalcVectorCross3r4(vAxis, vTemp2, m_vCylinderAxis);
         if(dCalcVectorLengthSquare3( vAxis ) > fEpsilon ) 
         {
             if (!_cldTestAxis( vAxis, 8 + i ))
@@ -640,7 +640,7 @@ int sCylinderBoxData::_cldClipCylinderToBox()
 
     // plane 3 -x
     dMat3GetCol(m_mBoxRot,0,vTemp1);
-    dNegateVector3(vTemp1);
+    dNegateVector3r4(vTemp1);
     dConstructPlane(plPlane, vTemp1, m_vBoxHalfSize[0]);
     if(!dClipEdgeToPlane( m_vEp0, m_vEp1, plPlane )) 
     { 
@@ -649,7 +649,7 @@ int sCylinderBoxData::_cldClipCylinderToBox()
 
     // plane 4 -y
     dMat3GetCol(m_mBoxRot,1,vTemp1);
-    dNegateVector3(vTemp1);
+    dNegateVector3r4(vTemp1);
     dConstructPlane(plPlane, vTemp1, m_vBoxHalfSize[1]);
     if(!dClipEdgeToPlane( m_vEp0, m_vEp1, plPlane )) 
     { 
@@ -658,7 +658,7 @@ int sCylinderBoxData::_cldClipCylinderToBox()
 
     // plane 5 -z
     dMat3GetCol(m_mBoxRot,2,vTemp1);
-    dNegateVector3(vTemp1);
+    dNegateVector3r4(vTemp1);
     dConstructPlane(plPlane, vTemp1, m_vBoxHalfSize[2]);
     if(!dClipEdgeToPlane( m_vEp0, m_vEp1, plPlane )) 
     { 
@@ -691,26 +691,26 @@ int sCylinderBoxData::_cldClipCylinderToBox()
 
     dContactGeom* Contact0 = SAFECONTACT(m_iFlags, m_gContact, m_nContacts, m_iSkip);
     Contact0->depth = m_fDepth0;
-    dCopyVector3(Contact0->normal, m_vNormal);
-    dCopyVector3(Contact0->pos, m_vEp0);
+    dCopyVector3r4(Contact0->normal, m_vNormal);
+    dCopyVector3r4(Contact0->pos, m_vEp0);
     Contact0->g1 = m_gCylinder;
     Contact0->g2 = m_gBox;
     Contact0->side1 = -1;
     Contact0->side2 = -1;
-    dNegateVector3(Contact0->normal);
+    dNegateVector3r4(Contact0->normal);
     m_nContacts++;
 
     if (m_nContacts != (m_iFlags & NUMC_MASK))
     {
         dContactGeom* Contact1 = SAFECONTACT(m_iFlags, m_gContact, m_nContacts, m_iSkip);
         Contact1->depth = m_fDepth1;
-        dCopyVector3(Contact1->normal, m_vNormal);
-        dCopyVector3(Contact1->pos, m_vEp1);
+        dCopyVector3r4(Contact1->normal, m_vNormal);
+        dCopyVector3r4(Contact1->pos, m_vEp1);
         Contact1->g1 = m_gCylinder;
         Contact1->g2 = m_gBox;
         Contact1->side1 = -1;
         Contact1->side2 = -1;
-        dNegateVector3(Contact1->normal);
+        dNegateVector3r4(Contact1->normal);
         m_nContacts++;
     }
 
@@ -876,7 +876,7 @@ void sCylinderBoxData::_cldClipBoxToCylinder()
 
     for(i=0; i<4; i++) 
     {
-        dSubtractVectors3(vTemp, avPoints[i], vCylinderCirclePos);
+        dSubtractVectors3r4(vTemp, avPoints[i], vCylinderCirclePos);
         dMultiplyMat3Vec3(mCylinderInv,vTemp,avPoints[i]);
     }
 
@@ -922,7 +922,7 @@ void sCylinderBoxData::_cldClipBoxToCylinder()
             vPoint[1] += vCylinderCirclePos[1];
             vPoint[2] += vCylinderCirclePos[2];
 
-            dSubtractVectors3(vTemp, vPoint, m_vCylinderPos);
+            dSubtractVectors3r4(vTemp, vPoint, m_vCylinderPos);
             ftmpdot	 = dCalcVectorDot3(vTemp, m_vNormal);
             fTempDepth = m_fBestrc - ftmpdot;
             // Depth must be positive
@@ -931,13 +931,13 @@ void sCylinderBoxData::_cldClipBoxToCylinder()
                 // generate contacts
                 dContactGeom* Contact0 = SAFECONTACT(m_iFlags, m_gContact, m_nContacts, m_iSkip);
                 Contact0->depth = fTempDepth;
-                dCopyVector3(Contact0->normal, m_vNormal);
-                dCopyVector3(Contact0->pos, vPoint);
+                dCopyVector3r4(Contact0->normal, m_vNormal);
+                dCopyVector3r4(Contact0->pos, vPoint);
                 Contact0->g1 = m_gCylinder;
                 Contact0->g2 = m_gBox;
                 Contact0->side1 = -1;
                 Contact0->side2 = -1;
-                dNegateVector3(Contact0->normal);
+                dNegateVector3r4(Contact0->normal);
                 m_nContacts++;
 
                 if (m_nContacts == (m_iFlags & NUMC_MASK))
@@ -956,7 +956,7 @@ void sCylinderBoxData::_cldClipBoxToCylinder()
             vPoint[1] += vCylinderCirclePos[1];
             vPoint[2] += vCylinderCirclePos[2];
 
-            dSubtractVectors3(vTemp, vPoint, m_vCylinderPos);
+            dSubtractVectors3r4(vTemp, vPoint, m_vCylinderPos);
             ftmpdot	 = dCalcVectorDot3(vTemp, m_vNormal);
             fTempDepth = m_fBestrc - ftmpdot;
             // Depth must be positive
@@ -965,13 +965,13 @@ void sCylinderBoxData::_cldClipBoxToCylinder()
                 // generate contacts
                 dContactGeom* Contact0 = SAFECONTACT(m_iFlags, m_gContact, m_nContacts, m_iSkip);
                 Contact0->depth = fTempDepth;
-                dCopyVector3(Contact0->normal, m_vNormal);
-                dCopyVector3(Contact0->pos, vPoint);
+                dCopyVector3r4(Contact0->normal, m_vNormal);
+                dCopyVector3r4(Contact0->pos, vPoint);
                 Contact0->g1 = m_gCylinder;
                 Contact0->g2 = m_gBox;
                 Contact0->side1 = -1;
                 Contact0->side2 = -1;
-                dNegateVector3(Contact0->normal);
+                dNegateVector3r4(Contact0->normal);
                 m_nContacts++;
 
                 if (m_nContacts == (m_iFlags & NUMC_MASK))

@@ -40,3 +40,9 @@ C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenS
 C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb
 C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer.csproj.CoreCompileInputs.cache
 C:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer.csprojAssemblyReference.cache
+D:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.dll
+D:\opensim\opensim-libs\HttpServer\trunk\HttpServer\bin\Release\HttpServer_OpenSim.pdb
+D:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer.csprojAssemblyReference.cache
+D:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer.csproj.CoreCompileInputs.cache
+D:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.dll
+D:\opensim\opensim-libs\HttpServer\trunk\HttpServer\obj\Release\HttpServer_OpenSim.pdb

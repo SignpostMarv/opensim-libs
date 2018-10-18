@@ -352,7 +352,7 @@ struct dxIslandsProcessingCallContext
     }
 
     void AssignGroupReleasee(dCallReleaseeID groupReleasee) { m_groupReleasee = groupReleasee; }
-    void SetStepperAllowedThreads(unsigned allowedThreadsLimit) { m_stepperAllowedThreads = allowedThreadsLimit; }
+	void SetStepperAllowedThreads(unsigned allowedThreadsLimit) { m_stepperAllowedThreads = allowedThreadsLimit; }
 
     static int ThreadedProcessGroup_Callback(void *callContext, dcallindex_t callInstanceIndex, dCallReleaseeID callThisReleasee);
     bool ThreadedProcessGroup();
@@ -374,7 +374,7 @@ struct dxIslandsProcessingCallContext
     dstepper_fn_t                   const m_stepper;
     dCallReleaseeID                 m_groupReleasee;
     size_t                          volatile m_islandToProcessStorage;
-    unsigned                        m_stepperAllowedThreads;
+	unsigned                        m_stepperAllowedThreads;
 };
 
 
@@ -482,12 +482,8 @@ void dInternalHandleAutoDisabling (dxWorld *world, dReal stepsize)
             dVector3 average_lvel, average_avel;
 
             // Store first velocity samples
-            average_lvel[0] = bb->average_lvel_buffer[0][0];
-            average_avel[0] = bb->average_avel_buffer[0][0];
-            average_lvel[1] = bb->average_lvel_buffer[0][1];
-            average_avel[1] = bb->average_avel_buffer[0][1];
-            average_lvel[2] = bb->average_lvel_buffer[0][2];
-            average_avel[2] = bb->average_avel_buffer[0][2];
+            dCopyVector3r4(average_lvel, bb->average_lvel_buffer[0]);
+            dCopyVector3r4(average_avel, bb->average_avel_buffer[0]);
 
             // If we're not in "instantaneous mode"
             if ( bb->adis.average_samples > 1 )
@@ -495,23 +491,14 @@ void dInternalHandleAutoDisabling (dxWorld *world, dReal stepsize)
                 // add remaining velocities together
                 for ( unsigned int i = 1; i < bb->adis.average_samples; ++i )
                 {
-                    average_lvel[0] += bb->average_lvel_buffer[i][0];
-                    average_avel[0] += bb->average_avel_buffer[i][0];
-                    average_lvel[1] += bb->average_lvel_buffer[i][1];
-                    average_avel[1] += bb->average_avel_buffer[i][1];
-                    average_lvel[2] += bb->average_lvel_buffer[i][2];
-                    average_avel[2] += bb->average_avel_buffer[i][2];
+                    dAddVector3r4(average_lvel, bb->average_lvel_buffer[i]);
+                    dAddVector3r4(average_avel, bb->average_avel_buffer[i]);
                 }
 
                 // make average
                 dReal r1 = dReal( 1.0 ) / dReal( bb->adis.average_samples );
-
-                average_lvel[0] *= r1;
-                average_avel[0] *= r1;
-                average_lvel[1] *= r1;
-                average_avel[1] *= r1;
-                average_lvel[2] *= r1;
-                average_avel[2] *= r1;
+                dScaleVector3r4(average_lvel, r1);
+                dScaleVector3r4(average_avel, r1);
             }
 
             // threshold test
@@ -550,12 +537,8 @@ void dInternalHandleAutoDisabling (dxWorld *world, dReal stepsize)
 
             // disabling bodies should also include resetting the velocity
             // should prevent jittering in big "islands"
-            bb->lvel[0] = 0;
-            bb->lvel[1] = 0;
-            bb->lvel[2] = 0;
-            bb->avel[0] = 0;
-            bb->avel[1] = 0;
-            bb->avel[2] = 0;
+            dZeroVector3r4(bb->lvel);
+            dZeroVector3r4(bb->avel);
         }
     }
 }
@@ -583,12 +566,14 @@ static inline dReal sinc (dReal x)
 void dxStepBody (dxBody *b, dReal h)
 {
     // cap the angular velocity
-    if (b->flags & dxBodyMaxAngularSpeed) {
+    if (b->flags & dxBodyMaxAngularSpeed)
+    {
         const dReal max_ang_speed = b->max_angular_speed;
-        const dReal aspeed = dCalcVectorLengthSquare3( b->avel);
-        if (aspeed > max_ang_speed*max_ang_speed) {
+        const dReal aspeed = dCalcVectorLengthSquare3(b->avel);
+        if (aspeed > max_ang_speed*max_ang_speed)
+        {
             const dReal coef = max_ang_speed/dSqrt(aspeed);
-            dScaleVector3(b->avel, coef);
+            dScaleVector3r4(b->avel, coef);
         }
     }
     // end of angular velocity cap
@@ -596,19 +581,21 @@ void dxStepBody (dxBody *b, dReal h)
 
     // handle linear velocity
 //    for (unsigned int j=0; j<3; j++) b->posr.pos[j] += h * b->lvel[j];
-    dAddScaledVector3(b->posr.pos, b->lvel, h);
+    dAddScaledVector3r4(b->posr.pos, b->lvel, h);
 
-    if (b->flags & dxBodyFlagFiniteRotation) {
+    if (b->flags & dxBodyFlagFiniteRotation)
+    {
         dVector3 irv;	// infitesimal rotation vector
         dQuaternion q;	// quaternion for finite rotation
 
-        if (b->flags & dxBodyFlagFiniteRotationAxis) {
+        if (b->flags & dxBodyFlagFiniteRotationAxis)
+        {
             // split the angular velocity vector into a component along the finite
             // rotation axis, and a component orthogonal to it.
             dVector3 frv;		// finite rotation vector
-            dReal k = dCalcVectorDot3 (b->finite_rot_axis,b->avel);
-            dCopyScaledVector3(frv, b->finite_rot_axis, k);
-            dSubtractVectors3(irv, b->avel, frv);
+            dReal k = dCalcVectorDot3 (b->finite_rot_axis, b->avel);
+            dCopyScaledVector3r4(frv, b->finite_rot_axis, k);
+            dSubtractVectors3r4(irv, b->avel, frv);
 
             // make a rotation quaternion q that corresponds to frv * h.
             // compare this with the full-finite-rotation case below.
@@ -618,7 +605,8 @@ void dxStepBody (dxBody *b, dReal h)
             dReal s = sinc(theta) * h;
             dCopyScaledVector3(&q[1], frv, s);
         }
-        else {
+        else
+        {
             // make a rotation quaternion q that corresponds to w * h
             dReal wlen = dCalcVectorLength3(b->avel);
             h *= REAL(0.5);
@@ -630,58 +618,64 @@ void dxStepBody (dxBody *b, dReal h)
 
         // do the finite rotation
         dQuaternion q2;
-        dQMultiply0 (q2,q,b->q);
+        dQMultiply0 (q2, q, b->q);
         //for (unsigned int j=0; j<4; j++) b->q[j] = q2[j];
-        dCopyVector3(b->q, q2);
+        dCopyVector4(b->q, q2);
 
         // do the infitesimal rotation if required
-        if (b->flags & dxBodyFlagFiniteRotationAxis) {
+        if (b->flags & dxBodyFlagFiniteRotationAxis)
+        {
             dReal dq[4];
             dWtoDQ (irv,b->q,dq);
             //for (unsigned int j=0; j<4; j++) b->q[j] += h * dq[j];
             dAddScaledVector4(b->q, dq, h);
         }
     }
-    else {
+    else
+    {
         // the normal way - do an infitesimal rotation
         dReal dq[4];
-        dWtoDQ (b->avel,b->q,dq);
+        dWtoDQ (b->avel, b->q, dq);
  //       for (unsigned int j=0; j<4; j++) b->q[j] += h * dq[j];
         dAddScaledVector4(b->q, dq, h);
     }
 
     // normalize the quaternion and convert it to a rotation matrix
     dNormalize4 (b->q);
-    dQtoR (b->q,b->posr.R);
+    dQtoR (b->q, b->posr.R);
 
     // notify all attached geoms that this body has moved
     dxWorldProcessContext *world_process_context = b->world->UnsafeGetWorldProcessingContext(); 
-    for (dxGeom *geom = b->geom; geom; geom = dGeomGetBodyNext (geom)) {
+    for (dxGeom *geom = b->geom; geom; geom = dGeomGetBodyNext (geom))
+    {
         world_process_context->LockForStepbodySerialization();
         dGeomMoved (geom);
         world_process_context->UnlockForStepbodySerialization();
     }
 
     // notify the user
-    if (b->moved_callback != NULL) {
+    if (b->moved_callback != NULL)
         b->moved_callback(b);
-    }
 
     // damping
-    if (b->flags & dxBodyLinearDamping) {
+    if (b->flags & dxBodyLinearDamping)
+    {
         const dReal lin_threshold = b->dampingp.linear_threshold;
         const dReal lin_speed = dCalcVectorLengthSquare3(b->lvel);
-        if ( lin_speed > lin_threshold) {
+        if ( lin_speed > lin_threshold)
+        {
             const dReal k = 1 - b->dampingp.linear_scale;
-            dScaleVector3(b->lvel, k);
+            dScaleVector3r4(b->lvel, k);
         }
     }
-    if (b->flags & dxBodyAngularDamping) {
+    if (b->flags & dxBodyAngularDamping)
+    {
         const dReal ang_threshold = b->dampingp.angular_threshold;
         const dReal ang_speed = dCalcVectorLengthSquare3(b->avel);
-        if ( ang_speed > ang_threshold) {
+        if ( ang_speed > ang_threshold)
+        {
             const dReal k = 1 - b->dampingp.angular_scale;
-            dScaleVector3(b->avel, k);
+            dScaleVector3r4(b->avel, k);
         }
     }
 }
@@ -912,7 +906,7 @@ bool dxProcessIslands (dxWorld *world, const dxWorldProcessIslandsInfo &islandsI
             &dxIslandsProcessingCallContext::ThreadedProcessGroup_Callback, (void *)&callContext, 0, "World Islands Stepping Group");
 
         callContext.AssignGroupReleasee(groupReleasee);
-        callContext.SetStepperAllowedThreads(stepperAllowedThreadCount);
+		callContext.SetStepperAllowedThreads(stepperAllowedThreadCount);
 
         // Summary fault flag may be omitted as any failures will automatically propagate to dependent releasee (i.e. to groupReleasee)
         world->PostThreadedCallsGroup(NULL, islandsAllowedThreadCount, groupReleasee, 

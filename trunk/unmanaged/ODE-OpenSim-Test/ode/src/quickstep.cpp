@@ -131,35 +131,17 @@ static void Multiply1_12q1 (dReal *A, const dReal *B, const dReal *C, unsigned i
 {
     dIASSERT (q>0 && A && B && C);
 
-    dReal a = 0;
-    dReal b = 0;
-    dReal c = 0;
-    dReal d = 0;
-    dReal e = 0;
-    dReal f = 0;
+    dZeroVector3(A);
+    dZeroVector3(A + 3);
 
     dReal s;
 
-    for(unsigned int i=0, k = 0; i<q; k += 12, i++)
+    for(unsigned int i = 0, k = 0; i < q; k += 12, i++)
     {
         s = C[i]; //C[i] and B[n+k] cannot overlap because its value has been read into a temporary.
-
-        //For the rest of the loop, the only memory dependency (array) is from B[]
-        a += B[  k] * s;
-        b += B[1+k] * s;
-        c += B[2+k] * s;
-        d += B[3+k] * s;
-        e += B[4+k] * s;
-        f += B[5+k] * s;
+        dAddScaledVector3(A, &B[k], s);
+        dAddScaledVector3(A + 3, &B[k + 3], s);
     }
-
-    A[0] = a;
-    A[1] = b;
-    A[2] = c;
-    A[3] = d;
-    A[4] = e;
-    A[5] = f;
-
 }
 
 //***************************************************************************
@@ -539,25 +521,28 @@ void compute_invM_JT (volatile atomicord32 *mi_storage, dReal *iMJ,
         size_t mi_offset = (size_t)mi * 12;
         dReal *iMJ_ptr = iMJ + mi_offset;
         const dReal *J_ptr = J + mi_offset;
-        while (true) {
+        dReal bm;
+        while (true)
+        {
             int b1 = jb[(size_t)mi*2];
             int b2 = jb[(size_t)mi*2+1];
 
-            dReal k1 = body[(unsigned)b1]->invMass;
-            for (unsigned int j=0; j<3; j++) iMJ_ptr[j] = k1*J_ptr[j];
+            bm = body[(unsigned)b1]->invMass;
+            dCopyScaledVector3(iMJ_ptr, J_ptr, bm);
             const dReal *invIrow1 = invI + 12*(size_t)(unsigned)b1;
             dMultiply0_331 (iMJ_ptr + 3, invIrow1, J_ptr + 3);
 
-            if (b2 != -1) {
-                dReal k2 = body[(unsigned)b2]->invMass;
-                for (unsigned int j=0; j<3; j++) iMJ_ptr[j+6] = k2*J_ptr[j+6];
+            if (b2 != -1)
+            {
+                bm = body[(unsigned)b2]->invMass;
+                dCopyScaledVector3(iMJ_ptr + 6, J_ptr + 6, bm);
                 const dReal *invIrow2 = invI + 12*(size_t)(unsigned)b2;
                 dMultiply0_331 (iMJ_ptr + 9, invIrow2, J_ptr + 9);
             }
         
-            if (++mi == miend) {
+            if (++mi == miend)
                 break;
-            }
+            
             iMJ_ptr += 12;
             J_ptr += 12;
         }
@@ -686,20 +671,26 @@ void multiplyAdd_J (volatile atomicord32 *mi_storage,
     unsigned int m_steps = (m + (step_size - 1)) / step_size;
 
     unsigned mi_step;
-    while ((mi_step = ThrsafeIncrementIntUpToLimit(mi_storage, m_steps)) != m_steps) {
+    while ((mi_step = ThrsafeIncrementIntUpToLimit(mi_storage, m_steps)) != m_steps)
+    {
         unsigned int mi = mi_step * step_size;
         const unsigned int miend = mi + dMIN(step_size, m - mi);
 
         const dReal *J_ptr = J + (size_t)mi * 12;
-        while (true) {
+        while (true)
+        {
             int b1 = jb[(size_t)mi*2];
             int b2 = jb[(size_t)mi*2+1];
-            dReal sum = REAL(0.0);
-            const dReal *in_ptr = in + (size_t)(unsigned)b1*6;
-            for (unsigned int j = 0; j < 6; ++j) sum += J_ptr[j] * in_ptr[j];
-            if (b2 != -1) {
+            
+            const dReal *in_ptr = in + (size_t)(unsigned)b1 * 6;
+            dReal sum = dCalcVectorDot3(J_ptr, in_ptr);
+            sum += dCalcVectorDot3(J_ptr + 3, in_ptr + 3);
+
+            if (b2 != -1)
+            {
                 in_ptr = in + (size_t)(unsigned)b2*6;
-                for (unsigned int j=0; j<6; j++) sum += J_ptr[6 + j] * in_ptr[j];
+                sum += dCalcVectorDot3(J_ptr + 6, in_ptr);
+                sum += dCalcVectorDot3(J_ptr + 9, in_ptr + 3);
             }
             out[mi] += sum;
 
@@ -763,7 +754,7 @@ void dxQuickStepIsland(const dxStepperProcessingCallContext *callContext)
 
     const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
     dIASSERT(allowedThreads != 0);
-
+ 
     void *stagesMemArenaState = memarena->SaveState();
 
     dxQuickStepperStage1CallContext *stage1CallContext = (dxQuickStepperStage1CallContext *)memarena->AllocateBlock(sizeof(dxQuickStepperStage1CallContext));
@@ -837,33 +828,48 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
         // since gravity does normally have only one component it's more efficient
         // to run three loops for each individual component
         dxBody *const *const bodyend = body + nb;
+
+#if defined(__AVX__)
+        for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++)
+        {
+            dxBody *b = *bodycurr;
+            if ((b->flags & dxBodyNoGravity) == 0)
+            {
+                dAddScaledVector3r4(b->facc, world->gravity, b->mass.mass);
+            }
+        }
+#else
         dReal gravity_x = world->gravity[0];
-        if (gravity_x) {
-            for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++) {
+        if (gravity_x)
+        {
+            for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++)
+            {
                 dxBody *b = *bodycurr;
-                if ((b->flags & dxBodyNoGravity) == 0) {
+                if ((b->flags & dxBodyNoGravity) == 0)
                     b->facc[0] += b->mass.mass * gravity_x;
-                }
             }
         }
         dReal gravity_y = world->gravity[1];
-        if (gravity_y) {
-            for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++) {
+        if (gravity_y)
+        {
+            for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++)
+            {
                 dxBody *b = *bodycurr;
-                if ((b->flags & dxBodyNoGravity) == 0) {
+                if ((b->flags & dxBodyNoGravity) == 0)
                     b->facc[1] += b->mass.mass * gravity_y;
-                }
             }
         }
         dReal gravity_z = world->gravity[2];
-        if (gravity_z) {
-            for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++) {
+        if (gravity_z)
+        {
+            for (dxBody *const *bodycurr = body; bodycurr != bodyend; bodycurr++)
+            {
                 dxBody *b = *bodycurr;
-                if ((b->flags & dxBodyNoGravity) == 0) {
+                if ((b->flags & dxBodyNoGravity) == 0)
                     b->facc[2] += b->mass.mass * gravity_z;
-                }
             }
         }
+#endif
     }
 
     // for all bodies, compute the inertia tensor and its inverse in the global
@@ -883,7 +889,8 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
 
             // Don't apply gyroscopic torques to bodies
             // if not flagged or the body is kinematic
-            if ((b->flags & dxBodyGyroscopic)&& (b->invMass>0)) {
+            if ((b->flags & dxBodyGyroscopic)&& (b->invMass>0))
+            {
                 dMatrix3 I;
                 // compute inertia tensor in global frame
                 dMultiply2_333 (tmp,b->mass.I,b->posr.R);
@@ -892,7 +899,7 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
 #if 0
                 // Explicit computation
                 dMultiply0_331 (tmp,I,b->avel);
-                dSubtractVectorCross3(b->tacc,b->avel,tmp);
+                dSubtractVectorCross3r4(b->tacc,b->avel,tmp);
 #else
                 // Do the implicit computation based on 
                 //"Stabilizing Gyroscopic Forces in Rigid Multibody Simulations"
@@ -916,7 +923,7 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
 
                 // Scale momentum by inverse time to get 
                 // a sort of "torque"
-                dScaleVector3(L,dRecip(h)); 
+                dScaleVector3r4(L,dRecip(h)); 
                 // Invert the pseudo-tensor
                 dMatrix3 itInv;
                 // This is a closed-form inversion.
@@ -924,7 +931,8 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
                 // when dealing with small masses with
                 // a large asymmetry.
                 // An LU decomposition might be better.
-                if (dInvertMatrix3(itInv,Itild)!=0) {
+                if (dInvertMatrix3(itInv,Itild)!=0)
+                {
                     // "Divide" the original tensor
                     // by the pseudo-tensor (on the right)
                     dMultiply0_333(Itild,I,itInv);
@@ -939,12 +947,9 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
                     // step.
                     dVector3 tau0;
                     dMultiply0_331(tau0,Itild,L);
-                    
+                    dAddVector3r4(b->tacc, tau0);
                     // Add the gyro torques to the torque 
                     // accumulator
-                    for (int ii=0;ii<3;++ii) {
-                      b->tacc[ii]+=tau0[ii];
-                    }
                 }
 #endif
             }
@@ -1021,10 +1026,8 @@ void dxQuickStepIsland_Stage1(dxQuickStepperStage1CallContext *stage1CallContext
     stage1CallContext = NULL; // WARNING! _stage1CallContext is not valid after this point!
     dIVERIFY(stage1CallContext == NULL); // To suppress unused variable assignment warnings
 
-    {
-        unsigned int _nj = callContext->m_islandJointsCount;
-        memarena->ShrinkArray<dJointWithInfo1>(jointinfos, _nj, nj);
-    }
+    unsigned int _nj = callContext->m_islandJointsCount;
+    memarena->ShrinkArray<dJointWithInfo1>(jointinfos, _nj, nj);
 
     unsigned int *mindex = NULL;
     dReal *J = NULL, *cfm = NULL, *lo = NULL, *hi = NULL, *rhs = NULL, *m_rhsPos = NULL, *Jcopy = NULL;
@@ -1042,10 +1045,14 @@ void dxQuickStepIsland_Stage1(dxQuickStepperStage1CallContext *stage1CallContext
             mcurr += 2;
 
             const dJointWithInfo1 *const jiend = jointinfos + nj;
-            for (const dJointWithInfo1 *jicurr = jointinfos; jicurr != jiend; ++jicurr) {
+            for (const dJointWithInfo1 *jicurr = jointinfos; jicurr != jiend; ++jicurr)
+            {
                 dxJoint *joint = jicurr->joint;
                 moffs += jicurr->info.m;
-                if (joint->feedback) { mfboffs += jicurr->info.m; }
+                if (joint->feedback)
+                {
+                    mfboffs += jicurr->info.m;
+                }
                 mcurr[0] = moffs;
                 mcurr[1] = mfboffs;
                 mcurr += 2;
@@ -1303,7 +1310,7 @@ void dxQuickStepIsland_Stage2b(dxQuickStepperStage2CallContext *stage2CallContex
     const dxStepperProcessingCallContext *callContext = stage2CallContext->m_stepperCallContext;
     const dxQuickStepperLocalContext *localContext = stage2CallContext->m_localContext;
 
-    const dReal stepsizeRecip = dRecip(callContext->m_stepSize);
+    const dReal negstepsizeRecip = -dRecip(callContext->m_stepSize);
     {
         // Warning!!!
         // This code reads facc/tacc fields of body objects which (the fields)
@@ -1323,22 +1330,23 @@ void dxQuickStepIsland_Stage2b(dxQuickStepperStage2CallContext *stage2CallContex
 
         // put -(v/h + invM*fe) into rhs_tmp
         unsigned bi_step;
-        while ((bi_step = ThrsafeIncrementIntUpToLimit(&stage2CallContext->m_bi, nb_steps)) != nb_steps) {
+        while ((bi_step = ThrsafeIncrementIntUpToLimit(&stage2CallContext->m_bi, nb_steps)) != nb_steps)
+        {
             unsigned int bi = bi_step * step_size;
             const unsigned int biend = bi + dMIN(step_size, nb - bi);
 
             dReal *rhscurr = rhs_tmp + (size_t)bi * 6;
             const dReal *invIrow = invI + (size_t)bi * 12;
-            while (true) {
+            while (true)
+            {
                 dxBody *b = body[bi];
-                dReal body_invMass = b->invMass;
-                for (unsigned int j=0; j<3; ++j) rhscurr[j] = -(b->facc[j] * body_invMass + b->lvel[j] * stepsizeRecip);
+                dReal body_neginvMass = -b->invMass;
+                dAddScaledVectors3(rhscurr, b->facc, b->lvel, body_neginvMass, negstepsizeRecip);
                 dMultiply0_331 (rhscurr + 3, invIrow, b->tacc);
-                for (unsigned int k=0; k<3; ++k) rhscurr[3+k] = -(b->avel[k] * stepsizeRecip) - rhscurr[3+k];
+                for (unsigned int k=0; k<3; ++k) rhscurr[3+k] = (b->avel[k] * negstepsizeRecip) - rhscurr[3+k];
                 
-                if (++bi == biend) {
+                if (++bi == biend)
                     break;
-                }
                 rhscurr += 6;
                 invIrow += 12;
             }
@@ -1357,6 +1365,7 @@ int dxQuickStepIsland_Stage2bSync_Callback(void *_stage2CallContext, dcallindex_
     const dxQuickStepperLocalContext *localContext = stage2CallContext->m_localContext;
     unsigned int m = localContext->m_m;
 
+    
     unsigned int stage2c_allowedThreads = CalculateOptimalThreadsCount<dxQUICKSTEPISLAND_STAGE2C_STEP>(m, allowedThreads);
 
     dxWorld *world = callContext->m_world;
@@ -1434,7 +1443,8 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
 
     unsigned int m = localContext->m_m;
 
-    if (m > 0) {
+    if (m > 0)
+    {
         // load lambda from the value saved on the previous iteration
         dReal *lambda = memarena->AllocateArray<dReal>(m);
 
@@ -1453,7 +1463,6 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
         const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
 //        bool singleThreadedExecution = allowedThreads == 1;
 //        dIASSERT(allowedThreads >= 1);
-
         atomicord32 *bi_links_or_mi_levels = NULL;
         atomicord32 *mi_links = NULL;
 //#if !dTHREADING_INTF_DISABLED
@@ -1563,7 +1572,8 @@ void dxQuickStepIsland_Stage3(dxQuickStepperStage3CallContext *stage3CallContext
     else {
         dxQuickStepIsland_Stage5(stage5CallContext);
     }
-}
+
+ }
 
 static 
 int dxQuickStepIsland_Stage4a_Callback(void *_stage4CallContext, dcallindex_t callInstanceIndex, dCallReleaseeID callThisReleasee)
@@ -1591,7 +1601,8 @@ void dxQuickStepIsland_Stage4a(dxQuickStepperStage4CallContext *stage4CallContex
     unsigned int nj_steps = (nj + (step_size - 1)) / step_size;
     
     unsigned ji_step;
-    while ((ji_step = ThrsafeIncrementIntUpToLimit(&stage4CallContext->m_ji_4a, nj_steps)) != nj_steps) {
+    while ((ji_step = ThrsafeIncrementIntUpToLimit(&stage4CallContext->m_ji_4a, nj_steps)) != nj_steps)
+    {
         unsigned int ji = ji_step * step_size;
         dReal *lambdacurr = lambda + mindex[2 * (size_t)ji];
 #ifdef WARM_STARTING
@@ -1665,7 +1676,7 @@ int dxQuickStepIsland_Stage4LCP_iMJSync_Callback(void *_stage4CallContext, dcall
     dxWorld *world = callContext->m_world;
 #ifdef WARM_STARTING
     world->AlterThreadedCallDependenciesCount(stage4CallContext->m_LCP_fcStartReleasee, -1);
-#endif
+#endif 
     world->AlterThreadedCallDependenciesCount(callThisReleasee, stage4LCP_Ad_allowedThreads);
     
     if (stage4LCP_Ad_allowedThreads > 1) {
@@ -1904,21 +1915,25 @@ void dxQuickStepIsland_Stage4LCP_AdComputation(dxQuickStepperStage4CallContext *
     unsigned int m_steps = (m + (step_size - 1)) / step_size;
 
     unsigned mi_step;
-    while ((mi_step = ThrsafeIncrementIntUpToLimit(&stage4CallContext->m_mi_Ad, m_steps)) != m_steps) {
+    while ((mi_step = ThrsafeIncrementIntUpToLimit(&stage4CallContext->m_mi_Ad, m_steps)) != m_steps)
+    {
         unsigned int mi = mi_step * step_size;
         const unsigned int miend = mi + dMIN(step_size, m - mi);
 
         size_t mi_offset = (size_t)mi * 12;
         const dReal *iMJ_ptr = iMJ + mi_offset;
         dReal *J_ptr = J + mi_offset;
-        while (true) {
-            dReal sum = REAL(0.0);
-            for (unsigned int j=0; j<6; j++) sum += iMJ_ptr[j] * J_ptr[j];
-            
+        while (true)
+        {
+            dReal sum = dCalcVectorDot3(iMJ_ptr, J_ptr);
+            sum += dCalcVectorDot3(iMJ_ptr + 3, J_ptr + 3);
+
             unsigned lend = 6;
             int b2 = jb[(size_t)mi*2+1];
-            if (b2 != -1) {
-                for (unsigned int k=6; k<12; ++k) sum += iMJ_ptr[k] * J_ptr[k];
+            if (b2 != -1)
+            {
+                sum += dCalcVectorDot3(iMJ_ptr + 6, J_ptr + 6);
+                sum += dCalcVectorDot3(iMJ_ptr + 9, J_ptr + 9);
                 lend = 12;
             }
 /*
@@ -2035,18 +2050,21 @@ int dxQuickStepIsland_Stage4LCP_IterationStart_Callback(void *_stage4CallContext
         // and the same iteration index may be used again).
         stage4CallContext->m_LCP_iteration = iteration + 1;
 
-        if (iteration + 1 != num_iterations) {
+        if (iteration + 1 != num_iterations)
+        {
             dCallReleaseeID stage4LCP_IterationStartReleasee;
             world->PostThreadedCallForUnawareReleasee(NULL, &stage4LCP_IterationStartReleasee, syncCallDependencies, stage4LCP_IterationSyncReleasee, 
                 NULL, &dxQuickStepIsland_Stage4LCP_IterationStart_Callback, stage4CallContext, 0, "QuickStepIsland Stage4LCP_Iteration Start");
             nextReleasee = stage4LCP_IterationStartReleasee;
         }
-        else {
+        else
+        {
             world->AlterThreadedCallDependenciesCount(stage4LCP_IterationSyncReleasee, syncCallDependencies);
             nextReleasee = stage4LCP_IterationSyncReleasee;
         }
 
-        if (reorderRequired) {
+        if (reorderRequired)
+        {
             const unsigned int reorderThreads = 2;
             dIASSERT(callContext->m_stepperAllowedThreads >= 2); // Otherwise the single-threaded execution path would be taken
 
@@ -2505,17 +2523,16 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
         dReal *J = localContext->m_J;
         const dReal *J_ptr = J + index_offset;
         // @@@ potential optimization: SIMD-ize this and the b2 >= 0 case
-        delta -=fc_ptr1[0] * J_ptr[0] + fc_ptr1[1] * J_ptr[1] +
-            fc_ptr1[2] * J_ptr[2] + fc_ptr1[3] * J_ptr[3] +
-            fc_ptr1[4] * J_ptr[4] + fc_ptr1[5] * J_ptr[5];
+
+        delta -= dCalcVectorDot3(fc_ptr1, J_ptr);
+        delta -= dCalcVectorDot3(fc_ptr1 + 3, J_ptr + 3);
         // @@@ potential optimization: handle 1-body constraints in a separate
         //     loop to avoid the cost of test & jump?
         if (b2 != -1)
         {
             fc_ptr2 = fc + 6*(size_t)(unsigned)b2;
-            delta -=fc_ptr2[0] * J_ptr[6] + fc_ptr2[1] * J_ptr[7] +
-                fc_ptr2[2] * J_ptr[8] + fc_ptr2[3] * J_ptr[9] +
-                fc_ptr2[4] * J_ptr[10] + fc_ptr2[5] * J_ptr[11];
+            delta -= dCalcVectorDot3(fc_ptr2, J_ptr + 6);
+            delta -= dCalcVectorDot3(fc_ptr2 + 3, J_ptr + 9);
         }
     }
 
@@ -2568,22 +2585,14 @@ dReal dxQuickStepIsland_Stage4LCP_IterationStep(dxQuickStepperStage4CallContext 
         const dReal *iMJ_ptr = iMJ + index_offset;
         // update fc.
         // @@@ potential optimization: SIMD for this and the b2 >= 0 case
-        fc_ptr1[0] += delta * iMJ_ptr[0];
-        fc_ptr1[1] += delta * iMJ_ptr[1];
-        fc_ptr1[2] += delta * iMJ_ptr[2];
-        fc_ptr1[3] += delta * iMJ_ptr[3];
-        fc_ptr1[4] += delta * iMJ_ptr[4];
-        fc_ptr1[5] += delta * iMJ_ptr[5];
+        dAddScaledVector3(fc_ptr1, iMJ_ptr, delta);
+        dAddScaledVector3(fc_ptr1 + 3, iMJ_ptr + 3, delta);
         // @@@ potential optimization: handle 1-body constraints in a separate
         //     loop to avoid the cost of test & jump?
         if (fc_ptr2)
         {
-            fc_ptr2[0] += delta * iMJ_ptr[6];
-            fc_ptr2[1] += delta * iMJ_ptr[7];
-            fc_ptr2[2] += delta * iMJ_ptr[8];
-            fc_ptr2[3] += delta * iMJ_ptr[9];
-            fc_ptr2[4] += delta * iMJ_ptr[10];
-            fc_ptr2[5] += delta * iMJ_ptr[11];
+            dAddScaledVector3(fc_ptr2, iMJ_ptr + 6, delta);
+            dAddScaledVector3(fc_ptr2 + 3, iMJ_ptr + 9, delta);
         }
     }
     return dFabs(lambda[index] - old_lambda);
@@ -2608,7 +2617,7 @@ int dxQuickStepIsland_Stage4LCP_IterationSync_Callback(void *_stage4CallContext,
     const dxStepperProcessingCallContext *callContext = stage4CallContext->m_stepperCallContext;
     const dxQuickStepperLocalContext *localContext = stage4CallContext->m_localContext;
     
-    unsigned int stage4b_allowedThreads = 1;
+     unsigned int stage4b_allowedThreads = 1;
     if (IsStage4bJointInfosIterationRequired(localContext)) {
         unsigned int allowedThreads = callContext->m_stepperAllowedThreads;
         dIASSERT(allowedThreads >= stage4b_allowedThreads);
@@ -2647,10 +2656,8 @@ void dxQuickStepIsland_Stage4MID(dxQuickStepperStage4CallContext *stage4CallCont
     
         for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforcecurr += 6, cforceMIDcurr += 6, bodycurr++)
         {
-            for (unsigned int j=0; j<6; j++)
-            {
-                cforceMIDcurr[j] = stepsize * cforcecurr[j];
-            }
+            dCopyScaledVector3(cforceMIDcurr, cforcecurr, stepsize);
+            dCopyScaledVector3(cforceMIDcurr + 3, cforcecurr + 3, stepsize);
         }
 /*
         dSetZero(cforce,(size_t)nb * 6);
@@ -2688,11 +2695,8 @@ void dxQuickStepIsland_Stage4b(dxQuickStepperStage4CallContext *stage4CallContex
         for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforcecurr+=6, bodycurr++)
         {
             dxBody *b = *bodycurr;
-            for (unsigned int j=0; j<3; j++)
-            {
-                b->lvel[j] += stepsize * cforcecurr[j];
-                b->avel[j] += stepsize * cforcecurr[3+j];
-            }
+            dAddScaledVector3r4(b->lvel, cforcecurr, stepsize);
+            dAddScaledVector3r4(b->avel, cforcecurr + 3, stepsize);
         }
     }
 
@@ -2712,14 +2716,16 @@ void dxQuickStepIsland_Stage4b(dxQuickStepperStage4CallContext *stage4CallContex
         unsigned int nj_steps = (nj + (step_size - 1)) / step_size;
 
         unsigned ji_step;
-        while ((ji_step = ThrsafeIncrementIntUpToLimit(&stage4CallContext->m_ji_4b, nj_steps)) != nj_steps) {
+        while ((ji_step = ThrsafeIncrementIntUpToLimit(&stage4CallContext->m_ji_4b, nj_steps)) != nj_steps)
+        {
             unsigned int ji = ji_step * step_size;
             const dReal *lambdacurr = lambda + mindex[2 * (size_t)ji];
             const dReal *Jcopyrow = Jcopy + (size_t)mindex[2 * (size_t)ji + 1] * 12;
             const dJointWithInfo1 *jicurr = jointinfos + ji;
             const dJointWithInfo1 *const jiend = jicurr + dMIN(step_size, nj - ji);
 
-            while (true) {
+            while (true)
+            {
                 dxJoint *joint = jicurr->joint;
                 unsigned int infom = jicurr->info.m;
 #ifdef WARM_STARTING
@@ -2732,22 +2738,14 @@ void dxQuickStepIsland_Stage4b(dxQuickStepperStage4CallContext *stage4CallContex
                 dJointFeedback *fb = joint->feedback;
                 if (fb != NULL) {
                     Multiply1_12q1 (data, Jcopyrow, lambdacurr, infom);
-                    fb->f1[0] = data[0];
-                    fb->f1[1] = data[1];
-                    fb->f1[2] = data[2];
-                    fb->t1[0] = data[3];
-                    fb->t1[1] = data[4];
-                    fb->t1[2] = data[5];
+                    dCopyVector3(fb->f1, data);
+                    dCopyVector3(fb->t1, data + 3);
 
                     if (joint->node[1].body)
                     {
                         Multiply1_12q1 (data, Jcopyrow+6, lambdacurr, infom);
-                        fb->f2[0] = data[0];
-                        fb->f2[1] = data[1];
-                        fb->f2[2] = data[2];
-                        fb->t2[0] = data[3];
-                        fb->t2[1] = data[4];
-                        fb->t2[2] = data[5];
+                        dCopyVector3(fb->f2, data);
+                        dCopyVector3(fb->t2, data + 3);
                     }
 
                     Jcopyrow += infom * 12;
@@ -2819,7 +2817,6 @@ void dxQuickStepIsland_Stage5(dxQuickStepperStage5CallContext *stage5CallContext
 */
 }
 
-
 static 
 int dxQuickStepIsland_Stage6a_Callback(void *_stage6CallContext, dcallindex_t callInstanceIndex, dCallReleaseeID callThisReleasee)
 {
@@ -2852,15 +2849,14 @@ void dxQuickStepIsland_Stage6a(dxQuickStepperStage6CallContext *stage6CallContex
         const dReal *invIrow = invI + (size_t)bi * 12;
         dxBody *const *bodycurr = body + bi;
         dxBody *const *bodyend = bodycurr + bicnt;
-        while (true) {
+        while (true)
+        {
             // compute the velocity update:
             // add stepsize * invM * fe to the body velocity
             dxBody *b = *bodycurr;
             dReal body_invMass_mul_stepsize = stepsize * b->invMass;
-            for (unsigned int j=0; j<3; j++) {
-                b->lvel[j] += body_invMass_mul_stepsize * b->facc[j];
-                b->tacc[j] *= stepsize;
-            }
+            dAddScaledVector3r4(b->lvel, b->facc, body_invMass_mul_stepsize);
+            dScaleVector3r4(b->tacc, stepsize);
             dMultiplyAdd0_331 (b->avel, invIrow, b->tacc);
             
             if (++bodycurr == bodyend) {
@@ -2882,7 +2878,7 @@ int dxQuickStepIsland_Stage6aSync_Callback(void *_stage6CallContext, dcallindex_
 
     const dxStepperProcessingCallContext *callContext = stage6CallContext->m_stepperCallContext;
 
-    const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
+     const unsigned allowedThreads = callContext->m_stepperAllowedThreads;
     unsigned int nb = callContext->m_islandBodiesCount;
     unsigned int stage6b_allowedThreads = CalculateOptimalThreadsCount<dxQUICKSTEPISLAND_STAGE6B_STEP>(nb, allowedThreads);
 
@@ -2995,13 +2991,8 @@ void dxQuickStepIsland_Stage6c(dxQuickStepperStage6CallContext *stage6CallContex
             for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforceMIDcurr+=6, bodycurr++)
             {
                 dxBody *b = *bodycurr;
-                for (unsigned int j=0; j<3; j++)
-                {
-                    b->lvel[j] -= cforceMIDcurr[j];
-                }
-                dReal *cforceMIDavel = cforceMIDcurr + 3;
-                for (unsigned int j=0; j<3; j++)
-                   b->avel[j] -= cforceMIDavel[j];
+                dSubtractVector3r4(b->lvel, cforceMIDcurr);
+                dSubtractVector3r4(b->avel, cforceMIDcurr + 3);
             }
         }
     }

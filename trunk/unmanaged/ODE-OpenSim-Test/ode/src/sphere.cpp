@@ -155,14 +155,11 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
     dReal *boxpos = box->final_posr->pos;
     dReal *boxR = box->final_posr->R;
 
-    p[0] = pos[0] - boxpos[0];
-    p[1] = pos[1] - boxpos[1];
-    p[2] = pos[2] - boxpos[2];
+    dSubtractVectors3r4(p, pos, boxpos);
 
     dMultiply1_331 (t, boxR, p);
+    dCopyVector3r4(l, box->halfside);
 
-    l[0] = box->halfside[0];
-//    t[0] = dCalcVectorDot3_14(p, boxR);
     if (t[0] < -l[0])
     {
         t[0] = -l[0];
@@ -174,8 +171,6 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
         onborder = 1;
     }
 
-    l[1] = box->halfside[1];
-//    t[1] = dCalcVectorDot3_14(p, boxR + 1);
     if (t[1] < -l[1])
     {
         t[1] = -l[1];
@@ -187,8 +182,6 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
         onborder = 1;
     }
 
-//    t[2] = dCalcVectorDot3_14(p, boxR + 2);
-    l[2] = box->halfside[2];
     if (t[2] < -l[2])
     {
         t[2] = -l[2];
@@ -200,13 +193,17 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
         onborder = 1;
     }
 
-    if (!onborder) {
+    if (!onborder)
+    {
         // sphere center inside box. find closest face to `t'
-        dReal min_distance = l[0] - dFabs(t[0]);
+        dFabsVector3r4(q, t);
+        dSubtractVector3r4(l, q);
+
+        dReal min_distance = l[0];
         int mini = 0;
         for (int i = 1; i < 3; i++)
         {
-            dReal face_distance = l[i] - dFabs(t[i]);
+            dReal face_distance = l[i];
             if (face_distance < min_distance)
             {
                 min_distance = face_distance;
@@ -214,9 +211,7 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
             }
         }
         // contact position = sphere center
-        contact->pos[0] = pos[0];
-        contact->pos[1] = pos[1];
-        contact->pos[2] = pos[2];
+        dCopyVector3r4(contact->pos, pos);
         // contact normal points to closest face
         dVector3 tmp;
         tmp[0] = 0;
@@ -228,22 +223,14 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
         contact->depth = min_distance + sphere->radius;
         return 1;
     }
-
-    t[3] = 0;			//@@@ hmmm
     dMultiply0_331 (q, boxR, t);
-    r[0] = p[0] - q[0];
-    r[1] = p[1] - q[1];
-    r[2] = p[2] - q[2];
+    dSubtractVectors3r4(r, p, q);
     depth = sphere->radius - dCalcVectorLength3(r);
     if (depth < 0)
         return 0;
-    contact->pos[0] = q[0] + boxpos[0];
-    contact->pos[1] = q[1] + boxpos[1];
-    contact->pos[2] = q[2] + boxpos[2];
-    contact->normal[0] = r[0];
-    contact->normal[1] = r[1];
-    contact->normal[2] = r[2];
-    dNormalize3 (contact->normal);
+    dAddVectors3r4(contact->pos, q, boxpos);
+    dCopyVector3r4(contact->normal, r);
+    dNormalize3(contact->normal);
     contact->depth = depth;
     return 1;
 }
@@ -270,12 +257,8 @@ int dCollideSpherePlane (dxGeom *o1, dxGeom *o2, int flags,
     dReal depth = plane->p[3] - k + sphere->radius;
     if (depth >= 0)
     {
-        contact->normal[0] = plane->p[0];
-        contact->normal[1] = plane->p[1];
-        contact->normal[2] = plane->p[2];
-        contact->pos[0] = pos[0] - plane->p[0] * sphere->radius;
-        contact->pos[1] = pos[1] - plane->p[1] * sphere->radius;
-        contact->pos[2] = pos[2] - plane->p[2] * sphere->radius;
+        dCopyVector3r4(contact->normal, plane->p);
+        dAddScaledVector3r4(contact->pos, pos, plane->p, -sphere->radius);
         contact->depth = depth;
         return 1;
     }

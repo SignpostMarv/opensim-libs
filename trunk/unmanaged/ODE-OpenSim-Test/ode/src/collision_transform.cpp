@@ -110,9 +110,7 @@ void dxGeomTransform::computeAABB()
 void dxGeomTransform::computeFinalTx()
 {
     dMultiply0_331 (transform_posr.pos,final_posr->R,obj->final_posr->pos);
-    transform_posr.pos[0] += final_posr->pos[0];
-    transform_posr.pos[1] += final_posr->pos[1];
-    transform_posr.pos[2] += final_posr->pos[2];
+    dAddVector3r4(transform_posr.pos, final_posr->pos);
     dMultiply0_333 (transform_posr.R,final_posr->R,obj->final_posr->R);
 }
 

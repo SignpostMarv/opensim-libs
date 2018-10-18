@@ -188,11 +188,11 @@ dxJointSlider::getInfo2 ( dReal worldFPS, dReal worldERP, const Info2Descr *info
     {
         dVector3 tmp;
         dCalcVectorCross3( tmp, c, p );
-        dScaleVector3( tmp, REAL( 0.5 ));
+        dScaleVector3r4( tmp, REAL( 0.5 ));
         for ( i = 0; i < 3; i++ ) info->J1a[s3+i] = tmp[i];
         for ( i = 0; i < 3; i++ ) info->J2a[s3+i] = tmp[i];
         dCalcVectorCross3( tmp, c, q );
-        dScaleVector3( tmp, REAL( 0.5 ));
+        dScaleVector3r4( tmp, REAL( 0.5 ));
         for ( i = 0; i < 3; i++ ) info->J1a[s4+i] = tmp[i];
         for ( i = 0; i < 3; i++ ) info->J2a[s4+i] = tmp[i];
         for ( i = 0; i < 3; i++ ) info->J2l[s3+i] = -p[i];

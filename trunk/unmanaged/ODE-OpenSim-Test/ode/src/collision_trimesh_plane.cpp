@@ -112,14 +112,11 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
             int_vertex[ 1 ] = VP.Vertex[ v ]->y;
             int_vertex[ 2 ] = VP.Vertex[ v ]->z;
 
-            dMultiply0_331( vertex, trimesh_R, int_vertex );
+            dMultiply0_331(vertex, trimesh_R, int_vertex );
 
 #endif // dSINGLE/dDOUBLE
 
-            vertex[ 0 ] += trimesh_pos[ 0 ];
-            vertex[ 1 ] += trimesh_pos[ 1 ];
-            vertex[ 2 ] += trimesh_pos[ 2 ];
-
+            dAddVector3r4(vertex, trimesh_pos);
 
             //
             // Collision?
@@ -134,15 +131,8 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
             {
                 // Alias the contact
                 dContactGeom* contact = SAFECONTACT( flags, contacts, contact_count, skip );
-
-                contact->pos[ 0 ] = vertex[ 0 ];
-                contact->pos[ 1 ] = vertex[ 1 ];
-                contact->pos[ 2 ] = vertex[ 2 ];
-
-                contact->normal[ 0 ] = plane->p[ 0 ];
-                contact->normal[ 1 ] = plane->p[ 1 ];
-                contact->normal[ 2 ] = plane->p[ 2 ];
-
+                dCopyVector3r4(contact->pos, vertex);
+                dCopyVector3r4(contact->normal, plane->p);
                 contact->depth = alpha;
                 contact->g1 = trimesh;
                 contact->g2 = plane;

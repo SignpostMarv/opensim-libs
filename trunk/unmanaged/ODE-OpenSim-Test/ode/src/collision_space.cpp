@@ -191,6 +191,8 @@ void dxSpace::remove (dxGeom *geom)
   // safeguard
   geom->next = 0;
   geom->tome = 0;
+  geom->next_ex = 0;
+  geom->tome_ex = 0;
   geom->parent_space = 0;
 
   // enumerator has been invalidated
@@ -229,6 +231,7 @@ void dxSimpleSpace::cleanGeoms()
 {
   // compute the AABBs of all dirty geoms, and clear the dirty flags
   lock_count++;
+  bool needrecon = (gflags & GEOM_AABB_BAD) != 0;
   if (gflags & GEOM_DIRTY)
   {
       for (dxGeom *g = first; g && (g->gflags & GEOM_DIRTY); g = g->next)
@@ -240,7 +243,10 @@ void dxSimpleSpace::cleanGeoms()
           g->recomputeAABB();
           dIASSERT((g->gflags & GEOM_AABB_BAD) == 0);
           g->gflags &= ~GEOM_DIRTY;
+          needrecon = true;
       }
+      if(needrecon)
+        recomputeAABB();
       gflags &= ~GEOM_DIRTY;
   }
   lock_count--;

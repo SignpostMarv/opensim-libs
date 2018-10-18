@@ -312,8 +312,8 @@ dxJointPiston::getInfo2 ( dReal worldFPS, dReal worldERP, const Info2Descr *info
     dPlaneSpace ( ax1, p, q );
 
     // LHS
-    dCopyVector3 ( ( info->J1a ) + s0, p );
-    dCopyVector3 ( ( info->J1a ) + s1, q );
+    dCopyVector3r4 ( ( info->J1a ) + s0, p );
+    dCopyVector3r4 ( ( info->J1a ) + s1, q );
 
     dVector3 b;
     if ( node[1].body )
@@ -397,7 +397,7 @@ dxJointPiston::getInfo2 ( dReal worldFPS, dReal worldERP, const Info2Descr *info
     // Compute the RHS of rows 2 and 3
     dVector3 err;
     dMultiply0_331 ( err, R1, anchor1 );
-    dSubtractVectors3( err, dist, err );
+    dSubtractVectors3r4( err, dist, err );
 
     info->c[2] = k * dCalcVectorDot3 ( p, err );
     info->c[3] = k * dCalcVectorDot3 ( q, err );
@@ -596,7 +596,7 @@ void dJointAddPistonForce ( dJointID j, dReal force )
     dVector3 axis;
     getAxis ( joint, axis, joint->axis1 );
     // axis[i] *= force
-    dScaleVector3( axis, force );
+    dScaleVector3r4( axis, force );
 
 
     if ( joint->node[0].body != 0 )

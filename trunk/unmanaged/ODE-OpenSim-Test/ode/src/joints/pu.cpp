@@ -159,7 +159,7 @@ dReal dJointGetPUPositionRate( dJointID j )
             //N.B. When there is no body 2 the joint->anchor2 is already in
             //     global coordinates
             // r = joint->node[0].body->posr.pos -  joint->anchor2;
-            dSubtractVectors3( r, joint->node[0].body->posr.pos, joint->anchor2 );
+            dSubtractVectors3r4( r, joint->node[0].body->posr.pos, joint->anchor2 );
         }
 
         // The body1 can have velocity coming from the rotation of
@@ -171,7 +171,7 @@ dReal dJointGetPUPositionRate( dJointID j )
         dCalcVectorCross3( lvel1, r, joint->node[0].body->avel );
 
         // lvel1 += joint->node[0].body->lvel;
-        dAddVectors3( lvel1, lvel1, joint->node[0].body->lvel );
+        dAddVectors3r4( lvel1, lvel1, joint->node[0].body->lvel );
 
         // Since we want rate of change along the prismatic axis
         // get axisP1 in global coordinates and get the component
@@ -189,8 +189,8 @@ dReal dJointGetPUPositionRate( dJointID j )
 
             // lvel1 -=  lvel2 + joint->node[1].body->lvel;
             dVector3 tmp;
-            dAddVectors3( tmp, lvel2, joint->node[1].body->lvel );
-            dSubtractVectors3( lvel1, lvel1, tmp );
+            dAddVectors3r4( tmp, lvel2, joint->node[1].body->lvel );
+            dSubtractVectors3r4( lvel1, lvel1, tmp );
 
             return dCalcVectorDot3( axP1, lvel1 );
         }
@@ -277,7 +277,7 @@ dxJointPU::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info )
     dVector3 uniPerp;  // Axis perpendicular to axes of rotation
     dCalcVectorCross3(uniPerp,ax1,ax2);
     dNormalize3( uniPerp );
-    dCopyVector3( info->J1a , uniPerp );
+    dCopyVector3r4( info->J1a , uniPerp );
     if ( node[1].body )
     {
         dCopyNegatedVector3( info->J2a , uniPerp );
@@ -300,7 +300,7 @@ dxJointPU::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info )
     } else {
         getAxis(this, axP, axisP1);
     }
-    dSubtractVectors3(sep,an2,an1);
+    dSubtractVectors3r4(sep,an2,an1);
 
     dVector3 p,q;
     dPlaneSpace(axP,p,q);
@@ -309,14 +309,14 @@ dxJointPU::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info )
     dCopyVector3(( info->J1l ) + s2, q );
     // Make the anchors be body local
     // Aliasing isn't a problem here.
-    dSubtractVectors3(an1,an1,node[0].body->posr.pos);
+    dSubtractVectors3r4(an1,an1,node[0].body->posr.pos);
     dCalcVectorCross3(( info->J1a ) + s1, an1, p );
     dCalcVectorCross3(( info->J1a ) + s2, an1, q );
 
     if (node[1].body) {
         dCopyNegatedVector3(( info->J2l ) + s1, p );
         dCopyNegatedVector3(( info->J2l ) + s2, q );
-        dSubtractVectors3(an2,an2,node[1].body->posr.pos);
+        dSubtractVectors3r4(an2,an2,node[1].body->posr.pos);
         dCalcVectorCross3(( info->J2a ) + s1, p, an2 );
         dCalcVectorCross3(( info->J2a ) + s2, q, an2 );
     }

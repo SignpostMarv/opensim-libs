@@ -305,7 +305,7 @@ inline void FetchTriangle(dxTriMesh* TriMesh, int Index, const dVector3 Position
             v[1] = VP.Vertex[i]->y;
             v[2] = VP.Vertex[i]->z;
 
-            dPointRotateTrans(Out[i], Rotation, v, Position);
+            dPointRotateTrans_r4(Out[i], Rotation, v, Position);
         }
     */
     dVector3 invecs[3];
@@ -317,7 +317,7 @@ inline void FetchTriangle(dxTriMesh* TriMesh, int Index, const dVector3 Position
         invecs[i][2] = VP.Vertex[i]->z;
     }
 
-    dtriangleRotateTrans(Out, invecs, Rotation, Position);
+    dtriangleRotateTrans_r4(Out, invecs, Rotation, Position);
 }
 
 inline void FetchTransformedTriangle(dxTriMesh* TriMesh, int Index, dVector3 Out[3]){

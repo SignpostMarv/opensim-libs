@@ -122,8 +122,8 @@ dxJointTransmission::getInfo2( dReal worldFPS,
 
         dIASSERT (ratio > 0);
         
-        dSubtractVectors3(d, a[1], a[0]);
-        dAddScaledVectors3(c[0], a[0], d, 1, ratio / (1 + ratio));
+        dSubtractVectors3r4(d, a[1], a[0]);
+        dAddScaledVectors3r4(c[0], a[0], d, 1, ratio / (1 + ratio));
         dCopyVector3(c[1], c[0]);
         
         dNormalize3(d);
@@ -146,7 +146,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
         na_0 = dCalcVectorDot3(n[0], a[0]);
         na_1 = dCalcVectorDot3(n[1], a[1]);
 
-        dAddScaledVectors3(O, n[0], n[1],
+        dAddScaledVectors3r4(O, n[0], n[1],
                            (na_0 - na_1 * nn) / (1 - nn * nn),
                            (na_1 - na_0 * nn) / (1 - nn * nn));
 
@@ -158,14 +158,14 @@ dxJointTransmission::getInfo2( dReal worldFPS,
         // line direction and origin.
 
         for (i = 0 ; i < 2 ; i += 1) {
-            dSubtractVectors3(d, a[i], O);
+            dSubtractVectors3r4(d, a[i], O);
             m = dCalcVectorDot3(d, l[i]);        
-            dAddScaledVectors3(c[i], O, l[i], 1, m);
+            dAddScaledVectors3r4(c[i], O, l[i], 1, m);
         }
 
         break;
     case dTransmissionChainDrive:
-        dSubtractVectors3(d, a[0], a[1]);
+        dSubtractVectors3r4(d, a[0], a[1]);
         m = dCalcVectorLength3(d);
 
         dIASSERT(m > 0);
@@ -198,7 +198,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
 
             // Finally calculate contact points and l.
             
-            dAddVectors3(c[i], a[i], v);
+            dAddVectors3r4(c[i], a[i], v);
             dCalcVectorCross3(l[i], v, n[i]);
             dNormalize3(l[i]);
 
@@ -217,7 +217,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
         // y axis.
 
         for (i = 0 ; i < 2 ; i += 1) {
-            dSubtractVectors3 (r[i], c[i], a[i]);
+            dSubtractVectors3r4(r[i], c[i], a[i]);
             radii[i] = dCalcVectorLength3(r[i]);
             dIASSERT(radii[i] > 0);
             
@@ -244,7 +244,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
     for (i = 0 ; i < 2 ; i += 1) {
         dReal phase_hat;
 
-        dSubtractVectors3 (r[i], c[i], a[i]);
+        dSubtractVectors3r4(r[i], c[i], a[i]);
         
         // Transform the (global) contact radius into the gear's
         // reference frame.
@@ -308,7 +308,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
     if (mode == dTransmissionChainDrive && delta < 0) {
         dVector3 d;
 
-        dSubtractVectors3(d, a[0], a[1]);
+        dSubtractVectors3r4(d, a[0], a[1]);
         
         for (i = 0 ; i < 2 ; i += 1) {
             dVector3 nn;
@@ -318,9 +318,9 @@ dxJointTransmission::getInfo2( dReal worldFPS,
             a = dCalcVectorDot3(nn, nn);
             dIASSERT(a > 0);
             
-            dAddScaledVectors3(c[i], c[i], nn,
+            dAddScaledVectors3r4(c[i], c[i], nn,
                                1, -2 * dCalcVectorDot3(c[i], nn) / a);
-            dAddScaledVectors3(l[i], l[i], nn,
+            dAddScaledVectors3r4(l[i], l[i], nn,
                                -1, 2 * dCalcVectorDot3(l[i], nn) / a);
         }
     }
@@ -340,7 +340,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
         // (v_1 . l + (r_c1 x l) . omega_1 = v_2 . l + (r_c2 x l) . omega_2
 
         for (i = 0 ; i < 2 ; i += 1) {
-            dSubtractVectors3 (r[i], c[i], p[i]);
+            dSubtractVectors3r4(r[i], c[i], p[i]);
         }
 
         dCalcVectorCross3(info->J1a, r[0], l[0]);

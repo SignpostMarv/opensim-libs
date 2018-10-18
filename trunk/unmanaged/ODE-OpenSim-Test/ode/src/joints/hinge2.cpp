@@ -40,12 +40,12 @@ dxJointHinge2::measureAngle1() const
     if (node[1].body)
         dMultiply0_331( p, node[1].body->posr.R, axis2 );
     else
-        dCopyVector3(p, axis2);
+        dCopyVector3r4(p, axis2);
 
     if (node[0].body)
         dMultiply1_331( q, node[0].body->posr.R, p );
     else
-        dCopyVector3(q, p);
+        dCopyVector3r4(q, p);
 
     dReal x = dCalcVectorDot3( v1, q );
     dReal y = dCalcVectorDot3( v2, q );
@@ -60,12 +60,12 @@ dxJointHinge2::measureAngle2() const
     if (node[0].body)
         dMultiply0_331( p, node[0].body->posr.R, axis1 );
     else
-        dCopyVector3(p, axis1);
+        dCopyVector3r4(p, axis1);
 
     if (node[1].body)
         dMultiply1_331( q, node[1].body->posr.R, p );
     else
-        dCopyVector3(q, p);
+        dCopyVector3r4(q, p);
 
     dReal x = dCalcVectorDot3( w1, q );
     dReal y = dCalcVectorDot3( w2, q );

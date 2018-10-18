@@ -70,6 +70,7 @@ int dMassCheck (const dMass *m)
     dSetZero (chat,12);
     dSetCrossMatrixPlus (chat,m->c,4);
     dMultiply0_333 (I2,chat,chat);
+
     for (i=0; i<3; i++) I2[i] = m->I[i] + m->mass*I2[i];
     for (i=4; i<7; i++) I2[i] = m->I[i] + m->mass*I2[i];
     for (i=8; i<11; i++) I2[i] = m->I[i] + m->mass*I2[i];
@@ -210,9 +211,10 @@ void dMassSetBoxTotal (dMass *m, dReal total_mass,
     dAASSERT (m);
     dMassSetZero (m);
     m->mass = total_mass;
-    m->_I(0,0) = total_mass/REAL(12.0) * (ly*ly + lz*lz);
-    m->_I(1,1) = total_mass/REAL(12.0) * (lx*lx + lz*lz);
-    m->_I(2,2) = total_mass/REAL(12.0) * (lx*lx + ly*ly);
+    dReal mm = total_mass/REAL(12.0);
+    m->_I(0,0) = mm * (ly*ly + lz*lz);
+    m->_I(1,1) = mm * (lx*lx + lz*lz);
+    m->_I(2,2) = mm * (lx*lx + ly*ly);
 
 # ifndef dNODEBUG
     dMassCheck (m);
@@ -259,9 +261,9 @@ void dMassSetTrimesh( dMass *m, dReal density, dGeomID g )
         FetchTransformedTriangle( TriMesh, i, v);
 
         dVector3 n, a, b;
-        dSubtractVectors3( a, v[1], v[0] ); 
-        dSubtractVectors3( b, v[2], v[0] ); 
-        dCalcVectorCross3( n, b, a );
+        dSubtractVectors3r4( a, v[1], v[0] ); 
+        dSubtractVectors3r4( b, v[2], v[0] ); 
+        dCalcVectorCross3r4( n, b, a );
         nx = (dReal)fabs(n[0]);
         ny = (dReal)fabs(n[1]);
         nz = (dReal)fabs(n[2]);

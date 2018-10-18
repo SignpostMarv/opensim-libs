@@ -102,7 +102,7 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
             if(s >= 0)
             {
                 // 1. Disc
-                dCopyVector3(P, G1Pos1);
+                dCopyVector3r4(P, G1Pos1);
             }
             else
                 return GeomCount; // no contacts
@@ -112,7 +112,7 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
             if(t >= 0)
             {
                 // 2. Disc
-                dCopyVector3(P, G1Pos2);
+                dCopyVector3r4(P, G1Pos2);
             }
             else
                 return GeomCount; // no contacts
@@ -136,13 +136,13 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         }
         // V1 is now another direction than vDir1
         // Cross-product
-        dCalcVectorCross3(V2, V1, vDir1);
+        dCalcVectorCross3r4(V2, V1, vDir1);
         // make unit V2
         t = dCalcVectorLength3(V2);
         t = radius / t;
-        dScaleVector3(V2, t);
+        dScaleVector3r4(V2, t);
         // cross again
-        dCalcVectorCross3(V1, V2, vDir1);
+        dCalcVectorCross3r4(V1, V2, vDir1);
         // |V2| is 'radius' and vDir1 unit, so |V1| is 'radius'
         // V1 = first axis
         // V2 = second axis
@@ -150,11 +150,11 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         // 3. generate contactpoints
 
         // Potential contact 1
-        dAddVectors3(contact->pos, P, V1);
+        dAddVectors3r4(contact->pos, P, V1);
         contact->depth = planevec[3] - dCalcVectorDot3(planevec, contact->pos);
         if(contact->depth > 0)
         {
-            dCopyVector3(contact->normal, PlaneNormal);
+            dCopyVector3r4(contact->normal, PlaneNormal);
             contact->g1 = Cylinder;
             contact->g2 = Plane;
             contact->side1 = -1;
@@ -170,7 +170,7 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         contact->depth = planevec[3] - dCalcVectorDot3(planevec, contact->pos);
         if(contact->depth > 0)
         {
-            dCopyVector3(contact->normal, PlaneNormal);
+            dCopyVector3r4(contact->normal, PlaneNormal);
             contact->g1 = Cylinder;
             contact->g2 = Plane;
             contact->side1 = -1;
@@ -182,11 +182,11 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         }
 
         // Potential contact 3
-        dAddVectors3(contact->pos, P, V2);
+        dAddVectors3r4(contact->pos, P, V2);
         contact->depth = planevec[3] - dCalcVectorDot3(planevec, contact->pos);
         if(contact->depth > 0)
         {
-            dCopyVector3(contact->normal, PlaneNormal);
+            dCopyVector3r4(contact->normal, PlaneNormal);
             contact->g1 = Cylinder;
             contact->g2 = Plane;
             contact->side1 = -1;
@@ -198,11 +198,11 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         }
 
         // Potential contact 4
-        dSubtractVectors3(contact->pos, P, V2);
+        dSubtractVectors3r4(contact->pos, P, V2);
         contact->depth = planevec[3] - dCalcVectorDot3(planevec, contact->pos);
         if(contact->depth > 0)
         {
-            dCopyVector3(contact->normal, PlaneNormal);
+            dCopyVector3r4(contact->normal, PlaneNormal);
             contact->g1 = Cylinder;
             contact->g2 = Plane;
             contact->side1 = -1;
@@ -222,16 +222,16 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         s = dCalcVectorLength3(C);
         // move C onto the circle
         s = radius / s;
-        dScaleVector3(C, s);
+        dScaleVector3r4(C, s);
 
         // deepest point of disc 1
-        dAddVectors3(contact->pos, C, G1Pos1);
+        dAddVectors3r4(contact->pos, C, G1Pos1);
 
         // depth of the deepest point
         contact->depth = planevec[3] - dCalcVectorDot3(planevec, contact->pos);
         if(contact->depth >= 0)
         {
-            dCopyVector3(contact->normal, PlaneNormal);
+            dCopyVector3r4(contact->normal, PlaneNormal);
             contact->g1 = Cylinder;
             contact->g2 = Plane;
             contact->side1 = -1;
@@ -245,13 +245,13 @@ int dCollideCylinderPlane(dxGeom *Cylinder, dxGeom *Plane, int flags, dContactGe
         // C is still computed
 
         // deepest point of disc 2
-        dAddVectors3(contact->pos, C, G1Pos2);
+        dAddVectors3r4(contact->pos, C, G1Pos2);
 
         // depth of the deepest point
         contact->depth = planevec[3] - planevec[0] * contact->pos[0] - planevec[1] * contact->pos[1] - planevec[2] * contact->pos[2];
         if(contact->depth >= 0)
         {
-            dCopyVector3(contact->normal, PlaneNormal);
+            dCopyVector3r4(contact->normal, PlaneNormal);
             contact->g1 = Cylinder;
             contact->g2 = Plane;
             contact->side1 = -1;

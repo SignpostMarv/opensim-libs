@@ -727,7 +727,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         for (i = 0; i < numTerrainContacts; i++)
         {
 		    pContact = CONTACT(contact, i*skip);
-            dCopyNegatedVector3(pContact->normal, triplane);
+            dCopyNegatedVector3r4(pContact->normal, triplane);
         }
         return numTerrainContacts;
     }
@@ -944,8 +944,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                     tri_base->isFirst))
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
-                    dCopyVector3( pContact->pos, planeCurrContact->pos);
-                    dCopyNegatedVector3(pContact->normal, itPlane);
+                    dCopyVector3r4( pContact->pos, planeCurrContact->pos);
+                    dCopyNegatedVector3r4(pContact->normal, itPlane);
                     pContact->depth = planeCurrContact->depth;
                     pContact->side1 = planeCurrContact->side1;
                     pContact->side2 = planeCurrContact->side2;
@@ -999,8 +999,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                     tri_test->isFirst))
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
-                    dCopyVector3(pContact->pos, planeCurrContact->pos);
-                    dCopyNegatedVector3(pContact->normal, itPlane);
+                    dCopyVector3r4(pContact->pos, planeCurrContact->pos);
+                    dCopyNegatedVector3r4(pContact->normal, itPlane);
                     pContact->depth = planeCurrContact->depth;
                     pContact->side1 = planeCurrContact->side1;
                     pContact->side2 = planeCurrContact->side2;
@@ -1077,9 +1077,9 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
                     //create contact using vertices
-                    dCopyVector3(pContact->pos, triVertex);
+                    dCopyVector3r4(pContact->pos, triVertex);
                     //create contact using Plane Normal
-                    dCopyNegatedVector3(pContact->normal, itTriangle->planeDef);
+                    dCopyNegatedVector3r4(pContact->normal, itTriangle->planeDef);
                     pContact->depth = depth;
                     pContact->side1 = -1;
                     pContact->side2 = -1;
@@ -1127,7 +1127,7 @@ void inline dOSTerrainAddSphereContact(const dContactGeom* contact, int skip,
         return;
     }
 
-    dCopyVector3(pContact->pos, pos);
+    dCopyVector3r4(pContact->pos, pos);
     pContact->depth = depth;
     numTerrainContacts++;
 }
@@ -1162,7 +1162,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
     dxSphere *sphere = (dxSphere*)o2;
     radius = sphere->radius;
 
-    dCopyVector3(center, sphere->final_posr->pos);
+    dCopyVector3r4(center, sphere->final_posr->pos);
 
     const dReal minO2Height = center[2] - radius;
 
@@ -1470,7 +1470,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                     if (k < depth)
                                     {
                                         depth = k;
-                                        dCopyVector3(pdist, dist);
+                                        dCopyVector3r4(pdist, dist);
                                     }
                                 }
                             }
@@ -1497,7 +1497,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                     if (k < depth)
                                     {
                                         depth = k;
-                                        dCopyVector3(pdist, dist);
+                                        dCopyVector3r4(pdist, dist);
                                     }
                                 }
                             }
@@ -1526,7 +1526,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                                if (k < depth)
                                {
                                    depth = k;
-                                   dCopyVector3(pdist, dist);
+                                   dCopyVector3r4(pdist, dist);
                                }
                            }
                         }
@@ -1537,7 +1537,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                        if (k < depth)
                        {
                            depth = k;
-                           dCopyVector3(pdist, tdist);
+                           dCopyVector3r4(pdist, tdist);
                        }
                     }
                 }
@@ -1569,9 +1569,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
         pContact->side1 = -1;
         pContact->side2 = -1;
         pContact->depth = pContactB->depth;
-        dCopyNegatedVector3(pContact->normal, pContactB->pos);
+        dCopyNegatedVector3r4(pContact->normal, pContactB->pos);
         dNormalize3(pContact->normal);
-        dSubtractVectors3(pContact->pos, center, pContactB->pos);
+        dSubtractVectors3r4(pContact->pos, center, pContactB->pos);
 
         pContactB = CONTACT(ContactBuffer, skip);
         if(pContactB->depth > 0)
@@ -1580,9 +1580,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dCopyNegatedVector3(pContact->normal, pContactB->pos);
+            dCopyNegatedVector3r4(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dSubtractVectors3(pContact->pos, center, pContactB->pos);
+            dSubtractVectors3r4(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
 
@@ -1593,9 +1593,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dCopyNegatedVector3(pContact->normal, pContactB->pos);
+            dCopyNegatedVector3r4(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dSubtractVectors3(pContact->pos, center, pContactB->pos);
+            dSubtractVectors3r4(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
 
@@ -1606,9 +1606,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dCopyNegatedVector3(pContact->normal, pContactB->pos);
+            dCopyNegatedVector3r4(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dSubtractVectors3(pContact->pos, center, pContactB->pos);
+            dSubtractVectors3r4(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
 
@@ -1619,9 +1619,9 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
             pContact->side1 = -1;
             pContact->side2 = -1;
             pContact->depth = pContactB->depth;
-            dCopyNegatedVector3(pContact->normal, pContactB->pos);
+            dCopyNegatedVector3r4(pContact->normal, pContactB->pos);
             dNormalize3(pContact->normal);
-            dSubtractVectors3(pContact->pos, center, pContactB->pos);
+            dSubtractVectors3r4(pContact->pos, center, pContactB->pos);
             numTerrainContacts++;
         }
         return numTerrainContacts;

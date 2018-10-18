@@ -49,7 +49,7 @@ dReal SqrDistancePointTri( const dVector3 p, const dVector3 triOrigin,
                           dReal* pfSParam, dReal* pfTParam )
 {
     dVector3 kDiff;
-    dSubtractVectors3(kDiff, triOrigin, p);
+    dSubtractVectors3r4(kDiff, triOrigin, p);
     dReal fA00 = dCalcVectorLengthSquare3( triEdge0);
     dReal fA01 = dCalcVectorDot3( triEdge0, triEdge1 );
     dReal fA11 = dCalcVectorLengthSquare3( triEdge1);
@@ -304,7 +304,7 @@ dReal SqrDistanceSegments( const dVector3 seg1Origin, const dVector3 seg1Directi
 {
     const dReal gs_fTolerance = 1e-05f;
     dVector3 kDiff, kNegDiff, seg1NegDirection;
-    dSubtractVectors3(kDiff, seg1Origin, seg2Origin);
+    dSubtractVectors3r4(kDiff, seg1Origin, seg2Origin);
     Vector3Negate( kDiff, kNegDiff );
     dReal fA00 = dCalcVectorLengthSquare3( seg1Direction);
     Vector3Negate( seg1Direction, seg1NegDirection );
@@ -683,9 +683,9 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
 {
     const dReal gs_fTolerance = 1e-06f;
     dVector3 segDirection, segNegDirection, kDiff, kNegDiff;
-    dSubtractVectors3(segDirection, segEnd, segOrigin);
+    dSubtractVectors3r4(segDirection, segEnd, segOrigin);
     Vector3Negate( segDirection, segNegDirection );
-    dSubtractVectors3(kDiff, triOrigin, segOrigin);
+    dSubtractVectors3r4(kDiff, triOrigin, segOrigin);
     Vector3Negate( kDiff, kNegDiff );
     dReal fA00 = dCalcVectorLengthSquare3(segDirection);
     dReal fA01 = dCalcVectorDot3( segNegDirection, triEdge0 );
@@ -703,7 +703,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
     // Set up for a relative error test on the angle between ray direction
     // and triangle normal to determine parallel/nonparallel status.
     dVector3 kN;
-    dCalcVectorCross3( kN, triEdge0, triEdge1 );
+    dCalcVectorCross3r4( kN, triEdge0, triEdge1 );
     dReal fNSqrLen = dCalcVectorLengthSquare3(kN);
     dReal fDot = dCalcVectorDot3( segDirection, kN );
     bool bNotParallel = (fDot*fDot >= gs_fTolerance*fA00*fNSqrLen);
@@ -824,8 +824,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fT );
                     fS = REAL(0.0);
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection, 
                         kTriSegOrigin, kTriSegDirection,
                         &fR0, &fT0 );
@@ -857,8 +857,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fS );
                     fT = REAL(0.0);
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR0, &fT0 );
@@ -884,8 +884,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                 else  // region 1m
                 {
                     // min on face s+t=1 or r=0
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fT );
@@ -970,8 +970,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fT );
                     fS = REAL(0.0);
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR0, &fT0 );
@@ -993,8 +993,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fS );
                     fT = REAL(0.0);
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3( kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4( kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR0, &fT0 );
@@ -1010,8 +1010,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                 else  // region 1
                 {
                     // min on face s+t=1
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fT );
@@ -1047,7 +1047,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                             fS = fS0;
                             fT = fT0;
                         }
-                        dAddVectors3( kPt, segOrigin, segDirection);
+                        dAddVectors3r4( kPt, segOrigin, segDirection);
                         fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1,
                             &fS0, &fT0 );
                         fR0 = REAL(1.0);
@@ -1068,7 +1068,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                             kTriSegOrigin, kTriSegDirection,
                             &fR, &fT );
                         fS = REAL(0.0);
-                        dAddVectors3(kPt, segOrigin, segDirection);
+                        dAddVectors3r4(kPt, segOrigin, segDirection);
                         fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1,
                             &fS0, &fT0 );
                         fR0 = REAL(1.0);
@@ -1090,7 +1090,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fS );
                     fT = REAL(0.0);
-                    dAddVectors3(kPt, segOrigin, segDirection);
+                    dAddVectors3r4(kPt, segOrigin, segDirection);
                     fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1,
                         &fS0, &fT0 );
                     fR0 = REAL(1.0);
@@ -1105,7 +1105,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                 else  // region 0p
                 {
                     // min face on r=1
-                    dAddVectors3(kPt, segOrigin, segDirection);
+                    dAddVectors3r4(kPt, segOrigin, segDirection);
                     fSqrDist = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1,
                         &fS, &fT );
                     fR = REAL(1.0);
@@ -1122,8 +1122,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fT );
                     fS = REAL(0.0);
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR0, &fT0 );
@@ -1135,7 +1135,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         fS = fS0;
                         fT = fT0;
                     }
-                    dAddVectors3(kPt, segOrigin, segDirection);
+                    dAddVectors3r4(kPt, segOrigin, segDirection);
                     fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1,
                         &fS0, &fT0 );
                     fR0 = REAL(1.0);
@@ -1156,8 +1156,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fS );
                     fT = REAL(0.0);
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR0, &fT0 );
@@ -1169,7 +1169,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                         fS = fS0;
                         fT = fT0;
                     }
-                    dAddVectors3(kPt, segOrigin, segDirection);
+                    dAddVectors3r4(kPt, segOrigin, segDirection);
                     fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1,
                         &fS0, &fT0 );
                     fR0 = REAL(1.0);
@@ -1184,13 +1184,13 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
                 else  // region 1p
                 {
                     // min on face s+t=1 or r=1
-                    dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-                    dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+                    dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+                    dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
                     fSqrDist = SqrDistanceSegments( segOrigin, segDirection,
                         kTriSegOrigin, kTriSegDirection,
                         &fR, &fT );
                     fS = REAL(1.0) - fT;
-                    dAddVectors3(kPt, segOrigin, segDirection);
+                    dAddVectors3r4(kPt, segOrigin, segDirection);
                     fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1, 
                         &fS0, &fT0 );
                     fR0 = REAL(1.0);
@@ -1227,8 +1227,8 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
             fT = fT0;
         }
 
-        dAddVectors3(kTriSegOrigin, triOrigin, triEdge0);
-        dSubtractVectors3(kTriSegDirection, triEdge1, triEdge0);
+        dAddVectors3r4(kTriSegOrigin, triOrigin, triEdge0);
+        dSubtractVectors3r4(kTriSegDirection, triEdge1, triEdge0);
         fSqrDist0 = SqrDistanceSegments( segOrigin, segDirection,
             kTriSegOrigin, kTriSegDirection, &fR0, &fT0 );
         fS0 = REAL(1.0) - fT0;
@@ -1251,7 +1251,7 @@ dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd,
             fT = fT0;
         }
 
-        dAddVectors3(kPt, segOrigin, segDirection);
+        dAddVectors3r4(kPt, segOrigin, segDirection);
         fSqrDist0 = SqrDistancePointTri( kPt, triOrigin, triEdge0, triEdge1, 
             &fS0, &fT0 );
         fR0 = REAL(1.0);

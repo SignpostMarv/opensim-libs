@@ -326,7 +326,7 @@ struct dxStepperProcessingCallContext
     dxJoint *const          *m_islandJointsStart;
     unsigned                m_islandBodiesCount;
     unsigned                m_islandJointsCount;
-    unsigned                m_stepperAllowedThreads;
+	unsigned                m_stepperAllowedThreads;
 };
 
 #define BEGIN_STATE_SAVE(memarena, state) void *state = memarena->SaveState();

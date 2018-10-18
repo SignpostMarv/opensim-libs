@@ -691,7 +691,7 @@ int dCollideRayCylinder( dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contac
     dVector3 pos;  // Ray origin in cylinder frame
     dVector3 dir;  // Ray direction in cylinder frame
     // Translate ray start by inverse cyl
-    dSubtractVectors3(tmp,ray->final_posr->pos,cyl->final_posr->pos);
+    dSubtractVectors3r4(tmp,ray->final_posr->pos,cyl->final_posr->pos);
     // Rotate ray start by inverse cyl
     dMultiply1_331(pos,cyl->final_posr->R,tmp);
 

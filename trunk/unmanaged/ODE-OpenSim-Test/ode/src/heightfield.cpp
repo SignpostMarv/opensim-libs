@@ -58,7 +58,7 @@
 
 #define dGeomRaySetNoNormalize(myRay, MyPoint, MyVector) {  \
     \
-    dCopyVector3 ((myRay).final_posr->pos, MyPoint);   \
+    dCopyVector3r4 ((myRay).final_posr->pos, MyPoint);   \
     (myRay).final_posr->R[2] = (MyVector)[0];       \
     (myRay).final_posr->R[6] = (MyVector)[1];       \
     (myRay).final_posr->R[10] = (MyVector)[2];      \
@@ -958,12 +958,12 @@ static inline dReal DistancePointToLine(const dVector3 &_point,
                                         const dReal _Edgelength)
 {
     dVector3 v;
-    dSubtractVectors3(v, _point, _pt0);
+    dSubtractVectors3r4(v, _point, _pt0);
     dVector3 s;
-    dCopyVector3(s, _Edge);
+    dCopyVector3r4(s, _Edge);
     const dReal dot = dCalcVectorDot3(v, _Edge) / _Edgelength;
-    dScaleVector3(s, dot);
-    dSubtractVectors3(v, s, v);
+    dScaleVector3r4(s, dot);
+    dSubtractVectors3r4(v, s, v);
     return dCalcVectorLength3(v);
 }
 
@@ -1183,9 +1183,9 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
     // define 2 edges and a point that will define collision plane
     {
     dVector3 Edge1, Edge2; 
-    dSubtractVectors3(Edge1, C, A);
-    dSubtractVectors3(Edge2, B, A);
-    dCalcVectorCross3(triplane, Edge1, Edge2);
+    dSubtractVectors3r4(Edge1, C, A);
+    dSubtractVectors3r4(Edge2, B, A);
+    dCalcVectorCross3r4(triplane, Edge1, Edge2);
     }
 
     // Define Plane
@@ -1377,14 +1377,14 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
             HeightFieldTriangle * const itTriangle = &tempTriangleBuffer[k];
 
             // define 2 edges and a point that will define collision plane
-            dSubtractVectors3(Edge1, itTriangle->vertices[2]->vertex, itTriangle->vertices[0]->vertex);
-            dSubtractVectors3(Edge2, itTriangle->vertices[1]->vertex, itTriangle->vertices[0]->vertex);
+            dSubtractVectors3r4(Edge1, itTriangle->vertices[2]->vertex, itTriangle->vertices[0]->vertex);
+            dSubtractVectors3r4(Edge2, itTriangle->vertices[1]->vertex, itTriangle->vertices[0]->vertex);
 
             // find a perpendicular vector to the triangle
             if  (itTriangle->isUp)
-                dCalcVectorCross3(triplane, Edge1, Edge2);
+                dCalcVectorCross3r4(triplane, Edge1, Edge2);
             else
-                dCalcVectorCross3(triplane, Edge2, Edge1);
+                dCalcVectorCross3r4(triplane, Edge2, Edge1);
 
             // Define Plane
             // Normalize plane normal
@@ -1500,7 +1500,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                         itPlane->trianglelist[b]->isUp))
                     {
                         pContact = CONTACT(contact, numTerrainContacts*skip);
-                        dCopyVector3(pContact->pos, pCPos);
+                        dCopyVector3r4(pContact->pos, pCPos);
                         dOPESIGN(pContact->normal, =, -, itPlane->planeDef);
                         pContact->depth = planeCurrContact->depth;
                         pContact->side1 = planeCurrContact->side1;
@@ -1601,7 +1601,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                 {
                     pContact = CONTACT(contact, numTerrainContacts*skip);
                     //create contact using vertices
-                    dCopyVector3(pContact->pos, triVertex);
+                    dCopyVector3r4(pContact->pos, triVertex);
                     //create contact using Plane Normal
                     dOPESIGN(pContact->normal, =, -, itTriangle->planeDef);
 
@@ -1648,7 +1648,7 @@ int dxHeightfield::dCollideHeightfieldZone( const int minX, const int maxX, cons
                 if (vertex0->state == true && vertex1->state == true)
                     continue;// plane did already collide.
 
-                dSubtractVectors3(Edge, vertex1->vertex, vertex0->vertex);
+                dSubtractVectors3r4(Edge, vertex1->vertex, vertex0->vertex);
                 edgeRay.length = dCalcVectorLength3 (Edge);
                 dGeomRaySetNoNormalize(edgeRay, vertex1->vertex, Edge);
                 int prevTerrainContacts = numTerrainContacts;
@@ -1730,7 +1730,7 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
     if (reComputeAABB)
     {
         // Backup original o2 position, rotation and AABB.
-        dCopyVector3(posbak, o2->final_posr->pos);
+        dCopyVector3r4(posbak, o2->final_posr->pos);
         dCopyMatrix4x3(Rbak, o2->final_posr->R);
         memcpy( aabbbak, o2->aabb, sizeof( dReal ) * 6 );
         gflagsbak = o2->gflags;
@@ -1739,12 +1739,12 @@ int dCollideHeightfield( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contac
     if ( terrain->gflags & GEOM_PLACEABLE )
     {
         // Transform o2 into heightfield space.
-        dSubtractVectors3( pos0, o2->final_posr->pos, terrain->final_posr->pos );
+        dSubtractVectors3r4( pos0, o2->final_posr->pos, terrain->final_posr->pos );
         dMultiply1_331( pos1, terrain->final_posr->R, pos0 );
         dMultiply1_333( R1, terrain->final_posr->R, o2->final_posr->R );
 
         // Update o2 with transformed position and rotation.
-        dCopyVector3(o2->final_posr->pos, pos1);
+        dCopyVector3r4(o2->final_posr->pos, pos1);
         dCopyMatrix4x3(o2->final_posr->R, R1);
     }
 
@@ -1820,7 +1820,7 @@ dCollideHeightfieldExit:
     if (reComputeAABB)
     {
         // Restore o2 position, rotation and AABB
-        dCopyVector3(o2->final_posr->pos, posbak);
+        dCopyVector3r4(o2->final_posr->pos, posbak);
         dCopyMatrix4x3(o2->final_posr->R, Rbak);
         memcpy( o2->aabb, aabbbak, sizeof(dReal)*6 );
         o2->gflags = gflagsbak;
@@ -1833,7 +1833,7 @@ dCollideHeightfieldExit:
             for ( i = 0; i < numTerrainContacts; ++i )
             {
                 pContact = CONTACT(contact,i*skip);
-                dCopyVector3( pos0, pContact->pos );
+                dCopyVector3r4( pos0, pContact->pos );
 
 #ifndef DHEIGHTFIELD_CORNER_ORIGIN
                 pos0[ 0 ] -= terrain->m_p_data->m_fHalfWidth;
@@ -1842,8 +1842,8 @@ dCollideHeightfieldExit:
 
                 dMultiply0_331( pContact->pos, terrain->final_posr->R, pos0 );
 
-                dAddVectors3( pContact->pos, pContact->pos, terrain->final_posr->pos );
-                dCopyVector3( pos0, pContact->normal );
+                dAddVectors3r4( pContact->pos, pContact->pos, terrain->final_posr->pos );
+                dCopyVector3r4( pos0, pContact->normal );
 
                 dMultiply0_331( pContact->normal, terrain->final_posr->R, pos0 );
             }

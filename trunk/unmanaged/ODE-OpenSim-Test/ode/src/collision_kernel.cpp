@@ -325,14 +325,15 @@ int dCollide (dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int skip
 
     dColliderEntry *ce = &colliders[o1->type][o2->type];
     int count = 0;
-    if (ce->fn) {
-        if (ce->reverse) {
-            count = (*ce->fn) (o2,o1,flags,contact,skip);
-            for (int i=0; i<count; i++) {
+    if (ce->fn)
+    {
+        if (ce->reverse)
+        {
+            count = (*ce->fn) (o2, o1, flags, contact, skip);
+            for (int i = 0; i < count; i++)
+            {
                 dContactGeom *c = CONTACT(contact,skip*i);
-                c->normal[0] = -c->normal[0];
-                c->normal[1] = -c->normal[1];
-                c->normal[2] = -c->normal[2];
+                dNegateVector3r4(c->normal);
                 dxGeom *tmp = c->g1;
                 c->g1 = c->g2;
                 c->g2 = tmp;
@@ -342,7 +343,7 @@ int dCollide (dxGeom *o1, dxGeom *o2, int flags, dContactGeom *contact, int skip
             }
         }
         else {
-            count = (*ce->fn) (o1,o2,flags,contact,skip);
+            count = (*ce->fn) (o1, o2, flags, contact, skip);
         }
     }
     return count;
@@ -445,7 +446,7 @@ void getBodyPosr(const dxPosR& offset_posr, const dxPosR& final_posr, dxPosR& bo
     dMultiply0_333(body_posr.R, final_posr.R, inv_offset);
     dVector3 world_offset;
     dMultiply0_331(world_offset, body_posr.R, offset_posr.pos);
-    dSubtractVectors3(body_posr.pos, final_posr.pos, world_offset);
+    dSubtractVectors3r4(body_posr.pos, final_posr.pos, world_offset);
 }
 
 void getWorldOffsetPosr(const dxPosR& body_posr, const dxPosR& world_posr, dxPosR& offset_posr)
@@ -455,7 +456,7 @@ void getWorldOffsetPosr(const dxPosR& body_posr, const dxPosR& world_posr, dxPos
 
     dMultiply0_333(offset_posr.R, inv_body, world_posr.R);
     dVector3 world_offset;
-    dSubtractVectors3(world_offset, world_posr.pos, body_posr.pos);
+    dSubtractVectors3r4(world_offset, world_posr.pos, body_posr.pos);
     dMultiply0_331(offset_posr.pos, inv_body, world_offset);
 }
 
@@ -658,7 +659,7 @@ void dGeomCopyPosition(dxGeom *g, dVector3 pos)
     dAASSERT (g);
     dUASSERT (g->gflags & GEOM_PLACEABLE,"geom must be placeable");
     g->recomputePosr();
-    dCopyVector3(pos, g->final_posr->pos);
+    dCopyVector3r4(pos, g->final_posr->pos);
 }
 
 
@@ -677,15 +678,9 @@ void dGeomCopyRotation(dxGeom *g, dMatrix3 R)
     dUASSERT (g->gflags & GEOM_PLACEABLE,"geom must be placeable");
     g->recomputePosr();
     const dReal* src = g->final_posr->R;
-    R[0]  = src[0];
-    R[1]  = src[1];
-    R[2]  = src[2];
-    R[4]  = src[4];
-    R[5]  = src[5];
-    R[6]  = src[6];
-    R[8]  = src[8];
-    R[9]  = src[9];
-    R[10] = src[10];
+    dCopyVector3r4(R, src);
+    dCopyVector3r4(R + 4, src + 4);
+    dCopyVector3r4(R + 8, src + 8);
 }
 
 
@@ -802,7 +797,7 @@ void dGeomGetRelPointPos (dGeomID g, dReal px, dReal py, dReal pz, dVector3 resu
     prel[2] = pz;
     prel[3] = 0;
     dMultiply0_331 (p,g->final_posr->R,prel);
-    dAddVectors3(result, p, g->final_posr->pos);
+    dAddVectors3r4(result, p, g->final_posr->pos);
 }
 
 
@@ -819,11 +814,12 @@ void dGeomGetPosRelPoint (dGeomID g, dReal px, dReal py, dReal pz, dVector3 resu
     g->recomputePosr();
 
     dVector3 prel;
-    prel[0] = px - g->final_posr->pos[0];
-    prel[1] = py - g->final_posr->pos[1];
-    prel[2] = pz - g->final_posr->pos[2];
+    prel[0] = px;
+    prel[1] = py;
+    prel[2] = pz;
+    dSubtractVector3r4(prel, g->final_posr->pos);
     prel[3] = 0;
-    dMultiply1_331 (result,g->final_posr->R,prel);
+    dMultiply1_331 (result, g->final_posr->R, prel);
 }
 
 
@@ -1169,7 +1165,7 @@ void dGeomCopyOffsetPosition (dxGeom *g, dVector3 pos)
     dAASSERT (g);
     if (g->offset_posr)
     {
-        dCopyVector3(pos, g->offset_posr->pos);
+        dCopyVector3r4(pos, g->offset_posr->pos);
     }
     else
     {
@@ -1202,27 +1198,15 @@ void dGeomCopyOffsetRotation (dxGeom *g, dMatrix3 R)
     if (g->offset_posr)
     {
         const dReal* src = g->offset_posr->R;
-        R[0]  = src[0];
-        R[1]  = src[1];
-        R[2]  = src[2];
-        R[4]  = src[4];
-        R[5]  = src[5];
-        R[6]  = src[6];
-        R[8]  = src[8];
-        R[9]  = src[9];
-        R[10] = src[10];
+        dCopyVector3r4(R, src);
+        dCopyVector3r4(R + 4, src + 4);
+        dCopyVector3r4(R + 8, src + 8);
     }
     else
     {
-        R[0]  = OFFSET_ROTATION_ZERO[0];
-        R[1]  = OFFSET_ROTATION_ZERO[1];
-        R[2]  = OFFSET_ROTATION_ZERO[2];
-        R[4]  = OFFSET_ROTATION_ZERO[4];
-        R[5]  = OFFSET_ROTATION_ZERO[5];
-        R[6]  = OFFSET_ROTATION_ZERO[6];
-        R[8]  = OFFSET_ROTATION_ZERO[8];
-        R[9]  = OFFSET_ROTATION_ZERO[9];
-        R[10] = OFFSET_ROTATION_ZERO[10];
+        dCopyVector3r4(R, &OFFSET_ROTATION_ZERO[0]);
+        dCopyVector3r4(R + 4, &OFFSET_ROTATION_ZERO[4]);
+        dCopyVector3r4(R + 8, &OFFSET_ROTATION_ZERO[8]);
     }
 }
 

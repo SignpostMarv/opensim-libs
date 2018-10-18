@@ -58,23 +58,25 @@ dxBox::dxBox (dSpaceID space, dReal lx, dReal ly, dReal lz) : dxGeom (space,1)
 
 void dxBox::computeAABB()
 {
+    dVector3 fabsR;
     const dMatrix3& R = final_posr->R;
     const dVector3& pos = final_posr->pos;
 
-    dReal xrange = (dFabs(R[0] * halfside[0]) +
-        dFabs(R[1] * halfside[1]) + dFabs(R[2] * halfside[2]));
-    dReal yrange = (dFabs(R[4] * halfside[0]) +
-        dFabs(R[5] * halfside[1]) + dFabs(R[6] * halfside[2]));
-    dReal zrange = (dFabs(R[8] * halfside[0]) +
-        dFabs(R[9] * halfside[1]) + dFabs(R[10] * halfside[2]));
-    aabb[0] = pos[0] - xrange;
-    aabb[1] = pos[0] + xrange;
-    aabb[2] = pos[1] - yrange;
-    aabb[3] = pos[1] + yrange;
-    aabb[4] = pos[2] - zrange;
-    aabb[5] = pos[2] + zrange;
-}
+    dFabsVector3r4(fabsR, R);
+    dReal range = dCalcVectorDot3(fabsR, halfside);
+    aabb[0] = pos[0] - range;
+    aabb[1] = pos[0] + range;
 
+    dFabsVector3r4(fabsR, &R[4]);
+    range = dCalcVectorDot3(fabsR, halfside);
+    aabb[2] = pos[1] - range;
+    aabb[3] = pos[1] + range;
+
+    dFabsVector3r4(fabsR, &R[8]);
+    range = dCalcVectorDot3(fabsR, halfside);
+    aabb[4] = pos[2] - range;
+    aabb[5] = pos[2] + range;
+}
 
 dGeomID dCreateBox (dSpaceID space, dReal lx, dReal ly, dReal lz)
 {
@@ -98,9 +100,7 @@ void dGeomBoxGetLengths (dGeomID g, dVector3 result)
 {
     dUASSERT (g && g->type == dBoxClass,"argument not a box");
     dxBox *b = (dxBox*) g;
-    result[0] = REAL(2.0) * b->halfside[0];
-    result[1] = REAL(2.0) * b->halfside[1];
-    result[2] = REAL(2.0) * b->halfside[2];
+    dCopyScaledVector3r4(result, b->halfside, 2.0f);
 }
 
 dReal dGeomBoxPointDepth (dGeomID g, dReal x, dReal y, dReal z)
@@ -112,13 +112,16 @@ dReal dGeomBoxPointDepth (dGeomID g, dReal x, dReal y, dReal z)
     // Set p = (x,y,z) relative to box center
 
     dVector3 p,q;
-    p[0] = x - b->final_posr->pos[0];
-    p[1] = y - b->final_posr->pos[1];
-    p[2] = z - b->final_posr->pos[2];
+    p[0] = x;
+    p[1] = y;
+    p[2] = z;
+    dSubtractVector3r4(p, b->final_posr->pos);
 
     // Rotate p into box's coordinate frame, so we can
     // treat the OBB as an AABB
     dMultiply1_331(q, b->final_posr->R, p);
+    dFabsVector3r4(p, q);
+    dSubtractVectors3r4(q, b->halfside, p);
 
     int   i;
     dReal tmp;
@@ -126,9 +129,9 @@ dReal dGeomBoxPointDepth (dGeomID g, dReal x, dReal y, dReal z)
     dReal out_dist = -dInfinity;
     bool inside = true;
 
-    for (i=0; i < 3; i++)
+    for (i=0; i < 3; ++i)
     {
-        tmp = b->halfside[i] - dFabs(q[i]);
+        tmp = q[i];
         if(tmp < 0)
         {
             inside = false;
@@ -195,7 +198,7 @@ static int intersectRectQuad(dReal h[2], dReal p[8], dReal ret[16])
                     pr[0] = pq[0];
                     pr[1] = pq[1];
                     pr += 2;
-                    nr++;
+                    ++nr;
                     if (nr & 8) {
                         q = r;
                         goto done;
@@ -209,7 +212,7 @@ static int intersectRectQuad(dReal h[2], dReal p[8], dReal ret[16])
                         (nextq[dir] - pq[dir]) * (signhdir - pq[dir]);
                     pr[dir] = signhdir;
                     pr += 2;
-                    nr++;
+                    ++nr;
                     if (nr & 8)
                     {
                         q = r;
@@ -357,12 +360,40 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     const dReal fudge_factor = REAL(1.2);
     dVector3 p, pp, normalC = {0, 0, 0};
     const dReal *normalR = 0;
-    dReal R11 ,R12 ,R13 ,R21 ,R22 ,R23, R31, R32, R33,
-        Q11, Q12, Q13, Q21, Q22, Q23, Q31, Q32, Q33, s, s2, l, expr1_val,expr2_val;
-    int i, j, invert_normal, code;
 
+    dVector3 R1x;
+    dVector3 R2x;
+    dVector3 R3x;
+
+    dVector3 Q1x;
+    dVector3 Q2x;
+    dVector3 Q3x;
+
+#define R11 R1x[0]
+#define R12 R1x[1]
+#define R13 R1x[2]
+#define R21 R2x[0]
+#define R22 R2x[1]
+#define R23 R2x[2]
+#define R31 R3x[0]
+#define R32 R3x[1]
+#define R33 R3x[2]
+
+#define Q11 Q1x[0]
+#define Q12 Q1x[1]
+#define Q13 Q1x[2]
+#define Q21 Q2x[0]
+#define Q22 Q2x[1]
+#define Q23 Q2x[2]
+#define Q31 Q3x[0]
+#define Q32 Q3x[1]
+#define Q33 Q3x[2]
+
+    dReal s, s2, l, expr1_val,expr2_val;
+    int i, j, invert_normal, code;
+    dReal tmp;
     // get vector from centers of box 1 to box 2, relative to box 1
-    dSubtractVectors3(p, p2, p1);
+    dSubtractVectors3r4(p, p2, p1);
     dMultiply1_331 (pp, R1, p);		// get pp = p relative to body 1
 
     // for all 15 possible separating axes:
@@ -380,51 +411,55 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     expr1_val = (expr1); /* Avoid duplicate evaluation of expr1 */ \
     expr2_val = (expr2); \
     s2 = dFabs(expr1_val) - (expr2_val); \
-    if (s2 > 0) return 0; \
-    if (s2 > s) { \
-    s = s2; \
-    normalR = norm; \
-    invert_normal = ((expr1_val) < 0); \
-    code = (cc); \
-    if (flags & CONTACTS_UNIMPORTANT) break; \
+    if (s2 > 0) \
+        return 0; \
+    if (s2 > s) \
+    { \
+        s = s2; \
+        normalR = norm; \
+        invert_normal = ((expr1_val) < 0); \
+        code = (cc); \
+        if (flags & CONTACTS_UNIMPORTANT) break; \
     }
+
         s = -dInfinity;
         invert_normal = 0;
         code = 0;
 
-    // Rij is R1'*R2, i.e. the relative rotation between R1 and R2
+        // Rij is R1'*R2, i.e. the relative rotation between R1 and R2
 
         const dReal *r1ptr = R1;
         const dReal *r2ptr = R2;
         R11 = dCalcVectorDot3_44(r1ptr, r2ptr++);
-        Q11 = dFabs(R11);
         R12 = dCalcVectorDot3_44(r1ptr, r2ptr++);
-        Q12 = dFabs(R12);
         R13 = dCalcVectorDot3_44(r1ptr, r2ptr);
-        Q13 = dFabs(R13);
+        dFabsVector3r4(Q1x, R1x);
 
+        tmp = A[0] + dCalcVectorDot3(B, Q1x);
         // separating axis = u1,u2,u3
-        TST (pp[0], (A[0] + B[0] * Q11 + B[1] * Q12 + B[2] * Q13), r1ptr, 1);
+        TST (pp[0], tmp, r1ptr, 1);
 
         r1ptr++;
         r2ptr = R2;
         R21 = dCalcVectorDot3_44(r1ptr, r2ptr++);
-        Q21 = dFabs(R21);
         R22 = dCalcVectorDot3_44(r1ptr, r2ptr++);
-        Q22 = dFabs(R22);
         R23 = dCalcVectorDot3_44(r1ptr, r2ptr);
-        Q23 = dFabs(R23);
-        TST(pp[1], (A[1] + B[0] * Q21 + B[1] * Q22 + B[2] * Q23), r1ptr, 2);
+
+        dFabsVector3r4(Q2x, R2x);
+        tmp = A[1] + dCalcVectorDot3(B, Q2x);
+
+        TST(pp[1], tmp, r1ptr, 2);
 
         r1ptr++;
         r2ptr = R2;
         R31 = dCalcVectorDot3_44(r1ptr, r2ptr++);
-        Q31 = dFabs(R31);
         R32 = dCalcVectorDot3_44(r1ptr, r2ptr++);
-        Q32 = dFabs(R32);
         R33 = dCalcVectorDot3_44(r1ptr, r2ptr);
-        Q33 = dFabs(R33);
-        TST(pp[2], (A[2] + B[0] * Q31 + B[1] * Q32 + B[2] * Q33), r1ptr, 3);
+        dFabsVector3r4(Q3x, R3x);
+
+        tmp = A[2] + dCalcVectorDot3(B, Q3x);
+
+        TST(pp[2], tmp, r1ptr, 3);
 
         // separating axis = v1,v2,v3
         r2ptr = R2;
@@ -441,19 +476,24 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     expr1_val = (expr1); /* Avoid duplicate evaluation of expr1 */ \
     expr2_val = (expr2); /* Avoid duplicate evaluation of expr1 */ \
     s2 = dFabs(expr1_val) - (expr2_val); \
-    if (s2 > 0) return 0; \
+    if (s2 > 0) \
+        return 0; \
     l = (n2)*(n2) + (n3)*(n3); \
-    if (l > dEpsilon) { \
-    l = dReal(1.0) / dSqrt(l);\
-    s2 *= l; \
-    if (s2 * fudge_factor > s) { \
-    s = s2; \
-    normalR = 0; \
-    normalC[0] = 0; normalC[1] = (n2) * l; normalC[2] = (n3) * l; \
-    invert_normal = ((expr1_val) < 0); \
-    code = (cc); \
-    if (flags & CONTACTS_UNIMPORTANT) break; \
-    } \
+    if (l > dEpsilon) \
+    { \
+        l = dRecipSqrt(l);\
+        s2 *= l; \
+        if (s2 * fudge_factor > s) \
+            { \
+            s = s2; \
+            normalR = 0; \
+            normalC[0] = 0; \
+            normalC[1] = (n2) * l; \
+            normalC[2] = (n3) * l; \
+            invert_normal = ((expr1_val) < 0); \
+            code = (cc); \
+            if (flags & CONTACTS_UNIMPORTANT) break; \
+            } \
     }
 
         // We only need to check 3 edges per box 
@@ -469,19 +509,24 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     expr1_val = (expr1); /* Avoid duplicate evaluation of expr1 */ \
     expr2_val = (expr2); /* Avoid duplicate evaluation of expr1 */ \
     s2 = dFabs(expr1_val) - (expr2_val); \
-    if (s2 > 0) return 0; \
+    if (s2 > 0) \
+        return 0; \
     l = (n1)*(n1) + (n3)*(n3); \
-    if (l > dEpsilon) { \
-    l = dReal(1.0) / dSqrt(l);\
-    s2 *= l; \
-    if (s2 * fudge_factor > s) { \
-    s = s2; \
-    normalR = 0; \
-    normalC[0] = (n1) * l; normalC[1] = 0; normalC[2] = (n3) * l; \
-    invert_normal = ((expr1_val) < 0); \
-    code = (cc); \
-    if (flags & CONTACTS_UNIMPORTANT) break; \
-    } \
+    if (l > dEpsilon) \
+    { \
+        l = dRecipSqrt(l); \
+        s2 *= l; \
+        if (s2 * fudge_factor > s) \
+        { \
+            s = s2; \
+            normalR = 0; \
+            normalC[0] = (n1) * l; \
+            normalC[1] = 0;  \
+            normalC[2] = (n3) * l; \
+            invert_normal = ((expr1_val) < 0); \
+            code = (cc); \
+            if (flags & CONTACTS_UNIMPORTANT) break; \
+        } \
     }
 
         // separating axis = u2 x (v1,v2,v3)
@@ -494,19 +539,24 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     expr1_val = (expr1); /* Avoid duplicate evaluation of expr1 */ \
     expr2_val = (expr2); /* Avoid duplicate evaluation of expr1 */ \
     s2 = dFabs(expr1_val) - (expr2_val); \
-    if (s2 > 0) return 0; \
+    if (s2 > 0) \
+        return 0; \
     l = (n1)*(n1) + (n2)*(n2); \
-    if (l > dEpsilon) { \
-    l = dReal(1.0) / dSqrt(l);\
-    s2 *= l; \
-    if (s2 * fudge_factor > s) { \
-    s = s2; \
-    normalR = 0; \
-    normalC[0] = (n1) * l; normalC[1] = (n2) * l; normalC[2] = 0; \
-    invert_normal = ((expr1_val) < 0); \
-    code = (cc); \
-    if (flags & CONTACTS_UNIMPORTANT) break; \
-    } \
+    if (l > dEpsilon) \
+    { \
+        l = dRecipSqrt(l);\
+        s2 *= l; \
+        if (s2 * fudge_factor > s) \
+        { \
+            s = s2; \
+            normalR = 0; \
+            normalC[0] = (n1) * l; \
+            normalC[1] = (n2) * l; \
+            normalC[2] = 0; \
+            invert_normal = ((expr1_val) < 0); \
+            code = (cc); \
+            if (flags & CONTACTS_UNIMPORTANT) break; \
+        } \
     }
 
         // separating axis = u3 x (v1,v2,v3)
@@ -532,9 +582,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
     }
 
     if (invert_normal) {
-        normal[0] = -normal[0];
-        normal[1] = -normal[1];
-        normal[2] = -normal[2];
+        dNegateVector3r4(normal);
     }
     *depth = -s;
 
@@ -546,8 +594,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         // find a point pa on the intersecting edge of box 1
         dVector3 pa;
         // Copy p1 into pa
-        for (i = 0; i < 3; i++)
-            pa[i] = p1[i]; // why no memcpy?
+        dCopyVector3r4(pa, p1);
         // Get world position of p2 into pa
         for (j = 0; j < 3; j++)
         {
@@ -566,8 +613,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         // find a point pb on the intersecting edge of box 2
         dVector3 pb;
         // Copy p2 into pb
-        for (i=0; i < 3; i++)
-            pb[i] = p2[i]; // why no memcpy?
+        dCopyVector3r4(pb, p2);
         // Get world position of p2 into pb
         for (j = 0; j < 3; j++)
         {
@@ -599,13 +645,10 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         // Get closest points between edges (one at each)
         dLineClosestApproach(pa, ua, pb, ub, &alpha, &beta);    
 
-        for (i = 0; i < 3; i++)
-            pa[i] += ua[i] * alpha;
-        for (i = 0; i < 3; i++)
-            pb[i] += ub[i] * beta;
-        // Set the contact point as halfway between the 2 closest points
-        for (i = 0; i < 3; i++)
-            contact[0].pos[i] = REAL(0.5)*(pa[i] + pb[i]);
+        dAddScaledVector3r4(pb, ub, beta);
+        dAddScaledVector3r4(pa, ua, alpha);
+        dAddVector3r4(pa, pb);
+        dCopyScaledVector3r4(contact[0].pos, pa, REAL(0.5));
         contact[0].depth = *depth;
     
         return 1;
@@ -634,9 +677,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         pb = p2; // Center (location) of 'b'
         Sa = A;  // Side Lenght of 'a'
         Sb = B;  // Side Lenght of 'b'
-        normal2[0] = normal[0];
-        normal2[1] = normal[1];
-        normal2[2] = normal[2];
+        dCopyVector3r4(normal2, normal);
         codeN = code - 1;
     }
     else
@@ -647,16 +688,12 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         pb = p1; // Center (location) of 'b'
         Sa = B;  // Side Lenght of 'a'
         Sb = A;  // Side Lenght of 'b'
-        normal2[0] = -normal[0];
-        normal2[1] = -normal[1];
-        normal2[2] = -normal[2];
+        dCopyNegatedVector3r4(normal2, normal);
         codeN = code - 4;
     }
     // Rotate normal2 in incident box opposite direction
     dMultiply1_331 (nr, Rb, normal2);
-    anr[0] = dFabs (nr[0]);
-    anr[1] = dFabs (nr[1]);
-    anr[2] = dFabs (nr[2]);
+    dFabsVector3r4(anr, nr);
 
     // find the largest compontent of anr: this corresponds to the normal
     // for the incident face. the other axis numbers of the incident face
@@ -811,8 +848,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         for (j=0; j < cnum; j++)
         {
             dContactGeom *con = CONTACT(contact, skip * j);
-            for (i=0; i < 3; i++)
-                con->pos[i] = point[j * 3 + i] + pa[i];
+            dAddVectors3r4(con->pos, &point[j * 3], pa);
             con->depth = dep[j];
         }
     }
@@ -838,8 +874,7 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
         for (j = 0; j < maxc; j++)
         {
             dContactGeom *con = CONTACT(contact,skip * j);
-            for (i=0; i < 3; i++)
-                con->pos[i] = point[iret[j] * 3 + i] + pa[i];
+            dAddVectors3r4(con->pos, &point[iret[j] * 3], pa);
             con->depth = dep[iret[j]];
         }
         cnum = maxc;
@@ -866,9 +901,7 @@ int dCollideBoxBox (dxGeom *o1, dxGeom *o2, int flags,
     for (int i=0; i<num; i++)
     {
         dContactGeom *currContact = CONTACT(contact,i * skip);
-        currContact->normal[0] = -normal[0];
-        currContact->normal[1] = -normal[1];
-        currContact->normal[2] = -normal[2];
+        dCopyNegatedVector3r4(currContact->normal, normal);
         currContact->g1 = o1;
         currContact->g2 = o2;
         currContact->side1 = -1;
@@ -877,16 +910,17 @@ int dCollideBoxBox (dxGeom *o1, dxGeom *o2, int flags,
     return num;
 }
 
-int dCollideBoxPlane (dxGeom *o1, dxGeom *o2,
-                      int flags, dContactGeom *contact, int skip)
+int dCollideBoxPlane(dxGeom *o1, dxGeom *o2,
+    int flags, dContactGeom *contact, int skip)
 {
-    dIASSERT (skip >= (int)sizeof(dContactGeom));
-    dIASSERT (o1->type == dBoxClass);
-    dIASSERT (o2->type == dPlaneClass);
-    dIASSERT ((flags & NUMC_MASK) >= 1);
+    dIASSERT(skip >= (int)sizeof(dContactGeom));
+    dIASSERT(o1->type == dBoxClass);
+    dIASSERT(o2->type == dPlaneClass);
+    dIASSERT((flags & NUMC_MASK) >= 1);
 
-    dxBox *box = (dxBox*) o1;
-    dxPlane *plane = (dxPlane*) o2;
+    dVector3 Q, A, B;
+    dxBox *box = (dxBox*)o1;
+    dxPlane *plane = (dxPlane*)o2;
 
     contact->g1 = o1;
     contact->g2 = o2;
@@ -900,19 +934,16 @@ int dCollideBoxPlane (dxGeom *o1, dxGeom *o2,
     const dReal *n = plane->p;		// normal vector
 
     // project sides lengths along normal vector, get absolute values
-    dReal Q1 = dCalcVectorDot3_14(n, R);
-    dReal Q2 = dCalcVectorDot3_14(n, R+1);
-    dReal Q3 = dCalcVectorDot3_14(n, R+2);
-    dReal A1 = box->halfside[0] * Q1;
-    dReal A2 = box->halfside[1] * Q2;
-    dReal A3 = box->halfside[2] * Q3;
-    dReal B1 = dFabs(A1);
-    dReal B2 = dFabs(A2);
-    dReal B3 = dFabs(A3);
+    Q[0] = dCalcVectorDot3_14(n, R);
+    Q[1] = dCalcVectorDot3_14(n, R + 1);
+    Q[2] = dCalcVectorDot3_14(n, R + 2);
+    dMultVectors3r4(A, box->halfside, Q);
+    dFabsVector3(B, A);
 
     // early exit test
-    dReal depth = plane->p[3] + (B1 + B2 + B3) - dCalcVectorDot3(n,o1->final_posr->pos);
-    if (depth < 0) return 0;
+    dReal depth = plane->p[3] + (B[0] + B[1] + B[2]) - dCalcVectorDot3(n, o1->final_posr->pos);
+    if (depth < 0)
+        return 0;
 
     // find number of contacts requested
     int maxc = flags & NUMC_MASK;
@@ -921,24 +952,22 @@ int dCollideBoxPlane (dxGeom *o1, dxGeom *o2,
 
     // find deepest point
     dVector3 p;
-    p[0] = o1->final_posr->pos[0];
-    p[1] = o1->final_posr->pos[1];
-    p[2] = o1->final_posr->pos[2];
+    dCopyVector3r4(p, o1->final_posr->pos);
+
 #define FOO(i,op) \
     p[0] op box->halfside[i] * R[0+i]; \
     p[1] op box->halfside[i] * R[4+i]; \
     p[2] op box->halfside[i] * R[8+i];
-#define BAR(i,iinc) if (A ## iinc > 0) { FOO(i,-=) } else { FOO(i,+=) }
-    BAR(0,1);
-    BAR(1,2);
-    BAR(2,3);
+
+#define BAR(i) if (A[i] > 0) { FOO(i,-=) } else { FOO(i,+=) }
+    BAR(0);
+    BAR(1);
+    BAR(2);
 #undef FOO
 #undef BAR
 
     // the deepest point is the first contact point
-    contact->pos[0] = p[0];
-    contact->pos[1] = p[1];
-    contact->pos[2] = p[2];
+    dCopyVector3r4(contact->pos, p);
     contact->depth = depth;
     ret = 1;		// ret is number of contact points found so far
     if (maxc == 1) goto done;
@@ -951,35 +980,46 @@ int dCollideBoxPlane (dxGeom *o1, dxGeom *o2,
     CONTACT(contact,i*skip)->pos[1] = p[1] op box->halfside[j] * R[4+j]; \
     CONTACT(contact,i*skip)->pos[2] = p[2] op box->halfside[j] * R[8+j];
 #define BAR(ctact,side,sideinc) \
-    if (depth - B ## sideinc < 0) goto done; \
-    if (A ## sideinc > 0) { FOO(ctact,side,+); } else { FOO(ctact,side,-); } \
-    CONTACT(contact,ctact*skip)->depth = depth - B ## sideinc; \
+    if (depth - B[sideinc] < 0) goto done; \
+    if (A[sideinc] > 0) { FOO(ctact,side,+); } else { FOO(ctact,side,-); } \
+    CONTACT(contact,ctact*skip)->depth = depth - B[sideinc]; \
     ret++;
 
-    if (B1 < B2) {
-        if (B3 < B1) goto use_side_3; else {
-            BAR(1,0,1);	// use side 1
+    if (B[0] < B[1])
+    {
+        if (B[2] < B[0])
+            goto use_side_3;
+        else
+        {
+            BAR(1,0,0);	// use side 1
             if (maxc == 2) goto done;
-            if (B2 < B3) goto contact2_2; else goto contact2_3;
+            if (B[1] < B[2])
+                goto contact2_2;
+            else goto contact2_3;
         }
     }
     else {
-        if (B3 < B2) {
+        if (B[2] < B[1]) {
 use_side_3:	// use side 3
-            BAR(1,2,3);
-            if (maxc == 2) goto done;
-            if (B1 < B2) goto contact2_1; else goto contact2_2;
+            BAR(1,2,2);
+            if (maxc == 2)
+                goto done;
+            if (B[0] < B[1])
+                goto contact2_1;
+            else goto contact2_2;
         }
         else {
-            BAR(1,1,2);	// use side 2
+            BAR(1,1,1);	// use side 2
             if (maxc == 2) goto done;
-            if (B1 < B3) goto contact2_1; else goto contact2_3;
+            if (B[0] < B[2])
+                goto contact2_1;
+            else goto contact2_3;
         }
     }
 
-contact2_1: BAR(2,0,1); goto done;
-contact2_2: BAR(2,1,2); goto done;
-contact2_3: BAR(2,2,3); goto done;
+contact2_1: BAR(2,0,0); goto done;
+contact2_2: BAR(2,1,1); goto done;
+contact2_3: BAR(2,2,2); goto done;
 #undef FOO
 #undef BAR
 
@@ -992,10 +1032,10 @@ done:
         dReal d4 = CONTACT(contact, skip)->depth + CONTACT(contact,2 * skip)->depth - depth;  // depth is the depth for first contact
         if (d4 > 0)
         {
-            CONTACT(contact,3 * skip)->pos[0] = CONTACT(contact, skip)->pos[0] + CONTACT(contact,2 * skip)->pos[0] - p[0]; // p is the position of first contact
-            CONTACT(contact,3 * skip)->pos[1] = CONTACT(contact, skip)->pos[1] + CONTACT(contact,2 * skip)->pos[1] - p[1];
-            CONTACT(contact,3 * skip)->pos[2] = CONTACT(contact, skip)->pos[2] + CONTACT(contact,2 * skip)->pos[2] - p[2];
-            CONTACT(contact,3 * skip)->depth  = d4;
+            dContactGeom *target = CONTACT(contact, 3 * skip);
+            dAddVectors3r4(target->pos, CONTACT(contact, skip)->pos, CONTACT(contact, 2 * skip)->pos);
+            dSubtractVector3r4(target->pos, p);
+            target->depth  = d4;
             ret++;
         }
     }
@@ -1008,9 +1048,7 @@ done:
         currContact->side1 = -1;
         currContact->side2 = -1;
 
-        currContact->normal[0] = n[0];
-        currContact->normal[1] = n[1];
-        currContact->normal[2] = n[2];
+        dCopyVector3r4(currContact->normal, n);
     }
     return ret;
 }

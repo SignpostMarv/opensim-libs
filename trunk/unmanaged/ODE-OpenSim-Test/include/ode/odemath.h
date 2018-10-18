@@ -64,6 +64,62 @@ ODE_PURE_INLINE void dAddVector3(dReal *res, const dReal *a)
 #endif
 
 #if defined(__AVX__)
+ODE_PURE_INLINE void dAddVector3r4(dReal *res, const dReal *a)
+{
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(res);
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dAddVector3r4(dReal *res, const dReal *a)
+{
+    res[0] += a[0];
+    res[1] += a[1];
+    res[2] += a[2];
+}
+#endif
+
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dZeroVector3(dReal *res)
+{
+    dReal restmp[4];
+    __m128 ma;
+    ma = _mm_setzero_ps();
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dZeroVector3(dReal *res)
+{
+    res[0] = 0;
+    res[1] = 0;
+    res[2] = 0;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dZeroVector3r4(dReal *res)
+{
+    __m128 ma;
+    ma = _mm_setzero_ps();
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dZeroVector3r4(dReal *res)
+{
+    res[0] = 0;
+    res[1] = 0;
+    res[2] = 0;
+}
+#endif
+
+#if defined(__AVX__)
 ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 {
     dReal restmp[4];
@@ -91,6 +147,57 @@ ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 #endif
 
 #if defined(__AVX__)
+ODE_PURE_INLINE void dAddVectors3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dAddVectors3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    const dReal res_0 = a[0] + b[0];
+    const dReal res_1 = a[1] + b[1];
+    const dReal res_2 = a[2] + b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dSubtractVector3(dReal *res, const dReal *a)
+{
+    dReal restmp[4];
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(res);
+    mb = _mm_loadu_ps(a);
+    ma = _mm_sub_ps(ma, mb);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a)
+{
+    const dReal res_0 = res[0] - a[0];
+    const dReal res_1 = res[1] - a[1];
+    const dReal res_2 = res[2] - a[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
+}
+#endif
+
+
+#if defined(__AVX__)
 ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *b)
 {
     dReal restmp[4];
@@ -107,15 +214,63 @@ ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *
 #else
 ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *b)
 {
-  const dReal res_0 = a[0] - b[0];
-  const dReal res_1 = a[1] - b[1];
-  const dReal res_2 = a[2] - b[2];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0;
-  res[1] = res_1;
-  res[2] = res_2;
+    const dReal res_0 = a[0] - b[0];
+    const dReal res_1 = a[1] - b[1];
+    const dReal res_2 = a[2] - b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
 }
 #endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dSubtractVector3r4(dReal *res, const dReal *a)
+{
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(res);
+    mb = _mm_loadu_ps(a);
+    ma = _mm_sub_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dSubtractVector3r4(dReal *res, const dReal *a)
+{
+    const dReal res_0 = res[0] - a[0];
+    const dReal res_1 = res[1] - a[1];
+    const dReal res_2 = res[2] - a[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
+}
+#endif
+
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dSubtractVectors3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    ma = _mm_sub_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dSubtractVectors3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    const dReal res_0 = a[0] - b[0];
+    const dReal res_1 = a[1] - b[1];
+    const dReal res_2 = a[2] - b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
+}
+#endif
+
 #if defined(__AVX__)
 ODE_PURE_INLINE void dSubNoAliaseVectors3(dReal *res, const dReal *a, const dReal *b)
 {
@@ -150,6 +305,29 @@ ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal s
 }
 #else
 ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal scale)
+{
+    res[0] += scale * a[0];
+    res[1] += scale * a[1];
+    res[2] += scale * a[2];
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dAddScaledVector3r4(dReal *res, const dReal *a, const dReal scale)
+{
+    __m128 ma, mb, mc;
+
+    ma = _mm_loadu_ps(a);
+    mc = _mm_set1_ps(scale);
+    mb = _mm_loadu_ps(res);
+
+    ma = _mm_mul_ps(ma, mc);
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dAddScaledVector3r4(dReal *res, const dReal *a, const dReal scale)
 {
     res[0] += scale * a[0];
     res[1] += scale * a[1];
@@ -206,11 +384,93 @@ ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal 
 #else
 ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
 {
-  const dReal res_0 = a_scale * a[0] + b_scale * b[0];
-  const dReal res_1 = a_scale * a[1] + b_scale * b[1];
-  const dReal res_2 = a_scale * a[2] + b_scale * b[2];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    const dReal res_0 = a_scale * a[0] + b_scale * b[0];
+    const dReal res_1 = a_scale * a[1] + b_scale * b[1];
+    const dReal res_2 = a_scale * a[2] + b_scale * b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+#if defined(__AVX__)
+ODE_PURE_INLINE void dAddScaledVectors3r4(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
+{
+    __m128 ma, mb, mc;
+
+    ma = _mm_loadu_ps(a);
+    mc = _mm_set1_ps(a_scale);
+    ma = _mm_mul_ps(ma, mc);
+
+    mb = _mm_loadu_ps(b);
+    mc = _mm_set1_ps(b_scale);
+    mb = _mm_mul_ps(mb, mc);
+
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dAddScaledVectors3r4(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
+{
+    const dReal res_0 = a_scale * a[0] + b_scale * b[0];
+    const dReal res_1 = a_scale * a[1] + b_scale * b[1];
+    const dReal res_2 = a_scale * a[2] + b_scale * b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal *b, dReal b_scale)
+{
+    dReal restmp[4];
+    __m128 ma, mb, mc;
+
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    mc = _mm_set1_ps(b_scale);
+    mb = _mm_mul_ps(mb, mc);
+
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal *b, dReal b_scale)
+{
+    const dReal res_0 = a[0] + b_scale * b[0];
+    const dReal res_1 = a[1] + b_scale * b[1];
+    const dReal res_2 = a[2] + b_scale * b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dAddScaledVector3r4(dReal *res, const dReal *a, const dReal *b, dReal b_scale)
+{
+    __m128 ma, mb, mc;
+
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    mc = _mm_set1_ps(b_scale);
+    mb = _mm_mul_ps(mb, mc);
+
+    ma = _mm_add_ps(ma, mb);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dAddScaledVector3r4(dReal *res, const dReal *a, const dReal *b, dReal b_scale)
+{
+    const dReal res_0 = a[0] + b_scale * b[0];
+    const dReal res_1 = a[1] + b_scale * b[1];
+    const dReal res_2 = a[2] + b_scale * b[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
 
@@ -231,9 +491,51 @@ ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 #else
 ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 {
-    res[0] *= nScale;
-    res[1] *= nScale;
-    res[2] *= nScale;
+    const dReal res_0 = res[0] * nScale;
+    const dReal res_1 = res[1] * nScale;
+    const dReal res_2 = res[2] * nScale;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dScaleVector3r4(dReal *res, dReal nScale)
+{
+    __m128 ma, mc;
+    ma = _mm_loadu_ps(res);
+    mc = _mm_set1_ps(nScale);
+    ma = _mm_mul_ps(ma, mc);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dScaleVector3r4(dReal *res, dReal nScale)
+{
+    const dReal res_0 = res[0] * nScale;
+    const dReal res_1 = res[1] * nScale;
+    const dReal res_2 = res[2] * nScale;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dScaleVector3r4(dReal *res, const dReal *a, const dReal nScale)
+{
+    __m128 ma, mc;
+    ma = _mm_loadu_ps(a);
+    mc = _mm_set1_ps(nScale);
+    ma = _mm_mul_ps(ma, mc);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dScaleVector3r4(dReal *res, const dReal *a, const dReal nScale)
+{
+    const dReal res_0 = a[0] * nScale;
+    const dReal res_1 = a[1] * nScale;
+    const dReal res_2 = a[2] * nScale;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
 
@@ -250,10 +552,11 @@ ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 #else
 ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 {
-    res[0] *= nScale;
-    res[1] *= nScale;
-    res[2] *= nScale;
-    res[3] *= nScale;
+    const dReal res_0 = res[0] * nScale;
+    const dReal res_1 = res[1] * nScale;
+    const dReal res_2 = res[2] * nScale;
+    const dReal res_3 = res[3] * nScale;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2, res[3] = res_3;
 }
 #endif
 
@@ -272,16 +575,83 @@ ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 {
-  const dReal res_0 = a[0];
-  const dReal res_1 = a[1];
-  const dReal res_2 = a[2];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    const dReal res_0 = a[0];
+    const dReal res_1 = a[1];
+    const dReal res_2 = a[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
 
 #if defined(__AVX__)
-ODE_PURE_INLINE void dCopyFabsVector3(dReal *res, const dReal *a)
+ODE_PURE_INLINE void dCopyVector3r4(dReal *res, const dReal *a)
+{
+    __m128 ma;
+
+    ma = _mm_loadu_ps(a);
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dCopyVector3r4(dReal *res, const dReal *a)
+{
+    const dReal res_0 = a[0];
+    const dReal res_1 = a[1];
+    const dReal res_2 = a[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dFabsVector3(dReal *res)
+{
+    dReal restmp[4];
+    __m128 ma, sign;
+
+    ma = _mm_loadu_ps(res);
+    sign = _mm_set1_ps(-0.0f);
+    ma = _mm_andnot_ps(sign, ma);
+
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dFabsVector3(dReal *res)
+{
+    const dReal res_0 = dFabs(res[0]);
+    const dReal res_1 = dFabs(res[1]);
+    const dReal res_2 = dFabs(res[2]);
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dFabsVector3r4(dReal *res)
+{
+    __m128 ma, sign;
+
+    ma = _mm_loadu_ps(res);
+    sign = _mm_set1_ps(-0.0f);
+    ma = _mm_andnot_ps(sign, ma);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dFabsVector3r4(dReal *res)
+{
+    const dReal res_0 = dFabs(res[0]);
+    const dReal res_1 = dFabs(res[1]);
+    const dReal res_2 = dFabs(res[2]);
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dFabsVector3(dReal *res, const dReal *a)
 {
     dReal restmp[4];
     __m128 ma, sign;
@@ -296,7 +666,29 @@ ODE_PURE_INLINE void dCopyFabsVector3(dReal *res, const dReal *a)
     res[2] = restmp[2];
 }
 #else
-ODE_PURE_INLINE void dCopyFabsVector3(dReal *res, const dReal *a)
+ODE_PURE_INLINE void dFabsVector3(dReal *res, const dReal *a)
+{
+    const dReal res_0 = dFabs(a[0]);
+    const dReal res_1 = dFabs(a[1]);
+    const dReal res_2 = dFabs(a[2]);
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dFabsVector3r4(dReal *res, const dReal *a)
+{
+    __m128 ma, sign;
+
+    ma = _mm_loadu_ps(a);
+    sign = _mm_set1_ps(-0.0f);
+    ma = _mm_andnot_ps(sign, ma);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dFabsVector3r4(dReal *res, const dReal *a)
 {
     const dReal res_0 = dFabs(a[0]);
     const dReal res_1 = dFabs(a[1]);
@@ -323,11 +715,32 @@ ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale
 #else
 ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale)
 {
-  const dReal res_0 = a[0] * nScale;
-  const dReal res_1 = a[1] * nScale;
-  const dReal res_2 = a[2] * nScale;
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    const dReal res_0 = a[0] * nScale;
+    const dReal res_1 = a[1] * nScale;
+    const dReal res_2 = a[2] * nScale;
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dCopyScaledVector3r4(dReal *res, const dReal *a, dReal nScale)
+{
+    __m128 ma, mc;
+    ma = _mm_loadu_ps(a);
+    mc = _mm_set1_ps(nScale);
+    ma = _mm_mul_ps(ma, mc);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dCopyScaledVector3r4(dReal *res, const dReal *a, dReal nScale)
+{
+    const dReal res_0 = a[0] * nScale;
+    const dReal res_1 = a[1] * nScale;
+    const dReal res_2 = a[2] * nScale;
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
 
@@ -348,6 +761,28 @@ ODE_PURE_INLINE void  dCopyNegatedVector3(dReal *res, const dReal *a)
 }
 #else
 ODE_PURE_INLINE void dCopyNegatedVector3(dReal *res, const dReal *a)
+{
+    const dReal res_0 = -a[0];
+    const dReal res_1 = -a[1];
+    const dReal res_2 = -a[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void  dCopyNegatedVector3r4(dReal *res, const dReal *a)
+{
+    __m128 ma, mc;
+
+    ma = _mm_loadu_ps(a);
+    mc = _mm_setzero_ps();
+    ma = _mm_sub_ps(mc, ma);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dCopyNegatedVector3r4(dReal *res, const dReal *a)
 {
     const dReal res_0 = -a[0];
     const dReal res_1 = -a[1];
@@ -383,6 +818,28 @@ ODE_PURE_INLINE void dNegateVector3(dReal *res)
 }
 #endif
 
+#if defined(__AVX__)
+ODE_PURE_INLINE void  dNegateVector3r4(dReal *res)
+{
+    __m128 ma, mc;
+
+    ma = _mm_loadu_ps(res);
+    mc = _mm_setzero_ps();
+    ma = _mm_sub_ps(mc, ma);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dNegateVector3r4(dReal *res)
+{
+    const dReal res_0 = -res[0];
+    const dReal res_1 = -res[1];
+    const dReal res_2 = -res[2];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
 
 #if defined(__AVX__)
 ODE_PURE_INLINE void dCopyVector4(dReal *res, const dReal *a)
@@ -400,6 +857,41 @@ ODE_PURE_INLINE void dCopyVector4(dReal *res, const dReal *a)
   const dReal res_3 = a[3];
   /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
   res[0] = res_0; res[1] = res_1; res[2] = res_2; res[3] = res_3;
+}
+#endif
+
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dSwapVectors3(dReal *a, dReal *b)
+{
+    dReal restmpa[4];
+    dReal restmpb[4];
+    __m128 ma,mb;
+
+    ma = _mm_loadu_ps(a);
+    ma = _mm_loadu_ps(b);
+    _mm_storeu_ps(restmpb, ma);
+    b[0] = restmpb[0];
+    b[1] = restmpb[1];
+    b[2] = restmpb[2];
+    _mm_storeu_ps(restmpa, mb);
+    a[0] = restmpa[0];
+    a[1] = restmpa[1];
+    a[2] = restmpa[2];
+}
+#else
+ODE_PURE_INLINE void dSwapVectors3(dReal *a, dReal *b)
+{
+    const dReal rb_0 = a[0];
+    const dReal rb_1 = a[1];
+    const dReal rb_2 = a[2];
+    const dReal ra_0 = b[0];
+    const dReal ra_1 = b[1];
+    const dReal ra_2 = b[2];
+
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    a[0] = ra_0; a[1] = ra_1; a[2] = ra_2;
+    b[0] = rb_0; b[1] = rb_1; b[2] = rb_2;
 }
 #endif
 
@@ -538,17 +1030,18 @@ ODE_PURE_INLINE dReal dCalcPointDepth3(const dReal *test_p, const dReal *plane_p
 }
 #endif
 #if defined(__AVX__)
-ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3& point, const dVector4& plane)
+ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3 point, const dVector4 plane)
 {
-    __m128 mp, mn;
+    __m128 mp, mn, mc;
     mp = _mm_loadu_ps(plane);
     mn = _mm_loadu_ps(point);
-
-    mp = _mm_dp_ps(mp, mn, 0x71);
-    return (dReal)_mm_cvtss_f32(mp) + plane[3];
+    mc = _mm_set1_ps(1.0);
+    mn = _mm_blend_ps(mn, mc, 8);
+    mp = _mm_dp_ps(mp, mn, 0xf1);
+    return (dReal)_mm_cvtss_f32(mp);
 }
 #else
-ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3& point, const dVector4& plane)
+ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3 point, const dVector4 plane)
 {
     return (plane[0] * point[0] + plane[1] * point[1] + plane[2] * point[2] + plane[3]);
 }
@@ -614,7 +1107,7 @@ ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *
 
     t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
     t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
-    
+
     t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
 
     t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
@@ -630,15 +1123,48 @@ ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *
 #else
 ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
-  const dReal res_0 = a[1]*b[2] - a[2]*b[1];
-  const dReal res_1 = a[2]*b[0] - a[0]*b[2];
-  const dReal res_2 = a[0]*b[1] - a[1]*b[0];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0;
-  res[1] = res_1;
-  res[2] = res_2;
+    const dReal res_0 = a[1] * b[2] - a[2] * b[1];
+    const dReal res_1 = a[2] * b[0] - a[0] * b[2];
+    const dReal res_2 = a[0] * b[1] - a[1] * b[0];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
 }
 #endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb, t1, t2, t3, t4;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+
+    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
+
+    t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
+
+    t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+    t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+
+    t4 = _mm_mul_ps(t1, t2);
+    ma = _mm_sub_ps(t3, t4);
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    const dReal res_0 = a[1] * b[2] - a[2] * b[1];
+    const dReal res_1 = a[2] * b[0] - a[0] * b[2];
+    const dReal res_2 = a[0] * b[1] - a[1] * b[0];
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0;
+    res[1] = res_1;
+    res[2] = res_2;
+}
+#endif
+
 /*
  * cross product, set res = a x b. _dCalcVectorCross3 means that elements of `res', `a'
  * and `b' are spaced step_res, step_a and step_b indexes apart respectively.
@@ -695,9 +1221,43 @@ ODE_PURE_INLINE void dAddVectorCross3(dReal *res, const dReal *a, const dReal *b
 #else
 ODE_PURE_INLINE void dAddVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
-  dReal tmp[3];
-  dCalcVectorCross3(tmp, a, b);
-  dAddVectors3(res, res, tmp);
+    dReal tmp[3];
+    dCalcVectorCross3(tmp, a, b);
+    dAddVector3(res, tmp);
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dAddVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb, mc, t1, t2, t3;
+
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+
+    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
+
+    t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
+
+    t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+    t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+
+    mc = _mm_loadu_ps(res);
+
+    mb = _mm_mul_ps(t1, t2);
+    ma = _mm_sub_ps(t3, mb);
+
+    ma = _mm_add_ps(ma, mc);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dAddVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    dReal tmp[3];
+    dCalcVectorCross3(tmp, a, b);
+    dAddVector3(res, tmp);
 }
 #endif
 
@@ -733,9 +1293,43 @@ ODE_PURE_INLINE void dSubtractVectorCross3(dReal *res, const dReal *a, const dRe
 #else
 ODE_PURE_INLINE void dSubtractVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
-  dReal tmp[3];
-  dCalcVectorCross3(tmp, a, b);
-  dSubtractVectors3(res, res, tmp);
+    dReal tmp[3];
+    dCalcVectorCross3(tmp, a, b);
+    dSubtractVectors3(res, res, tmp);
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dSubtractVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb, mc, t1, t2, t3;
+
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+
+    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
+
+    t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
+
+    t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+    t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+
+    mc = _mm_loadu_ps(res);
+
+    mb = _mm_mul_ps(t1, t2);
+    ma = _mm_sub_ps(t3, mb);
+
+    ma = _mm_sub_ps(mc, ma);
+
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dSubtractVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    dReal tmp[3];
+    dCalcVectorCross3(tmp, a, b);
+    dSubtractVectors3(res, res, tmp);
 }
 #endif
 
@@ -841,7 +1435,36 @@ ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *
     dReal tmp[3];
     tmp[0] = a[0] + (b[0] - a[0]) * t;
     tmp[1] = a[1] + (b[1] - a[1]) * t;
-    tmp[0] = a[2] + (b[2] - a[2]) * t;
+    tmp[2] = a[2] + (b[2] - a[2]) * t;
+    res[0] = tmp[0];
+    res[1] = tmp[1];
+    res[2] = tmp[2];
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dCalcLerpVectors3r4(dReal *res, const dReal *a, const dReal *b, const dReal t)
+{
+    __m128 ma, mb, mc, t1, t2;
+
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(b);
+    mc = _mm_set1_ps(t);
+
+    t1 = _mm_sub_ps(mb, ma);
+    t2 = _mm_mul_ps(t1, mc);
+    mb = _mm_add_ps(ma, t2);
+
+    _mm_storeu_ps(res, mb);
+}
+#else
+ODE_PURE_INLINE void dCalcLerpVectors3r4(dReal *res, const dReal *a, const dReal *b, const dReal t)
+{
+    // res = a + ( b - a ) * t;
+    dReal tmp[3];
+    tmp[0] = a[0] + (b[0] - a[0]) * t;
+    tmp[1] = a[1] + (b[1] - a[1]) * t;
+    tmp[2] = a[2] + (b[2] - a[2]) * t;
     res[0] = tmp[0];
     res[1] = tmp[1];
     res[2] = tmp[2];
@@ -853,9 +1476,93 @@ ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *
  */
 
 #if defined(__AVX__)
+ODE_PURE_INLINE void dMultVectors3(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb;
+    dReal restmp[4];
+    mb = _mm_loadu_ps(a);
+    ma = _mm_loadu_ps(b);
+    ma = _mm_mul_ps(ma, mb);
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dMultVectors3(dReal *res, const dReal *a, const dReal *b)
+{
+    const dReal res_0 = a[0] * b[0];
+    const dReal res_1 = a[1] * b[1];
+    const dReal res_2 = a[2] * b[2];;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dMultVectors3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    __m128 ma, mb;
+    mb = _mm_loadu_ps(a);
+    ma = _mm_loadu_ps(b);
+    ma = _mm_mul_ps(ma, mb);
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dMultVectors3r4(dReal *res, const dReal *a, const dReal *b)
+{
+    const dReal res_0 = a[0] * b[0];
+    const dReal res_1 = a[1] * b[1];
+    const dReal res_2 = a[2] * b[2];;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dMultVector3(dReal *res, const dReal *a)
+{
+    __m128 ma, mb;
+    dReal restmp[4];
+    mb = _mm_loadu_ps(res);
+    ma = _mm_loadu_ps(a);
+    ma = _mm_mul_ps(ma, mb);
+    _mm_storeu_ps(restmp, ma);
+    res[0] = restmp[0];
+    res[1] = restmp[1];
+    res[2] = restmp[2];
+}
+#else
+ODE_PURE_INLINE void dMultVector3(dReal *res, const dReal *a)
+{
+    const dReal res_0 = res[0] * a[0];
+    const dReal res_1 = res[1] * a[1];
+    const dReal res_2 = res[2] * a[2];;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dMultVector3r4(dReal *res, const dReal *a)
+{
+    __m128 ma, mb;
+    mb = _mm_loadu_ps(res);
+    ma = _mm_loadu_ps(a);
+    ma = _mm_mul_ps(ma, mb);
+    _mm_storeu_ps(res, ma);
+}
+#else
+ODE_PURE_INLINE void dMultVector3r4(dReal *res, const dReal *a)
+{
+    const dReal res_0 = res[0] * a[0];
+    const dReal res_1 = res[1] * a[1];
+    const dReal res_2 = res[2] * a[2];;
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+}
+#endif
+
+#if defined(__AVX__)
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
-    __m128 ma, mb,mc;
+    __m128 ma, mb, mc;
     dReal restmp[3];
     mb = _mm_loadu_ps(b);
     ma = _mm_loadu_ps(a);
@@ -875,11 +1582,11 @@ ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
-  const dReal res_0 = dCalcVectorDot3(a, b);
-  const dReal res_1 = dCalcVectorDot3(a + 4, b);
-  const dReal res_2 = dCalcVectorDot3(a + 8, b);
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    const dReal res_0 = dCalcVectorDot3(a, b);
+    const dReal res_1 = dCalcVectorDot3(a + 4, b);
+    const dReal res_2 = dCalcVectorDot3(a + 8, b);
+    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
+    res[0] = res_0; res[1] = res_1; res[2] = res_2;
 }
 #endif
 
@@ -975,7 +1682,37 @@ ODE_PURE_INLINE void dPointRotateTrans(dReal *res, const dReal *r, const dReal *
 ODE_PURE_INLINE void dPointRotateTrans(dReal *res, const dReal *vec, dReal *rot, const dReal *pos)
 {
     dMultiply0_331(res, vec, rot);
-    dAddVectors3(res, res, pos);
+    dAddVector3(res, pos);
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dPointRotateTrans_r4(dReal *res, const dReal *r, const dReal *p, const dReal *t)
+{
+    __m128 ma, mb, mr, mt;
+
+    mb = _mm_loadu_ps(p);
+    ma = _mm_loadu_ps(r);
+    mr = _mm_dp_ps(ma, mb, 0x7f);
+
+    ma = _mm_loadu_ps(r + 4);
+    mt = _mm_dp_ps(ma, mb, 0x7f);
+    mr = _mm_blend_ps(mr, mt, 2);
+
+    ma = _mm_loadu_ps(r + 8);
+    mt = _mm_dp_ps(ma, mb, 0x7f);
+    mr = _mm_blend_ps(mr, mt, 4);
+
+    ma = _mm_loadu_ps(t);
+    mr = _mm_add_ps(mr, ma);
+
+    _mm_storeu_ps(res, mr);
+}
+#else
+ODE_PURE_INLINE void dPointRotateTrans_r4(dReal *res, const dReal *vec, dReal *rot, const dReal *pos)
+{
+    dMultiply0_331(res, vec, rot);
+    dAddVector3(res, pos);
 }
 #endif
 
@@ -990,7 +1727,7 @@ ODE_PURE_INLINE void dtriangleRotateTrans(dVector3 *res, dVector3 *invec, const 
     mpos = _mm_loadu_ps(pos);
     int i;
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; ++i)
     {
         ma = _mm_loadu_ps(invec[i]);
         mr = _mm_dp_ps(mrota, ma, 0x7f);
@@ -999,7 +1736,7 @@ ODE_PURE_INLINE void dtriangleRotateTrans(dVector3 *res, dVector3 *invec, const 
         mb = _mm_dp_ps(mrotc, ma, 0x7f);
         mr = _mm_blend_ps(mr, mb, 4);
 
-        mr = _mm_add_ps(mr,mpos);
+        mr = _mm_add_ps(mr, mpos);
         _mm_storeu_ps(restmp, mr);
         res[i][0] = restmp[0];
         res[i][1] = restmp[1];
@@ -1010,10 +1747,46 @@ ODE_PURE_INLINE void dtriangleRotateTrans(dVector3 *res, dVector3 *invec, const 
 ODE_PURE_INLINE void dtriangleRotateTrans(dVector3 *res, dVector3 *invec, const dReal *rot, const dVector3 pos)
 {
     int i;
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; ++i)
     {
         dMultiply0_331(res[i], rot, invec[i]);
-        dAddVectors3(res[i], res[i], pos);
+        dAddVector3(res[i], pos);
+    }
+}
+#endif
+
+#if defined(__AVX__)
+ODE_PURE_INLINE void dtriangleRotateTrans_r4(dVector3 *res, dVector3 *invec, const dReal *rot, const dVector3 pos)
+{
+    __m128 mrota, mrotb, mrotc, mpos, ma, mb, mr;
+
+    mrota = _mm_loadu_ps(rot);
+    mrotb = _mm_loadu_ps(rot + 4);
+    mrotc = _mm_loadu_ps(rot + 8);
+    mpos = _mm_loadu_ps(pos);
+    int i;
+
+    for (i = 0; i < 3; ++i)
+    {
+        ma = _mm_loadu_ps(invec[i]);
+        mr = _mm_dp_ps(mrota, ma, 0x7f);
+        mb = _mm_dp_ps(mrotb, ma, 0x7f);
+        mr = _mm_blend_ps(mr, mb, 2);
+        mb = _mm_dp_ps(mrotc, ma, 0x7f);
+        mr = _mm_blend_ps(mr, mb, 4);
+
+        mr = _mm_add_ps(mr, mpos);
+        _mm_storeu_ps(res[i], mr);
+    }
+}
+#else
+ODE_PURE_INLINE void dtriangleRotateTrans_r4(dVector3 *res, dVector3 *invec, const dReal *rot, const dVector3 pos)
+{
+    int i;
+    for (i = 0; i < 3; ++i)
+    {
+        dMultiply0_331(res[i], rot, invec[i]);
+        dAddVector3(res[i], pos);
     }
 }
 #endif
@@ -1048,54 +1821,54 @@ ODE_PURE_INLINE void dMultiplyAdd0_331(dReal *res, const dReal *a, const dReal *
 {
   dReal tmp[3];
   dMultiply0_331(tmp, a, b);
-  dAddVectors3(res, res, tmp);
+  dAddVector3(res, tmp);
 }
 
 ODE_PURE_INLINE void dMultiplyAdd1_331(dReal *res, const dReal *a, const dReal *b)
 {
   dReal tmp[3];
   dMultiply1_331(tmp, a, b);
-  dAddVectors3(res, res, tmp);
+  dAddVector3(res, tmp);
 }
 
 ODE_PURE_INLINE void dMultiplyAdd0_133(dReal *res, const dReal *a, const dReal *b)
 {
   dReal tmp[3];
   dMultiplyHelper0_133(tmp, a, b);
-  dAddVectors3(res, res, tmp);
+  dAddVector3(res, tmp);
 }
 
 ODE_PURE_INLINE void dMultiplyAdd0_333(dReal *res, const dReal *a, const dReal *b)
 {
   dReal tmp[3];
   dMultiplyHelper0_133(tmp, a + 0, b);
-  dAddVectors3(res + 0, res + 0, tmp);
+  dAddVector3(res + 0, tmp);
   dMultiplyHelper0_133(tmp, a + 4, b);
-  dAddVectors3(res + 4, res + 4, tmp);
+  dAddVector3(res + 4, tmp);
   dMultiplyHelper0_133(tmp, a + 8, b);
-  dAddVectors3(res + 8, res + 8, tmp);
+  dAddVector3(res + 8, tmp);
 }
 
 ODE_PURE_INLINE void dMultiplyAdd1_333(dReal *res, const dReal *a, const dReal *b)
 {
   dReal tmp[3];
   dMultiplyHelper1_133(tmp, b, a + 0);
-  dAddVectors3(res + 0, res + 0, tmp);
+  dAddVector3(res + 0, tmp);
   dMultiplyHelper1_133(tmp, b, a + 1);
-  dAddVectors3(res + 4, res + 4, tmp);
+  dAddVector3(res + 4, tmp);
   dMultiplyHelper1_133(tmp, b, a + 2);
-  dAddVectors3(res + 8, res + 8, tmp);
+  dAddVector3(res + 8, tmp);
 }
 
 ODE_PURE_INLINE void dMultiplyAdd2_333(dReal *res, const dReal *a, const dReal *b)
 {
   dReal tmp[3];
   dMultiply0_331(tmp, b, a + 0);
-  dAddVectors3(res + 0, res + 0, tmp);
+  dAddVector3(res + 0, tmp);
   dMultiply0_331(tmp, b, a + 4);
-  dAddVectors3(res + 4, res + 4, tmp);
+  dAddVector3(res + 4, tmp);
   dMultiply0_331(tmp, b, a + 8);
-  dAddVectors3(res + 8, res + 8, tmp);
+  dAddVector3(res + 8, tmp);
 }
 
 #if defined(__AVX__)

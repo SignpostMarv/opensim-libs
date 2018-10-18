@@ -74,56 +74,56 @@
 //! TO BE DOCUMENTED
 BOOL CoplanarTriTri(const Point& n, const Point& v0, const Point& v1, const Point& v2, const Point& u0, const Point& u1, const Point& u2)
 {
-	float A[3];
-	short i0,i1;
-	/* first project onto an axis-aligned plane, that maximizes the area */
-	/* of the triangles, compute indices: i0,i1. */
-	A[0] = fabsf(n[0]);
-	A[1] = fabsf(n[1]);
-	A[2] = fabsf(n[2]);
-	if(A[0]>A[1])
-	{
-		if(A[0]>A[2])
-		{
-			i0=1;      /* A[0] is greatest */
-			i1=2;
-		}
-		else
-		{
-			i0=0;      /* A[2] is greatest */
-			i1=1;
-		}
-	}
-	else   /* A[0]<=A[1] */
-	{
-		if(A[2]>A[1])
-		{
-			i0=0;      /* A[2] is greatest */
-			i1=1;
-		}
-		else
-		{
-			i0=0;      /* A[1] is greatest */
-			i1=2;
-		}
-	}
+    float A[3];
+    short i0, i1;
+    /* first project onto an axis-aligned plane, that maximizes the area */
+    /* of the triangles, compute indices: i0,i1. */
+    A[0] = fabsf(n[0]);
+    A[1] = fabsf(n[1]);
+    A[2] = fabsf(n[2]);
+    if (A[0] > A[1])
+    {
+        if (A[0] > A[2])
+        {
+            i0 = 1;      /* A[0] is greatest */
+            i1 = 2;
+        }
+        else
+        {
+            i0 = 0;      /* A[2] is greatest */
+            i1 = 1;
+        }
+    }
+    else   /* A[0]<=A[1] */
+    {
+        if (A[2] > A[1])
+        {
+            i0 = 0;      /* A[2] is greatest */
+            i1 = 1;
+        }
+        else
+        {
+            i0 = 0;      /* A[1] is greatest */
+            i1 = 2;
+        }
+    }
 
-	/* test all edges of triangle 1 against the edges of triangle 2 */
-	EDGE_AGAINST_TRI_EDGES(v0, v1, u0, u1, u2);
-	EDGE_AGAINST_TRI_EDGES(v1, v2, u0, u1, u2);
-	EDGE_AGAINST_TRI_EDGES(v2, v0, u0, u1, u2);
+    /* test all edges of triangle 1 against the edges of triangle 2 */
+    EDGE_AGAINST_TRI_EDGES(v0, v1, u0, u1, u2);
+    EDGE_AGAINST_TRI_EDGES(v1, v2, u0, u1, u2);
+    EDGE_AGAINST_TRI_EDGES(v2, v0, u0, u1, u2);
 
-	/* finally, test if tri1 is totally contained in tri2 or vice versa */
-	POINT_IN_TRI(v0, u0, u1, u2);
-	POINT_IN_TRI(u0, v0, v1, v2);
+    /* finally, test if tri1 is totally contained in tri2 or vice versa */
+    POINT_IN_TRI(v0, u0, u1, u2);
+    POINT_IN_TRI(u0, v0, v1, v2);
 
-	return FALSE;
+    return FALSE;
 }
 
 //! TO BE DOCUMENTED
 #define NEWCOMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, A, B, C, X0, X1)	\
 {																						\
-	if(D0D1>0.0f)																		\
+	if(D0D1 > 0.0f)																		\
 	{																					\
 		/* here we know that D0D2<=0.0 */												\
 		/* that is D0, D1 are on the same side, D2 on the other or on the plane */		\
@@ -162,7 +162,7 @@ BOOL CoplanarTriTri(const Point& n, const Point& v0, const Point& v1, const Poin
  *	Journal of Graphics Tools, 2(2), 1997
  *
  *	Updated June 1999: removed the divisions -- a little faster now!
- *	Updated October 1999: added {} to CROSS and SUB macros 
+ *	Updated October 1999: added {} to CROSS and SUB macros
  *
  *	int NoDivTriTriIsect(float V0[3],float V1[3],float V2[3],
  *                      float U0[3],float U1[3],float U2[3])
@@ -175,125 +175,109 @@ BOOL CoplanarTriTri(const Point& n, const Point& v0, const Point& v1, const Poin
  *	\param		U2		[in] triangle 1, vertex 2
  *	\return		true if triangles overlap
  */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 inline_ BOOL AABBTreeCollider::TriTriOverlap(const Point& V0, const Point& V1, const Point& V2, const Point& U0, const Point& U1, const Point& U2)
 {
-	// Stats
-	mNbPrimPrimTests++;
+    // Stats
+    mNbPrimPrimTests++;
 
-	// Compute plane equation of triangle(V0,V1,V2)
-	Point E1 = V1 - V0;
-	Point E2 = V2 - V0;
-	const Point N1 = E1 ^ E2;
-	const float d1 =-N1 | V0;
-	// Plane equation 1: N1.X+d1=0
+    // Compute plane equation of triangle(V0,V1,V2)
+    Point E1 = V1 - V0;
+    Point E2 = V2 - V0;
+    const Point N1 = E1 ^ E2;
+    const float d1 = -N1 | V0;
+    // Plane equation 1: N1.X+d1=0
 
-	// Put U0,U1,U2 into plane equation 1 to compute signed distances to the plane
-	float du0 = (N1|U0) + d1;
-	float du1 = (N1|U1) + d1;
-	float du2 = (N1|U2) + d1;
+    // Put U0,U1,U2 into plane equation 1 to compute signed distances to the plane
+    float du0 = (N1 | U0) + d1;
+    float du1 = (N1 | U1) + d1;
+    float du2 = (N1 | U2) + d1;
 
-	// Coplanarity robustness check
-#ifdef OPC_TRITRI_EPSILON_TEST
-    float absd1 = FastFabs(d1), sqmagN1 = N1.SquareMagnitude();
-    if (absd1>=sqmagN1)
+    if (fabs(du0) < LOCAL_EPSILON) du0 = 0.0;
+    if (fabs(du1) < LOCAL_EPSILON) du1 = 0.0;
+    if (fabs(du2) < LOCAL_EPSILON) du2 = 0.0;
+
+    const float du0du1 = du0 * du1;
+    const float du0du2 = du0 * du2;
+
+    if (du0du1 > 0 && du0du2 > 0)	// same sign on all of them + not equal 0 ?
     {
-		if(FastFabs(du0)<=LOCAL_EPSILON*absd1) du0 = 0.0f;
-		if(FastFabs(du1)<=LOCAL_EPSILON*absd1) du1 = 0.0f;
-		if(FastFabs(du2)<=LOCAL_EPSILON*absd1) du2 = 0.0f;
-	}
-	else
-	{
-		if(FastFabs(du0)<=LOCAL_EPSILON*FCMax2(absd1, FCMin2(sqmagN1, U0.SquareMagnitude()))) du0 = 0.0f;
-		if(FastFabs(du1)<=LOCAL_EPSILON*FCMax2(absd1, FCMin2(sqmagN1, U1.SquareMagnitude()))) du1 = 0.0f;
-		if(FastFabs(du2)<=LOCAL_EPSILON*FCMax2(absd1, FCMin2(sqmagN1, U2.SquareMagnitude()))) du2 = 0.0f;
-	}
-#endif
-	const float du0du1 = du0 * du1;
-	const float du0du2 = du0 * du2;
+        if (fabs(du0) > 0.1f || fabs(du1) > 0.1f || fabs(du2) > 0.1f)
+            return false;
+        return true;
+    }
 
-	if(du0du1>0.0f && du0du2>0.0f)	// same sign on all of them + not equal 0 ?
-		return FALSE;				// no intersection occurs
 
-	// Compute plane of triangle (U0,U1,U2)
-	E1 = U1 - U0;
-	E2 = U2 - U0;
-	const Point N2 = E1 ^ E2;
-	const float d2=-N2 | U0;
-	// plane equation 2: N2.X+d2=0
+    // Compute plane of triangle (U0,U1,U2)
+    E1 = U1 - U0;
+    E2 = U2 - U0;
+    const Point N2 = E1 ^ E2;
+    const float d2 = -N2 | U0;
+    // plane equation 2: N2.X+d2=0
 
-	// put V0,V1,V2 into plane equation 2
-	float dv0 = (N2|V0) + d2;
-	float dv1 = (N2|V1) + d2;
-	float dv2 = (N2|V2) + d2;
+    // put V0,V1,V2 into plane equation 2
+    float dv0 = (N2 | V0) + d2;
+    float dv1 = (N2 | V1) + d2;
+    float dv2 = (N2 | V2) + d2;
 
-#ifdef OPC_TRITRI_EPSILON_TEST
-    float absd2 = FastFabs(d2), sqmagN2 = N2.SquareMagnitude();
-    if (absd2>=sqmagN2)
+    if (fabs(dv0) < LOCAL_EPSILON) dv0 = 0.0;
+    if (fabs(dv1) < LOCAL_EPSILON) dv1 = 0.0;
+    if (fabs(dv2) < LOCAL_EPSILON) dv2 = 0.0;
+
+    const float dv0dv1 = dv0 * dv1;
+    const float dv0dv2 = dv0 * dv2;
+
+    if (dv0dv1 > 0 && dv0dv2 > 0)	// same sign on all of them + not equal 0 ?
     {
-		if(FastFabs(dv0)<=LOCAL_EPSILON*absd2) dv0 = 0.0f;
-		if(FastFabs(dv1)<=LOCAL_EPSILON*absd2) dv1 = 0.0f;
-		if(FastFabs(dv2)<=LOCAL_EPSILON*absd2) dv2 = 0.0f;
-	}
-	else
-	{
-		if(FastFabs(dv0)<=LOCAL_EPSILON*FCMax2(absd2, FCMin2(sqmagN2, V0.SquareMagnitude()))) dv0 = 0.0f;
-		if(FastFabs(dv1)<=LOCAL_EPSILON*FCMax2(absd2, FCMin2(sqmagN2, V1.SquareMagnitude()))) dv1 = 0.0f;
-		if(FastFabs(dv2)<=LOCAL_EPSILON*FCMax2(absd2, FCMin2(sqmagN2, V2.SquareMagnitude()))) dv2 = 0.0f;
-	}
-#endif
+        if (fabs(dv0) > 0.1f || fabs(dv1) > 0.1f || fabs(dv2) > 0.1f)
+            return false;
+        return true;
+    }
 
-	const float dv0dv1 = dv0 * dv1;
-	const float dv0dv2 = dv0 * dv2;
+    // Compute direction of intersection line
+    const Point D = N1^N2;
 
-	if(dv0dv1>0.0f && dv0dv2>0.0f)	// same sign on all of them + not equal 0 ?
-		return FALSE;				// no intersection occurs
+    // Compute and index to the largest component of D
+    float max = fabsf(D[0]);
+    short index = 0;
+    float bb = fabsf(D[1]);
+    if (bb > max) max = bb, index = 1;
+    if (fabsf(D[2]) > max) index = 2;
 
-	// Compute direction of intersection line
-	const Point D = N1^N2;
+    // This is the simplified projection onto L
+    const float vp0 = V0[index];
+    const float vp1 = V1[index];
+    const float vp2 = V2[index];
 
-	// Compute and index to the largest component of D
-	float max=fabsf(D[0]);
-	short index=0;
-	float bb=fabsf(D[1]);
-	float cc=fabsf(D[2]);
-	if(bb>max) max=bb,index=1;
-	if(cc>max) max=cc,index=2;
+    const float up0 = U0[index];
+    const float up1 = U1[index];
+    const float up2 = U2[index];
 
-	// This is the simplified projection onto L
-	const float vp0 = V0[index];
-	const float vp1 = V1[index];
-	const float vp2 = V2[index];
+    // Compute interval for triangle 1
+    float a, b, c, x0, x1;
+    NEWCOMPUTE_INTERVALS(vp0, vp1, vp2, dv0, dv1, dv2, dv0dv1, dv0dv2, a, b, c, x0, x1);
 
-	const float up0 = U0[index];
-	const float up1 = U1[index];
-	const float up2 = U2[index];
+    // Compute interval for triangle 2
+    float d, e, f, y0, y1;
+    NEWCOMPUTE_INTERVALS(up0, up1, up2, du0, du1, du2, du0du1, du0du2, d, e, f, y0, y1);
 
-	// Compute interval for triangle 1
-	float a,b,c,x0,x1;
-	NEWCOMPUTE_INTERVALS(vp0,vp1,vp2,dv0,dv1,dv2,dv0dv1,dv0dv2,a,b,c,x0,x1);
+    const float xx = x0*x1;
+    const float yy = y0*y1;
+    const float xxyy = xx*yy;
 
-	// Compute interval for triangle 2
-	float d,e,f,y0,y1;
-	NEWCOMPUTE_INTERVALS(up0,up1,up2,du0,du1,du2,du0du1,du0du2,d,e,f,y0,y1);
+    float isect1[2], isect2[2];
 
-	const float xx=x0*x1;
-	const float yy=y0*y1;
-	const float xxyy=xx*yy;
+    float tmp = a*xxyy;
+    isect1[0] = tmp + b*x1*yy;
+    isect1[1] = tmp + c*x0*yy;
 
-	float isect1[2], isect2[2];
+    tmp = d*xxyy;
+    isect2[0] = tmp + e*xx*y1;
+    isect2[1] = tmp + f*xx*y0;
 
-	float tmp=a*xxyy;
-	isect1[0]=tmp+b*x1*yy;
-	isect1[1]=tmp+c*x0*yy;
+    SORT(isect1[0], isect1[1]);
+    SORT(isect2[0], isect2[1]);
 
-	tmp=d*xxyy;
-	isect2[0]=tmp+e*xx*y1;
-	isect2[1]=tmp+f*xx*y0;
-
-	SORT(isect1[0],isect1[1]);
-	SORT(isect2[0],isect2[1]);
-
-	if(isect1[1]<isect2[0] || isect2[1]<isect1[0]) return FALSE;
-	return TRUE;
+    if (isect1[1] < isect2[0] || isect2[1] < isect1[0]) return FALSE;
+    return TRUE;
 }

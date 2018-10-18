@@ -40,46 +40,19 @@
 
 int _dSafeNormalize3 (dVector3 a)
 {
-    dAASSERT (a);
+    dIASSERT(a);
 
-    int idx;
-    dReal aa[3], l;
-
-    aa[0] = dFabs(a[0]);
-    aa[1] = dFabs(a[1]);
-    aa[2] = dFabs(a[2]);
-    if (aa[1] > aa[0]) {
-        if (aa[2] > aa[1]) { // aa[2] is largest
-            idx = 2;
-        }
-        else {              // aa[1] is largest
-            idx = 1;
-        }
-    }
-    else {
-        if (aa[2] > aa[0]) {// aa[2] is largest
-            idx = 2;
-        }
-        else {              // aa[0] might be the largest
-            if (aa[0] <= 0) { // aa[0] might is largest
-                a[0] = 1;	// if all a's are zero, this is where we'll end up.
-                a[1] = 0;	// return a default unit length vector.
-                a[2] = 0;
-                return 0;
-            }
-            else {
-                idx = 0;
-            }
-        }
+    dReal l = dCalcVectorLengthSquare3(a);
+    if (l > dEpsilon)
+    {
+        dScaleVector3r4(a, dRecipSqrt(l));
+        return 1;
     }
 
-    dReal rk = dReal(1.0) / aa[idx];
-    dScaleVector3(a, rk);
-    l = dCalcVectorLengthSquare3(a);
-    l = dRecipSqrt(l);
-    dScaleVector3(a, l);
-
-    return 1;
+    a[0] = 1;	// if all a's are zero, this is where we'll end up.
+    a[1] = 0;	// return a default unit length vector.
+    a[2] = 0;
+    return 0;
 }
 
 /* OLD VERSION */
@@ -87,7 +60,7 @@ int _dSafeNormalize3 (dVector3 a)
 void dNormalize3 (dVector3 a)
 {
     dIASSERT (a);
-    dReal l = dCalcVectorDot3(a,a);
+    dReal l = dCalcVectorlenghtSquare3(a,a);
     if (l > 0) {
         l = dRecipSqrt(l);
         a[0] *= l;

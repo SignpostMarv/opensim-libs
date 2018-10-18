@@ -61,10 +61,10 @@ dxJointContact::getInfo1( dxJoint::Info1 *info )
     if ( contact.surface.mode & dContactAxisDep )
     {
         if ( contact.surface.mu2 < 0 ) contact.surface.mu2 = 0;
-        if ( contact.surface.mu  > 0 ) m++;
-        if ( contact.surface.mu2 > 0 ) m++;
-        if ( contact.surface.mu  == dInfinity ) nub ++;
-        if ( contact.surface.mu2 == dInfinity ) nub ++;
+        if ( contact.surface.mu  > 0 ) ++m;
+        if ( contact.surface.mu2 > 0 ) ++m;
+        if ( contact.surface.mu  == dInfinity ) ++nub;
+        if ( contact.surface.mu2 == dInfinity ) ++nub;
     // roll not in use for opensim
 /*
         if (roll) {
@@ -340,7 +340,7 @@ dxJointContact::getInfo2( dReal worldFPS, dReal worldERP, const Info2Descr *info
         for (int ii=0;ii<3;++ii) {
             if (rho[ii]>0) {
               // Set the angular axis
-              dCopyVector3(&(info->J1a[ rollRow*s ]),ax[ii]);
+              dCopyVector3r4(&(info->J1a[ rollRow*s ]),ax[ii]);
               if ( b1 ) {
                 dCopyNegatedVector3(&(info->J2a[ rollRow*s ]),ax[ii]);
               }

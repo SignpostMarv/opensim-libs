@@ -42,13 +42,13 @@ int dCollideSpheres (dVector3 p1, dReal r1,
     //	  d,p1[0],p1[1],p1[2],p2[0],p2[1],p2[2],r1,r2);
 
     dVector3 delta;
-    dSubtractVectors3(delta, p1, p2);
+    dSubtractVectors3r4(delta, p1, p2);
     float d = dCalcVectorLengthSquare3(delta);
 
     dReal rsum = r1 + r2;
     if( d < dEpsilon)
     {
-        dCopyVector3(c->pos, p1);
+        dCopyVector3r4(c->pos, p1);
         c->normal[0] = 1;
         c->normal[1] = 0;
         c->normal[2] = 0;
@@ -61,15 +61,12 @@ int dCollideSpheres (dVector3 p1, dReal r1,
 
     d = dSqrt(d);
     c->depth = rsum - d;
+    dReal k = REAL(0.5) * (r2 - r1 - d);
 
     d = dRecip(d);
-    dScaleVector3(delta, d);
-
-    dCopyVector3(c->normal, delta);
-
-    dCopyVector3(c->pos, p1);
-    dReal k = REAL(0.5) * (r2 - r1 - d);
-    dAddScaledVector4(c->pos, delta, k);
+    dScaleVector3r4(delta, d);
+    dCopyVector3r4(c->normal, delta);
+    dAddScaledVector3r4(c->pos, p1,  delta, k);
     return 1;
 }
 
@@ -89,7 +86,7 @@ void dLineClosestApproach (const dVector3 pa, const dVector3 ua,
     }
     else
     {
-        dSubtractVectors3(p, pb, pa);
+        dSubtractVectors3r4(p, pb, pa);
         dReal q1 = dCalcVectorDot3(ua, p);
         dReal q2 = -dCalcVectorDot3(ub, p);
         d = dRecip(d);
@@ -120,50 +117,47 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     dVector3 a1a2,b1b2,a1b1,a1b2,a2b1,a2b2,n;
     dReal la,lb,k,da1,da2,da3,da4,db1,db2,db3,db4,det;
 
-#define SET2(a, b) a[0] = b[0]; a[1] = b[1]; a[2] = b[2];
-#define SET3(a, b, op, c) a[0] = b[0] op c[0]; a[1] = b[1] op c[1]; a[2] = b[2] op c[2];
-
     // check vertex-vertex features
-    dSubtractVectors3(a1a2, a2, a1);
-    dSubtractVectors3(a1b1, b1, a1);
+    dSubtractVectors3r4(a1a2, a2, a1);
+    dSubtractVectors3r4(a1b1, b1, a1);
     da1 = dCalcVectorDot3(a1a2, a1b1);
 
-    dSubtractVectorCross3(b1b2, b2, b1);
+    dSubtractVectorCross3r4(b1b2, b2, b1);
     db1 = dCalcVectorDot3(b1b2, a1b1);
     if (da1 <= 0 && db1 >= 0)
     {
-        SET2 (cp1, a1);
-        SET2 (cp2, b1);
+        dCopyVector3r4(cp1, a1);
+        dCopyVector3r4(cp2, b1);
         return;
     }
 
-    dSubtractVectors3(a1b2, b2, a1);
+    dSubtractVectors3r4(a1b2, b2, a1);
     da2 = dCalcVectorDot3(a1a2, a1b2);
     db2 = dCalcVectorDot3(b1b2, a1b2);
     if (da2 <= 0 && db2 <= 0)
     {
-        SET2 (cp1, a1);
-        SET2 (cp2, b2);
+        dCopyVector3r4(cp1, a1);
+        dCopyVector3r4(cp2, b2);
         return;
     }
 
-    dSubtractVectors3(a2b1, b1, a2);
+    dSubtractVectors3r4(a2b1, b1, a2);
     da3 = dCalcVectorDot3(a1a2, a2b1);
     db3 = dCalcVectorDot3(b1b2, a2b1);
     if (da3 >= 0 && db3 >= 0)
     {
-        SET2 (cp1, a2);
-        SET2 (cp2, b1);
+        dCopyVector3r4(cp1, a2);
+        dCopyVector3r4(cp2, b1);
         return;
     }
 
-    dSubtractVectors3(a2b2, b2, a2);
+    dSubtractVectors3r4(a2b2, b2, a2);
     da4 = dCalcVectorDot3(a1a2, a2b2);
     db4 = dCalcVectorDot3(b1b2, a2b2);
     if (da4 >= 0 && db4 <= 0)
     {
-        SET2 (cp1, a2);
-        SET2 (cp2, b2);
+        dCopyVector3r4(cp1, a2);
+        dCopyVector3r4(cp2, b2);
         return;
     }
 
@@ -175,11 +169,11 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     if (da1 >= 0 && da3 <= 0)
     {
         k = da1 / la;
-        SET3 (n, a1b1, -, k * a1a2);
+        dAddScaledVector3r4(n, a1b1, a1a2, -k);
         if (dCalcVectorDot3(b1b2, n) >= 0)
         {
-            SET3 (cp1,a1,+,k*a1a2);
-            SET2 (cp2,b1);
+            dAddScaledVector3r4(cp1, a1, a1a2, k);
+            dCopyVector3r4(cp2,b1);
             return;
         }
     }
@@ -187,11 +181,11 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     if (da2 >= 0 && da4 <= 0)
     {
         k = da2 / la;
-        SET3 (n, a1b2, -, k * a1a2);
+        dAddScaledVector3r4(n, a1b2, a1a2, -k);
         if (dCalcVectorDot3(b1b2, n) <= 0)
         {
-            SET3 (cp1, a1, +, k * a1a2);
-            SET2 (cp2, b2);
+            dAddScaledVector3r4(cp1, a1, a1a2, k);
+            dCopyVector3r4(cp2, b2);
             return;
         }
     }
@@ -200,11 +194,12 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     if (db1 <= 0 && db2 >= 0)
     {
         k = -db1 / lb;
-        SET3 (n, -a1b1, -, k * b1b2);
+        dCopyNegatedVector3r4(n, a1b1);
+        dAddScaledVector3r4(n, b1b2, -k);
         if (dCalcVectorDot3(a1a2, n) >= 0)
         {
-            SET2 (cp1, a1);
-            SET3 (cp2, b1, +, k * b1b2);
+            dCopyVector3r4(cp1, a1);
+            dAddScaledVector3r4(cp2, b1, b1b2, k);
             return;
         }
     }
@@ -212,11 +207,12 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     if (db3 <= 0 && db4 >= 0)
     {
         k = -db3 / lb;
-        SET3 (n, -a2b1, -, k * b1b2);
+        dCopyNegatedVector3r4(n, a2b1);
+        dAddScaledVector3r4(n, b1b2, -k);
         if (dCalcVectorDot3(a1a2, n) <= 0)
         {
-            SET2 (cp1, a2);
-            SET3 (cp2, b1, +, k * b1b2);
+            dCopyVector3r4(cp1, a2);
+            dAddScaledVector3r4(cp2, b1, b1b2, k);
             return;
         }
     }
@@ -228,18 +224,15 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     if (det <= 0)
     {
         // this should never happen, but just in case...
-        SET2(cp1, a1);
-        SET2(cp2, b1);
+        dCopyVector3r4(cp1, a1);
+        dCopyVector3r4(cp2, b1);
         return;
     }
     det = dRecip (det);
     dReal alpha = (lb * da1 -  k * db1) * det;
     dReal beta  = ( k *da1 - la * db1) * det;
-    SET3 (cp1, a1, +, alpha * a1a2);
-    SET3 (cp2, b1, +, beta * b1b2);
-
-# undef SET2
-# undef SET3
+    dAddScaledVector3r4(cp1, a1, a1a2, alpha);
+    dAddScaledVector3r4(cp2, b1, b1b2, beta);
 }
 
 
@@ -275,9 +268,9 @@ void dClosestLineBoxPoints (const dVector3 p1, const dVector3 p2,
     // we will do all subsequent computations in this box-relative coordinate
     // system. we have to do a translation and rotation for each point.
     dVector3 tmp,s,v;
-    dSubtractVectors3(tmp, p1, c);
+    dSubtractVectors3r4(tmp, p1, c);
     dMultiply1_331 (s,R,tmp);
-    dSubtractVectors3(tmp, p2, p1);
+    dSubtractVectors3r4(tmp, p2, p1);
     dMultiply1_331 (v,R,tmp);
 
     dVector3 sign;
@@ -386,51 +379,35 @@ got_answer:
     float ftmp;
     if(t >= (1 - tanchor_eps))
     {
-        for (i=0; i<3; i++)
-        {
-            // compute closest point on the line
-            lret[i] = p2[i];
-
-            ftmp = sign[i] * (s[i] + v[i]);
-            if (ftmp < -h[i])
-                ftmp = -h[i];
-            else if (ftmp > h[i])
-                ftmp = h[i];
-            tmp[i] = ftmp;
-        }
+        dCopyVector3r4(lret, p2);
+        dAddVector3r4(s, v);
+        dMultVector3r4(s, sign);
     }
     else if (t <= tanchor_eps)
     {
-        for (i=0; i<3; i++)
-        {
-            lret[i] = p1[i];
-
-            ftmp = sign[i] * s[i];
-            if (ftmp < -h[i])
-                ftmp = -h[i];
-            else if (ftmp > h[i])
-                ftmp = h[i];
-            tmp[i] = ftmp;
-        }
+        dCopyVector3r4(lret, p1);
+        dMultVector3r4(s, sign);
     }
     else
     {
-        for (i=0; i<3; i++)
-        {
-            lret[i] = p1[i] + t*tmp[i];
+        dAddScaledVector3r4(lret, p1, tmp, t);
+        dAddScaledVector3r4(s, v, t);
+        dMultVector3r4(s, sign);
+    }
 
-            ftmp = sign[i] * (s[i] + t*v[i]);
-            if (ftmp < -h[i])
-                ftmp = -h[i];
-            else if (ftmp > h[i])
-                ftmp = h[i];
-            tmp[i] = ftmp;
-        }       
+    for (i = 0; i<3; i++)
+    {
+        ftmp = s[i];
+        if (ftmp < -h[i])
+            ftmp = -h[i];
+        else if (ftmp > h[i])
+            ftmp = h[i];
+        tmp[i] = ftmp;
     }
 
     // compute closest point on the box
-    dMultiply0_331(s,R,tmp);
-    dAddVectors3(bret, s, c);
+    dMultiply0_331(s, R, tmp);
+    dAddVectors3r4(bret, s, c);
 }
 
 
@@ -454,7 +431,7 @@ int dBoxTouchesBox (const dVector3 p1, const dMatrix3 R1,
         Q11,Q12,Q13,Q21,Q22,Q23,Q31,Q32,Q33;
 
     // get vector from centers of box 1 to box 2, relative to box 1
-    dSubtractVectors3(p, p2, p1);
+    dSubtractVectors3r4(p, p2, p1);
     dMultiply1_331 (pp, R1 ,p);		// get pp = p relative to body 1
 
     // get side lengths / 2
@@ -566,10 +543,10 @@ int dClipEdgeToPlane( dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector4& plPlan
         // clamp correct edge to intersection point
         if ( fDistance0 < 0 ) 
         {
-            dCopyVector3(vEpnt0, vIntersectionPoint);
+            dCopyVector3r4(vEpnt0, vIntersectionPoint);
         } else 
         {
-            dCopyVector3(vEpnt1, vIntersectionPoint);
+            dCopyVector3r4(vEpnt1, vIntersectionPoint);
         }
         return 1;
     }

@@ -110,7 +110,7 @@ static inline void dMultiplyMat3Vec3(const dMatrix3& m,const dVector3& v, dVecto
 
 static inline void dConstructPlane(dVector4& plane, const dVector3& normal,const dReal& distance)
 {
-    dCopyVector3(plane, normal);
+    dCopyVector3r4(plane, normal);
     plane[3] = distance;
 }
 
@@ -147,7 +147,7 @@ inline void dQuatInvTransform(const dQuaternion& quat,const dVector3& source,dVe
     else
     {
         // Singular -> return identity
-        dCopyVector3(dest, source);
+        dCopyVector3r4(dest, source);
     }
 }
 

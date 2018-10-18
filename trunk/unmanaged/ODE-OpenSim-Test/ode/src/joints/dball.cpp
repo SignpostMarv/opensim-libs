@@ -63,10 +63,10 @@ dxJointDBall::getInfo2( dReal worldFPS, dReal /*worldERP*/, const Info2Descr *in
     if (node[1].body)
         dBodyGetRelPointPos(node[1].body, anchor2[0], anchor2[1], anchor2[2], globalA2);
     else
-        dCopyVector3(globalA2, anchor2);
+        dCopyVector3r4(globalA2, anchor2);
 
     dVector3 q;
-    dSubtractVectors3(q, globalA1, globalA2);
+    dSubtractVectors3r4(q, globalA1, globalA2);
 
 #ifdef dSINGLE
     const dReal MIN_LENGTH = REAL(1e-7);
@@ -83,7 +83,7 @@ dxJointDBall::getInfo2( dReal worldFPS, dReal /*worldERP*/, const Info2Descr *in
             dBodyGetPointVel(node[1].body, globalA2[0], globalA2[1], globalA2[2], v2);
         else
             dSetZero(v2, 3);
-        dSubtractVectors3(q, v1, v2);
+        dSubtractVectors3r4(q, v1, v2);
 
         if (dCalcVectorLength3(q) < MIN_LENGTH) {
             // this direction is as good as any
@@ -137,11 +137,11 @@ dxJointDBall::updateTargetDistance()
     if (node[0].body)
         dBodyGetRelPointPos(node[0].body, anchor1[0], anchor1[1], anchor1[2], p1);
     else
-        dCopyVector3(p1, anchor1);
+        dCopyVector3r4(p1, anchor1);
     if (node[1].body)
         dBodyGetRelPointPos(node[1].body, anchor2[0], anchor2[1], anchor2[2], p2);
     else
-        dCopyVector3(p2, anchor2);
+        dCopyVector3r4(p2, anchor2);
 
     targetDistance = dCalcPointsDistance3(p1, p2);
 }
@@ -229,12 +229,12 @@ void dJointGetDBallAnchor1( dJointID j, dVector3 result )
         if (joint->node[1].body)
             dBodyGetRelPointPos(joint->node[1].body, joint->anchor2[0], joint->anchor2[1], joint->anchor2[2], result);
         else
-            dCopyVector3(result, joint->anchor2);
+            dCopyVector3r4(result, joint->anchor2);
     } else {
         if (joint->node[0].body)
             dBodyGetRelPointPos(joint->node[0].body, joint->anchor1[0], joint->anchor1[1], joint->anchor1[2], result);
         else
-            dCopyVector3(result, joint->anchor1);
+            dCopyVector3r4(result, joint->anchor1);
     }
 }
 
@@ -249,12 +249,12 @@ void dJointGetDBallAnchor2( dJointID j, dVector3 result )
         if (joint->node[0].body)
             dBodyGetRelPointPos(joint->node[0].body, joint->anchor1[0], joint->anchor1[1], joint->anchor1[2], result);
         else
-            dCopyVector3(result, joint->anchor1);
+            dCopyVector3r4(result, joint->anchor1);
     } else {
         if (joint->node[1].body)
             dBodyGetRelPointPos(joint->node[1].body, joint->anchor2[0], joint->anchor2[1], joint->anchor2[2], result);
         else
-            dCopyVector3(result, joint->anchor2);
+            dCopyVector3r4(result, joint->anchor2);
     }
 }
 

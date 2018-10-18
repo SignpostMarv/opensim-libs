@@ -97,18 +97,16 @@ dxTriMeshData::Build(const void* Vertices, int VertexStide, int VertexCount,
     // best compromise?
     Settings.mRules = SPLIT_BEST_AXIS | SPLIT_SPLATTER_POINTS | SPLIT_GEOM_CENTER;
 
-
     OPCODECREATE TreeBuilder;
     TreeBuilder.mIMesh = &Mesh;
 
     TreeBuilder.mSettings = Settings;
     TreeBuilder.mNoLeaf = true;
     TreeBuilder.mQuantized = false;
+//    TreeBuilder.mQuantized = true;
 
     TreeBuilder.mKeepOriginal = false;
     TreeBuilder.mCanRemap = false;
-
-
 
     BVTree.Build(TreeBuilder);
 
