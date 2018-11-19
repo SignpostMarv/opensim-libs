@@ -486,7 +486,9 @@ namespace HttpServer
 
         private void OnRequestCompleted(object source, EventArgs args)
         {
+            TriggerKeepalive = false;
             MonitorKeepaliveMS = 0;
+
             // load cookies if they exist
             RequestCookies cookies = _currentRequest.Headers["cookie"] != null
                 ? new RequestCookies(_currentRequest.Headers["cookie"])
@@ -540,7 +542,7 @@ namespace HttpServer
             lock (requestsInServiceIDs)
             {
                 requestsInServiceIDs.Remove(requestID);
-                //                doclose = doclose && requestsInServiceIDs.Count == 0;
+//                doclose = doclose && requestsInServiceIDs.Count == 0;
                 if (requestsInServiceIDs.Count > 1)
                 {
 
@@ -552,7 +554,11 @@ namespace HttpServer
                 Disconnect(SocketError.Success);
             else
             {
-                TriggerKeepalive = true;
+                lock (requestsInServiceIDs)
+                {
+                    if (requestsInServiceIDs.Count == 0)
+                        TriggerKeepalive = true;
+                }
             }
         }
 
