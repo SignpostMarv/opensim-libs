@@ -32,7 +32,9 @@ namespace HttpServer
             /// way to serve documents.
             /// </summary>
             Stream Body { get; set; }
-
+            byte[] RawBuffer { get; set; }
+            int RawBufferStart { get; set; }
+            int RawBufferLen { get; set; }
             uint requestID {get;}
 
             /// <summary>
