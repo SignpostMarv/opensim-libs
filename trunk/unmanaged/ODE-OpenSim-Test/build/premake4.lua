@@ -9,17 +9,12 @@
 ----------------------------------------------------------------------
 -- Configuration options
 ----------------------------------------------------------------------
-  
-  newoption {
-    trigger     = "with-libccd",
-    description = "Uses libccd for handling some collision tests absent in ODE."
-  }
-  
-  newoption {
-    trigger     = "no-dif",
-    description = "Exclude DIF (Dynamics Interchange Format) exports"
-  }
-  
+
+newoption {
+    trigger     = "enable-avx",
+    description = "compile for AVX SIMD."
+  }  
+    
   newoption {
     trigger     = "with-ou",
     description = "Use TLS for global caches (allows threaded collision checks for separated spaces)"
@@ -50,17 +45,7 @@
     trigger     = "only-static",
 	description = "Only build static versions of the library"
   }
-
-  newoption {
-    trigger     = "only-single",
-	description = "Only use single-precision math"
-  }
-  
-  newoption {
-    trigger     = "only-double",
-	description = "Only use double-precision math"
-  }
-  
+ 
   -- always clean all of the optional components and toolsets
   if _ACTION == "clean" then
     for action in premake.action.each() do
@@ -92,16 +77,10 @@
 	end
 	configs = newconfigs
   end
-  
-  
-  if not _OPTIONS["only-single"] and not _OPTIONS["only-double"] then
-    addconfigs("Single", "Double")
-  end
-  
+	
   if not _OPTIONS["only-shared"] and not _OPTIONS["only-static"] then
     addconfigs("DLL", "Lib")
   end
-
   
 ----------------------------------------------------------------------
 -- The solution, and solution-wide settings
@@ -124,19 +103,21 @@
     configurations (configs)
     
     configuration { "Debug*" }
-      defines { "_DEBUG" }
-      flags   { "Symbols" }
+	    if _OPTIONS["enable-avx"] then
+		   defines { "_DEBUG", "dIDESINGLE"}
+		else
+		   defines { "_DEBUG", "dIDESINGLE"}
+        end
+        flags   { "Symbols"}
       
     configuration { "Release*" }
-      defines { "NDEBUG", "dNODEBUG" }
-      flags   { "OptimizeSpeed", "NoFramePointer" }
-
-    configuration { "*Single*" }
-      defines { "dIDESINGLE", "CCD_IDESINGLE" }
-      
-    configuration { "*Double*" }
-      defines { "dIDEDOUBLE", "CCD_IDEDOUBLE" }
-    
+	    if _OPTIONS["enable-avx"] then
+		   defines { "NDEBUG", "dNODEBUG", "dIDESINGLE"}
+		else
+		   defines { "NDEBUG", "dNODEBUG", "dIDESINGLE"}
+        end
+		flags   { "OptimizeSpeed", "NoFramePointer"}
+   
     configuration { "Windows" }
       defines { "WIN32" }
 
@@ -160,7 +141,7 @@
     -- don't remember why we had to do this	
     configuration { "vs2002 or vs2003", "*Lib" }
       flags  { "StaticRuntime" }
-
+	 
 ----------------------------------------------------------------------
 -- The ODE library project
 ----------------------------------------------------------------------
@@ -173,7 +154,6 @@
     includedirs {
       "../ode/src/joints",
       "../OPCODE",
-      "../libccd/src"
     }
 
     files {
@@ -206,16 +186,7 @@
 
       -- TODO: MacOSX probably needs something too
       
-    configuration { "no-dif" }
-      excludes { "../ode/src/export-dif.cpp" }
-    
- 
-    configuration { "with-libccd" }
-      files   { "../libccd/src/ccd/*.h", "../libccd/src/*.c" }
-      defines { "dLIBCCD_ENABLED", "dLIBCCD_CYL_CYL" }
-
-    configuration { "not with-libccd" }
-      excludes { "../ode/src/collision_libccd.cpp", "../ode/src/collision_libccd.h" }
+    excludes { "../ode/src/collision_libccd.cpp", "../ode/src/collision_libccd.h" }
 
     configuration { "windows" }
       links   { "user32" }
@@ -236,19 +207,6 @@
 	  
     configuration { "Release" }
       targetname "ode"
-	  
-    configuration { "DebugSingle*" }
-      targetname "ode_singled"
-      
-    configuration { "ReleaseSingle*" }
-      targetname "ode_single"
-      
-    configuration { "DebugDouble*" }
-      targetname "ode_doubled"
-      
-    configuration { "ReleaseDouble*" }
-      targetname "ode_double"
-
 
 ----------------------------------------------------------------------
 -- Write a custom <config.h> to build, based on the supplied flags
@@ -260,7 +218,6 @@
 
     text = string.gsub(text, "/%* #define dOU_ENABLED 1 %*/", "#define dOU_ENABLED 1")
     text = string.gsub(text, "/%* #define dATOMICS_ENABLED 1 %*/", "#define dATOMICS_ENABLED 1")
-
 
     text = string.gsub(text, "/%* #define dTLS_ENABLED 1 %*/", "#define dTLS_ENABLED 1")
 
@@ -292,17 +249,9 @@
     
     function generate(precstr)
       generateheader("../include/ode/precision.h", "@ODE_PRECISION@", "d" .. precstr)
-      generateheader("../libccd/src/ccd/precision.h", "@CCD_PRECISION@", "CCD_" .. precstr)
     end
     
-    if _OPTIONS["only-single"] then
-      generate("SINGLE")
-    elseif _OPTIONS["only-double"] then
-      generate("DOUBLE")
-    else 
-      generate("UNDEFINEDPRECISION")
-    end
-
+    generate("SINGLE")
     generateheader("../include/ode/version.h", "@ODE_VERSION@", ode_version)
 
   end

@@ -41,7 +41,6 @@
 /* #define dTHREADING_INTF_DISABLED 1 */
 /* #define dBUILTIN_THREADING_IMPL_ENABLED 1 */
 
-
 /******************************************************************
  * SYSTEM SETTINGS - you shouldn't need to change these. If you
  *   run into an issue with these settings, please report it to
@@ -87,12 +86,7 @@
   #include <alloca.h>
 #endif
 
-
-#ifdef dSINGLE
-       #define dEpsilon  FLT_EPSILON
-#else
-       #define dEpsilon  DBL_EPSILON
-#endif
+#define dEpsilon  FLT_EPSILON
 
 /* An integer type that can be safely cast to a pointer. This definition
  * should be safe even on 64-bit systems */
