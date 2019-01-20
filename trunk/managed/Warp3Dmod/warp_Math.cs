@@ -76,16 +76,19 @@ namespace Warp3D
             return fastRnd(1);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float deg2rad(float deg)
         {
             return deg * 0.0174532925194f;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float rad2deg(float rad)
         {
             return rad * 57.295779514719f;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float sin(float angle)
         {
             return (float)Math.Sin(angle);
@@ -93,6 +96,7 @@ namespace Warp3D
             //			return sinus[(int)((angle+pad)*rad2scale)&0xFFF];
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float cos(float angle)
         {
             return (float)Math.Cos(angle);
@@ -114,26 +118,31 @@ namespace Warp3D
                     trig=true;
                 }
         */
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float pythagoras(float a, float b)
         {
             return (float)Math.Sqrt(a * a + b * b);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static int pythagoras(int a, int b)
         {
             return (int)Math.Sqrt(a * a + b * b);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static int crop(int num, int min, int max)
         {
             return (num < min) ? min : (num > max) ? max : num;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float crop(float num, float min, float max)
         {
             return (num < min) ? min : (num > max) ? max : num;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static bool inrange(int num, int min, int max)
         {
             return ((num >= min) && (num < max));

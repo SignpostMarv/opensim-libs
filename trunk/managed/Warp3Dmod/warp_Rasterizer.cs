@@ -38,7 +38,7 @@ namespace Warp3D
 
         private int
         bkgrd, c, s, lutID, //lutID is position in LUT (diffuse,envmap,specular)
-        x1, x2, x3, x4, y1, y2, y3, dy21, dy31, z1, z2, z3, z4,
+        x1, x2, x3, x4, y1, y2, y3, z1, z2, z3, z4,
         x, y, z, dx, dy, dz, offset, pos, temp,
         xL, xR, xBase, zBase, xMax, dxL, dxR, dzBase,
 
@@ -58,7 +58,7 @@ namespace Warp3D
         warp_Screen screen;
         int[] zBuffer;
         int width, height;
-  
+
         // Constructor
         public warp_Rasterizer(warp_RenderPipeline pipeline)
         {
@@ -86,7 +86,7 @@ namespace Warp3D
         // Lightmap loader
         public void loadLightmap(warp_Lightmap lm)
         {
-            if(lm == null)
+            if (lm == null)
                 return;
             diffuse = lm.diffuse;
             specular = lm.specular;
@@ -101,14 +101,14 @@ namespace Warp3D
             color = material.color;
             reflectivity = material.reflectivity;
             texture = material.texture;
-            if(material.envmap != null)
+            if (material.envmap != null)
                 envmap = material.envmap.pixel;
             else
                 envmap = null;
 
-            if(texture != null)
+            if (texture != null)
             {
-                if(obj.projectedmaxMips < 2)
+                if (obj.projectedmaxMips < 2)
                 {
                     color = warp_Color.multiply(color, texture.averageColor);
                     texture = null;
@@ -116,13 +116,13 @@ namespace Warp3D
                 else
                 {
                     int mip = obj.projectedmaxMips - 1;
-                    if(mip > texture.maxmips)
+                    if (mip > texture.maxmips)
                         mip = texture.maxmips;
 
-                    if(texture.mips[mip] != null)
+                    if (texture.mips[mip] != null)
                     {
                         tpixels = texture.mips[mip];
-                        tbitW =  texture.mipsBitWidth[mip];
+                        tbitW = texture.mipsBitWidth[mip];
                         tbitH = texture.mipsBitHeight[mip];
                         tw = texture.mipstw[mip] - 1;
                         th = texture.mipsth[mip] - 1;
@@ -139,13 +139,13 @@ namespace Warp3D
             }
 
             mode = 0;
-            if(!material.flat)
+            if (!material.flat)
                 mode |= P;
-            if(envmap != null)
+            if (envmap != null)
                 mode |= E;
-            if(texture != null)
+            if (texture != null)
                 mode |= T;
-            if(material.wireframe)
+            if (material.wireframe)
                 mode |= W;
             materialLoaded = true;
             ready = lightmapLoaded && materialLoaded;
@@ -158,7 +158,7 @@ namespace Warp3D
             texture = obj.fasttexture;
             envmap = obj.fastenvmappixels;
 
-            if(texture != null)
+            if (texture != null)
             {
                 tpixels = obj.fasttpixels;
                 tw = obj.fasttw;
@@ -174,18 +174,18 @@ namespace Warp3D
 
         public void render(warp_Triangle tri)
         {
-            if(!ready)
+            if (!ready)
             {
                 return;
             }
-            if(tri.parent == null)
+            if (tri.parent == null)
             {
                 return;
             }
-            if((mode & W) != 0)
+            if ((mode & W) != 0)
             {
                 drawWireframe(tri, color);
-                if((mode & W) == 0)
+                if ((mode & W) == 0)
                 {
                     return;
                 }
@@ -195,35 +195,35 @@ namespace Warp3D
             p2 = tri.p2;
             p3 = tri.p3;
 
-            if(p1.y > p2.y)
+            if (p1.y > p2.y)
             {
                 tempVertex = p1;
                 p1 = p2;
                 p2 = tempVertex;
             }
-            if(p2.y > p3.y)
+            if (p2.y > p3.y)
             {
                 tempVertex = p2;
                 p2 = p3;
                 p3 = tempVertex;
             }
-            if(p1.y > p2.y)
+            if (p1.y > p2.y)
             {
                 tempVertex = p1;
                 p1 = p2;
                 p2 = tempVertex;
             }
 
-            if(p1.y >= height)
+            if (p1.y >= height)
                 return;
 
-            if(p3.y < 0)
+            if (p3.y < 0)
                 return;
 
-            if(p1.y == p3.y)
+            if (p1.y == p3.y)
                 return;
 
-            if(mode == F)
+            if (mode == F)
             {
                 lutID = (int)(tri.n2.x * 127 + 127) + ((int)(tri.n2.y * 127 + 127) << 8);
                 c = warp_Color.multiply(color, diffuse[lutID]);
@@ -237,22 +237,22 @@ namespace Warp3D
             y1 = p1.y;
             y2 = p2.y;
             y3 = p3.y;
-            
+
             int dy21 = y2 - y1;
             int dy31 = y3 - y1;
 
-      		x4 = x1 + (x3 - x1) * dy21 / dy31;
+            x4 = x1 + (x3 - x1) * dy21 / dy31;
 
- 			dx = (x4 - x2) >> 8;
-			if (dx == 0)
-				return;
+            dx = (x4 - x2) >> 8;
+            if (dx == 0)
+                return;
 
             x1 <<= 8;
             x2 <<= 8;
             x3 <<= 8;
             x4 <<= 8;
 
-			temp = (dy21 << 8) / dy31;
+            temp = (dy21 << 8) / dy31;
 
             z1 = p1.z;
             z3 = p3.z;
@@ -273,7 +273,7 @@ namespace Warp3D
             dny = (ny4 - ny2) / dx;
 
             float tf = (float)dy21 / (float)dy31;
- 
+
             tx1 = p1.tx * tw;
             tx3 = p3.tx * tw;
             tx4 = tx1 + ((tx3 - tx1) * tf);
@@ -292,7 +292,7 @@ namespace Warp3D
             sw2 = p2.invZ;
             dsw = (sw4 - sw2) / dx;
 
-            if(dx < 0)
+            if (dx < 0)
             {
                 temp = x2;
                 x2 = x4;
@@ -307,7 +307,7 @@ namespace Warp3D
 
 
             dy = dy21;
-            if(y2 >= 0 && dy > 0)
+            if (y2 >= 0 && dy > 0)
             {
                 dxL = (x2 - x1) / dy;
                 dxR = (x4 - x1) / dy;
@@ -327,7 +327,7 @@ namespace Warp3D
                 tyBase = ty1;
                 swBase = sw1;
 
-                if(y1 < 0)
+                if (y1 < 0)
                 {
                     xBase -= y1 * dxL;
                     xMax -= y1 * dxR;
@@ -340,17 +340,17 @@ namespace Warp3D
                     y1 = 0;
                 }
 
-                if(y2 > height)
+                if (y2 > height)
                     y2 = height;
                 offset = y1 * width;
-                for(y = y1; y < y2; y++)
+                for (y = y1; y < y2; y++)
                 {
                     renderLine();
                 }
             }
 
             dy = y3 - y2;
-            if(y2 < height && dy > 0)
+            if (y2 < height && dy > 0)
             {
                 dxL = (x3 - x2) / dy;
                 dxR = (x3 - x4) / dy;
@@ -370,7 +370,7 @@ namespace Warp3D
                 tyBase = ty2;
                 swBase = sw2;
 
-                if(y2 < 0)
+                if (y2 < 0)
                 {
                     xBase -= y2 * dxL;
                     xMax -= y2 * dxR;
@@ -383,11 +383,11 @@ namespace Warp3D
                     y2 = 0;
                 }
 
-                if(y3 > height)
+                if (y3 > height)
                     y3 = height;
                 offset = y2 * width;
 
-                for(y = y2; y < y3; y++)
+                for (y = y2; y < y3; y++)
                 {
                     renderLine();
                 }
@@ -405,7 +405,7 @@ namespace Warp3D
             ty = tyBase;
             sw = swBase;
 
-            if(xL < 0)
+            if (xL < 0)
             {
                 z -= xL * dz;
                 nx -= xL * dnx;
@@ -415,22 +415,22 @@ namespace Warp3D
                 sw -= xL * dsw;
                 xL = 0;
             }
-            if(xR > width )
+            if (xR > width)
                 xR = width;
 
-            if(mode == F)
+            if (mode == F)
                 renderLineF();
-            else if((mode & SHADED) == P)
+            else if ((mode & SHADED) == P)
                 renderLineP();
-            else if((mode & SHADED) == E)
+            else if ((mode & SHADED) == E)
                 renderLineE();
-            else if((mode & SHADED) == T)
+            else if ((mode & SHADED) == T)
                 renderLineT();
-            else if((mode & SHADED) == (P | E))
+            else if ((mode & SHADED) == (P | E))
                 renderLinePE();
-            else if((mode & SHADED) == (P | T))
+            else if ((mode & SHADED) == (P | T))
                 renderLinePT();
-            else if((mode & SHADED) == (P | E | T))
+            else if ((mode & SHADED) == (P | E | T))
                 renderLinePET();
 
             offset += width;
@@ -445,170 +445,198 @@ namespace Warp3D
         }
 
         // Fast scanline rendering
-        private void renderLineF()
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLineF()
         {
-            for(x = xL; x < xR; x++)
+            fixed (int* sp = screen.pixels, zB = zBuffer)
             {
-                pos = x + offset;
-                if(z < zBuffer[pos])
+                for (x = xL; x < xR; x++)
                 {
-                    bkgrd = screen.pixels[pos];
-                    c = warp_Color.overSolid(bkgrd, currentColor);
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
+                    pos = x + offset;
+                    if (z < zBuffer[pos])
+                    {
+                        bkgrd = sp[pos];
+                        c = warp_Color.overSolid(bkgrd, currentColor);
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+                    z += dz;
                 }
-                z += dz;
             }
         }
 
-        private void renderLineP()
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLineP()
         {
-            for(x = xL; x < xR; x++)
+            fixed (int* sp = screen.pixels, zB = zBuffer, df = diffuse, spc = specular)
             {
-                pos = x + offset;
-                if(z < zBuffer[pos])
+                for (x = xL; x < xR; x++)
                 {
-                    lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
-                    bkgrd = screen.pixels[pos];
-                    c = warp_Color.multiply(color, diffuse[lutID]);
-                    s = specular[lutID];
-                    s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.overSolid(bkgrd, c);
-                    c = warp_Color.add(c, s);
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
+                    pos = x + offset;
+                    if (z < zB[pos])
+                    {
+                        lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
+                        bkgrd = sp[pos];
+                        c = warp_Color.multiply(color, df[lutID]);
+                        s = spc[lutID];
+                        s = warp_Color.scale(s, reflectivity);
+                        c = warp_Color.overSolid(bkgrd, c);
+                        c = warp_Color.add(c, s);
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+                    z += dz;
+                    nx += dnx;
+                    ny += dny;
                 }
-                z += dz;
-                nx += dnx;
-                ny += dny;
-            }
-
-        }
-
-        private void renderLineE()
-        {
-            for(x = xL; x < xR; x++)
-            {
-                pos = x + offset;
-                if(z < zBuffer[pos])
-                {
-                    lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
-                    bkgrd = screen.pixels[pos];
-                    s = warp_Color.add(specular[lutID], envmap[lutID]);
-                    s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.overSolid(bkgrd, s);
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
-                }
-                z += dz;
-                nx += dnx;
-                ny += dny;
             }
         }
 
-        private void renderLineT()
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLineE()
         {
-            for(x = xL; x < xR; x++)
+            fixed (int* sp = screen.pixels, zB = zBuffer, spc = specular, env = envmap)
             {
-                pos = x + offset;
-                if(z < zBuffer[pos])
+                for (x = xL; x < xR; x++)
                 {
-                    bkgrd = screen.pixels[pos];
-                    c = tpixels[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
-                    c = warp_Color.multiply(color, c);
-                    c = warp_Color.overSolid(bkgrd, c);
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
+                    pos = x + offset;
+                    if (z < zB[pos])
+                    {
+                        lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
+                        bkgrd = sp[pos];
+                        s = warp_Color.add(spc[lutID], env[lutID]);
+                        s = warp_Color.scale(s, reflectivity);
+                        c = warp_Color.overSolid(bkgrd, s);
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+                    z += dz;
+                    nx += dnx;
+                    ny += dny;
                 }
-                z += dz;
-                tx += dtx;
-                ty += dty;
-                sw += dsw;
             }
         }
 
-        private void renderLinePE()
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLineT()
         {
-            for(x = xL; x < xR; x++)
+            fixed (int* sp = screen.pixels, zB = zBuffer, tp = tpixels)
             {
-                pos = x + offset;
-                if(z < zBuffer[pos])
+                for (x = xL; x < xR; x++)
                 {
-                    lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
-
-                    bkgrd = screen.pixels[pos];
-                    c = warp_Color.multiply(color, diffuse[lutID]);
-                    s = warp_Color.add(specular[lutID], envmap[lutID]);
-                    s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.overSolid(bkgrd, c);
-                    c = warp_Color.add(c, s);
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
+                    pos = x + offset;
+                    if (z < zB[pos])
+                    {
+                        bkgrd = sp[pos];
+                        c = tp[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
+                        c = warp_Color.multiply(color, c);
+                        c = warp_Color.overSolid(bkgrd, c);
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+                    z += dz;
+                    tx += dtx;
+                    ty += dty;
+                    sw += dsw;
                 }
-                z += dz;
-                nx += dnx;
-                ny += dny;
             }
         }
 
-        private void renderLinePT()
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLinePE()
         {
-            for(x = xL; x < xR; x++)
+            fixed (int* sp = screen.pixels, zB = zBuffer, df = diffuse, spc = specular, env = envmap)
             {
-                pos = x + offset;
-                if(z < zBuffer[pos])
+                for (x = xL; x < xR; x++)
                 {
-                    lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
+                    pos = x + offset;
+                    if (z < zB[pos])
+                    {
+                        lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
 
-                    bkgrd = screen.pixels[pos];
-                    c = tpixels[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
-                    c = warp_Color.multiply(color, c);
-                    c = warp_Color.multiply(c, diffuse[lutID]);
-                    s = warp_Color.scale(specular[lutID], reflectivity);
-                    c = warp_Color.overSolid(bkgrd, c);
-                    c = warp_Color.add(c, s);
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
+                        bkgrd = sp[pos];
+                        c = warp_Color.multiply(color, df[lutID]);
+                        s = warp_Color.add(spc[lutID], env[lutID]);
+                        s = warp_Color.scale(s, reflectivity);
+                        c = warp_Color.overSolid(bkgrd, c);
+                        c = warp_Color.add(c, s);
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+                    z += dz;
+                    nx += dnx;
+                    ny += dny;
                 }
-
-                z += dz;
-                nx += dnx;
-                ny += dny;
-                tx += dtx;
-                ty += dty;
-                sw += dsw;
             }
         }
 
-        private void renderLinePET()
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLinePT()
         {
-            for(x = xL; x < xR; x++)
+            fixed (int* sp = screen.pixels, zB = zBuffer, df = diffuse, spc = specular, tp = tpixels)
             {
-                pos = x + offset;
-                if(z < zBuffer[pos])
+                for (x = xL; x < xR; x++)
                 {
-                    lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
-                    bkgrd = screen.pixels[pos];
-                    c = tpixels[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
-                    c = warp_Color.multiply(color, c);
-                    c = warp_Color.multiply(c, diffuse[lutID]);
-                    s = warp_Color.add(specular[lutID], envmap[lutID]);
-                    s = warp_Color.scale(s, reflectivity);
-                    c = warp_Color.overSolid(bkgrd, c);
-                    c = warp_Color.add(c, s);
+                    pos = x + offset;
+                    if (z < zB[pos])
+                    {
+                        lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
 
-                    screen.pixels[pos] = c;
-                    zBuffer[pos] = z;
+                        bkgrd = sp[pos];
+                        c = tp[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
+                        c = warp_Color.multiply(color, c);
+                        c = warp_Color.multiply(c, df[lutID]);
+                        s = warp_Color.scale(spc[lutID], reflectivity);
+                        c = warp_Color.overSolid(bkgrd, c);
+                        c = warp_Color.add(c, s);
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+
+                    z += dz;
+                    nx += dnx;
+                    ny += dny;
+                    tx += dtx;
+                    ty += dty;
+                    sw += dsw;
                 }
-                z += dz;
-                nx += dnx;
-                ny += dny;
-                tx += dtx;
-                ty += dty;
-                sw += dsw;
             }
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private unsafe void renderLinePET()
+        {
+            fixed (int* sp = screen.pixels, zB = zBuffer, df = diffuse, spc = specular, tp = tpixels, env = envmap)
+            {
+                for (x = xL; x < xR; x++)
+                {
+                    pos = x + offset;
+                    if (z < zB[pos])
+                    {
+                        lutID = ((nx >> 16) & 255) + (((ny >> 16) & 255) << 8);
+                        bkgrd = sp[pos];
+                        c = tp[(((int)(tx / sw)) & tw) + ((((int)(ty / sw)) & th) << tbitW)];
+                        c = warp_Color.multiply(color, c);
+                        c = warp_Color.multiply(c, df[lutID]);
+                        s = warp_Color.add(spc[lutID], env[lutID]);
+                        s = warp_Color.scale(s, reflectivity);
+                        c = warp_Color.overSolid(bkgrd, c);
+                        c = warp_Color.add(c, s);
+
+                        sp[pos] = c;
+                        zB[pos] = z;
+                    }
+                    z += dz;
+                    nx += dnx;
+                    ny += dny;
+                    tx += dtx;
+                    ty += dty;
+                    sw += dsw;
+                }
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         private void drawWireframe(warp_Triangle tri, int defaultcolor)
         {
             drawLine(tri.p1, tri.p2, defaultcolor);
@@ -616,80 +644,83 @@ namespace Warp3D
             drawLine(tri.p3, tri.p1, defaultcolor);
         }
 
-        private void drawLine(warp_Vertex a, warp_Vertex b, int color)
+        private unsafe void drawLine(warp_Vertex a, warp_Vertex b, int color)
         {
             warp_Vertex temp;
-            if((a.clipcode & b.clipcode) != 0)
+            if ((a.clipcode & b.clipcode) != 0)
                 return;
 
             dx = (int)Math.Abs(a.x - b.x);
             dy = (int)Math.Abs(a.y - b.y);
             dz = 0;
 
-            if(dx > dy)
+            fixed (int* sp = screen.pixels, zB = zBuffer)
             {
-                if(a.x > b.x)
+                if (dx > dy)
                 {
-                    temp = a;
-                    a = b;
-                    b = temp;
-                }
-                if(dx > 0)
-                {
-                    dz = (b.z - a.z) / dx;
-                    dy = ((b.y - a.y) << 16) / dx;
-                }
-                z = a.z;
-                y = a.y << 16;
-                for(x = a.x; x <= b.x; x++)
-                {
-                    y2 = y >> 16;
-                    if(warp_Math.inrange(x, 0, width - 1) && warp_Math.inrange(y2, 0, height - 1))
+                    if (a.x > b.x)
                     {
-                        offset = y2 * width;
-                        if(z < zBuffer[x + offset])
+                        temp = a;
+                        a = b;
+                        b = temp;
+                    }
+                    if (dx > 0)
+                    {
+                        dz = (b.z - a.z) / dx;
+                        dy = ((b.y - a.y) << 16) / dx;
+                    }
+                    z = a.z;
+                    y = a.y << 16;
+                    for (x = a.x; x <= b.x; x++)
+                    {
+                        y2 = y >> 16;
+                        if (warp_Math.inrange(x, 0, width - 1) && warp_Math.inrange(y2, 0, height - 1))
                         {
+                            offset = y2 * width;
+                            if (z < zB[x + offset])
                             {
-                                screen.pixels[x + offset] = color;
-                                zBuffer[x + offset] = z;
+                                {
+                                    sp[x + offset] = color;
+                                    zB[x + offset] = z;
+                                }
                             }
                         }
+                        z += dz;
+                        y += dy;
                     }
-                    z += dz;
-                    y += dy;
                 }
-            }
-            else
-            {
-                if(a.y > b.y)
+                else
                 {
-                    temp = a;
-                    a = b;
-                    b = temp;
-                }
-                if(dy > 0)
-                {
-                    dz = (b.z - a.z) / dy;
-                    dx = ((b.x - a.x) << 16) / dy;
-                }
-                z = a.z;
-                x = a.x << 16;
-                for(y = a.y; y <= b.y; y++)
-                {
-                    x2 = x >> 16;
-                    if(warp_Math.inrange(x2, 0, width - 1) && warp_Math.inrange(y, 0, height - 1))
+                    if (a.y > b.y)
                     {
-                        offset = y * width;
-                        if(z < zBuffer[x2 + offset])
+                        temp = a;
+                        a = b;
+                        b = temp;
+                    }
+                    if (dy > 0)
+                    {
+                        dz = (b.z - a.z) / dy;
+                        dx = ((b.x - a.x) << 16) / dy;
+                    }
+                    z = a.z;
+                    x = a.x << 16;
+                    for (y = a.y; y <= b.y; y++)
+                    {
+                        x2 = x >> 16;
+                        if (warp_Math.inrange(x2, 0, width - 1) && warp_Math.inrange(y, 0, height - 1))
                         {
+                            offset = y * width;
+                            if (z < zB[x2 + offset])
                             {
-                                screen.pixels[x2 + offset] = color;
-                                zBuffer[x2 + offset] = z;
+                                {
+                                    sp[x2 + offset] = color;
+                                    zB[x2 + offset] = z;
+                                }
                             }
                         }
+                        z += dz;
+                        x += dx;
                     }
-                    z += dz;
-                    x += dx;
                 }
             }
         }

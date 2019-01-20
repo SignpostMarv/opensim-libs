@@ -173,47 +173,50 @@ namespace Warp3D
             unsafe
             {
                 byte* p = (byte*)bmData.Scan0;
-                int nPixel = 0;
-                if(hasAlpha)
+                fixed(int* px = pixel)
                 {
-                    int nOffset = bmData.Stride - width * 4;
-                    for(int i = 0; i < height; i++)
+                    int nPixel = 0;
+                    if(hasAlpha)
                     {
-                        for(int j = 0; j < width; j++)
+                        int nOffset = bmData.Stride - width * 4;
+                        for(int i = 0; i < height; i++)
                         {
-                            blue = *(p++);
-                            avgB += blue; 
-                            green = *(p++);
-                            avgG += green; 
-                            red = *(p++);
-                            avgR += red;
-                            alpha = *(p++);
-                            avgA += alpha;
+                            for(int j = 0; j < width; j++)
+                            {
+                                blue = *(p++);
+                                avgB += blue; 
+                                green = *(p++);
+                                avgG += green; 
+                                red = *(p++);
+                                avgR += red;
+                                alpha = *(p++);
+                                avgA += alpha;
 
-                            if(opaque && alpha != 0xff)
-                                opaque = false;
-                            pixel[nPixel++] = alpha << 24 | red << 16 | green << 8 | blue;
+                                if(opaque && alpha != 0xff)
+                                    opaque = false;
+                                px[nPixel++] = alpha << 24 | red << 16 | green << 8 | blue;
+                            }
+                            p += nOffset;
                         }
-                        p += nOffset;
                     }
-                }
-                else
-                {
-                    int nOffset = bmData.Stride - width * 3;
-                    for(int i = 0; i < height; i++)
+                    else
                     {
-                        for(int j = 0; j < width; j++)
+                        int nOffset = bmData.Stride - width * 3;
+                        for(int i = 0; i < height; i++)
                         {
-                            blue = *(p++);
-                            avgB += blue;
-                            green = *(p++);
-                            avgG += green;
-                            red = *(p++);
-                            avgR += red;
+                            for(int j = 0; j < width; j++)
+                            {
+                                blue = *(p++);
+                                avgB += blue;
+                                green = *(p++);
+                                avgG += green;
+                                red = *(p++);
+                                avgR += red;
 
-                            pixel[nPixel++] = ALPHA | red << 16 | green << 8 | blue;
+                                px[nPixel++] = ALPHA | red << 16 | green << 8 | blue;
+                            }
+                            p += nOffset;
                         }
-                        p += nOffset;
                     }
                 }
             }
@@ -259,8 +262,8 @@ namespace Warp3D
             int bw = bitWidth;
             int bh = bitHeight;
 
-            int [] src;
-            int [] dst = null;
+            int[] src;
+            int[] dst = null;
             for(int n = maxmips; n >= 0; --n)
             {
                 src = mips[n + 1];
@@ -296,7 +299,7 @@ namespace Warp3D
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        private int[] dec2XY(int[] src, int w, int h)
+        private unsafe int[] dec2XY(int[] src, int w, int h)
         {
             int[] dst = new int[w * h];
             int sw = 2 * w;
@@ -307,18 +310,20 @@ namespace Warp3D
             int c4;
             int sxl2 = sw;
             int dx = 0;
-            for(int sx = 0 ; sx < stot; sx += sw, sxl2 += sw)
+            fixed (int* s = src, d = dst)
             {
-                for(int i = 0; i < w ; i++, sx += 2, sxl2 += 2)
+                for (int sx = 0 ; sx < stot; sx += sw, sxl2 += sw)
                 {
-                    c1 = src[sx];
-                    c2 = src[sx + 1];
-                    c3 = src[sxl2];
-                    c4 = src[sxl2 + 1];
-                    dst[dx++] = warp_Color.avg4c(c1, c2, c3, c4);
+                    for(int i = 0; i < w ; i++, sx += 2, sxl2 += 2)
+                    {
+                        c1 = s[sx];
+                        c2 = s[sx + 1];
+                        c3 = s[sxl2];
+                        c4 = s[sxl2 + 1];
+                        d[dx++] = warp_Color.avg4c(c1, c2, c3, c4);
+                    }
                 }
             }
-
             return dst;
         }
 
@@ -344,7 +349,7 @@ namespace Warp3D
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        private int[] dec2Y(int[] src, int w, int h)
+        private unsafe int[] dec2Y(int[] src, int w, int h)
         {
             int[] dst = new int[w * h];
             int stot = 2 * h * w;
@@ -352,39 +357,45 @@ namespace Warp3D
             int c2;
             int sxl2 = w;
             int dx = 0;
-            for(int sx = 0 ; sx < stot; sx += w, sxl2 += w)
+            fixed (int* s = src, d = dst)
             {
-                for(int i = 0; i < w ; i++, ++sx, ++sxl2)
+                for (int sx = 0 ; sx < stot; sx += w, sxl2 += w)
                 {
-                    c1 = src[sx];
-                    c2 = src[sxl2];
-                    dst[dx++] = warp_Color.avg2c(c1, c2);
+                    for(int i = 0; i < w ; i++, ++sx, ++sxl2)
+                    {
+                        c1 = s[sx];
+                        c2 = s[sxl2];
+                        d[dx++] = warp_Color.avg2c(c1, c2);
+                    }
                 }
             }
             return dst;
         }
 
-        private void setSize(int w, int h)
+        private unsafe void setSize(int w, int h)
         {
             int offset = w * h;
             int offset2;
             if(w * h != 0)
             {
                 int[] newpixels = new int[w * h];
-                for(int j = h - 1; j >= 0; j--)
+                fixed(int* np = newpixels, p = pixel)
                 {
-                    offset -= w;
-                    offset2 = (j * height / h) * width;
-                    for(int i = w - 1; i >= 0; i--)
-                        newpixels[i + offset] = pixel[(i * width / w) + offset2];
+                    for(int j = h - 1; j >= 0; j--)
+                    {
+                        offset -= w;
+                        offset2 = (j * height / h) * width;
+                        for(int i = w - 1; i >= 0; i--)
+                            np[i + offset] = p[(i * width / w) + offset2];
+                    }
                 }
-
                 width = w;
                 height = h;
                 pixel = newpixels;
             }
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         private bool inrange(int a, int b, int c)
         {
             return (a >= b) & (a < c);
