@@ -575,7 +575,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
     if (tempHeightBufferSizeX < numX || tempHeightBufferSizeY < numY)
     {
         resetHeightBuffer();
-		allocateHeightBuffer(numX, numY);
+        allocateHeightBuffer(numX, numY);
     }
 
     offsetX = final_posr->pos[0] - m_p_data->m_fHalfWidth;
@@ -618,13 +618,13 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
     if (minO2Height - maxZ > -dEpsilon )
     {
-		//totally above heightfield
+        //totally above heightfield
         return 0;
     }
 
     if (minZ - maxO2Height > -dEpsilon)
-	{
-		// totally under heightfield
+    {
+        // totally under heightfield
         // meshs aren't all centered around position
         dReal Xpos = (o2->aabb[1] + o2->aabb[0]) * REAL(0.5);
         dReal Ypos = (o2->aabb[3] + o2->aabb[2]) * REAL(0.5);
@@ -632,9 +632,9 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
         pContact = CONTACT(contact,0);
 
-		pContact->pos[0] = Xpos;
-		pContact->pos[1] = Ypos;
-		pContact->pos[2] = minO2Height;
+        pContact->pos[0] = Xpos;
+        pContact->pos[1] = Ypos;
+        pContact->pos[2] = minO2Height;
         pContact->normal[0] = 0;
         pContact->normal[1] = 0;
         pContact->normal[2] = -1;
@@ -644,8 +644,8 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         pContact->side1 = -1;
         pContact->side2 = -1;
 
-		return 1;
-	}
+        return 1;
+    }
 
     // get All Planes that could collide against.
     dColliderFn *geomRayNCollider=0;
@@ -722,24 +722,24 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
         // find collision and compute contact points
         numTerrainContacts = geomNPlaneCollider (o2, sliding_plane, flags, contact, skip);
-	    dIASSERT(numTerrainContacts <= numMaxContactsPossible);
+        dIASSERT(numTerrainContacts <= numMaxContactsPossible);
 
         for (i = 0; i < numTerrainContacts; i++)
         {
-		    pContact = CONTACT(contact, i*skip);
+            pContact = CONTACT(contact, i*skip);
             dCopyNegatedVector3r4(pContact->normal, triplane);
         }
         return numTerrainContacts;
     }
  
 
-	dContactGeom *PlaneContact = m_p_data->m_contacts;
-	
+    dContactGeom *PlaneContact = m_p_data->m_contacts;
+
     const unsigned int numTriMax = (maxX - minX) * (maxY - minY) * 2;
     if (tempTriangleBufferSize < numTriMax)
     {
         resetTriangleBuffer();
-		allocateTriangleBuffer(numTriMax);
+        allocateTriangleBuffer(numTriMax);
     }
     
     // Sorting triangle/plane  resulting from heightfield zone
@@ -752,7 +752,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
     bool needFurtherPasses = (o2->type == dTriMeshClass);
     //compute Ratio between Triangle size and O2 aabb size
-	// no FurtherPasses are needed in ray class
+    // no FurtherPasses are needed in ray class
     if (o2->type != dRayClass  && needFurtherPasses == false)
     {
         const dReal xratio = (o2->aabb[1] - o2->aabb[0]);
@@ -764,7 +764,6 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
             if (zratio > REAL(1.5))
                 needFurtherPasses = true;
         }
-
     }
 
     unsigned int numTri = 0;
@@ -908,9 +907,9 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
     unsigned int numPlanes = 0;
     int numPlaneContacts;
 
-	int numMaxContactsPerPlane = dMIN(numMaxContactsPossible - numTerrainContacts, OSTERRAINMAXCONTACTPERCELL);
-	int planeTestFlags = (flags & ~NUMC_MASK) | numMaxContactsPerPlane;
-	dIASSERT((OSTERRAINMAXCONTACTPERCELL & ~NUMC_MASK) == 0);     
+    int numMaxContactsPerPlane = dMIN(numMaxContactsPossible - numTerrainContacts, OSTERRAINMAXCONTACTPERCELL);
+    int planeTestFlags = (flags & ~NUMC_MASK) | numMaxContactsPerPlane;
+    dIASSERT((OSTERRAINMAXCONTACTPERCELL & ~NUMC_MASK) == 0);     
 
     OSTerrainTriangle* tri_base;
     OSTerrainTriangle* tri_test;
@@ -1027,9 +1026,9 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
         dReal depth;
         bool vertexCollided;
 
-		// Only one contact is necessary for ray test
-		int rayTestFlags = (flags & ~NUMC_MASK) | 1;
-		dIASSERT((1 & ~NUMC_MASK) == 0);
+        // Only one contact is necessary for ray test
+        int rayTestFlags = (flags & ~NUMC_MASK) | 1;
+        dIASSERT((1 & ~NUMC_MASK) == 0);
         //
         // Find Contact Penetration Depth of each vertices
         //
@@ -1554,7 +1553,6 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
 
 //    t1 = getClockTicksMs() - tstart;
 
-
     delete[] VtopCollideA;
     delete[] VtopCollideB;
 
@@ -1698,17 +1696,17 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 
     if(o2->type == dSphereClass)
     {
-    	numTerrainContacts = terrain->dCollideOSTerrainSphere(
-			nMinX,nMaxX,nMinY,nMaxY,o2,numMaxTerrainContacts - numTerrainContacts,
-			flags,CONTACT(contact,numTerrainContacts*skip),skip	);
+        numTerrainContacts = terrain->dCollideOSTerrainSphere(
+            nMinX,nMaxX,nMinY,nMaxY,o2,numMaxTerrainContacts - numTerrainContacts,
+            flags,CONTACT(contact,numTerrainContacts*skip),skip	);
     }
     else    
     {
-	    numTerrainContacts = terrain->dCollideOSTerrainZone(
-			nMinX,nMaxX,nMinY,nMaxY,o2,numMaxTerrainContacts - numTerrainContacts,
-			flags,CONTACT(contact,numTerrainContacts*skip),skip	);
+        numTerrainContacts = terrain->dCollideOSTerrainZone(
+            nMinX,nMaxX,nMinY,nMaxY,o2,numMaxTerrainContacts - numTerrainContacts,
+            flags,CONTACT(contact,numTerrainContacts*skip),skip	);
     }
-	dIASSERT( numTerrainContacts <= numMaxTerrainContacts );
+    dIASSERT( numTerrainContacts <= numMaxTerrainContacts );
 
     for ( i = 0; i < numTerrainContacts; ++i )
     {
@@ -1726,6 +1724,4 @@ int dCollideOSTerrain( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* contact,
 
     return numTerrainContacts;
 }
-
-
 

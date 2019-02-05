@@ -889,7 +889,7 @@ void dxQuickStepIsland_Stage0_Bodies(dxQuickStepperStage0BodiesCallContext *call
 
             // Don't apply gyroscopic torques to bodies
             // if not flagged or the body is kinematic
-            if ((b->flags & dxBodyGyroscopic)&& (b->invMass>0))
+            if ((b->flags & dxBodyGyroscopic)&& (b->invMass>0) && b->invMass < 1e6)
             {
                 dMatrix3 I;
                 // compute inertia tensor in global frame

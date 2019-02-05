@@ -898,11 +898,15 @@ ODE_PURE_INLINE void dSwapVectors3(dReal *a, dReal *b)
 #if defined(__AVX__)
 ODE_PURE_INLINE void dCopyMatrix4x4(dReal *res, const dReal *a)
 {
-    __m256 ab;
-    ab = _mm256_loadu_ps(a);
-    _mm256_storeu_ps(res, ab);
-    ab = _mm256_loadu_ps(a + 8);
-    _mm256_storeu_ps(res + 8, ab);
+    __m128 ma, mb, mc, md;
+    ma = _mm_loadu_ps(a);
+    mb = _mm_loadu_ps(a + 4);
+    mc = _mm_loadu_ps(a + 8);
+    md = _mm_loadu_ps(a + 12);
+    _mm_storeu_ps(res, ma);
+    _mm_storeu_ps(res + 4, mb);
+    _mm_storeu_ps(res + 8, mc);
+    _mm_storeu_ps(res + 12, md);
 }
 #else
 ODE_PURE_INLINE void dCopyMatrix4x4(dReal *res, const dReal *a)
@@ -916,7 +920,7 @@ ODE_PURE_INLINE void dCopyMatrix4x4(dReal *res, const dReal *a)
 #if defined(__AVX__)
 ODE_PURE_INLINE void dCopyMatrix4x3(dReal *res, const dReal *a)
 {
-    __m128 ma,mb,mc;
+    __m128 ma, mb, mc;
     ma = _mm_loadu_ps(a);
     mb = _mm_loadu_ps(a + 4);
     mc = _mm_loadu_ps(a + 8);
