@@ -149,10 +149,28 @@ namespace Warp3D
 
             if(maxBitSize > 3)
             {
-                if (bitWidth > maxBitSize)
-                    bitWidth = maxBitSize;
-                if (bitHeight > maxBitSize)
-                    bitHeight = maxBitSize;
+                if(bitWidth > bitHeight)
+                {
+                    if (bitWidth > maxBitSize)
+                    {
+                        int ex = bitWidth - maxBitSize;
+                        bitWidth = maxBitSize;
+                        bitHeight -= ex;
+                        if (bitHeight < 0)
+                            bitHeight = 0;
+                    }
+                }
+                else
+                {
+                    if (bitHeight > maxBitSize)
+                    {
+                        int ex = bitHeight - maxBitSize;
+                        bitHeight = maxBitSize;
+                        bitWidth -= ex;
+                        if (bitWidth < 0)
+                            bitWidth = 0;
+                    }
+                }
             }
 
             int w = (int)Math.Pow(2, bitWidth);
