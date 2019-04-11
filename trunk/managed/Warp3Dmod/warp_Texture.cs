@@ -47,15 +47,15 @@ namespace Warp3D
             System.Array.Copy(data, pixel, pixel.Length);
         }
 
-        public warp_Texture(Bitmap map)
+        public warp_Texture(Bitmap map, int maxBitSize = -1)
         {
-            loadTexture(map);
+            loadTexture(map, maxBitSize);
         }
 
-        public warp_Texture(string path)
+        public warp_Texture(string path, int maxBitSize = -1)
         {
             using(Bitmap map = new Bitmap(path, false))
-                loadTexture(map);
+                loadTexture(map, maxBitSize);
         }
 
         public void resize()
@@ -116,7 +116,7 @@ namespace Warp3D
             return this;
         }
 
-        private void loadTexture(Bitmap pmap)
+        private void loadTexture(Bitmap pmap, int maxBitSize = -1)
         {
             Bitmap map = pmap;
             bool disposemap = false;
@@ -144,8 +144,19 @@ namespace Warp3D
 
            // make sure sizes are power of 2
             const double log2inv = 1.4426950408889634073599246810019;
-            int w = (int)Math.Pow(2, bitWidth = (int)Math.Ceiling((Math.Log(width) * log2inv)));
-            int h = (int)Math.Pow(2, bitHeight = (int)Math.Ceiling((Math.Log(height) * log2inv)));
+            bitWidth = (int)Math.Ceiling((Math.Log(width) * log2inv));
+            bitHeight = (int)Math.Ceiling((Math.Log(height) * log2inv));
+
+            if(maxBitSize > 3)
+            {
+                if (bitWidth > maxBitSize)
+                    bitWidth = maxBitSize;
+                if (bitHeight > maxBitSize)
+                    bitHeight = maxBitSize;
+            }
+
+            int w = (int)Math.Pow(2, bitWidth);
+            int h = (int)Math.Pow(2, bitHeight);
 
             if(width != w || height != h || format != targetformat)
             {
